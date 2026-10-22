@@ -12,7 +12,8 @@ Codice riutilizzato da `UniSgamb98/Statistiche`, branch
   le cui funzionalità di analisi non sono incluse in questo progetto.
 - CSS globale e test del livello core ripresi dal riferimento.
 
-Package adattati a `com.orodent.tonv3`. Ton-V3 utilizza `TonV3Database`,
+Il codice inizialmente adattato a `com.orodent.tonv3` è ora suddiviso nei
+moduli di Orodent-EcoS, con package `com.orodent.ecos`. Ton-V3 utilizza `TonV3Database`,
 protocollo discovery `TONV3`, TCP 1528 e UDP 45680: non scopre host Statistiche.
 Il database conserva lo schema clienti/vendite del riferimento.
 La directory predefinita sui sistemi non Windows è `~/.ton-v3/database`;
@@ -24,10 +25,10 @@ Vedere anche [database-discovery.md](database-discovery.md).
 Richiede Java 21, Maven (oppure `bash mvnw`) e le librerie native JavaFX.
 
 ```sh
-bash mvnw verify
-bash mvnw javafx:run
+bash mvnw install
+bash mvnw -pl orodent-app javafx:run
 ```
 
-Il punto d'ingresso è `app.MainApp`; `Launcher` delega allo stesso avvio.
+Il punto d'ingresso è `com.orodent.ecos.app.MainApp`; `Launcher` delega allo stesso avvio.
 I test includono database, transazioni/importazioni e discovery con processi separati.
 Il discovery tra macchine richiede una LAN con broadcast UDP e porte accessibili.
