@@ -13,11 +13,11 @@ Codice riutilizzato da `UniSgamb98/Statistiche`, branch
 - CSS globale e test del livello core ripresi dal riferimento.
 
 Il codice inizialmente adattato a `com.orodent.tonv3` è ora suddiviso nei
-moduli di Orodent-EcoS, con package `com.orodent.ecos`. Ton-V3 utilizza `TonV3Database`,
+moduli di Orodent-EcoS, con package `com.orodent.ecos`. Orodent-EcoS utilizza `OrodentEcoS`,
 protocollo discovery `TONV3`, TCP 1528 e UDP 45680: non scopre host Statistiche.
 Il database conserva lo schema clienti/vendite del riferimento.
 La directory predefinita sui sistemi non Windows è `~/.ton-v3/database`;
-`ton.database.home` o `TON_DATABASE_HOME` consentono di cambiarla.
+`ton.database.home` o `ORODENT_ECOS_DATABASE_HOME` consentono di cambiarla.
 Vedere anche [database-discovery.md](database-discovery.md).
 
 ## Sviluppo

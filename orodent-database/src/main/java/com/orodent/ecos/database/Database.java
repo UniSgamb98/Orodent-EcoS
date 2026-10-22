@@ -20,7 +20,7 @@ public class Database implements ConnectionProvider {
 
     public Database() {
         this(DatabaseConfiguration.forHome(resolveDatabaseHome(System.getProperty("ton.database.home"),
-                System.getenv("TON_DATABASE_HOME"), System.getProperty("os.name", ""),
+                System.getenv("ORODENT_ECOS_DATABASE_HOME"), System.getProperty("os.name", ""),
                 System.getProperty("user.home"))));
     }
 

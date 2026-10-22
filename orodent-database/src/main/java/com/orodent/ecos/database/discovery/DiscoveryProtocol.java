@@ -5,8 +5,8 @@ import java.util.Optional;
 
 /** Application and protocol identifiers prevent discovery of unrelated Derby applications. */
 final class DiscoveryProtocol {
-    private static final String REQUEST = "TONV3_DISCOVER;v=1;database=TonV3Database;nonce=";
-    private static final String RESPONSE = "TONV3_HOST;v=1;database=TonV3Database;nonce=";
+    private static final String REQUEST = "TONV3_DISCOVER;v=1;database=OrodentEcoS;nonce=";
+    private static final String RESPONSE = "TONV3_HOST;v=1;database=OrodentEcoS;nonce=";
 
     private DiscoveryProtocol() { }
 

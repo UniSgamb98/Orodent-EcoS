@@ -1,7 +1,7 @@
 # Avvio automatico HOST / CLIENT
 
 All'avvio l'applicazione cerca un host Ton-V3 sul computer locale e sulla rete LAN.
-Un candidato viene accettato solo dopo una connessione al database `TonV3Database`
+Un candidato viene accettato solo dopo una connessione al database `OrodentEcoS`
 e una verifica in lettura delle tabelle dell'applicazione.
 
 Se non trova un host utilizzabile, avvia il proprio database, inizializza lo schema e
@@ -25,7 +25,7 @@ L'HOST rilascia esclusivamente le risorse che ha avviato.
 | `ton.discovery.timeout.ms` | `1500` | Attesa per ciascun tentativo discovery |
 | `ton.database.home` | Windows: `C:\`; altri sistemi: `~/.ton-v3/database` | Directory del database HOST |
 
-`TON_DATABASE_HOME` può impostare la directory quando la proprietà
+`ORODENT_ECOS_DATABASE_HOME` può impostare la directory quando la proprietà
 `ton.database.home` non è specificata. La directory di un CLIENT non viene creata.
 
 Per collegamenti tra computer, consentire sul firewall dell'HOST TCP 1528 e UDP 45680
@@ -49,3 +49,11 @@ Il database non viene copiato sul computer CLIENT.
 I test di integrazione avviano JVM separate con directory temporanee e porte dedicate:
 verificano dati condivisi, avvio contemporaneo, connessioni indipendenti, chiusura del
 CLIENT e conflitti con risorse occupate da processi che non partecipano al discovery.
+
+## Cambio del nome database
+
+Il database Derby è `OrodentEcoS`; un precedente `TonV3Database` non viene
+rinominato o migrato automaticamente. Il vecchio database resta intatto.
+Per conservare dati preesistenti occorre pianificare una migrazione separata.
+Aggiornare le postazioni allo stesso nome database per utilizzare il discovery.
+La variabile precedente `TON_DATABASE_HOME` non viene più letta.

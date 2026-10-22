@@ -4,7 +4,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 public record DatabaseConfiguration(Path home, int databasePort, int discoveryPort, int discoveryTimeoutMs) {
-    public static final String DATABASE_NAME = "TonV3Database";
+    public static final String DATABASE_NAME = "OrodentEcoS";
     public static final String USER = "APP";
     public static final String PASSWORD = "pw";
 

@@ -14,7 +14,7 @@ public final class DatabaseProcessProbe {
             java.nio.file.Files.createDirectories(Path.of(args[0]));
             System.setProperty("derby.system.home", args[0]);
             Class.forName("org.apache.derby.jdbc.EmbeddedDriver").getConstructor().newInstance();
-            try (var connection = java.sql.DriverManager.getConnection("jdbc:derby:TonV3Database;create=true", "APP", "pw");
+            try (var connection = java.sql.DriverManager.getConnection("jdbc:derby:OrodentEcoS;create=true", "APP", "pw");
                  var input = new BufferedReader(new InputStreamReader(System.in))) {
                 System.out.println("READY LEGACY");
                 while (input.readLine() != null) {

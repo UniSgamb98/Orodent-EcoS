@@ -22,9 +22,10 @@ class DatabaseDiscoveryIntegrationTest {
         int udp = udpPort();
         try (var host = start(temporary.resolve("host"), tcp, udp)) {
             assertEquals("READY HOST", host.line());
+            assertTrue(Files.isDirectory(temporary.resolve("host/OrodentEcoS")));
             try (var client = start(temporary.resolve("client"), tcp, udp)) {
                 assertEquals("READY CLIENT", client.line());
-                assertFalse(Files.exists(temporary.resolve("client/TonV3Database")));
+                assertFalse(Files.exists(temporary.resolve("client/OrodentEcoS")));
                 assertEquals("INSERTED", client.command("INSERT"));
                 assertEquals("COUNT 1", host.command("COUNT"));
                 assertEquals("INDEPENDENT OK", client.command("INDEPENDENT"));
@@ -62,7 +63,7 @@ class DatabaseDiscoveryIntegrationTest {
         try (var occupied = new ServerSocket(0);
              var instance = start(temporary.resolve("blocked"), occupied.getLocalPort(), udpPort())) {
             assertTrue(instance.line().startsWith("FAILED Database o porte occupati"));
-            assertFalse(Files.exists(temporary.resolve("blocked/TonV3Database")));
+            assertFalse(Files.exists(temporary.resolve("blocked/OrodentEcoS")));
             assertFalse(occupied.isClosed());
         }
     }

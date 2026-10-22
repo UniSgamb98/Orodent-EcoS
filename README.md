@@ -52,10 +52,17 @@ Il wrapper è conservato nella radice; non esistono wrapper separati per modulo.
 
 ## Database e compatibilità
 
-Questa fase riorganizza il codice senza cambiare formato, nome o posizione dei dati.
-Restano validi `ton.database.home`, `TON_DATABASE_HOME`, `TonV3Database`,
-TCP 1528 e UDP 45680. Il protocollo di rete rimane quello introdotto in Ton-V3.
-Non viene eseguita alcuna migrazione né fusione con il database di Statistiche.
+Il database Derby si chiama `OrodentEcoS`. La variabile opzionale
+`ORODENT_ECOS_DATABASE_HOME` sceglie la directory HOST; la proprietà JVM
+`ton.database.home` mantiene la precedenza. Restano invariate directory
+predefinite, TCP 1528 e UDP 45680. Il discovery accetta soltanto host che
+pubblicano il nuovo nome database.
+
+Un precedente database `TonV3Database` non viene rinominato o migrato automaticamente:
+l'app crea `OrodentEcoS` nella directory configurata. Eventuali dati precedenti
+restano nel vecchio database e richiedono una migrazione separata.
+La vecchia variabile `TON_DATABASE_HOME` non viene più letta.
+Non viene eseguita alcuna fusione con il database di Statistiche.
 
 Vedere [configurazione e discovery](docs/database-discovery.md) e
 [provenienza del codice](docs/reuse-statistiche.md).

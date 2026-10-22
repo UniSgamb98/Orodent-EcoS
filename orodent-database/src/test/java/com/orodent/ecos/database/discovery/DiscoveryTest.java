@@ -15,7 +15,7 @@ class DiscoveryTest {
         assertEquals(1528, DiscoveryProtocol.host(response, NONCE, address).orElseThrow().dbPort());
         assertTrue(DiscoveryProtocol.response("CLIZR_DISCOVER", 1528).isEmpty());
         assertTrue(DiscoveryProtocol.response(DiscoveryProtocol.request("invalid"), 1528).isEmpty());
-        for (String invalid : new String[]{response.replace("v=1", "v=2"), response.replace("TonV3Database", "Other"),
+        for (String invalid : new String[]{response.replace("v=1", "v=2"), response.replace("OrodentEcoS", "Other"),
                 response.replace(NONCE, "abcdef0123456789abcdef0123456789"), response + ";extra=1",
                 response.replace("1528", "0"), response.replace("1528", "65536"), response.replace("1528", "abc")}) {
             assertTrue(DiscoveryProtocol.host(invalid, NONCE, address).isEmpty(), invalid);

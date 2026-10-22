@@ -52,5 +52,14 @@ public final class DiscoveryServer implements Runnable, AutoCloseable {
     @Override
     public void close() {
         socket.close(); // Also unblocks receive; safe even before start().
+        Thread worker = thread;
+        if (worker != null && worker != Thread.currentThread()) {
+            try {
+                // Let an in-flight receive release the native socket before callers reuse the port.
+                worker.join(1000);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 }
