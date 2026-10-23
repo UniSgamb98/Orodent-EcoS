@@ -4,4 +4,6 @@ public interface AppNavigator {
     void showHome();
 
     void showTon();
+
+    void showStatistiche();
 }

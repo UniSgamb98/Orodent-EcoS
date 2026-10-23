@@ -60,6 +60,15 @@ public final class DatabaseProcessProbe {
                             }
                         });
                         System.out.println("COUNT " + count);
+                    } else if (command.equals("FUTURE_SCHEMA")) {
+                        database.withConnection(connection -> {
+                            try (var statement = connection.createStatement()) {
+                                statement.executeUpdate("UPDATE APP.ECOS_SCHEMA_HISTORY SET version = "
+                                        + (DatabaseSchema.CURRENT_VERSION + 1));
+                            }
+                            return null;
+                        });
+                        System.out.println("SCHEMA FUTURE");
                     } else if (command.equals("INDEPENDENT")) {
                         try (var first = database.openConnection(); var second = database.openConnection()) {
                             if (first == second) throw new AssertionError("Shared connection");

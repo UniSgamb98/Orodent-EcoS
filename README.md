@@ -1,7 +1,7 @@
 # Orodent-EcoS
 
 Un'unica applicazione desktop JavaFX, organizzata come monorepo Maven.
-Ton è il primo componente; Statistiche verrà integrato successivamente.
+La Home permette di aprire Ton e Statistiche nello stesso processo JavaFX.
 
 ## Moduli
 
@@ -12,17 +12,20 @@ Ton è il primo componente; Statistiche verrà integrato successivamente.
 | `orodent-core` | Contratti comuni, ConnectionProvider e strumenti CSV indipendenti dalla UI |
 | `orodent-database` | Derby HOST/CLIENT, discovery, schema, modelli, repository e servizi di importazione |
 | `orodent-ton` | Componente Ton, attualmente con una schermata iniziale |
+| `orodent-statistiche` | Dashboard vendite, analisi clienti/prodotti/sconti/resi, archivio e importazioni CSV |
 
-Le dipendenze hanno una sola direzione: `app` utilizza `core`, `database` e `ton`;
-`database` utilizza `core`. `ton` per ora richiede solo JavaFX e non dipende dall'app.
+Le dipendenze hanno una sola direzione: `app` compone `core`, `database`, `ton` e
+`statistiche`; `statistiche` utilizza `core` e `database`, mentre `database` utilizza
+`core`. `ton` per ora richiede solo JavaFX. I componenti non dipendono dall'app.
 Il launcher dipende dall’app solo per assemblare la distribuzione: il suo codice non
 carica JavaFX o classi dei componenti. Il modulo `core` non dipende da JavaFX o Derby. I package Java iniziano con
 `com.orodent.ecos`; ogni modulo ha il proprio descrittore `module-info.java`.
 
 Il POM principale centralizza versioni e plugin. `AppContainer` compone i servizi
-condivisi: ogni componente aggiunto utilizzerà questa base anziché avviare un proprio DB.
-Anagrafiche e vendite rimangono temporaneamente in `orodent-database`;
-la separazione dei domini e le migrazioni saranno affrontate con i prossimi moduli.
+condivisi: i componenti ricevono connessione, executor e servizi di importazione.
+Anagrafiche e vendite risiedono in `orodent-database`, nello stesso database
+`OrodentEcoS`. La versione dello schema è registrata dall'HOST; i CLIENT eseguono
+solo una verifica di compatibilità. Vedere [integrazione Statistiche](docs/reuse-statistiche.md).
 
 ## Build e avvio
 
@@ -43,7 +46,7 @@ il punto d'ingresso è `com.orodent.ecos.app.MainApp` (oppure `com.orodent.ecos.
 ```sh
 # Test e package di tutti i moduli, senza richiedere un display
 bash mvnw verify
-# Include il test grafico Home → Ton → Home; richiede un display reale o virtuale
+# Include navigazione dei moduli e import/lettura dati; richiede un display reale o virtuale
 bash mvnw -Pui-smoke verify
 # Solo database e sue dipendenze
 bash mvnw -pl orodent-database -am verify
@@ -109,10 +112,9 @@ sono inoltrate anche le proprietà JVM `ton.database.home`, `ton.database.port`,
 Gli errori di avvio sono scritti su stderr e mostrati in una finestra quando
 è disponibile un ambiente grafico.
 
-Per questa prima fase occorre Java 21 già installato. Il pacchetto contiene le
-librerie native JavaFX del sistema su cui viene compilato: generare la distribuzione
-Windows su Windows. Il test di distribuzione è stato eseguito su Linux; il wrapping
-Launch4j e l’esecuzione Windows sono passaggi successivi da verificare.
+Questo ZIP richiede Java 21 già installato. Il pacchetto contiene le librerie native
+JavaFX del sistema su cui viene compilato: generare la distribuzione Windows su
+Windows. Per ottenere l'EXE con Java incluso, usare lo script descritto sotto.
 Usare `clean package` per evitare JAR di vecchie versioni nella cartella di distribuzione.
 
 Il launcher include il controllo degli aggiornamenti pubblici firmati su GitHub Releases.

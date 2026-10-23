@@ -3,6 +3,7 @@ package com.orodent.ecos.app;
 import com.orodent.ecos.app.navigation.AppNavigator;
 import com.orodent.ecos.features.home.view.HomeView;
 import com.orodent.ecos.ton.view.TonView;
+import com.orodent.ecos.statistiche.StatisticheModule;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -30,6 +31,7 @@ public final class AppController implements AppNavigator {
         HomeView view = new HomeView(app.databaseMode());
         view.homeButton().setOnAction(event -> showHome());
         view.tonButton().setOnAction(event -> showTon());
+        view.statisticheButton().setOnAction(event -> showStatistiche());
         showView(view, () -> { });
         stage.setTitle("Orodent-EcoS - Home");
     }
@@ -40,6 +42,15 @@ public final class AppController implements AppNavigator {
         view.homeButton().setOnAction(event -> showHome());
         showView(view, () -> { });
         stage.setTitle("Orodent-EcoS - Ton");
+    }
+
+    @Override
+    public void showStatistiche() {
+        StatisticheModule module = new StatisticheModule(
+                app.connectionProvider(), app.backgroundExecutor(),
+                app.clientiCsvImportService(), app.venditeCsvImportService(), this::showHome);
+        showView(module.root(), module::dispose);
+        stage.setTitle("Orodent-EcoS - Statistiche");
     }
 
     private void showView(Parent root, Runnable cleanup, String... extraCss) {

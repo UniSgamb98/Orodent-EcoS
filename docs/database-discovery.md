@@ -2,7 +2,7 @@
 
 All'avvio l'applicazione cerca un host Ton-V3 sul computer locale e sulla rete LAN.
 Un candidato viene accettato solo dopo una connessione al database `OrodentEcoS`
-e una verifica in lettura delle tabelle dell'applicazione.
+e una verifica in lettura delle tabelle e della versione dello schema dell'applicazione.
 
 Se non trova un host utilizzabile, avvia il proprio database, inizializza lo schema e
 avvia il server Derby. Solo a quel punto risponde alle richieste discovery.
@@ -54,6 +54,12 @@ Il database non viene copiato sul computer CLIENT.
 - `DerbyClient`: connessioni JDBC remote e verifica dell'host.
 - `DiscoveryClient`, `DiscoveryServer`, `DiscoveryProtocol`: trasporto e protocollo UDP.
 - `DatabaseConfiguration`: percorsi, porte e timeout.
+- `DatabaseSchema`: inizializzazione transazionale e registrazione della versione
+  in `APP.ECOS_SCHEMA_HISTORY`; verifica in sola lettura per i CLIENT.
+
+La versione 1 comprende l'anagrafica clienti e le vendite condivise con Statistiche.
+I database già creati da EcoS vengono registrati dopo aver verificato le tabelle,
+senza cancellarne i dati. Non viene importato il database della vecchia app Statistiche.
 
 I test di integrazione avviano JVM separate con directory temporanee e porte dedicate:
 verificano dati condivisi, avvio contemporaneo, connessioni indipendenti, chiusura del

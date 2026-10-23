@@ -1,0 +1,82 @@
+/* Product analysis: scoped styling, independent of customer analysis. */
+.products-analysis-page .product-page-scroll,
+.products-analysis-page .product-page-scroll > .viewport,
+.product-detail-scroll,
+.product-detail-scroll > .viewport {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+}
+.product-analysis-split { -fx-background-color: transparent; -fx-padding: 0; }
+.product-analysis-split > .split-pane-divider { -fx-background-color: #e0e6ef; -fx-padding: 0 2px; }
+.product-ranking, .product-detail {
+    -fx-background-color: white;
+    -fx-background-radius: 12px;
+    -fx-border-color: #e0e6ef;
+    -fx-border-radius: 12px;
+    -fx-padding: 16px;
+}
+.product-section-title { -fx-font-size: 16px; -fx-font-weight: 700; -fx-text-fill: #173f5f; }
+.product-detail-title { -fx-font-size: 20px; -fx-font-weight: 700; -fx-text-fill: #173f5f; }
+.product-scope-note { -fx-text-fill: #64748b; -fx-font-size: 12px; }
+.product-metric {
+    -fx-padding: 12px;
+    -fx-min-width: 150px;
+    -fx-pref-width: 175px;
+    -fx-background-color: #fbfcfe;
+    -fx-background-radius: 8px;
+    -fx-border-color: #e0e6ef;
+    -fx-border-radius: 8px;
+}
+.product-metric-value { -fx-font-size: 18px; -fx-font-weight: 800; -fx-text-fill: #173f5f; }
+.product-comparison { -fx-padding: 12px; -fx-background-color: #f1f7fa; -fx-background-radius: 8px; }
+.product-comparison-period { -fx-text-fill: #526177; -fx-font-size: 12px; }
+.product-change { -fx-font-weight: 700; }
+.product-positive { -fx-text-fill: #15803d; }
+.product-negative { -fx-text-fill: #b91c1c; }
+.product-neutral { -fx-text-fill: #64748b; }
+.product-detail-tabs { -fx-tab-min-height: 34px; }
+.product-detail-tabs > .tab-header-area { -fx-padding: 0; }
+.product-detail-tabs > .tab-header-area > .tab-header-background { -fx-background-color: #eef3f8; }
+.product-detail-tabs > .tab-header-area > .headers-region > .tab { -fx-background-color: transparent; -fx-padding: 5px 12px; }
+.product-detail-tabs > .tab-header-area > .headers-region > .tab:selected {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #176b87 transparent;
+    -fx-border-width: 0 0 3px 0;
+}
+.product-tab-content { -fx-padding: 14px 0; }
+.product-insight { -fx-padding: 10px; -fx-background-color: #f1f7fa; -fx-background-radius: 8px; -fx-text-fill: #526177; }
+.product-monthly-chart .chart-plot-background { -fx-background-color: #fbfcfe; }
+.product-monthly-chart .chart-horizontal-grid-lines,
+.product-monthly-chart .chart-vertical-grid-lines { -fx-stroke: #e7edf4; }
+.product-monthly-chart .default-color0.chart-series-line { -fx-stroke: #176b87; -fx-stroke-width: 3px; }
+.product-monthly-chart .default-color1.chart-series-line { -fx-stroke: #94a3b8; -fx-stroke-width: 2px; -fx-stroke-dash-array: 8 6; }
+.product-monthly-chart .default-color0.chart-line-symbol { -fx-background-color: #176b87, white; }
+.product-monthly-chart .default-color1.chart-line-symbol { -fx-background-color: #94a3b8, white; }
+.product-monthly-chart .default-color0.chart-legend-item-symbol { -fx-background-color: #176b87; }
+.product-monthly-chart .default-color1.chart-legend-item-symbol { -fx-background-color: #94a3b8; }
+.product-unclassified > .title { -fx-background-color: #f8fafc; -fx-border-color: #e0e6ef; }
+.product-unclassified > .content { -fx-background-color: white; -fx-border-color: #e0e6ef; }
+.products-analysis-page .progress-bar > .bar { -fx-background-color: #176b87; }
+.products-analysis-page .table-view .column-header,
+.products-analysis-page .table-view .filler {
+    -fx-background-color: #eef3f8;
+    -fx-border-color: transparent transparent #dce3ec transparent;
+    -fx-padding: 7px 3px;
+}
+.products-analysis-page .table-view .column-header .label { -fx-text-fill: #334155; -fx-font-weight: 700; }
+.products-analysis-page .table-row-cell { -fx-background-color: white; -fx-cell-size: 34px; }
+.products-analysis-page .table-row-cell:odd { -fx-background-color: #f8fafc; }
+.products-analysis-page .table-row-cell:selected { -fx-background-color: #dff0f4; }
+.products-analysis-page .table-row-cell:selected .table-cell { -fx-text-fill: #173f5f; }
+.products-analysis-page .table-cell { -fx-border-color: transparent transparent #edf2f7 transparent; }
+
+.product-monthly-chart .chart-legend {
+    -fx-background-color: transparent;
+    -fx-padding: 10px 6px 4px 6px;
+}
+.product-monthly-chart .chart-legend-item {
+    -fx-text-fill: #334155;
+    -fx-font-size: 13px;
+    -fx-padding: 2px 10px;
+}

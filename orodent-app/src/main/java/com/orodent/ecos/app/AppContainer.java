@@ -28,10 +28,10 @@ public final class AppContainer implements ApplicationInitializer {
         database = new Database();
         backgroundExecutor = Executors.newFixedThreadPool(
                 BACKGROUND_WORKERS,
-                namedDaemonThreadFactory("ton-worker-")
+                namedDaemonThreadFactory("ecos-worker-")
         );
         importExecutor = Executors.newSingleThreadExecutor(
-                namedDaemonThreadFactory("ton-import-")
+                namedDaemonThreadFactory("ecos-import-")
         );
         venditeCsvImportService = new VenditeCsvImportService(database, importExecutor);
         clientiCsvImportService = new ClientiCsvImportService(database, importExecutor);
