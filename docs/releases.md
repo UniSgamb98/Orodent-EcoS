@@ -13,11 +13,23 @@ il launcher non accetta aggiornamenti e usa la versione installata.
 **I vecchi EXE non acquisiscono questa funzionalità da soli:** la prima distribuzione
 con il nuovo launcher e la chiave va installata manualmente, una volta.
 
-Questa prima linea supporta Windows x64, Java 21, protocollo updater 1 e schema DB 1.
-Aggiorna i JAR come un insieme, non i singoli moduli indipendentemente. Non aggiorna
-EXE, launcher o Java. Cambiare runtime, schema o protocollo richiede una distribuzione
-completa e un piano di migrazione separato. Il catalogo non deve dichiarare schema 1
-per modifiche incompatibili. Non sono ancora implementate migrazioni automatiche.
+La linea attuale supporta Windows x64, Java 21 e protocollo updater 1. Aggiorna i JAR
+come un insieme; EXE, launcher e Java rimangono quelli installati. Il contratto di
+compatibilità resta `database.schema=1`, come richiesto dai launcher già distribuiti.
+Il contatore interno delle migrazioni DB è distinto: attualmente vale 2.
+
+`ReleaseTool` legge `database/version.properties` dal JAR database che sta firmando
+e dichiara nel catalogo `database.migration.minimum` e `database.migration.target`.
+I vecchi launcher ignorano questi campi aggiuntivi, mantenendo tutte le verifiche
+esistenti; l'applicazione HOST esegue la migrazione supportata in transazione al primo
+avvio. Per il passaggio da DB 1 a 2 basta quindi una normale release firmata, senza
+sostituire il launcher. Conservare config e percorso dei dati e riavviare prima
+l'HOST, poi i CLIENT: vedere il [passaggio allo schema 2](database-schema.md).
+
+Cambiare il runtime, il launcher o un contratto non supportato dalle installazioni
+esistenti richiede ancora una distribuzione completa. Aumentare soltanto il contatore
+delle migrazioni non implica un cambio di contratto; occorre verificare che i nuovi
+componenti gestiscano realmente la migrazione e rifiutino database incompatibili.
 
 ## 1. Creare la chiave una sola volta, sul proprio PC
 

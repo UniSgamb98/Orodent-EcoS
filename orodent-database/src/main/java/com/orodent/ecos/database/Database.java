@@ -69,6 +69,7 @@ public class Database implements ConnectionProvider {
             state = State.FAILED;
             if (failure instanceof InterruptedException || failure instanceof InterruptedIOException)
                 Thread.currentThread().interrupt();
+            if (failure instanceof DatabaseInitializationException initialization) throw initialization;
             String message = failure instanceof DatabaseResourceBusyException
                     ? "Database o porte occupati: nessun host Orodent-EcoS disponibile. Verifica che l'istanza principale sia avviata."
                     : "Impossibile avviare il database.";
@@ -90,6 +91,9 @@ public class Database implements ConnectionProvider {
                 mode = DatabaseMode.CLIENT;
                 return true;
             } catch (SQLException failure) {
+                if (DatabaseSchema.INCOMPATIBLE_SCHEMA.equals(failure.getSQLState())) {
+                    throw new DatabaseInitializationException("Database host incompatibile: " + failure.getMessage(), failure);
+                }
                 LOG.log(System.Logger.Level.DEBUG, "Host discovery non utilizzabile: SQLState " + failure.getSQLState());
                 return false;
             }

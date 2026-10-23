@@ -11,6 +11,7 @@
     <module>orodent-core</module>
     <module>orodent-database</module>
     <module>orodent-ton</module>
+    <module>orodent-statistiche</module>
     <module>orodent-app</module>
     <module>orodent-launcher</module>
   </modules>
@@ -27,6 +28,7 @@
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-core</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-database</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-ton</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.orodent</groupId><artifactId>orodent-statistiche</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>org.openjfx</groupId><artifactId>javafx-controls</artifactId><version>${javafx.version}</version></dependency>
     <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>${junit.version}</version></dependency>
     <dependency><groupId>org.apache.derby</groupId><artifactId>derby</artifactId><version>${derby.version}</version></dependency>

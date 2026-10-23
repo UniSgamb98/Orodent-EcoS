@@ -11,6 +11,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 public final class HomeView extends BorderPane {
+    private final Button statisticheButton = new Button("Apri Statistiche");
     private final Button tonButton = new Button("Apri Ton");
     private final Button homeButton = new Button("Home");
 
@@ -35,13 +36,17 @@ public final class HomeView extends BorderPane {
         databaseStatus.getStyleClass().add("muted-label");
         tonButton.setId("open-ton-button");
         tonButton.getStyleClass().add("primary-button");
+        statisticheButton.setId("open-statistiche-button");
+        statisticheButton.getStyleClass().add("primary-button");
         Label version = new Label("Versione " + System.getProperty("orodent.ecos.version", "sviluppo"));
         version.setId("app-version");
         version.getStyleClass().add("muted-label");
-        VBox content = new VBox(18, welcome, databaseStatus, version, tonButton);
+        VBox content = new VBox(18, welcome, databaseStatus, version, tonButton, statisticheButton);
         content.setPadding(new Insets(28, 34, 36, 34));
         setCenter(content);
     }
+
+    public Button statisticheButton() { return statisticheButton; }
 
     public Button tonButton() { return tonButton; }
 

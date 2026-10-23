@@ -1,7 +1,7 @@
 # Orodent-EcoS
 
 Un'unica applicazione desktop JavaFX, organizzata come monorepo Maven.
-Ton è il primo componente; Statistiche verrà integrato successivamente.
+La Home permette di aprire Ton e Statistiche nello stesso processo JavaFX.
 
 ## Moduli
 
@@ -12,17 +12,26 @@ Ton è il primo componente; Statistiche verrà integrato successivamente.
 | `orodent-core` | Contratti comuni, ConnectionProvider e strumenti CSV indipendenti dalla UI |
 | `orodent-database` | Derby HOST/CLIENT, discovery, schema, modelli, repository e servizi di importazione |
 | `orodent-ton` | Componente Ton, attualmente con una schermata iniziale |
+| `orodent-statistiche` | Dashboard vendite, analisi clienti/prodotti/sconti/resi, archivio e importazioni CSV |
 
-Le dipendenze hanno una sola direzione: `app` utilizza `core`, `database` e `ton`;
-`database` utilizza `core`. `ton` per ora richiede solo JavaFX e non dipende dall'app.
+Le dipendenze hanno una sola direzione: `app` compone `core`, `database`, `ton` e
+`statistiche`; `statistiche` utilizza `core` e `database`, mentre `database` utilizza
+`core`. `ton` per ora richiede solo JavaFX. I componenti non dipendono dall'app.
 Il launcher dipende dall’app solo per assemblare la distribuzione: il suo codice non
 carica JavaFX o classi dei componenti. Il modulo `core` non dipende da JavaFX o Derby. I package Java iniziano con
 `com.orodent.ecos`; ogni modulo ha il proprio descrittore `module-info.java`.
 
 Il POM principale centralizza versioni e plugin. `AppContainer` compone i servizi
-condivisi: ogni componente aggiunto utilizzerà questa base anziché avviare un proprio DB.
-Anagrafiche e vendite rimangono temporaneamente in `orodent-database`;
-la separazione dei domini e le migrazioni saranno affrontate con i prossimi moduli.
+condivisi: i componenti ricevono connessione, executor e servizi di importazione.
+Anagrafiche e vendite risiedono in `orodent-database`, nello stesso database
+`OrodentEcoS`. La versione dello schema è registrata dall'HOST; i CLIENT eseguono
+solo una verifica di compatibilità. Vedere [integrazione Statistiche](docs/reuse-statistiche.md).
+
+Lo schema DB 2 organizza le tabelle in `ECOS`, `ANAGRAFICHE` e `VENDITE`.
+I dati delle precedenti tabelle `APP` vengono migrati dall'HOST in transazione.
+Il passaggio può arrivare tramite una normale release dei componenti, mantenendo
+il launcher installato: il contatore delle migrazioni è distinto dal contratto
+degli aggiornamenti. Vedere [struttura e migrazione del database](docs/database-schema.md).
 
 ## Build e avvio
 
@@ -43,7 +52,7 @@ il punto d'ingresso è `com.orodent.ecos.app.MainApp` (oppure `com.orodent.ecos.
 ```sh
 # Test e package di tutti i moduli, senza richiedere un display
 bash mvnw verify
-# Include il test grafico Home → Ton → Home; richiede un display reale o virtuale
+# Include navigazione dei moduli e import/lettura dati; richiede un display reale o virtuale
 bash mvnw -Pui-smoke verify
 # Solo database e sue dipendenze
 bash mvnw -pl orodent-database -am verify
@@ -51,6 +60,29 @@ bash mvnw -pl orodent-database -am verify
 
 Il test grafico usa database temporaneo e porte dedicate.
 Il wrapper è conservato nella radice; non esistono wrapper separati per modulo.
+
+## Configurazione IntelliJ condivisa
+
+La repository include `.run/Orodent-EcoS Sviluppo.run.xml`.
+Dopo il pull e l'importazione del POM principale, selezionare **Orodent-EcoS - Sviluppo**
+nel menu Run/Debug. La configurazione avvia `com.orodent.ecos.Launcher`, compila prima
+di partire e usa il profilo sviluppo con percorsi relativi a `$PROJECT_DIR$`.
+La variabile DB è vuota nella Run configuration per non ereditare una directory di
+produzione da Windows; restano validi i valori di `config/development.properties`.
+
+Selezionare una volta **File → Project Structure → Project → SDK** e indicare un
+JDK 21 standard (Temurin o Liberica Standard, non Full): la configurazione eredita
+il JDK del progetto, senza salvare il percorso personale del JDK nella repository.
+Il vecchio `.idea/misc.xml` può ancora indicare Liberica Full: correggere l'SDK del
+progetto prima del primo avvio della configurazione condivisa.
+Se il modulo appare non risolto, ricaricare Maven e selezionare `orodent-app`
+(o `orodent-app.main` se la propria importazione usa moduli distinti per source set).
+
+Per condividere altre configurazioni: **Run → Edit Configurations → Store as project file**,
+salvarle in `.run/` e committare soltanto quelle senza percorsi o credenziali personali.
+Se esiste già una configurazione locale con lo stesso nome, eliminare la copia locale
+o rinominarla per evitare due voci identiche. La configurazione condivisa riguarda
+lo sviluppo; non serve per creare lo ZIP o l'EXE Windows.
 
 ## Prima distribuzione con launcher
 
@@ -86,10 +118,9 @@ sono inoltrate anche le proprietà JVM `ton.database.home`, `ton.database.port`,
 Gli errori di avvio sono scritti su stderr e mostrati in una finestra quando
 è disponibile un ambiente grafico.
 
-Per questa prima fase occorre Java 21 già installato. Il pacchetto contiene le
-librerie native JavaFX del sistema su cui viene compilato: generare la distribuzione
-Windows su Windows. Il test di distribuzione è stato eseguito su Linux; il wrapping
-Launch4j e l’esecuzione Windows sono passaggi successivi da verificare.
+Questo ZIP richiede Java 21 già installato. Il pacchetto contiene le librerie native
+JavaFX del sistema su cui viene compilato: generare la distribuzione Windows su
+Windows. Per ottenere l'EXE con Java incluso, usare lo script descritto sotto.
 Usare `clean package` per evitare JAR di vecchie versioni nella cartella di distribuzione.
 
 Il launcher include il controllo degli aggiornamenti pubblici firmati su GitHub Releases.

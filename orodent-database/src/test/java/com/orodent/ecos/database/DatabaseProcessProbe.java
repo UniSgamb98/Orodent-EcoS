@@ -47,25 +47,34 @@ public final class DatabaseProcessProbe {
                     if (command.equals("INSERT")) {
                         database.withConnection(connection -> {
                             try (var statement = connection.createStatement()) {
-                                statement.executeUpdate("INSERT INTO APP.clienti (codice_cliente, ragione_sociale) VALUES ('TEST', 'Test')");
+                                statement.executeUpdate("INSERT INTO ANAGRAFICHE.CLIENTI (codice_cliente, ragione_sociale) VALUES ('TEST', 'Test')");
                             }
                             return null;
                         });
                         System.out.println("INSERTED");
                     } else if (command.equals("COUNT")) {
                         int count = database.withConnection(connection -> {
-                            try (var statement = connection.createStatement(); var result = statement.executeQuery("SELECT COUNT(*) FROM APP.clienti")) {
+                            try (var statement = connection.createStatement(); var result = statement.executeQuery("SELECT COUNT(*) FROM ANAGRAFICHE.CLIENTI")) {
                                 result.next();
                                 return result.getInt(1);
                             }
                         });
                         System.out.println("COUNT " + count);
+                    } else if (command.equals("FUTURE_SCHEMA")) {
+                        database.withConnection(connection -> {
+                            try (var statement = connection.createStatement()) {
+                                statement.executeUpdate("UPDATE ECOS.ECOS_SCHEMA_HISTORY SET version = "
+                                        + (DatabaseSchema.CURRENT_VERSION + 1) + " WHERE version = " + DatabaseSchema.CURRENT_VERSION);
+                            }
+                            return null;
+                        });
+                        System.out.println("SCHEMA FUTURE");
                     } else if (command.equals("INDEPENDENT")) {
                         try (var first = database.openConnection(); var second = database.openConnection()) {
                             if (first == second) throw new AssertionError("Shared connection");
                             first.setAutoCommit(false);
                             try (var statement = first.createStatement()) {
-                                statement.executeUpdate("INSERT INTO APP.clienti (codice_cliente, ragione_sociale) VALUES ('ROLLBACK', 'Test')");
+                                statement.executeUpdate("INSERT INTO ANAGRAFICHE.CLIENTI (codice_cliente, ragione_sociale) VALUES ('ROLLBACK', 'Test')");
                             }
                             second.close();
                             first.rollback();

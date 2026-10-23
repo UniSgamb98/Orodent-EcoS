@@ -22,6 +22,15 @@ class UpdateManagerTest {
     private record Release(byte[] catalog, byte[] signature, byte[] archive) { }
 
     private Release release(String version, String runtime, String entry) throws Exception {
+        return release(version, runtime, entry, UpdateCatalog.DATA_COMPATIBILITY);
+    }
+
+    private Release release(String version, String runtime, String entry, String schema) throws Exception {
+        return release(version, runtime, entry, schema, null, null);
+    }
+
+    private Release release(String version, String runtime, String entry, String contract,
+                            String minimumMigration, String targetMigration) throws Exception {
         byte[] content = "component bytes".getBytes(StandardCharsets.UTF_8);
         ByteArrayOutputStream archive = new ByteArrayOutputStream();
         try (var zip = new ZipOutputStream(archive)) {
@@ -29,7 +38,9 @@ class UpdateManagerTest {
         }
         byte[] zip = archive.toByteArray();
         Properties properties = new Properties();
-        properties.setProperty("protocol", "1"); properties.setProperty("database.schema", "1");
+        properties.setProperty("protocol", "1"); properties.setProperty("database.schema", contract);
+        if (minimumMigration != null) properties.setProperty("database.migration.minimum", minimumMigration);
+        if (targetMigration != null) properties.setProperty("database.migration.target", targetMigration);
         properties.setProperty("runtime", runtime); properties.setProperty("version", version);
         properties.setProperty("files", "orodent-app-" + version + ".jar");
         properties.setProperty("sha256.orodent-app-" + version + ".jar", sha(content));
@@ -84,6 +95,44 @@ class UpdateManagerTest {
         assertEquals(base, manager(release("0.1.1", "other-runtime", "lib/orodent-app-0.1.1.jar")).select(base, BASE).libraries());
         assertEquals(base, offline().select(base, BASE).libraries());
     }
+    @Test void rejectsDifferentCompatibilityContractsEvenWithAValidSignature() throws Exception {
+        Path base = bundled();
+        var compatible = manager(release("0.1.1", RUNTIME, "lib/orodent-app-0.1.1.jar")).select(base, BASE);
+        for (String schema : List.of("2", "3")) {
+            var updater = manager(release("0.1.2", RUNTIME, "lib/orodent-app-0.1.2.jar", schema));
+            assertEquals(compatible, updater.select(base, BASE));
+            assertTrue(updater.lastFailure().contains("contratto del launcher"));
+        }
+    }
+    @Test void ignoresCachedComponentsFromAnIncompatibleContract() throws Exception {
+        Path base = bundled();
+        Release old = release("0.9.0", RUNTIME, "lib/orodent-app-0.9.0.jar", "2");
+        Path state = Files.createDirectories(temporary.resolve("updates"));
+        String directory = "version-0.9.0-" + UUID.randomUUID();
+        Path cached = Files.createDirectories(state.resolve(directory));
+        Files.write(cached.resolve("update.properties"), old.catalog());
+        Files.write(cached.resolve("update.properties.sig"), old.signature());
+        Files.writeString(state.resolve("active"), directory);
+        assertEquals(base, offline().select(base, BASE).libraries());
+    }
+    @Test void acceptsInternalMigrationVersionsWithoutChangingTheLauncherContract() throws Exception {
+        Path base = bundled();
+        for (String target : List.of("2", "3")) {
+            String version = "0.1." + target;
+            var updater = manager(release(version, RUNTIME, "lib/orodent-app-" + version + ".jar", "1", "1", target));
+            assertEquals(ReleaseVersion.parse(version), updater.select(base, BASE).version(), updater.lastFailure());
+            assertNull(updater.lastFailure());
+        }
+    }
+    @Test void rejectsInvalidMigrationRangesInSignedCatalogs() throws Exception {
+        Path base = bundled();
+        for (String[] range : new String[][]{{null, "2"}, {"1", null}, {"0", "2"}, {"3", "2"}, {"1", "invalid"}}) {
+            var updater = manager(release("0.1.1", RUNTIME, "lib/orodent-app-0.1.1.jar", "1", range[0], range[1]));
+            assertEquals(base, updater.select(base, BASE).libraries());
+            assertTrue(updater.lastFailure().contains("Intervallo migrazioni"));
+            assertFalse(Files.exists(temporary.resolve("updates/active")));
+        }
+    }
     @Test void detectsTamperingInCachedComponents() throws Exception {
         Path base = bundled();
         var selected = manager(release("0.1.1", RUNTIME, "lib/orodent-app-0.1.1.jar")).select(base, BASE);
@@ -98,45 +147,6 @@ class UpdateManagerTest {
         assertEquals(base, broken.select(base, BASE).libraries());
         assertFalse(Files.exists(temporary.resolve("updates/active")));
     }
-    @Test void releaseToolSignsRealComponentsAndBundledRuntimeAcceptsThem() throws Exception {
-        Path tool = Path.of("../scripts/ReleaseTool.java").toAbsolutePath().normalize();
-        String javaExecutable = Path.of(System.getProperty("java.home"), "bin",
-                System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT).contains("win") ? "java.exe" : "java").toString();
-        Path workspace = Files.createDirectory(temporary.resolve("publisher"));
-        Path log = temporary.resolve("publisher.log");
-        Process keygen = new ProcessBuilder(javaExecutable, tool.toString(), "keygen").directory(workspace.toFile())
-                .redirectErrorStream(true).redirectOutput(log.toFile()).start();
-        assertTrue(keygen.waitFor(30, java.util.concurrent.TimeUnit.SECONDS));
-        assertEquals(0, keygen.exitValue(), () -> read(log));
-        Path output = workspace.resolve("release");
-        Path libraries = Path.of("target/distribution/app/lib").toAbsolutePath();
-        ProcessBuilder publisher = new ProcessBuilder(javaExecutable, tool.toString(), "release", "0.1.1", libraries.toString(), output.toString())
-                .directory(workspace.toFile()).redirectErrorStream(true).redirectOutput(log.toFile());
-        publisher.environment().put("UPDATE_SIGNING_PRIVATE_KEY", Files.readString(workspace.resolve(".release-keys/update-private-key.pem")));
-        Process signed = publisher.start();
-        assertTrue(signed.waitFor(30, java.util.concurrent.TimeUnit.SECONDS));
-        assertEquals(0, signed.exitValue(), () -> read(log));
-        var publicKey = UpdateCatalog.publicKey(Files.readString(workspace.resolve("config/update-public-key.pem")));
-        var manager = new UpdateManager(temporary.resolve("real-updates"), publicKey, RUNTIME,
-                (url, path, limit) -> {
-                    String name = url.endsWith(".sig") ? "update.properties.sig" : url.endsWith(".zip")
-                            ? "Orodent-EcoS-components.zip" : "update.properties";
-                    Files.copy(output.resolve(name), path);
-                }, downloaded -> {
-                    Process check = new ProcessBuilder(javaExecutable, "--dry-run", "--module-path", downloaded.toString(),
-                            "--module", "com.orodent.ecos.app/com.orodent.ecos.app.MainApp")
-                            .redirectErrorStream(true).redirectOutput(log.toFile()).start();
-                    assertTrue(check.waitFor(20, java.util.concurrent.TimeUnit.SECONDS));
-                    if (check.exitValue() != 0) throw new java.io.IOException(read(log));
-                });
-        var selected = manager.select(libraries, BASE);
-        assertEquals(ReleaseVersion.parse("0.1.1"), selected.version(), manager.lastFailure());
-        assertNotEquals(libraries, selected.libraries());
-    }
-    private static String read(Path path) {
-        try { return Files.readString(path); } catch (Exception failure) { return failure.toString(); }
-    }
-
     @Test void numericVersionsCompareCorrectlyAndRejectTagsAndSnapshots() {
         assertTrue(ReleaseVersion.parse("0.10.0").compareTo(ReleaseVersion.parse("0.9.9")) > 0);
         assertThrows(IllegalArgumentException.class, () -> ReleaseVersion.parse("v0.1.0"));

@@ -1,0 +1,9 @@
+.customer-follow-up { -fx-padding: 0 6 0 0; -fx-spacing: 10; }
+.customer-list-modes { -fx-padding: 0 0 2 0; }
+.customer-list-mode { -fx-background-color: #edf3f8; -fx-text-fill: #174263; -fx-padding: 9 14; -fx-background-radius: 7; }
+.customer-list-mode:selected { -fx-background-color: #176b87; -fx-text-fill: white; }
+.customer-follow-up-controls { -fx-padding: 10; -fx-background-color: #edf3f8; -fx-background-radius: 7; }
+.customer-follow-up-reference { -fx-font-weight: bold; -fx-text-fill: #174263; }
+.customer-follow-up-scope { -fx-font-size: 11px; -fx-text-fill: #60738f; }
+.customer-follow-up-table .customer-follow-up-delay.table-cell { -fx-text-fill: #b45309; -fx-font-weight: bold; }
+.customer-follow-up-table .table-row-cell:selected .customer-follow-up-delay.table-cell { -fx-text-fill: #174263; }

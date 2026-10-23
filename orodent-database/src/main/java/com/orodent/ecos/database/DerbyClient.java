@@ -21,12 +21,9 @@ public final class DerbyClient implements ConnectionProvider {
     }
 
     public void verify() throws SQLException {
-        try (Connection connection = source.getConnection();
-             var statement = connection.createStatement()) {
-            statement.setQueryTimeout(3);
-            // No create=true and no schema updates on a remote host.
-            statement.executeQuery("SELECT codice_cliente FROM APP.clienti WHERE 1=0").close();
-            statement.executeQuery("SELECT vendita_id FROM APP.vendite_dettaglio WHERE 1=0").close();
+        try (Connection connection = source.getConnection()) {
+            // No create=true, DDL or migration history writes on a remote host.
+            DatabaseSchema.verifyCompatible(connection);
         }
     }
 

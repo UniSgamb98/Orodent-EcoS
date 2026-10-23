@@ -1,0 +1,5 @@
+.monthly-forecast-toggle { -fx-text-fill: #536888; -fx-padding: 4 8; }
+.monthly-forecast-note { -fx-text-fill: #657b9c; -fx-font-size: 11px; -fx-padding: 2 8 4 8; }
+.chart.monthly-forecast-chart .chart-series-line.monthly-forecast-line { -fx-stroke: #8753bd; -fx-stroke-width: 2.5px; -fx-stroke-dash-array: 6 4; }
+.chart.monthly-forecast-chart .chart-line-symbol.monthly-forecast-symbol { -fx-background-color: #8753bd, white; -fx-background-insets: 0, 2; }
+.chart.monthly-forecast-chart .chart-legend-item-symbol.monthly-forecast-legend-symbol { -fx-background-color: #8753bd; }

@@ -2,7 +2,7 @@
 
 All'avvio l'applicazione cerca un host Ton-V3 sul computer locale e sulla rete LAN.
 Un candidato viene accettato solo dopo una connessione al database `OrodentEcoS`
-e una verifica in lettura delle tabelle dell'applicazione.
+e una verifica in lettura delle tabelle e della versione dello schema dell'applicazione.
 
 Se non trova un host utilizzabile, avvia il proprio database, inizializza lo schema e
 avvia il server Derby. Solo a quel punto risponde alle richieste discovery.
@@ -54,6 +54,14 @@ Il database non viene copiato sul computer CLIENT.
 - `DerbyClient`: connessioni JDBC remote e verifica dell'host.
 - `DiscoveryClient`, `DiscoveryServer`, `DiscoveryProtocol`: trasporto e protocollo UDP.
 - `DatabaseConfiguration`: percorsi, porte e timeout.
+- `DatabaseSchema`: inizializzazione transazionale e registrazione della versione
+  in `ECOS.ECOS_SCHEMA_HISTORY`; verifica in sola lettura per i CLIENT.
+
+La versione 2 separa anagrafica e vendite negli schemi `ANAGRAFICHE` e `VENDITE`.
+L'HOST migra le vecchie tabelle `APP` in transazione, conservandone i dati.
+Un CLIENT non accetta un HOST di schema 1 e non tenta un database locale alternativo.
+Il passaggio richiede tutte le postazioni aggiornate: avviare prima l'HOST.
+Vedere [struttura e migrazione del database](database-schema.md).
 
 I test di integrazione avviano JVM separate con directory temporanee e porte dedicate:
 verificano dati condivisi, avvio contemporaneo, connessioni indipendenti, chiusura del

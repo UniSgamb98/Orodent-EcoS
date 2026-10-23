@@ -72,6 +72,29 @@ class DatabaseDiscoveryIntegrationTest {
     }
 
     @Test
+    void incompatibleDiscoveredHostFailsWithoutAttemptingALocalDatabase() throws Exception {
+        int hostTcp = tcpPort();
+        int clientTcp = tcpPort();
+        while (clientTcp == hostTcp) clientTcp = tcpPort();
+        int udp = udpPort();
+        Path clientHome = temporary.resolve("incompatible-client");
+        try (var host = start(temporary.resolve("future-host"), hostTcp, udp)) {
+            assertEquals("READY HOST", host.line());
+            assertEquals("SCHEMA FUTURE", host.command("FUTURE_SCHEMA"));
+            try (var client = start(clientHome, clientTcp, udp)) {
+                assertEquals("FAILED Database host incompatibile: Versione schema database non supportata: "
+                        + (DatabaseSchema.CURRENT_VERSION + 1), client.line());
+                // DerbyHost creates its home before claiming any ports, so this also forbids a local fallback attempt.
+                assertFalse(Files.exists(clientHome));
+                assertTrue(client.process.waitFor(5, TimeUnit.SECONDS));
+                assertEquals(1, client.process.exitValue());
+            }
+            assertEquals("COUNT 0", host.command("COUNT"));
+            assertEquals("STOPPED", host.command("STOP"));
+        }
+    }
+
+    @Test
     void simultaneousStartupChoosesExactlyOneHost() throws Exception {
         int tcp = tcpPort();
         int udp = udpPort();
@@ -158,7 +181,8 @@ class DatabaseDiscoveryIntegrationTest {
                     String line = output.readLine();
                     if (line == null) fail("Database process exited: " + process.exitValue());
                     if (line.equals("STARTING HOST") || line.startsWith("READY ") || line.startsWith("FAILED ") || line.startsWith("COUNT ")
-                            || line.equals("INSERTED") || line.equals("STOPPED") || line.equals("INDEPENDENT OK")) return line;
+                            || line.equals("INSERTED") || line.equals("STOPPED") || line.equals("INDEPENDENT OK")
+                            || line.equals("SCHEMA FUTURE")) return line;
                 }
                 Thread.sleep(20);
             }
