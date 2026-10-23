@@ -21,7 +21,7 @@ public final class CustomerAnalysisRepositoryImpl implements CustomerAnalysisRep
                        MAX(c.agente) agente, MAX(c.tipo_cliente) tipo_cliente,
                        COALESCE(SUM(v.importo_netto),0) fatturato, COALESCE(SUM(v.quantita),0) quantita,
                        COUNT(DISTINCT v.documento_id) documenti, MIN(v.data_vendita) primo, MAX(v.data_vendita) ultimo
-                FROM vendite_dettaglio v LEFT JOIN clienti c ON c.codice_cliente=v.codice_cliente
+                FROM VENDITE.VENDITE_DETTAGLIO v LEFT JOIN ANAGRAFICHE.CLIENTI c ON c.codice_cliente=v.codice_cliente
                 WHERE v.codice_cliente=? AND YEAR(v.data_vendita)=? AND v.tipo_operazione='VENDITA'
                 GROUP BY v.codice_cliente
                 """;
@@ -41,7 +41,7 @@ public final class CustomerAnalysisRepositoryImpl implements CustomerAnalysisRep
 
     @Override public Map<String, List<LocalDate>> loadPurchaseDates(int year, LocalDate through) {
         String sql = """
-                SELECT DISTINCT codice_cliente, data_vendita FROM vendite_dettaglio
+                SELECT DISTINCT codice_cliente, data_vendita FROM VENDITE.VENDITE_DETTAGLIO
                 WHERE data_vendita BETWEEN ? AND ? AND tipo_operazione='VENDITA'
                 ORDER BY codice_cliente, data_vendita
                 """;
@@ -59,7 +59,7 @@ public final class CustomerAnalysisRepositoryImpl implements CustomerAnalysisRep
     }
 
     @Override public List<LocalDate> loadPurchaseDates(String code,int year){
-        String sql="SELECT DISTINCT data_vendita FROM vendite_dettaglio WHERE codice_cliente=? AND YEAR(data_vendita)=? AND tipo_operazione='VENDITA' ORDER BY data_vendita";
+        String sql="SELECT DISTINCT data_vendita FROM VENDITE.VENDITE_DETTAGLIO WHERE codice_cliente=? AND YEAR(data_vendita)=? AND tipo_operazione='VENDITA' ORDER BY data_vendita";
         try(PreparedStatement ps=connection.prepareStatement(sql)){ps.setString(1,code);ps.setInt(2,year);
             try(ResultSet rs=ps.executeQuery()){List<LocalDate> out=new ArrayList<>();while(rs.next())out.add(rs.getDate(1).toLocalDate());return List.copyOf(out);}
         }catch(SQLException e){throw failure(e);}
@@ -68,7 +68,7 @@ public final class CustomerAnalysisRepositoryImpl implements CustomerAnalysisRep
     @Override public List<CustomerYearSummary> loadYearlyHistory(String code){
         String sql="""
                 SELECT YEAR(data_vendita) anno, SUM(importo_netto) fatturato, SUM(quantita) quantita,
-                       COUNT(DISTINCT documento_id) documenti FROM vendite_dettaglio
+                       COUNT(DISTINCT documento_id) documenti FROM VENDITE.VENDITE_DETTAGLIO
                 WHERE codice_cliente=? AND tipo_operazione='VENDITA' GROUP BY YEAR(data_vendita) ORDER BY anno
                 """;
         try(PreparedStatement ps=connection.prepareStatement(sql)){ps.setString(1,code);
@@ -79,7 +79,7 @@ public final class CustomerAnalysisRepositoryImpl implements CustomerAnalysisRep
     @Override public List<CustomerMonthlyValue> loadMonthlyHistory(String code,int fromYear,int toYear){
         String sql="""
                 SELECT YEAR(data_vendita) anno, MONTH(data_vendita) mese, SUM(importo_netto) fatturato,
-                       SUM(quantita) quantita, COUNT(DISTINCT documento_id) documenti FROM vendite_dettaglio
+                       SUM(quantita) quantita, COUNT(DISTINCT documento_id) documenti FROM VENDITE.VENDITE_DETTAGLIO
                 WHERE codice_cliente=? AND YEAR(data_vendita) BETWEEN ? AND ? AND tipo_operazione='VENDITA'
                 GROUP BY YEAR(data_vendita),MONTH(data_vendita) ORDER BY anno,mese
                 """;
@@ -93,7 +93,7 @@ public final class CustomerAnalysisRepositoryImpl implements CustomerAnalysisRep
         String sql = """
                 SELECT COALESCE(SUM(importo_netto), 0) fatturato,
                        COALESCE(SUM(quantita), 0) quantita, COUNT(DISTINCT documento_id) documenti
-                FROM vendite_dettaglio
+                FROM VENDITE.VENDITE_DETTAGLIO
                 WHERE codice_cliente=? AND data_vendita BETWEEN ? AND ? AND tipo_operazione='VENDITA'
                 """;
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -113,7 +113,7 @@ public final class CustomerAnalysisRepositoryImpl implements CustomerAnalysisRep
     @Override public List<CustomerProductItem> loadProducts(String code,int year){
         String sql="""
                 SELECT codice_prodotto,MAX(descrizione_prodotto) descrizione,SUM(importo_netto) fatturato,SUM(quantita) quantita
-                FROM vendite_dettaglio WHERE codice_cliente=? AND YEAR(data_vendita)=? AND tipo_operazione='VENDITA'
+                FROM VENDITE.VENDITE_DETTAGLIO WHERE codice_cliente=? AND YEAR(data_vendita)=? AND tipo_operazione='VENDITA'
                 GROUP BY codice_prodotto ORDER BY fatturato DESC FETCH FIRST 20 ROWS ONLY
                 """;
         try(PreparedStatement ps=connection.prepareStatement(sql)){ps.setString(1,code);ps.setInt(2,year);
@@ -122,7 +122,7 @@ public final class CustomerAnalysisRepositoryImpl implements CustomerAnalysisRep
     }
 
     @Override public SalesDataCoverage loadDataCoverage() {
-        String sql = "SELECT MIN(data_vendita), MAX(data_vendita) FROM vendite_dettaglio "
+        String sql = "SELECT MIN(data_vendita), MAX(data_vendita) FROM VENDITE.VENDITE_DETTAGLIO "
                 + "WHERE tipo_operazione='VENDITA'";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             try (ResultSet rs = ps.executeQuery()) {
@@ -136,7 +136,7 @@ public final class CustomerAnalysisRepositoryImpl implements CustomerAnalysisRep
 
     @Override public List<DailyRevenueValue> loadDailyRevenueHistory(String code, int fromYear, int toYear) {
         String sql = """
-                SELECT data_vendita, SUM(importo_netto) fatturato FROM vendite_dettaglio
+                SELECT data_vendita, SUM(importo_netto) fatturato FROM VENDITE.VENDITE_DETTAGLIO
                 WHERE codice_cliente=? AND YEAR(data_vendita) BETWEEN ? AND ? AND tipo_operazione='VENDITA'
                 GROUP BY data_vendita ORDER BY data_vendita
                 """;
@@ -153,7 +153,7 @@ public final class CustomerAnalysisRepositoryImpl implements CustomerAnalysisRep
 
     @Override public List<DailyMetricValue> loadDailyQuantityHistory(String code, int fromYear, int toYear) {
         String sql = """
-                SELECT data_vendita, SUM(quantita) quantita FROM vendite_dettaglio
+                SELECT data_vendita, SUM(quantita) quantita FROM VENDITE.VENDITE_DETTAGLIO
                 WHERE codice_cliente=? AND YEAR(data_vendita) BETWEEN ? AND ? AND tipo_operazione='VENDITA'
                 GROUP BY data_vendita ORDER BY data_vendita
                 """;

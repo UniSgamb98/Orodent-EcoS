@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Properties;
 
 public record UpdateCatalog(ReleaseVersion version, String runtime, String archiveHash, Map<String, String> files) {
+    public static final String DATABASE_SCHEMA = "2";
     public static PublicKey publicKey(String pem) throws Exception {
         String base64 = pem.replace("-----BEGIN PUBLIC KEY-----", "").replace("-----END PUBLIC KEY-----", "").replaceAll("\\s", "");
         return KeyFactory.getInstance("Ed25519").generatePublic(new X509EncodedKeySpec(Base64.getDecoder().decode(base64)));
@@ -26,7 +27,7 @@ public record UpdateCatalog(ReleaseVersion version, String runtime, String archi
         if (!verifier.verify(Base64.getMimeDecoder().decode(signature))) throw new IOException("Firma del catalogo non valida");
         Properties data = new Properties();
         data.load(new StringReader(new String(bytes, StandardCharsets.UTF_8)));
-        if (!"1".equals(data.getProperty("protocol")) || !"1".equals(data.getProperty("database.schema")))
+        if (!"1".equals(data.getProperty("protocol")) || !DATABASE_SCHEMA.equals(data.getProperty("database.schema")))
             throw new IOException("Release incompatibile con launcher o schema database");
         if (!expectedRuntime.equals(data.getProperty("runtime"))) throw new IOException("Runtime incompatibile: serve un nuovo pacchetto completo");
         String archiveHash = hash(data.getProperty("archive.sha256"));

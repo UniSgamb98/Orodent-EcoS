@@ -15,9 +15,10 @@ class CustomerAnalysisPeriodTotalsTest {
         String url = "jdbc:derby:memory:customerPeriods" + UUID.randomUUID().toString().replace("-", "");
         try (var connection = DriverManager.getConnection(url + ";create=true")) {
             try (var sql = connection.createStatement()) {
-                sql.executeUpdate("CREATE TABLE vendite_dettaglio (data_vendita DATE, codice_cliente VARCHAR(20), "
+                sql.executeUpdate("CREATE SCHEMA VENDITE");
+                sql.executeUpdate("CREATE TABLE VENDITE.VENDITE_DETTAGLIO (data_vendita DATE, codice_cliente VARCHAR(20), "
                         + "documento_id VARCHAR(20), importo_netto DECIMAL(15,2), quantita DECIMAL(15,3), tipo_operazione VARCHAR(20))");
-                sql.executeUpdate("INSERT INTO vendite_dettaglio VALUES "
+                sql.executeUpdate("INSERT INTO VENDITE.VENDITE_DETTAGLIO VALUES "
                         + "(DATE('2025-01-01'),'A','P1',100,10,'VENDITA'),"
                         + "(DATE('2025-10-07'),'A','P2',200,20,'VENDITA'),"
                         + "(DATE('2025-10-08'),'A','P3',9000,900,'VENDITA'),"

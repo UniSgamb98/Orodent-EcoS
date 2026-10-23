@@ -24,7 +24,7 @@ public record ClienteRepositoryImpl(Connection connection) implements ClienteRep
 
     @Override
     public int deleteAll() {
-        try (PreparedStatement statement = connection.prepareStatement("DELETE FROM clienti")) {
+        try (PreparedStatement statement = connection.prepareStatement("DELETE FROM ANAGRAFICHE.CLIENTI")) {
             return statement.executeUpdate();
         } catch (SQLException exception) {
             throw new RepositoryException("Errore durante la cancellazione dell'anagrafica clienti", exception);
@@ -34,7 +34,7 @@ public record ClienteRepositoryImpl(Connection connection) implements ClienteRep
     @Override
     public int insertAll(List<Cliente> clienti) {
         String sql = """
-                INSERT INTO clienti (
+                INSERT INTO ANAGRAFICHE.CLIENTI (
                     codice_cliente, codice_iso, categoria, listino, agente,
                     tipo_cliente, ragione_sociale, importato_il
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -107,6 +107,6 @@ public record ClienteRepositoryImpl(Connection connection) implements ClienteRep
 
     private String selectColumns() {
         return "SELECT codice_cliente, codice_iso, categoria, listino, agente, tipo_cliente, "
-                + "ragione_sociale, importato_il FROM clienti";
+                + "ragione_sociale, importato_il FROM ANAGRAFICHE.CLIENTI";
     }
 }

@@ -27,6 +27,11 @@ Anagrafiche e vendite risiedono in `orodent-database`, nello stesso database
 `OrodentEcoS`. La versione dello schema è registrata dall'HOST; i CLIENT eseguono
 solo una verifica di compatibilità. Vedere [integrazione Statistiche](docs/reuse-statistiche.md).
 
+Lo schema DB 2 organizza le tabelle in `ECOS`, `ANAGRAFICHE` e `VENDITE`.
+I dati delle precedenti tabelle `APP` vengono migrati dall'HOST in transazione.
+Il passaggio richiede una nuova distribuzione completa su tutte le postazioni:
+vedere [struttura e migrazione del database](docs/database-schema.md).
+
 ## Build e avvio
 
 Richiede Java 21 e le librerie native JavaFX della piattaforma.

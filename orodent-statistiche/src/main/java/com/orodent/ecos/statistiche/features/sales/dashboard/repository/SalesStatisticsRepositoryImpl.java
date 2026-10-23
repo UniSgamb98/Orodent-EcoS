@@ -46,7 +46,7 @@ public final class SalesStatisticsRepositoryImpl implements SalesStatisticsRepos
     public List<Integer> findAvailableYears() {
         String sql = """
                 SELECT DISTINCT YEAR(data_vendita) AS anno
-                FROM vendite_dettaglio
+                FROM VENDITE.VENDITE_DETTAGLIO
                 ORDER BY anno DESC
                 """;
         try (PreparedStatement ps = conn.prepareStatement(sql);
@@ -67,9 +67,9 @@ public final class SalesStatisticsRepositoryImpl implements SalesStatisticsRepos
         String sql = """
                 SELECT v.codice_cliente, COALESCE(MAX(c.ragione_sociale),v.codice_cliente) AS nome,
                        YEAR(v.data_vendita) AS anno, SUM(%s) AS fatturato
-                FROM vendite_dettaglio v LEFT JOIN clienti c ON c.codice_cliente=v.codice_cliente
+                FROM VENDITE.VENDITE_DETTAGLIO v LEFT JOIN ANAGRAFICHE.CLIENTI c ON c.codice_cliente=v.codice_cliente
                 WHERE v.codice_cliente IN (
-                    SELECT codice_cliente FROM vendite_dettaglio WHERE YEAR(data_vendita)=?
+                    SELECT codice_cliente FROM VENDITE.VENDITE_DETTAGLIO WHERE YEAR(data_vendita)=?
                     GROUP BY codice_cliente ORDER BY SUM(%s) DESC, codice_cliente
                     FETCH FIRST %d ROWS ONLY)
                 GROUP BY v.codice_cliente,YEAR(v.data_vendita) ORDER BY anno,v.codice_cliente
@@ -89,7 +89,7 @@ public final class SalesStatisticsRepositoryImpl implements SalesStatisticsRepos
 
     @Override
     public Optional<SalesDataCoverage> loadDataCoverage(int year) {
-        String sql = "SELECT MIN(data_vendita), MAX(data_vendita) FROM vendite_dettaglio WHERE YEAR(data_vendita)=?";
+        String sql = "SELECT MIN(data_vendita), MAX(data_vendita) FROM VENDITE.VENDITE_DETTAGLIO WHERE YEAR(data_vendita)=?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, year);
             try (ResultSet rs = ps.executeQuery()) {
@@ -104,7 +104,7 @@ public final class SalesStatisticsRepositoryImpl implements SalesStatisticsRepos
     @Override
     public List<DailyRevenueValue> loadDailyRevenueHistory(int fromYear, int toYear) {
         String sql = """
-                SELECT data_vendita, SUM(%s) AS fatturato FROM vendite_dettaglio
+                SELECT data_vendita, SUM(%s) AS fatturato FROM VENDITE.VENDITE_DETTAGLIO
                 WHERE YEAR(data_vendita) BETWEEN ? AND ?
                 GROUP BY data_vendita ORDER BY data_vendita
                 """.formatted(SIGNED_REVENUE);
@@ -126,7 +126,7 @@ public final class SalesStatisticsRepositoryImpl implements SalesStatisticsRepos
     public List<DailyMetricValue> loadDailyQuantityHistory(int fromYear, int toYear) {
         String sql = """
                 SELECT data_vendita giorno, SUM(%s) valore
-                FROM vendite_dettaglio WHERE YEAR(data_vendita) BETWEEN ? AND ?
+                FROM VENDITE.VENDITE_DETTAGLIO WHERE YEAR(data_vendita) BETWEEN ? AND ?
                 GROUP BY data_vendita ORDER BY data_vendita
                 """.formatted(SIGNED_QUANTITY);
         return loadDailyMetric(sql, fromYear, toYear);
@@ -138,7 +138,7 @@ public final class SalesStatisticsRepositoryImpl implements SalesStatisticsRepos
         String sql = """
                 SELECT prima giorno, COUNT(*) valore FROM (
                     SELECT YEAR(data_vendita) anno, documento_id, MIN(data_vendita) prima
-                    FROM vendite_dettaglio WHERE YEAR(data_vendita) BETWEEN ? AND ?
+                    FROM VENDITE.VENDITE_DETTAGLIO WHERE YEAR(data_vendita) BETWEEN ? AND ?
                     GROUP BY YEAR(data_vendita), documento_id
                 ) documenti GROUP BY prima ORDER BY prima
                 """;
@@ -164,7 +164,7 @@ public final class SalesStatisticsRepositoryImpl implements SalesStatisticsRepos
                 SELECT COALESCE(SUM(%s), 0) AS fatturato,
                        COALESCE(SUM(%s), 0) AS quantita,
                        COALESCE(SUM(sconto_importo), 0) AS sconto
-                FROM vendite_dettaglio
+                FROM VENDITE.VENDITE_DETTAGLIO
                 WHERE data_vendita BETWEEN ? AND ?
                 """.formatted(SIGNED_REVENUE, SIGNED_QUANTITY);
         BigDecimal revenue;
@@ -192,7 +192,7 @@ public final class SalesStatisticsRepositoryImpl implements SalesStatisticsRepos
 
     private int countDistinct(String column, SalesFilter filter) throws SQLException {
         String sql = "SELECT COUNT(DISTINCT " + column + ") AS totale "
-                + "FROM vendite_dettaglio WHERE data_vendita BETWEEN ? AND ?";
+                + "FROM VENDITE.VENDITE_DETTAGLIO WHERE data_vendita BETWEEN ? AND ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             setDateRange(ps, filter);
             try (ResultSet rs = ps.executeQuery()) {
@@ -209,7 +209,7 @@ public final class SalesStatisticsRepositoryImpl implements SalesStatisticsRepos
                        SUM(%s) AS fatturato,
                        SUM(%s) AS quantita,
                        COUNT(DISTINCT documento_id) AS documenti
-                FROM vendite_dettaglio
+                FROM VENDITE.VENDITE_DETTAGLIO
                 WHERE data_vendita BETWEEN ? AND ?
                 GROUP BY MONTH(data_vendita)
                 ORDER BY mese
@@ -238,7 +238,7 @@ public final class SalesStatisticsRepositoryImpl implements SalesStatisticsRepos
         return loadRanking(
                 "v.codice_cliente",
                 "COALESCE(MAX(c.ragione_sociale), v.codice_cliente)",
-                "LEFT JOIN clienti c ON c.codice_cliente = v.codice_cliente",
+                "LEFT JOIN ANAGRAFICHE.CLIENTI c ON c.codice_cliente = v.codice_cliente",
                 filter,
                 limit
         );
@@ -271,7 +271,7 @@ public final class SalesStatisticsRepositoryImpl implements SalesStatisticsRepos
                        SUM(%s) AS fatturato,
                        SUM(%s) AS quantita,
                        COUNT(DISTINCT documento_id) AS documenti
-                FROM vendite_dettaglio v
+                FROM VENDITE.VENDITE_DETTAGLIO v
                 %s
                 WHERE v.data_vendita BETWEEN ? AND ?
                 GROUP BY %s

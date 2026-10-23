@@ -14,10 +14,12 @@ class CustomerPriceListRepositoryTest {
         String url = "jdbc:derby:memory:priceList" + UUID.randomUUID().toString().replace("-", "");
         try (var connection = DriverManager.getConnection(url + ";create=true")) {
             try (var statement = connection.createStatement()) {
-                statement.executeUpdate("CREATE TABLE clienti (codice_cliente VARCHAR(30), ragione_sociale VARCHAR(100), listino VARCHAR(100))");
-                statement.executeUpdate("CREATE TABLE vendite_dettaglio (codice_cliente VARCHAR(30), data_vendita DATE, documento_id VARCHAR(30), tipo_operazione VARCHAR(20), importo_netto DECIMAL(15,2), quantita DECIMAL(15,3))");
-                statement.executeUpdate("INSERT INTO clienti VALUES ('20ZR988','3D Openminds BV','24_ZR55'),('20DR1030','Cliente senza listino',NULL)");
-                statement.executeUpdate("INSERT INTO vendite_dettaglio VALUES "
+                statement.executeUpdate("CREATE SCHEMA ANAGRAFICHE");
+                statement.executeUpdate("CREATE TABLE ANAGRAFICHE.CLIENTI (codice_cliente VARCHAR(30), ragione_sociale VARCHAR(100), listino VARCHAR(100))");
+                statement.executeUpdate("CREATE SCHEMA VENDITE");
+                statement.executeUpdate("CREATE TABLE VENDITE.VENDITE_DETTAGLIO (codice_cliente VARCHAR(30), data_vendita DATE, documento_id VARCHAR(30), tipo_operazione VARCHAR(20), importo_netto DECIMAL(15,2), quantita DECIMAL(15,3))");
+                statement.executeUpdate("INSERT INTO ANAGRAFICHE.CLIENTI VALUES ('20ZR988','3D Openminds BV','24_ZR55'),('20DR1030','Cliente senza listino',NULL)");
+                statement.executeUpdate("INSERT INTO VENDITE.VENDITE_DETTAGLIO VALUES "
                         + "('20ZR988',DATE('2026-10-20'),'D1','VENDITA',100,2),"
                         + "('20ZR988',DATE('2026-10-20'),'D1','VENDITA',50,1),"
                         + "('20DR1030',DATE('2026-10-20'),'D2','VENDITA',20,1),"
@@ -32,7 +34,7 @@ class CustomerPriceListRepositoryTest {
             assertEquals("SCONOSCIUTO", rows.get(2).name());
             assertNull(rows.get(2).priceList());
             try (var statement = connection.createStatement()) {
-                statement.executeUpdate("UPDATE clienti SET listino='26_50' WHERE codice_cliente='20ZR988'");
+                statement.executeUpdate("UPDATE ANAGRAFICHE.CLIENTI SET listino='26_50' WHERE codice_cliente='20ZR988'");
             }
             assertEquals("26_50", new SalesAnalysisRepositoryImpl(connection).loadCustomers(2026).getFirst().priceList());
         } finally {

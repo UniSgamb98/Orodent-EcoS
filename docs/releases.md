@@ -13,11 +13,14 @@ il launcher non accetta aggiornamenti e usa la versione installata.
 **I vecchi EXE non acquisiscono questa funzionalità da soli:** la prima distribuzione
 con il nuovo launcher e la chiave va installata manualmente, una volta.
 
-Questa prima linea supporta Windows x64, Java 21, protocollo updater 1 e schema DB 1.
+La linea attuale supporta Windows x64, Java 21, protocollo updater 1 e schema DB 2.
 Aggiorna i JAR come un insieme, non i singoli moduli indipendentemente. Non aggiorna
 EXE, launcher o Java. Cambiare runtime, schema o protocollo richiede una distribuzione
-completa e un piano di migrazione separato. Il catalogo non deve dichiarare schema 1
-per modifiche incompatibili. Non sono ancora implementate migrazioni automatiche.
+completa. I vecchi launcher rifiutano i cataloghi di schema 2: installare manualmente
+il nuovo pacchetto su tutte le postazioni. L'applicazione HOST applica la migrazione
+dei dati da schema 1 a 2, in transazione, al primo avvio; il launcher non migra il DB.
+Conservare config e percorso dei dati. Vedere il [passaggio allo schema 2](database-schema.md).
+Le successive release con schema 2 possono aggiornare automaticamente i componenti.
 
 ## 1. Creare la chiave una sola volta, sul proprio PC
 
@@ -106,7 +109,7 @@ il pacchetto è scaricato dal tag esatto firmato. La chiave fidata è incorporat
 launcher. Firma e SHA-256 non sono disabilitabili. Sono applicati limiti di dimensione,
 timeout, controlli sui nomi ZIP e una verifica `java --dry-run` prima dell'attivazione.
 
-Le versioni sono conservate sotto `%LOCALAPPDATA%/Orodent-EcoS/updates/windows-x64`
+Le versioni di schema 2 sono conservate sotto `%LOCALAPPDATA%/Orodent-EcoS/updates/windows-x64-schema2`
 (con fallback nel profilo utente). Ogni cartella è immutabile; un file `active`
 seleziona la versione tramite sostituzione atomica. Un lock protegge l'installazione
 contemporanea. Non vengono cancellate automaticamente le versioni precedenti.

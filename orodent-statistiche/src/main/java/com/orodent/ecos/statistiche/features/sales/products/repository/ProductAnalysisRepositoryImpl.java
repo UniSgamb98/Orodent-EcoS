@@ -13,7 +13,7 @@ public final class ProductAnalysisRepositoryImpl implements ProductAnalysisRepos
     public ProductAnalysisRepositoryImpl(Connection connection) { this.connection = connection; }
 
     @Override public List<Integer> findYears() {
-        try (var statement = connection.prepareStatement("SELECT DISTINCT YEAR(data_vendita) FROM vendite_dettaglio ORDER BY 1 DESC");
+        try (var statement = connection.prepareStatement("SELECT DISTINCT YEAR(data_vendita) FROM VENDITE.VENDITE_DETTAGLIO ORDER BY 1 DESC");
              var result = statement.executeQuery()) {
             List<Integer> years = new ArrayList<>();
             while (result.next()) years.add(result.getInt(1));
@@ -22,7 +22,7 @@ public final class ProductAnalysisRepositoryImpl implements ProductAnalysisRepos
     }
 
     @Override public SalesDataCoverage loadCoverage() {
-        try (var statement = connection.prepareStatement("SELECT MIN(data_vendita), MAX(data_vendita) FROM vendite_dettaglio");
+        try (var statement = connection.prepareStatement("SELECT MIN(data_vendita), MAX(data_vendita) FROM VENDITE.VENDITE_DETTAGLIO");
              var result = statement.executeQuery()) {
             result.next();
             return result.getDate(1) == null ? null : new SalesDataCoverage(result.getDate(1).toLocalDate(), result.getDate(2).toLocalDate());
@@ -37,7 +37,7 @@ public final class ProductAnalysisRepositoryImpl implements ProductAnalysisRepos
                        SUM(CASE WHEN v.tipo_operazione='VENDITA' THEN COALESCE(v.importo_netto,0)
                            ELSE -ABS(COALESCE(v.importo_netto,0)) END) fatturato,
                        SUM(CASE WHEN v.tipo_operazione='VENDITA' THEN v.quantita ELSE -ABS(v.quantita) END) quantita
-                FROM vendite_dettaglio v LEFT JOIN clienti c ON c.codice_cliente=v.codice_cliente
+                FROM VENDITE.VENDITE_DETTAGLIO v LEFT JOIN ANAGRAFICHE.CLIENTI c ON c.codice_cliente=v.codice_cliente
                 WHERE v.data_vendita BETWEEN ? AND ?
                 GROUP BY v.codice_prodotto, v.data_vendita, v.codice_cliente, v.documento_id, v.tipo_operazione
                 ORDER BY v.data_vendita, v.codice_prodotto, v.codice_cliente

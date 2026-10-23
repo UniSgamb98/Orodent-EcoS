@@ -2,16 +2,10 @@ package com.orodent.ecos.database;
 
 import com.orodent.ecos.core.ConnectionProvider;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.Arrays;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -19,10 +13,13 @@ import java.util.Objects;
 
 /** Applies the shared schema once on the HOST; CLIENT checks never modify it. */
 public final class DatabaseSchema {
-    public static final int CURRENT_VERSION = 1;
+    public static final int CURRENT_VERSION = 2;
     private static final String HISTORY = "ECOS_SCHEMA_HISTORY";
-    private static final String SCHEMA_RESOURCE = "/database/schema.sql";
-    private static final String OBJECT_ALREADY_EXISTS = "X0Y32";
+    private static final SchemaMigration BASELINE = new SchemaMigration(1,
+            "Shared customers and sales baseline", "/database/schema.sql");
+    private static final SchemaMigration DOMAINS = new SchemaMigration(2,
+            "Separate ecosystem, master data and sales schemas", "/database/migrations/V2__domain_schemas.sql");
+    private static final List<SchemaMigration> MIGRATIONS = List.of(BASELINE, DOMAINS);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS = List.of(
             varchar("CODICE_CLIENTE", 50), varchar("CODICE_ISO", 10), varchar("CATEGORIA", 100),
@@ -43,84 +40,104 @@ public final class DatabaseSchema {
         this.connectionProvider = Objects.requireNonNull(connectionProvider, "connectionProvider");
     }
 
-    /** Baselines pre-existing APP tables without deleting or replacing their data. */
+    /** Baselines legacy APP data and moves it atomically to the shared domain schemas. */
     public void initialize() {
-        String script = loadSchema();
-        String checksum = checksum(script);
         connectionProvider.withTransaction(connection -> {
-            boolean historyExists = tableExists(connection, HISTORY);
-            boolean baselineRecorded = historyExists && verifyHistory(connection, checksum);
-            if (!baselineRecorded) {
-                applyBaseline(connection, script);
-                verifyTables(connection);
-                if (!historyExists) {
-                    try (Statement statement = connection.createStatement()) {
-                        statement.executeUpdate("""
-                                CREATE TABLE APP.ECOS_SCHEMA_HISTORY (
-                                    version INTEGER PRIMARY KEY,
-                                    description VARCHAR(200) NOT NULL,
-                                    checksum CHAR(64) NOT NULL,
-                                    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-                                )
-                                """);
-                    }
-                }
-                try (var statement = connection.prepareStatement(
-                        "INSERT INTO APP.ECOS_SCHEMA_HISTORY(version, description, checksum) VALUES (?, ?, ?)")) {
-                    statement.setInt(1, CURRENT_VERSION);
-                    statement.setString(2, "Shared customers and sales baseline");
-                    statement.setString(3, checksum);
-                    statement.executeUpdate();
-                }
+            connection.setSchema("APP");
+            if (tableExists(connection, "ECOS", HISTORY)) {
+                verifyCompatible(connection);
+                return null;
             }
-            verifyTables(connection);
+            // A failed transaction rolls its DDL back. Pre-existing target tables need investigation,
+            // rather than an implicit merge or replacement of either copy of the user's data.
+            if (tableExists(connection, "ANAGRAFICHE", "CLIENTI")
+                    || tableExists(connection, "VENDITE", "VENDITE_DETTAGLIO")) {
+                throw incompatible("Schemi di destinazione già presenti senza uno storico valido: migrazione annullata.");
+            }
+            if (tableExists(connection, "APP", HISTORY)) {
+                verifyHistory(connection, "APP", 1);
+                verifyTables(connection, "APP", "APP");
+            } else {
+                BASELINE.apply(connection, true);
+                verifyTables(connection, "APP", "APP");
+                try (Statement statement = connection.createStatement()) {
+                    statement.executeUpdate("""
+                            CREATE TABLE APP.ECOS_SCHEMA_HISTORY (
+                                version INTEGER PRIMARY KEY,
+                                description VARCHAR(200) NOT NULL,
+                                checksum CHAR(64) NOT NULL,
+                                applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                            )
+                            """);
+                }
+                recordMigration(connection, "APP", BASELINE);
+            }
+            DOMAINS.apply(connection, false);
+            DomainSchemaMigration.copyData(connection);
+            recordMigration(connection, "ECOS", DOMAINS);
+            verifyHistory(connection, "ECOS", CURRENT_VERSION);
+            verifyTables(connection, "ANAGRAFICHE", "VENDITE");
+            DomainSchemaMigration.removeLegacyTables(connection);
             return null;
         });
     }
 
-    /** Read-only compatibility probe. Legacy hosts remain readable until they register the baseline. */
+    /** CLIENT probes never baseline or migrate a remote HOST. */
     public static void verifyCompatible(Connection connection) throws SQLException {
-        if (tableExists(connection, HISTORY) && !verifyHistory(connection, checksum(loadSchema())))
-            throw incompatible("Schema database non inizializzato: manca la migrazione di base.");
-        verifyTables(connection);
+        if (!tableExists(connection, "ECOS", HISTORY)) {
+            throw incompatible("Schema database 2 richiesto: aggiornare e riavviare l'HOST con la nuova distribuzione.");
+        }
+        verifyHistory(connection, "ECOS", CURRENT_VERSION);
+        verifyTables(connection, "ANAGRAFICHE", "VENDITE");
     }
 
-    private static boolean verifyHistory(Connection connection, String expectedChecksum) throws SQLException {
-        boolean baseline = false;
+    private static void verifyHistory(Connection connection, String schema, int expectedVersion) throws SQLException {
+        int expected = 1;
         try (Statement statement = connection.createStatement()) {
             statement.setQueryTimeout(3);
-            try (var rows = statement.executeQuery("SELECT version, checksum FROM APP.ECOS_SCHEMA_HISTORY ORDER BY version")) {
+            try (var rows = statement.executeQuery("SELECT version, checksum FROM " + schema + "." + HISTORY + " ORDER BY version")) {
                 while (rows.next()) {
-                    if (rows.getInt("version") != CURRENT_VERSION)
-                        throw incompatible("Versione schema database non supportata: " + rows.getInt("version"));
-                    if (!expectedChecksum.equals(rows.getString("checksum")))
+                    int version = rows.getInt("version");
+                    if (version > expectedVersion) {
+                        throw incompatible("Versione schema database non supportata: " + version);
+                    }
+                    if (version != expected || version < 1) {
+                        throw incompatible("Storico migrazioni incompleto o non valido.");
+                    }
+                    if (!MIGRATIONS.get(version - 1).checksum().equals(rows.getString("checksum"))) {
                         throw incompatible("La migrazione registrata non corrisponde alla versione dell'applicazione.");
-                    baseline = true;
+                    }
+                    expected++;
                 }
             }
-        }
-        return baseline;
-    }
-
-    private static void applyBaseline(Connection connection, String script) throws SQLException {
-        for (String sql : Arrays.stream(script.split(";"))
-                .map(String::trim).filter(statement -> !statement.isEmpty()).toList()) {
-            try (Statement statement = connection.createStatement()) {
-                statement.executeUpdate(sql);
-            } catch (SQLException failure) {
-                if (!OBJECT_ALREADY_EXISTS.equals(failure.getSQLState())) throw failure;
+        } catch (SQLException failure) {
+            if (INCOMPATIBLE_SCHEMA.equals(failure.getSQLState())) throw failure;
+            if (failure.getSQLState() != null && failure.getSQLState().startsWith("42")) {
+                throw new SQLException("Struttura dello storico migrazioni non valida.", INCOMPATIBLE_SCHEMA, failure);
             }
+            throw failure;
+        }
+        if (expected != expectedVersion + 1) throw incompatible("Storico migrazioni incompleto o non valido.");
+    }
+
+    private static void recordMigration(Connection connection, String schema, SchemaMigration migration) throws SQLException {
+        try (var statement = connection.prepareStatement(
+                "INSERT INTO " + schema + "." + HISTORY + "(version, description, checksum) VALUES (?, ?, ?)")) {
+            statement.setInt(1, migration.version());
+            statement.setString(2, migration.description());
+            statement.setString(3, migration.checksum());
+            statement.executeUpdate();
         }
     }
 
-    private static void verifyTables(Connection connection) throws SQLException {
-        verifyColumns(connection, "CLIENTI", CUSTOMERS);
-        verifyColumns(connection, "VENDITE_DETTAGLIO", SALES);
+    private static void verifyTables(Connection connection, String customersSchema, String salesSchema) throws SQLException {
+        verifyColumns(connection, customersSchema, "CLIENTI", CUSTOMERS);
+        verifyColumns(connection, salesSchema, "VENDITE_DETTAGLIO", SALES);
     }
 
-    private static void verifyColumns(Connection connection, String table, List<Column> expected) throws SQLException {
+    private static void verifyColumns(Connection connection, String schema, String table, List<Column> expected) throws SQLException {
         Map<String, Column> actual = new java.util.HashMap<>();
-        try (var columns = connection.getMetaData().getColumns(null, "APP", table, null)) {
+        try (var columns = connection.getMetaData().getColumns(null, schema, table, null)) {
             while (columns.next()) {
                 actual.put(columns.getString("COLUMN_NAME"), new Column(columns.getString("COLUMN_NAME"),
                         columns.getInt("DATA_TYPE"), columns.getInt("COLUMN_SIZE"), columns.getInt("DECIMAL_DIGITS"),
@@ -135,13 +152,13 @@ public final class DatabaseSchema {
                     || column.autoIncrement() && !existing.autoIncrement()
                     || column.defaultExpression() != null
                         && !column.defaultExpression().equals(normalizeExpression(existing.defaultExpression()))) {
-                throw incompatible("Schema incompatibile: APP." + table + "." + column.name());
+                throw incompatible("Schema incompatibile: " + schema + "." + table + "." + column.name());
             }
         }
     }
 
-    private static boolean tableExists(Connection connection, String table) throws SQLException {
-        try (var tables = connection.getMetaData().getTables(null, "APP", table, new String[]{"TABLE"})) {
+    private static boolean tableExists(Connection connection, String schema, String table) throws SQLException {
+        try (var tables = connection.getMetaData().getTables(null, schema, table, new String[]{"TABLE"})) {
             return tables.next();
         }
     }
@@ -162,18 +179,4 @@ public final class DatabaseSchema {
     private record Column(String name, int type, int precision, int scale,
                           boolean autoIncrement, String defaultExpression) { }
 
-    private static String checksum(String script) {
-        try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(script.replace("\r\n", "\n").replace('\r', '\n').getBytes(StandardCharsets.UTF_8)));
-        } catch (java.security.NoSuchAlgorithmException impossible) { throw new AssertionError(impossible); }
-    }
-
-    private static String loadSchema() {
-        try (InputStream input = DatabaseSchema.class.getResourceAsStream(SCHEMA_RESOURCE)) {
-            if (input == null) throw new IllegalStateException("Risorsa non trovata: " + SCHEMA_RESOURCE);
-            return new String(input.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException failure) {
-            throw new IllegalStateException("Impossibile leggere lo schema database", failure);
-        }
-    }
 }

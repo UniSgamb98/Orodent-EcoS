@@ -18,7 +18,7 @@ public final class SalesAnalysisRepositoryImpl implements SalesAnalysisRepositor
 
     @Override
     public List<Integer> findAvailableYears() {
-        return queryYears("SELECT DISTINCT YEAR(data_vendita) anno FROM vendite_dettaglio ORDER BY anno DESC");
+        return queryYears("SELECT DISTINCT YEAR(data_vendita) anno FROM VENDITE.VENDITE_DETTAGLIO ORDER BY anno DESC");
     }
 
     @Override
@@ -30,7 +30,7 @@ public final class SalesAnalysisRepositoryImpl implements SalesAnalysisRepositor
                        SUM(CASE WHEN v.tipo_operazione='VENDITA' THEN v.quantita ELSE -ABS(v.quantita) END) quantita,
                        COUNT(DISTINCT v.documento_id) documenti, MAX(v.data_vendita) ultima_vendita,
                        MAX(c.listino) listino
-                FROM vendite_dettaglio v LEFT JOIN clienti c ON c.codice_cliente=v.codice_cliente
+                FROM VENDITE.VENDITE_DETTAGLIO v LEFT JOIN ANAGRAFICHE.CLIENTI c ON c.codice_cliente=v.codice_cliente
                 WHERE YEAR(v.data_vendita)=? GROUP BY v.codice_cliente ORDER BY fatturato DESC
                 """;
         try (PreparedStatement ps = prepareYear(sql, year); ResultSet rs = ps.executeQuery()) {
@@ -50,7 +50,7 @@ public final class SalesAnalysisRepositoryImpl implements SalesAnalysisRepositor
                                 ELSE -ABS(COALESCE(importo_netto,0)) END) fatturato,
                        SUM(CASE WHEN tipo_operazione='VENDITA' THEN quantita ELSE -ABS(quantita) END) quantita,
                        COUNT(DISTINCT codice_cliente) clienti, COUNT(DISTINCT documento_id) documenti
-                FROM vendite_dettaglio WHERE YEAR(data_vendita)=?
+                FROM VENDITE.VENDITE_DETTAGLIO WHERE YEAR(data_vendita)=?
                 GROUP BY codice_prodotto ORDER BY fatturato DESC
                 """;
         try (PreparedStatement ps = prepareYear(sql, year); ResultSet rs = ps.executeQuery()) {
@@ -68,7 +68,7 @@ public final class SalesAnalysisRepositoryImpl implements SalesAnalysisRepositor
                 SELECT COALESCE(SUM(sconto_importo),0) sconto,
                        COALESCE(AVG(sconto_percentuale),0) percentuale,
                        COALESCE(SUM(importo_netto),0) netto, COUNT(DISTINCT documento_id) documenti
-                FROM vendite_dettaglio WHERE YEAR(data_vendita)=? AND tipo_operazione='VENDITA'
+                FROM VENDITE.VENDITE_DETTAGLIO WHERE YEAR(data_vendita)=? AND tipo_operazione='VENDITA'
                 """;
         return summary(sql, year, "sconto", "percentuale", "netto", "documenti", "sconti");
     }
@@ -79,7 +79,7 @@ public final class SalesAnalysisRepositoryImpl implements SalesAnalysisRepositor
                 SELECT v.codice_cliente codice, COALESCE(MAX(c.ragione_sociale),v.codice_cliente) nome,
                        COALESCE(SUM(v.importo_netto),0) fatturato, COALESCE(SUM(v.sconto_importo),0) sconto,
                        COALESCE(AVG(v.sconto_percentuale),0) percentuale
-                FROM vendite_dettaglio v LEFT JOIN clienti c ON c.codice_cliente=v.codice_cliente
+                FROM VENDITE.VENDITE_DETTAGLIO v LEFT JOIN ANAGRAFICHE.CLIENTI c ON c.codice_cliente=v.codice_cliente
                 WHERE YEAR(v.data_vendita)=? AND v.tipo_operazione='VENDITA'
                 GROUP BY v.codice_cliente ORDER BY sconto DESC
                 """;
@@ -96,7 +96,7 @@ public final class SalesAnalysisRepositoryImpl implements SalesAnalysisRepositor
         String sql = """
                 SELECT COALESCE(SUM(ABS(importo_netto)),0) importo, COALESCE(SUM(ABS(quantita)),0) quantita,
                        CAST(0 AS DECIMAL(15,2)) vuoto, COUNT(DISTINCT documento_id) documenti
-                FROM vendite_dettaglio WHERE YEAR(data_vendita)=? AND tipo_operazione<>'VENDITA'
+                FROM VENDITE.VENDITE_DETTAGLIO WHERE YEAR(data_vendita)=? AND tipo_operazione<>'VENDITA'
                 """;
         return summary(sql, year, "importo", "quantita", "vuoto", "documenti", "resi");
     }
@@ -107,7 +107,7 @@ public final class SalesAnalysisRepositoryImpl implements SalesAnalysisRepositor
                 SELECT v.codice_cliente codice, COALESCE(MAX(c.ragione_sociale),v.codice_cliente) nome,
                        SUM(ABS(COALESCE(v.importo_netto,0))) importo, SUM(ABS(v.quantita)) quantita,
                        COUNT(DISTINCT v.documento_id) documenti
-                FROM vendite_dettaglio v LEFT JOIN clienti c ON c.codice_cliente=v.codice_cliente
+                FROM VENDITE.VENDITE_DETTAGLIO v LEFT JOIN ANAGRAFICHE.CLIENTI c ON c.codice_cliente=v.codice_cliente
                 WHERE YEAR(v.data_vendita)=? AND v.tipo_operazione<>'VENDITA'
                 GROUP BY v.codice_cliente ORDER BY importo DESC
                 """;
@@ -127,7 +127,7 @@ public final class SalesAnalysisRepositoryImpl implements SalesAnalysisRepositor
                        COALESCE(c.ragione_sociale,v.codice_cliente) nome_cliente,
                        v.codice_prodotto, v.descrizione_prodotto, v.quantita,
                        v.sconto_percentuale, v.importo_netto, v.tipo_operazione
-                FROM vendite_dettaglio v LEFT JOIN clienti c ON c.codice_cliente=v.codice_cliente
+                FROM VENDITE.VENDITE_DETTAGLIO v LEFT JOIN ANAGRAFICHE.CLIENTI c ON c.codice_cliente=v.codice_cliente
                 WHERE YEAR(v.data_vendita)=? AND (
                     ?='' OR UPPER(v.numero_documento) LIKE ? OR UPPER(v.codice_cliente) LIKE ?
                     OR UPPER(COALESCE(c.ragione_sociale,'')) LIKE ? OR UPPER(v.codice_prodotto) LIKE ?

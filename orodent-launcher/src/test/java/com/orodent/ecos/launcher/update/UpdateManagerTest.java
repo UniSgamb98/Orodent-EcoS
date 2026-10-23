@@ -22,6 +22,10 @@ class UpdateManagerTest {
     private record Release(byte[] catalog, byte[] signature, byte[] archive) { }
 
     private Release release(String version, String runtime, String entry) throws Exception {
+        return release(version, runtime, entry, UpdateCatalog.DATABASE_SCHEMA);
+    }
+
+    private Release release(String version, String runtime, String entry, String schema) throws Exception {
         byte[] content = "component bytes".getBytes(StandardCharsets.UTF_8);
         ByteArrayOutputStream archive = new ByteArrayOutputStream();
         try (var zip = new ZipOutputStream(archive)) {
@@ -29,7 +33,7 @@ class UpdateManagerTest {
         }
         byte[] zip = archive.toByteArray();
         Properties properties = new Properties();
-        properties.setProperty("protocol", "1"); properties.setProperty("database.schema", "1");
+        properties.setProperty("protocol", "1"); properties.setProperty("database.schema", schema);
         properties.setProperty("runtime", runtime); properties.setProperty("version", version);
         properties.setProperty("files", "orodent-app-" + version + ".jar");
         properties.setProperty("sha256.orodent-app-" + version + ".jar", sha(content));
@@ -82,6 +86,26 @@ class UpdateManagerTest {
     @Test void rejectsDifferentRuntimeAndFallsBackWhenOffline() throws Exception {
         Path base = bundled();
         assertEquals(base, manager(release("0.1.1", "other-runtime", "lib/orodent-app-0.1.1.jar")).select(base, BASE).libraries());
+        assertEquals(base, offline().select(base, BASE).libraries());
+    }
+    @Test void rejectsOldAndFutureSchemaEvenWithAValidSignature() throws Exception {
+        Path base = bundled();
+        var compatible = manager(release("0.1.1", RUNTIME, "lib/orodent-app-0.1.1.jar")).select(base, BASE);
+        for (String schema : List.of("1", "3")) {
+            var updater = manager(release("0.1.2", RUNTIME, "lib/orodent-app-0.1.2.jar", schema));
+            assertEquals(compatible, updater.select(base, BASE));
+            assertTrue(updater.lastFailure().contains("schema database"));
+        }
+    }
+    @Test void ignoresCachedComponentsFromTheOldSchema() throws Exception {
+        Path base = bundled();
+        Release old = release("0.9.0", RUNTIME, "lib/orodent-app-0.9.0.jar", "1");
+        Path state = Files.createDirectories(temporary.resolve("updates"));
+        String directory = "version-0.9.0-" + UUID.randomUUID();
+        Path cached = Files.createDirectories(state.resolve(directory));
+        Files.write(cached.resolve("update.properties"), old.catalog());
+        Files.write(cached.resolve("update.properties.sig"), old.signature());
+        Files.writeString(state.resolve("active"), directory);
         assertEquals(base, offline().select(base, BASE).libraries());
     }
     @Test void detectsTamperingInCachedComponents() throws Exception {

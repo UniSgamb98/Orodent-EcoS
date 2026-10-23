@@ -15,8 +15,9 @@ class CustomerPurchaseDatesRepositoryTest {
         String url = "jdbc:derby:memory:followUp" + UUID.randomUUID().toString().replace("-", "");
         try (var connection = DriverManager.getConnection(url + ";create=true")) {
             try (var statement = connection.createStatement()) {
-                statement.executeUpdate("CREATE TABLE vendite_dettaglio (codice_cliente VARCHAR(20), data_vendita DATE, tipo_operazione VARCHAR(20))");
-                statement.executeUpdate("INSERT INTO vendite_dettaglio VALUES "
+                statement.executeUpdate("CREATE SCHEMA VENDITE");
+                statement.executeUpdate("CREATE TABLE VENDITE.VENDITE_DETTAGLIO (codice_cliente VARCHAR(20), data_vendita DATE, tipo_operazione VARCHAR(20))");
+                statement.executeUpdate("INSERT INTO VENDITE.VENDITE_DETTAGLIO VALUES "
                         + "('A', DATE('2025-12-31'), 'VENDITA'),"
                         + "('A', DATE('2026-01-01'), 'VENDITA'),"
                         + "('A', DATE('2026-01-01'), 'VENDITA'),"

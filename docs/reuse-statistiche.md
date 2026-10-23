@@ -42,19 +42,14 @@ aprire i diversi moduli: l'utente JDBC identifica la connessione dell'applicazio
 Il percorso, le porte e il ruolo HOST/CLIENT sono descritti in
 [database-discovery.md](database-discovery.md).
 
-Le tabelle clienti/vendite del progetto originale coincidono con quelle già
-presenti in EcoS. Per mantenere la compatibilità, restano in `APP`: questa modifica
-non le sposta in nuovi schemi. La separazione fisica per dominio richiederà una
-migrazione successiva; non bisogna creare copie dell'anagrafica in ogni modulo.
+Le tabelle fisiche sono `ANAGRAFICHE.CLIENTI` e `VENDITE.VENDITE_DETTAGLIO`.
+Statistiche le condivide con gli altri moduli; non mantiene copie proprie.
 
-`DatabaseSchema` registra la base compatibile come versione 1 in
-`APP.ECOS_SCHEMA_HISTORY`, con checksum dello script e data di applicazione.
-L'HOST crea le tabelle mancanti e registra la versione in un'unica transazione;
-su un database esistente verifica la struttura e conserva le righe. Un CLIENT
-controlla la struttura e l'eventuale storico senza scrivere. Una versione futura
-o uno storico incompatibile impediscono l'apertura. Lo script della versione 1
-non va modificato: cambiamenti strutturali futuri richiedono una nuova migrazione
-e una revisione della compatibilità dichiarata dall'updater.
+`DatabaseSchema` migra i database precedenti da `APP` ai nuovi schemi in un'unica
+transazione, conservando dati, identificativi, timestamp e sequenza delle vendite.
+Lo storico delle versioni 1 e 2 è in `ECOS.ECOS_SCHEMA_HISTORY`.
+Il CLIENT richiede lo schema 2 e controlla la compatibilità senza scrivere.
+Vedere [struttura e passaggio allo schema 2](database-schema.md).
 
 ## Build, test e distribuzione
 
@@ -75,4 +70,5 @@ analisi e dei componenti sono in `orodent-statistiche/src/test`.
 Il normale package include automaticamente il JAR `orodent-statistiche` in
 `app/lib` e nei componenti delle release. Non occorre cambiare lo script Windows
 o configurare un secondo aggiornamento: il launcher aggiorna l'insieme coerente
-dei JAR, mantenendo il protocollo e lo schema dati compatibili con la linea attuale.
+dei JAR. Il passaggio dallo schema 1 al 2 richiede una distribuzione completa con
+il nuovo launcher; le successive release di schema 2 si aggiornano normalmente.

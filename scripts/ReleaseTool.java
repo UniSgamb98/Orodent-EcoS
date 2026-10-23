@@ -37,7 +37,7 @@ public class ReleaseTool {
         if (jars.isEmpty() || jars.size() > 128 || jars.stream().noneMatch(p -> p.getFileName().toString().startsWith("orodent-app-")))
             throw new IllegalStateException("Componenti mancanti");
         Properties manifest = new Properties();
-        manifest.setProperty("protocol", "1"); manifest.setProperty("database.schema", "1");
+        manifest.setProperty("protocol", "1"); manifest.setProperty("database.schema", "2");
         manifest.setProperty("runtime", "windows-x64-java21-v1"); manifest.setProperty("version", version);
         List<String> names = new ArrayList<>();
         Path archive = output.resolve("Orodent-EcoS-components.zip");

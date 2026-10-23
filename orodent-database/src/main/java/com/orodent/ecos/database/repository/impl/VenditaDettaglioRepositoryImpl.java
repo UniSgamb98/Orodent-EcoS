@@ -31,7 +31,7 @@ public record VenditaDettaglioRepositoryImpl(Connection conn) implements Vendita
     @Override
     public VenditaDettaglio insert(VenditaDettaglio vendita) {
         String sql = """
-                INSERT INTO vendite_dettaglio (
+                INSERT INTO VENDITE.VENDITE_DETTAGLIO (
                     sorgente,
                     documento_id,
                     numero_documento,
@@ -75,7 +75,7 @@ public record VenditaDettaglioRepositoryImpl(Connection conn) implements Vendita
         }
 
         String sql = """
-                INSERT INTO vendite_dettaglio (
+                INSERT INTO VENDITE.VENDITE_DETTAGLIO (
                     sorgente,
                     documento_id,
                     numero_documento,
@@ -169,7 +169,7 @@ public record VenditaDettaglioRepositoryImpl(Connection conn) implements Vendita
         }
 
         String sql = """
-                UPDATE vendite_dettaglio
+                UPDATE VENDITE.VENDITE_DETTAGLIO
                 SET sorgente = ?,
                     documento_id = ?,
                     numero_documento = ?,
@@ -328,7 +328,7 @@ public record VenditaDettaglioRepositoryImpl(Connection conn) implements Vendita
 
     @Override
     public void deleteById(long venditaId) {
-        String sql = "DELETE FROM vendite_dettaglio WHERE vendita_id = ?";
+        String sql = "DELETE FROM VENDITE.VENDITE_DETTAGLIO WHERE vendita_id = ?";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, venditaId);
@@ -344,7 +344,7 @@ public record VenditaDettaglioRepositoryImpl(Connection conn) implements Vendita
             throw new IllegalArgumentException("Intervallo di cancellazione non valido");
         }
         String sql = """
-                DELETE FROM vendite_dettaglio
+                DELETE FROM VENDITE.VENDITE_DETTAGLIO
                 WHERE data_vendita >= ?
                   AND data_vendita < ?
                 """;
@@ -503,7 +503,7 @@ public record VenditaDettaglioRepositoryImpl(Connection conn) implements Vendita
                        canale,
                        agente,
                        importato_il
-                FROM vendite_dettaglio
+                FROM VENDITE.VENDITE_DETTAGLIO
                 """;
     }
 

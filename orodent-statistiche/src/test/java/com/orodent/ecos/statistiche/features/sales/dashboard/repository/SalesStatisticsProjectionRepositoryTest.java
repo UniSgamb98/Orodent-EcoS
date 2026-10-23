@@ -18,8 +18,9 @@ class SalesStatisticsProjectionRepositoryTest {
         String url = "jdbc:derby:memory:projection" + UUID.randomUUID().toString().replace("-", "");
         try (var connection = DriverManager.getConnection(url + ";create=true")) {
             try (var statement = connection.createStatement()) {
-                statement.executeUpdate("CREATE TABLE vendite_dettaglio (data_vendita DATE, importo_netto DECIMAL(15,2), tipo_operazione VARCHAR(20))");
-                statement.executeUpdate("INSERT INTO vendite_dettaglio VALUES "
+                statement.executeUpdate("CREATE SCHEMA VENDITE");
+                statement.executeUpdate("CREATE TABLE VENDITE.VENDITE_DETTAGLIO (data_vendita DATE, importo_netto DECIMAL(15,2), tipo_operazione VARCHAR(20))");
+                statement.executeUpdate("INSERT INTO VENDITE.VENDITE_DETTAGLIO VALUES "
                         + "(DATE('2025-12-31'), 100, 'VENDITA'),"
                         + "(DATE('2026-01-10'), 100, 'VENDITA'),"
                         + "(DATE('2026-01-10'), 20, 'RESO'),"

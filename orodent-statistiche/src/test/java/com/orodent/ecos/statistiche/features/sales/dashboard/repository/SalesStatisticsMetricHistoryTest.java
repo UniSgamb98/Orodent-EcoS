@@ -14,8 +14,9 @@ class SalesStatisticsMetricHistoryTest {
         String url = "jdbc:derby:memory:metrics" + UUID.randomUUID().toString().replace("-", "");
         try (var connection = DriverManager.getConnection(url + ";create=true")) {
             try (var statement = connection.createStatement()) {
-                statement.executeUpdate("CREATE TABLE vendite_dettaglio (data_vendita DATE, documento_id VARCHAR(20), tipo_operazione VARCHAR(20), quantita DECIMAL(15,3))");
-                statement.executeUpdate("INSERT INTO vendite_dettaglio VALUES "
+                statement.executeUpdate("CREATE SCHEMA VENDITE");
+                statement.executeUpdate("CREATE TABLE VENDITE.VENDITE_DETTAGLIO (data_vendita DATE, documento_id VARCHAR(20), tipo_operazione VARCHAR(20), quantita DECIMAL(15,3))");
+                statement.executeUpdate("INSERT INTO VENDITE.VENDITE_DETTAGLIO VALUES "
                         + "(DATE('2025-01-01'),'D1','VENDITA',10),"
                         + "(DATE('2025-01-01'),'D1','VENDITA',5),"
                         + "(DATE('2025-02-01'),'D1','VENDITA',2),"

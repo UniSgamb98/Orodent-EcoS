@@ -55,11 +55,13 @@ Il database non viene copiato sul computer CLIENT.
 - `DiscoveryClient`, `DiscoveryServer`, `DiscoveryProtocol`: trasporto e protocollo UDP.
 - `DatabaseConfiguration`: percorsi, porte e timeout.
 - `DatabaseSchema`: inizializzazione transazionale e registrazione della versione
-  in `APP.ECOS_SCHEMA_HISTORY`; verifica in sola lettura per i CLIENT.
+  in `ECOS.ECOS_SCHEMA_HISTORY`; verifica in sola lettura per i CLIENT.
 
-La versione 1 comprende l'anagrafica clienti e le vendite condivise con Statistiche.
-I database già creati da EcoS vengono registrati dopo aver verificato le tabelle,
-senza cancellarne i dati. Non viene importato il database della vecchia app Statistiche.
+La versione 2 separa anagrafica e vendite negli schemi `ANAGRAFICHE` e `VENDITE`.
+L'HOST migra le vecchie tabelle `APP` in transazione, conservandone i dati.
+Un CLIENT non accetta un HOST di schema 1 e non tenta un database locale alternativo.
+Il passaggio richiede tutte le postazioni aggiornate: avviare prima l'HOST.
+Vedere [struttura e migrazione del database](database-schema.md).
 
 I test di integrazione avviano JVM separate con directory temporanee e porte dedicate:
 verificano dati condivisi, avvio contemporaneo, connessioni indipendenti, chiusura del

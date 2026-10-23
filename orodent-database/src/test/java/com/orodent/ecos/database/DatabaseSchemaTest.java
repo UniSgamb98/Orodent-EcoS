@@ -9,6 +9,8 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
 
@@ -43,112 +45,184 @@ class DatabaseSchemaTest {
     }
 
     @Test
-    void initializesAndRecordsBaselineExactlyOnce() {
-        DatabaseSchema schema = new DatabaseSchema(connections);
-        schema.initialize();
-        schema.initialize();
+    void initializesDomainSchemasAndRecordsEachMigrationExactlyOnce() {
+        migrate();
+        migrate();
+        assertEquals(List.of(List.of(1), List.of(2)), rows("SELECT version FROM ECOS.ECOS_SCHEMA_HISTORY ORDER BY version"));
         connections.withConnection(connection -> {
             DatabaseSchema.verifyCompatible(connection);
-            try (var statement = connection.createStatement(); var rows = statement.executeQuery(
-                    "SELECT version, description, checksum FROM APP.ECOS_SCHEMA_HISTORY")) {
-                assertTrue(rows.next());
-                assertEquals(1, rows.getInt("version"));
-                assertEquals(64, rows.getString("checksum").length());
-                assertFalse(rows.next());
+            assertTrue(tableExists(connection, "ANAGRAFICHE", "CLIENTI"));
+            assertTrue(tableExists(connection, "VENDITE", "VENDITE_DETTAGLIO"));
+            assertLegacyTablesAbsent(connection);
+            try (var schemas = connection.getMetaData().getSchemas()) {
+                while (schemas.next()) {
+                    assertNotEquals("STATISTICHE", schemas.getString("TABLE_SCHEM"));
+                    assertNotEquals("TON", schemas.getString("TABLE_SCHEM"));
+                }
             }
             return null;
         });
     }
 
     @Test
-    void registersExistingSchemaWithoutLosingItsRows() throws Exception {
-        createLegacySchema();
+    void migratesUntrackedLegacyDataWithoutChangingAnyValuesOrIdentifiers() throws Exception {
+        createLegacySchema(UnaryOperator.identity());
+        seedLegacyData();
+        List<List<Object>> customers = rows("SELECT * FROM APP.CLIENTI");
+        List<List<Object>> sales = rows("SELECT * FROM APP.VENDITE_DETTAGLIO ORDER BY vendita_id");
+        migrate();
+        assertEquals(customers, rows("SELECT * FROM ANAGRAFICHE.CLIENTI"));
+        assertEquals(sales, rows("SELECT * FROM VENDITE.VENDITE_DETTAGLIO ORDER BY vendita_id"));
+        execute("INSERT INTO VENDITE.VENDITE_DETTAGLIO (sorgente,documento_id,numero_riga,data_vendita,codice_cliente,codice_prodotto,quantita) "
+                + "VALUES ('TEST','NEW',1,DATE('2025-01-02'),'OLD','P',1)");
+        assertEquals(List.of(List.of(100L)), rows("SELECT vendita_id FROM VENDITE.VENDITE_DETTAGLIO WHERE documento_id='NEW'"));
         connections.withConnection(connection -> {
-            try (var statement = connection.createStatement()) {
-                statement.executeUpdate("INSERT INTO APP.clienti(codice_cliente, ragione_sociale) VALUES ('OLD', 'Existing customer')");
-            }
-            return null;
-        });
-        new DatabaseSchema(connections).initialize();
-        connections.withConnection(connection -> {
+            assertLegacyTablesAbsent(connection);
             DatabaseSchema.verifyCompatible(connection);
-            try (var statement = connection.createStatement(); var rows = statement.executeQuery(
-                    "SELECT ragione_sociale FROM APP.clienti WHERE codice_cliente = 'OLD'")) {
-                assertTrue(rows.next());
-                assertEquals("Existing customer", rows.getString(1));
-            }
             return null;
         });
     }
 
     @Test
-    void clientChecksLegacySchemaWithoutCreatingMigrationHistory() throws Exception {
-        createLegacySchema();
+    void preservesTheRecordedBaselineAndItsTimestamp() throws Exception {
+        createTrackedLegacySchema();
+        seedLegacyData();
+        List<List<Object>> history = rows("SELECT * FROM APP.ECOS_SCHEMA_HISTORY");
+        migrate();
+        assertEquals(history, rows("SELECT * FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version=1"));
+        assertEquals(2, rows("SELECT version FROM ECOS.ECOS_SCHEMA_HISTORY").size());
+    }
+
+    @Test
+    void clientRejectsLegacyHostWithoutCreatingOrMigratingAnything() throws Exception {
+        createLegacySchema(UnaryOperator.identity());
+        connections.withConnection(connection -> {
+            connection.setReadOnly(true);
+            SQLException failure = assertThrows(SQLException.class, () -> DatabaseSchema.verifyCompatible(connection));
+            assertEquals("XEC01", failure.getSQLState());
+            assertTrue(failure.getMessage().contains("aggiornare e riavviare l'HOST"));
+            assertFalse(tableExists(connection, "ECOS", "ECOS_SCHEMA_HISTORY"));
+            assertTrue(tableExists(connection, "APP", "CLIENTI"));
+            return null;
+        });
+    }
+
+    @Test
+    void clientChecksCurrentSchemaOnAReadOnlyConnection() {
+        migrate();
+        List<List<Object>> history = rows("SELECT * FROM ECOS.ECOS_SCHEMA_HISTORY ORDER BY version");
         connections.withConnection(connection -> {
             connection.setReadOnly(true);
             DatabaseSchema.verifyCompatible(connection);
-            assertFalse(tableExists(connection, "ECOS_SCHEMA_HISTORY"));
             return null;
         });
+        assertEquals(history, rows("SELECT * FROM ECOS.ECOS_SCHEMA_HISTORY ORDER BY version"));
     }
 
     @Test
     void rejectsFutureSchemaForBothHostAndClient() {
-        new DatabaseSchema(connections).initialize();
-        connections.withConnection(connection -> {
-            try (var statement = connection.createStatement()) {
-                statement.executeUpdate("UPDATE APP.ECOS_SCHEMA_HISTORY SET version = 2");
-            }
-            return null;
-        });
-        assertThrows(RuntimeException.class, () -> new DatabaseSchema(connections).initialize());
+        migrate();
+        execute("UPDATE ECOS.ECOS_SCHEMA_HISTORY SET version=3 WHERE version=2");
+        assertThrows(RuntimeException.class, this::migrate);
         connections.withConnection(connection -> {
             SQLException failure = assertThrows(SQLException.class, () -> DatabaseSchema.verifyCompatible(connection));
             assertEquals("XEC01", failure.getSQLState());
-            try (var statement = connection.createStatement(); var rows = statement.executeQuery("SELECT version FROM APP.ECOS_SCHEMA_HISTORY")) {
-                assertTrue(rows.next());
-                assertEquals(2, rows.getInt(1));
-            }
             return null;
         });
+        assertEquals(List.of(List.of(1), List.of(3)), rows("SELECT version FROM ECOS.ECOS_SCHEMA_HISTORY ORDER BY version"));
     }
 
     @Test
     void rejectsModifiedMigrationHistory() {
-        new DatabaseSchema(connections).initialize();
-        connections.withConnection(connection -> {
-            try (var statement = connection.createStatement()) {
-                statement.executeUpdate("UPDATE APP.ECOS_SCHEMA_HISTORY SET checksum = '" + "0".repeat(64) + "'");
-            }
-            return null;
-        });
-        assertThrows(RuntimeException.class, () -> new DatabaseSchema(connections).initialize());
+        migrate();
+        execute("UPDATE ECOS.ECOS_SCHEMA_HISTORY SET checksum='" + "0".repeat(64) + "' WHERE version=1");
+        assertThrows(RuntimeException.class, this::migrate);
     }
 
     @Test
-    void rollsBackNewTablesWhenAnExistingTableIsIncompatible() {
+    void rejectsMissingMigrationHistory() {
+        migrate();
+        execute("DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version=1");
+        assertThrows(RuntimeException.class, this::migrate);
         connections.withConnection(connection -> {
-            try (var statement = connection.createStatement()) {
-                statement.executeUpdate("CREATE TABLE APP.clienti(codice_cliente INTEGER)");
-            }
+            assertThrows(SQLException.class, () -> DatabaseSchema.verifyCompatible(connection));
             return null;
         });
-        assertThrows(RuntimeException.class, () -> new DatabaseSchema(connections).initialize());
+    }
+
+    @Test
+    void rejectsAlteredLegacyHistoryWithoutCreatingDomainTables() throws Exception {
+        createTrackedLegacySchema();
+        execute("UPDATE APP.ECOS_SCHEMA_HISTORY SET checksum='" + "0".repeat(64) + "'");
+        assertThrows(RuntimeException.class, this::migrate);
         connections.withConnection(connection -> {
-            assertTrue(tableExists(connection, "CLIENTI"));
-            assertFalse(tableExists(connection, "VENDITE_DETTAGLIO"));
-            assertFalse(tableExists(connection, "ECOS_SCHEMA_HISTORY"));
+            assertTrue(tableExists(connection, "APP", "CLIENTI"));
+            assertFalse(tableExists(connection, "ANAGRAFICHE", "CLIENTI"));
+            return null;
+        });
+    }
+
+    @Test
+    void rollsBackNewTablesWhenAnExistingLegacyTableIsIncompatible() {
+        execute("CREATE TABLE APP.CLIENTI(codice_cliente INTEGER)");
+        assertThrows(RuntimeException.class, this::migrate);
+        connections.withConnection(connection -> {
+            assertTrue(tableExists(connection, "APP", "CLIENTI"));
+            assertFalse(tableExists(connection, "APP", "VENDITE_DETTAGLIO"));
+            assertFalse(tableExists(connection, "APP", "ECOS_SCHEMA_HISTORY"));
+            assertFalse(tableExists(connection, "ECOS", "ECOS_SCHEMA_HISTORY"));
+            return null;
+        });
+    }
+
+    @Test
+    void rollsBackCopiedDataAndDroppedTablesWhenALegacyDependencyBlocksTheMove() throws Exception {
+        createTrackedLegacySchema();
+        seedLegacyData();
+        execute("CREATE VIEW APP.CLIENTI_EXPORT AS SELECT codice_cliente FROM APP.CLIENTI");
+        List<List<Object>> before = rows("SELECT * FROM APP.VENDITE_DETTAGLIO");
+        assertThrows(RuntimeException.class, this::migrate);
+        assertEquals(before, rows("SELECT * FROM APP.VENDITE_DETTAGLIO"));
+        assertEquals(List.of(List.of(1)), rows("SELECT version FROM APP.ECOS_SCHEMA_HISTORY"));
+        connections.withConnection(connection -> {
+            assertFalse(tableExists(connection, "ECOS", "ECOS_SCHEMA_HISTORY"));
+            assertFalse(tableExists(connection, "ANAGRAFICHE", "CLIENTI"));
+            assertFalse(tableExists(connection, "VENDITE", "VENDITE_DETTAGLIO"));
+            return null;
+        });
+        execute("DROP VIEW APP.CLIENTI_EXPORT");
+        migrate();
+        assertEquals(before, rows("SELECT * FROM VENDITE.VENDITE_DETTAGLIO"));
+    }
+
+    @Test
+    void refusesToMergeIntoPreexistingDomainTables() throws Exception {
+        createLegacySchema(UnaryOperator.identity());
+        seedLegacyData();
+        execute("CREATE SCHEMA ANAGRAFICHE", "CREATE TABLE ANAGRAFICHE.CLIENTI(code VARCHAR(50))",
+                "INSERT INTO ANAGRAFICHE.CLIENTI VALUES ('KEEP')");
+        assertThrows(RuntimeException.class, this::migrate);
+        assertEquals(List.of(List.of("KEEP")), rows("SELECT code FROM ANAGRAFICHE.CLIENTI"));
+        assertEquals(List.of(List.of("OLD")), rows("SELECT codice_cliente FROM APP.CLIENTI"));
+    }
+
+    @Test
+    void preservesLegacyDataIfItCannotFitInTheDestination() throws Exception {
+        createLegacySchema(script -> script.replace("ragione_sociale VARCHAR(500)", "ragione_sociale VARCHAR(600)"));
+        execute("INSERT INTO APP.CLIENTI(codice_cliente,ragione_sociale) VALUES ('LONG','" + "a".repeat(501) + "')");
+        assertThrows(RuntimeException.class, this::migrate);
+        assertEquals(List.of(List.of(501)), rows("SELECT LENGTH(ragione_sociale) FROM APP.CLIENTI"));
+        connections.withConnection(connection -> {
+            assertFalse(tableExists(connection, "ANAGRAFICHE", "CLIENTI"));
             return null;
         });
     }
 
     @Test
     void rejectsChangedColumnsEvenWhenMigrationVersionIsCurrent() {
-        new DatabaseSchema(connections).initialize();
+        migrate();
+        execute("ALTER TABLE ANAGRAFICHE.CLIENTI DROP COLUMN codice_iso");
         connections.withConnection(connection -> {
-            try (var statement = connection.createStatement()) {
-                statement.executeUpdate("ALTER TABLE APP.clienti DROP COLUMN codice_iso");
-            }
             assertThrows(SQLException.class, () -> DatabaseSchema.verifyCompatible(connection));
             return null;
         });
@@ -157,47 +231,107 @@ class DatabaseSchemaTest {
     @Test
     void rejectsLegacySchemaWithoutTheGeneratedSalesIdentity() throws Exception {
         createLegacySchema(script -> script.replace("GENERATED ALWAYS AS IDENTITY", ""));
-        assertThrows(RuntimeException.class, () -> new DatabaseSchema(connections).initialize());
-        connections.withConnection(connection -> {
-            assertThrows(SQLException.class, () -> DatabaseSchema.verifyCompatible(connection));
-            assertFalse(tableExists(connection, "ECOS_SCHEMA_HISTORY"));
-            return null;
-        });
+        assertThrows(RuntimeException.class, this::migrate);
     }
 
     @Test
     void rejectsLegacySchemaWithoutImportTimestampDefaults() throws Exception {
         createLegacySchema(script -> script.replace("DEFAULT CURRENT_TIMESTAMP", ""));
-        assertThrows(RuntimeException.class, () -> new DatabaseSchema(connections).initialize());
+        assertThrows(RuntimeException.class, this::migrate);
+    }
+
+    @Test
+    void repositoriesUseExplicitDomainsEvenWhenTheConnectionDefaultIsDifferent() {
+        migrate();
         connections.withConnection(connection -> {
-            assertThrows(SQLException.class, () -> DatabaseSchema.verifyCompatible(connection));
-            assertFalse(tableExists(connection, "ECOS_SCHEMA_HISTORY"));
+            connection.setSchema("ECOS");
+            assertTrue(new com.orodent.ecos.database.repository.impl.ClienteRepositoryImpl(connection).findAll().isEmpty());
+            assertTrue(new com.orodent.ecos.database.repository.impl.VenditaDettaglioRepositoryImpl(connection).findAll().isEmpty());
             return null;
         });
     }
 
-    private void createLegacySchema() throws Exception {
+    @Test
+    void legacyNamesAreAliasesAndAnOldBootstrapCannotCreateAnEmptyParallelDatabase() throws Exception {
         createLegacySchema(UnaryOperator.identity());
+        seedLegacyData();
+        migrate();
+        assertEquals(rows("SELECT * FROM ANAGRAFICHE.CLIENTI"), rows("SELECT * FROM APP.CLIENTI"));
+        SchemaMigration oldBootstrap = new SchemaMigration(1, "Legacy", "/database/schema.sql");
+        assertThrows(RuntimeException.class, () -> connections.withTransaction(connection -> {
+            oldBootstrap.apply(connection, true);
+            return null;
+        }));
+        connections.withConnection(connection -> {
+            assertLegacyTablesAbsent(connection);
+            DatabaseSchema.verifyCompatible(connection);
+            return null;
+        });
+        assertEquals(List.of(List.of("OLD")), rows("SELECT codice_cliente FROM ANAGRAFICHE.CLIENTI"));
+    }
+
+    private void migrate() { new DatabaseSchema(connections).initialize(); }
+
+    private void seedLegacyData() {
+        execute("INSERT INTO APP.CLIENTI(codice_cliente,codice_iso,categoria,listino,agente,tipo_cliente,ragione_sociale,importato_il) "
+                        + "VALUES ('OLD','IT','Laboratorio','2025',NULL,'Nazionale','Cliente già esistente',TIMESTAMP('2024-02-03 04:05:06.123456789'))",
+                "ALTER TABLE APP.VENDITE_DETTAGLIO ALTER COLUMN vendita_id RESTART WITH 42",
+                "INSERT INTO APP.VENDITE_DETTAGLIO(sorgente,documento_id,numero_riga,data_vendita,codice_cliente,codice_prodotto,quantita,importo_netto,importato_il) "
+                        + "VALUES ('TEST','OLD',1,DATE('2024-01-01'),'OLD','P',1.125,123.45,TIMESTAMP('2024-01-01 12:34:56.987654321'))",
+                "ALTER TABLE APP.VENDITE_DETTAGLIO ALTER COLUMN vendita_id RESTART WITH 99",
+                "INSERT INTO APP.VENDITE_DETTAGLIO(sorgente,documento_id,numero_riga,data_vendita,codice_cliente,codice_prodotto,quantita) "
+                        + "VALUES ('TEST','DELETED',1,DATE('2024-01-01'),'OLD','P',1)",
+                "DELETE FROM APP.VENDITE_DETTAGLIO WHERE vendita_id=99");
     }
 
     private void createLegacySchema(UnaryOperator<String> transform) throws Exception {
-        String script;
         try (var input = DatabaseSchemaTest.class.getResourceAsStream("/database/schema.sql")) {
             assertNotNull(input);
-            script = transform.apply(new String(input.readAllBytes(), StandardCharsets.UTF_8));
+            String script = transform.apply(new String(input.readAllBytes(), StandardCharsets.UTF_8));
+            execute(script.split(";"));
         }
-        connections.withTransaction(connection -> {
-            for (String sql : script.split(";")) {
-                if (!sql.isBlank()) {
-                    try (var statement = connection.createStatement()) { statement.executeUpdate(sql); }
-                }
+    }
+
+    private void createTrackedLegacySchema() throws Exception {
+        createLegacySchema(UnaryOperator.identity());
+        execute("CREATE TABLE APP.ECOS_SCHEMA_HISTORY(version INTEGER PRIMARY KEY, description VARCHAR(200) NOT NULL, "
+                + "checksum CHAR(64) NOT NULL, applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)");
+        SchemaMigration baseline = new SchemaMigration(1, "Shared customers and sales baseline", "/database/schema.sql");
+        execute("INSERT INTO APP.ECOS_SCHEMA_HISTORY(version,description,checksum) VALUES (1,'"
+                + baseline.description() + "','" + baseline.checksum() + "')");
+    }
+
+    private void execute(String... statements) {
+        connections.withConnection(connection -> {
+            try (var statement = connection.createStatement()) {
+                for (String sql : statements) if (!sql.isBlank()) statement.executeUpdate(sql);
             }
             return null;
         });
     }
 
-    private static boolean tableExists(Connection connection, String name) throws SQLException {
-        try (var tables = connection.getMetaData().getTables(null, "APP", name, new String[]{"TABLE"})) {
+    private List<List<Object>> rows(String sql) {
+        return connections.withConnection(connection -> {
+            try (var statement = connection.createStatement(); var result = statement.executeQuery(sql)) {
+                List<List<Object>> rows = new ArrayList<>();
+                while (result.next()) {
+                    List<Object> values = new ArrayList<>();
+                    for (int column = 1; column <= result.getMetaData().getColumnCount(); column++) values.add(result.getObject(column));
+                    rows.add(values);
+                }
+                return rows;
+            }
+        });
+    }
+
+    private static void assertLegacyTablesAbsent(Connection connection) throws SQLException {
+        for (String name : List.of("CLIENTI", "VENDITE_DETTAGLIO", "ECOS_SCHEMA_HISTORY")) {
+            assertFalse(tableExists(connection, "APP", name), name);
+        }
+    }
+
+    private static boolean tableExists(Connection connection, String schema, String name) throws SQLException {
+        try (var tables = connection.getMetaData().getTables(null, schema, name, new String[]{"TABLE"})) {
             return tables.next();
         }
     }

@@ -17,10 +17,12 @@ class SalesStatisticsTopHistoryRepositoryTest {
         String url = "jdbc:derby:memory:topHistory" + UUID.randomUUID().toString().replace("-", "");
         try (var connection = DriverManager.getConnection(url + ";create=true")) {
             try (var sql = connection.createStatement()) {
-                sql.executeUpdate("CREATE TABLE clienti (codice_cliente VARCHAR(20), ragione_sociale VARCHAR(100))");
-                sql.executeUpdate("INSERT INTO clienti VALUES ('B','Cliente Beta')");
-                sql.executeUpdate("CREATE TABLE vendite_dettaglio (data_vendita DATE, codice_cliente VARCHAR(20), importo_netto DECIMAL(15,2), tipo_operazione VARCHAR(20))");
-                sql.executeUpdate("INSERT INTO vendite_dettaglio VALUES "
+                sql.executeUpdate("CREATE SCHEMA ANAGRAFICHE");
+                sql.executeUpdate("CREATE TABLE ANAGRAFICHE.CLIENTI (codice_cliente VARCHAR(20), ragione_sociale VARCHAR(100))");
+                sql.executeUpdate("INSERT INTO ANAGRAFICHE.CLIENTI VALUES ('B','Cliente Beta')");
+                sql.executeUpdate("CREATE SCHEMA VENDITE");
+                sql.executeUpdate("CREATE TABLE VENDITE.VENDITE_DETTAGLIO (data_vendita DATE, codice_cliente VARCHAR(20), importo_netto DECIMAL(15,2), tipo_operazione VARCHAR(20))");
+                sql.executeUpdate("INSERT INTO VENDITE.VENDITE_DETTAGLIO VALUES "
                         + "(DATE('2025-01-10'),'A',2000,'VENDITA'),"
                         + "(DATE('2025-02-10'),'B',100,'VENDITA'),"
                         + "(DATE('2026-01-10'),'A',1000,'VENDITA'),"

@@ -15,10 +15,12 @@ class ProductAnalysisRepositoryTest {
         String url = "jdbc:derby:memory:products" + UUID.randomUUID().toString().replace("-","");
         try (var connection = DriverManager.getConnection(url + ";create=true")) {
             try(var statement=connection.createStatement()) {
-                statement.executeUpdate("CREATE TABLE clienti (codice_cliente VARCHAR(20) PRIMARY KEY, ragione_sociale VARCHAR(100))");
-                statement.executeUpdate("INSERT INTO clienti VALUES ('C1','Cliente Uno')");
-                statement.executeUpdate("CREATE TABLE vendite_dettaglio (codice_prodotto VARCHAR(30), descrizione_prodotto VARCHAR(100), data_vendita DATE, codice_cliente VARCHAR(20), documento_id VARCHAR(20), tipo_operazione VARCHAR(20), importo_netto DECIMAL(15,2), quantita DECIMAL(15,3))");
-                statement.executeUpdate("INSERT INTO vendite_dettaglio VALUES "
+                statement.executeUpdate("CREATE SCHEMA ANAGRAFICHE");
+                statement.executeUpdate("CREATE TABLE ANAGRAFICHE.CLIENTI (codice_cliente VARCHAR(20) PRIMARY KEY, ragione_sociale VARCHAR(100))");
+                statement.executeUpdate("INSERT INTO ANAGRAFICHE.CLIENTI VALUES ('C1','Cliente Uno')");
+                statement.executeUpdate("CREATE SCHEMA VENDITE");
+                statement.executeUpdate("CREATE TABLE VENDITE.VENDITE_DETTAGLIO (codice_prodotto VARCHAR(30), descrizione_prodotto VARCHAR(100), data_vendita DATE, codice_cliente VARCHAR(20), documento_id VARCHAR(20), tipo_operazione VARCHAR(20), importo_netto DECIMAL(15,2), quantita DECIMAL(15,3))");
+                statement.executeUpdate("INSERT INTO VENDITE.VENDITE_DETTAGLIO VALUES "
                         + "('ZR9812MSTA2','MST A2',DATE('2025-01-01'),'C1','D1','VENDITA',100,10),"
                         + "('ZR9812MSTA2','MST A2',DATE('2025-01-01'),'C1','D1','VENDITA',200,20),"
                         + "('ZR9812MSTA2','MST A2',DATE('2025-01-02'),'C1','R1','RESO',50,5),"
