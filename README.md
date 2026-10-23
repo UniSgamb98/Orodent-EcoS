@@ -99,23 +99,29 @@ Il database è esterno alla distribuzione e non viene sostituito dal launcher.
 
 ## Windows portabile con EXE e Java incluso
 
-Eseguire su **Windows** con un **JDK 21 completo** della stessa architettura delle
+Eseguire su **Windows** con un **JDK 21 standard completo, senza JavaFX incorporato** della stessa architettura delle
 postazioni di destinazione. Servono `java`, `javac`, `jlink`, `jpackage` e `jmods`;
 un JRE o il solo runtime di IntelliJ non bastano. Per `app-image` non serve WiX.
 
 Dal terminale PowerShell nella radice del progetto:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-windows.ps1 -JdkHome "$env:USERPROFILE\.jdks\liberica-full-21.0.10"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-windows.ps1 -JdkHome "C:\Java\jdk-21"
 ```
 
-Sostituire il percorso con quello del JDK indicato in IntelliJ, in
+Il percorso `C:\Java\jdk-21` è un esempio: sostituirlo con quello del proprio JDK
+**Eclipse Temurin 21** o **Liberica Standard 21**. Non usare **Liberica Full**:
+include JavaFX e può causare `Hash of javafx.base differs ... recorded in java.base`
+quando il runtime carica i JAR JavaFX della distribuzione. Non disabilitare i controlli
+degli hash. Se il JDK è registrato in IntelliJ, leggere il percorso in
 **File → Project Structure → SDKs**. `-JdkHome` è facoltativo se `JAVA_HOME` indica
 già il JDK 21 completo oppure `jpackage.exe` è disponibile nel PATH.
 L'opzione di esecuzione vale per il solo processo PowerShell avviato.
 
 Lo script seleziona quel JDK anche per Maven, esegue `clean package` con i test
-headless, verifica la presenza delle librerie JavaFX Windows e crea:
+headless, verifica la presenza delle librerie JavaFX Windows e risolve il grafo
+dei moduli dell’app con il runtime incorporato tramite `--dry-run`, prima di creare
+lo ZIP. Questa verifica non avvia il database. Produce:
 
 ```text
 target/

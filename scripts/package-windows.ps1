@@ -33,6 +33,21 @@ if ($LASTEXITCODE -ne 0 -or $javaVersion -notmatch '(?m)^(openjdk|java) 21([.\s]
     throw "Serve Java 21. Il JDK selezionato riporta: $javaVersion"
 }
 
+# Full JDK distributions may bundle a different JavaFX build and record its hashes
+# in java.base. Application JavaFX must come exclusively from the Maven artifacts.
+$jdkModules = (& $javaExecutable --list-modules | Out-String)
+if ($LASTEXITCODE -ne 0) {
+    throw 'Impossibile leggere i moduli del JDK selezionato.'
+}
+if ($jdkModules -match '(?m)^javafx\.') {
+    throw @'
+Il JDK selezionato include JavaFX (per esempio Liberica Full).
+Usare un JDK 21 standard senza JavaFX incorporato, come Eclipse Temurin 21
+o Liberica Standard 21, passando il suo percorso a -JdkHome.
+I moduli JavaFX dell'applicazione sono gia forniti da Maven.
+'@
+}
+
 function Invoke-CheckedTool {
     param([string]$FilePath, [string[]]$ToolArguments)
     & $FilePath @ToolArguments
@@ -88,6 +103,19 @@ try {
     if (-not (Test-Path -LiteralPath (Join-Path $image 'app\app\lib') -PathType Container)) {
         throw 'Pacchetto incompleto: mancano le dipendenze applicative.'
     }
+    # Resolve the real application's module graph with the bundled runtime.
+    # --dry-run loads the main class without starting JavaFX, discovery or the DB.
+    $runtimeJava = Join-Path $image 'runtime\bin\java.exe'
+    $runtimeModules = (& $runtimeJava --list-modules | Out-String)
+    if ($LASTEXITCODE -ne 0 -or $runtimeModules -match '(?m)^javafx\.') {
+        throw 'Il runtime incorporato non e valido o contiene JavaFX. Rigenerare con un JDK 21 standard.'
+    }
+    Write-Host 'Verifica del runtime incorporato e della compatibilita dei moduli JavaFX.'
+    Invoke-CheckedTool -FilePath $runtimeJava -ToolArguments @(
+        '--dry-run',
+        '--module-path', (Join-Path $image 'app\app\lib'),
+        '--module', 'com.orodent.ecos.app/com.orodent.ecos.app.MainApp'
+    )
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'windows-portable-LEGGIMI.txt') -Destination (Join-Path $image 'LEGGIMI.txt')
     Write-Host '3/3 - Creazione ZIP distribuibile.'
     $zip = Join-Path $projectRoot 'target\Orodent-EcoS-windows-portable.zip'

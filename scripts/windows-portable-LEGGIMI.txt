@@ -21,3 +21,8 @@ I CLIENT collegati a un HOST usano i dati dell'HOST e non ne creano una copia.
 Chiudere l'app prima di sostituire la cartella con una nuova distribuzione.
 Conservare separatamente i dati; lo ZIP contiene soltanto i file del programma.
 Il pacchetto e per la stessa architettura Windows del JDK usato per generarlo.
+
+Se il log contiene "Hash of javafx.base ... recorded in java.base", il pacchetto
+e stato creato con un runtime che include una versione diversa di JavaFX.
+Rigenerarlo con lo script aggiornato e un JDK 21 standard (non Liberica Full).
+Non rimuovere manualmente JAR o disabilitare la verifica degli hash.
