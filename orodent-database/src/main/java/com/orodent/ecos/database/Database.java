@@ -5,7 +5,6 @@ import com.orodent.ecos.core.ConnectionProvider;
 import com.orodent.ecos.database.discovery.DiscoveryClient;
 
 import java.io.InterruptedIOException;
-import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -19,9 +18,7 @@ public class Database implements ConnectionProvider {
     private DerbyHost host;
 
     public Database() {
-        this(DatabaseConfiguration.forHome(resolveDatabaseHome(System.getProperty("ton.database.home"),
-                System.getenv("ORODENT_ECOS_DATABASE_HOME"), System.getProperty("os.name", ""),
-                System.getProperty("user.home"))));
+        this(DatabaseSettings.load());
     }
 
     public Database(DatabaseConfiguration configuration) {
@@ -86,26 +83,6 @@ public class Database implements ConnectionProvider {
                 return false;
             }
         }).isPresent();
-    }
-
-    static Path resolveDatabaseHome(String propertyValue, String environmentValue,
-                                    String operatingSystem, String userHome) {
-        if (propertyValue != null && !propertyValue.isBlank()) {
-            return Path.of(propertyValue);
-        }
-        if (environmentValue != null && !environmentValue.isBlank()) {
-            return Path.of(environmentValue);
-        }
-        return defaultDatabaseHome(operatingSystem, userHome);
-    }
-
-    private static Path defaultDatabaseHome(String operatingSystem, String userHome) {
-        String normalizedOperatingSystem = operatingSystem == null ? "" : operatingSystem.toLowerCase();
-        if (normalizedOperatingSystem.contains("win")) {
-            // Preserve the location used by previous releases unless explicitly overridden.
-            return Path.of("C:\\");
-        }
-        return Path.of(userHome, ".ton-v3", "database");
     }
 
     public synchronized void stop() {

@@ -92,7 +92,8 @@ try {
         '--dest', $destination,
         '--add-modules', 'java.se,jdk.unsupported,jdk.crypto.ec,jdk.charsets,jdk.localedata,jdk.zipfs',
         '--jlink-options', '--strip-debug --no-header-files --no-man-pages',
-        '--java-options', '-Dorodent.ecos.packaged=true'
+        '--java-options', '-Dorodent.ecos.packaged=true',
+        '--java-options', '-Dorodent.ecos.config=$APPDIR/../config/application.properties'
     )
     $image = Join-Path $destination 'Orodent-EcoS'
     foreach ($relativeFile in @('Orodent-EcoS.exe', 'runtime\bin\java.exe', 'app\orodent-launcher.jar')) {
@@ -102,6 +103,11 @@ try {
     }
     if (-not (Test-Path -LiteralPath (Join-Path $image 'app\app\lib') -PathType Container)) {
         throw 'Pacchetto incompleto: mancano le dipendenze applicative.'
+    }
+    # Keep the editable configuration beside the EXE, outside jpackage's app payload.
+    Move-Item -LiteralPath (Join-Path $image 'app\config') -Destination (Join-Path $image 'config')
+    if (-not (Test-Path -LiteralPath (Join-Path $image 'config\application.properties') -PathType Leaf)) {
+        throw 'Pacchetto incompleto: manca config\application.properties.'
     }
     # Resolve the real application's module graph with the bundled runtime.
     # --dry-run loads the main class without starting JavaFX, discovery or the DB.

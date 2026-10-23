@@ -16,8 +16,8 @@ Il codice inizialmente adattato a `com.orodent.tonv3` è ora suddiviso nei
 moduli di Orodent-EcoS, con package `com.orodent.ecos`. Orodent-EcoS utilizza `OrodentEcoS`,
 protocollo discovery `TONV3`, TCP 1528 e UDP 45680: non scopre host Statistiche.
 Il database conserva lo schema clienti/vendite del riferimento.
-La directory predefinita sui sistemi non Windows è `~/.ton-v3/database`;
-`ton.database.home` o `ORODENT_ECOS_DATABASE_HOME` consentono di cambiarla.
+I percorsi e le porte sono ora separati tramite i file di configurazione sviluppo/produzione;
+`ton.database.home` e `ORODENT_ECOS_DATABASE_HOME` restano disponibili come override.
 Vedere anche [database-discovery.md](database-discovery.md).
 
 ## Sviluppo

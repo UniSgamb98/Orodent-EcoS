@@ -17,6 +17,21 @@ class DatabaseDiscoveryIntegrationTest {
     @TempDir Path temporary;
 
     @Test
+    void separateDevelopmentAndProductionPortsKeepTheirDataIndependent() throws Exception {
+        try (var development = start(temporary.resolve("development"), tcpPort(), udpPort())) {
+            assertEquals("READY HOST", development.line());
+            assertEquals("INSERTED", development.command("INSERT"));
+            try (var production = start(temporary.resolve("production"), tcpPort(), udpPort())) {
+                assertEquals("READY HOST", production.line());
+                assertEquals("COUNT 0", production.command("COUNT"));
+                assertEquals("COUNT 1", development.command("COUNT"));
+                assertEquals("STOPPED", production.command("STOP"));
+            }
+            assertEquals("STOPPED", development.command("STOP"));
+        }
+    }
+
+    @Test
     void secondProcessUsesHostAndItsShutdownDoesNotStopHost() throws Exception {
         int tcp = tcpPort();
         int udp = udpPort();

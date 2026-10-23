@@ -142,37 +142,62 @@ Estrarre lo ZIP interamente e fare doppio clic su `Orodent-EcoS.exe`.
 Distribuire tutta la cartella, mai il solo EXE. Il contenuto interno sotto `app`
 è gestito da jpackage; non spostare manualmente i JAR.
 
-Solo per l'avvio confezionato (`orodent.ecos.packaged=true`), in assenza di una
-configurazione esplicita, il database viene creato in
-`%LOCALAPPDATA%\Orodent-EcoS\data\OrodentEcoS` e i log in
-`%LOCALAPPDATA%\Orodent-EcoS\logs\application.log`.
-Se `LOCALAPPDATA` manca viene usata la cartella `Orodent-EcoS` sotto il profilo utente.
-`ton.database.home` e `ORODENT_ECOS_DATABASE_HOME` mantengono la precedenza.
-L'avvio diretto da IntelliJ o dal JAR mantiene invece i percorsi predefiniti precedenti.
-Nessun dato esistente viene spostato: per riutilizzare il proprio database occorre
-impostare la sua directory padre tramite la variabile o la proprietà JVM.
+Nella cartella estratta il file **`config/application.properties`**, accanto all’EXE,
+sceglie la directory database e le porte. Il valore distribuito è
+`database.home=I:/CliZr/Tommaso/Database`: Derby crea la sottocartella `OrodentEcoS`.
+Il percorso deve essere disponibile e scrivibile sulla macchina HOST.
+I log rimangono in `%LOCALAPPDATA%\Orodent-EcoS\logs\application.log`
+(con fallback sotto il profilo utente se LOCALAPPDATA manca).
+Non copiare il file della configurazione di produzione nella configurazione di sviluppo.
+Nessun database precedente viene spostato o migrato automaticamente.
 
 Il pacchetto non include database, installer, collegamenti o aggiornamenti automatici.
 Lo script Windows richiede una prova sul PC Windows; la disposizione dei file
 jpackage e l'avvio del launcher con runtime incorporato sono verificabili anche
 con un'immagine Linux equivalente, ma questo non verifica l'EXE Windows.
 
-## Database e compatibilità
+## Configurazione database: sviluppo e distribuzione
 
-Il database Derby si chiama `OrodentEcoS`. La variabile opzionale
-`ORODENT_ECOS_DATABASE_HOME` sceglie la directory HOST; la proprietà JVM
-`ton.database.home` mantiene la precedenza. Restano invariate directory
-predefinite, TCP 1528 e UDP 45680. Il discovery accetta soltanto host che
-pubblicano il nuovo nome database.
+| Avvio | File | Directory HOST | TCP / discovery UDP |
+| --- | --- | --- | --- |
+| IntelliJ/app diretta, working directory radice repository | `config/development.properties` | `.local/database` nella repository | 1529 / 45681 |
+| EXE Windows | `config/application.properties` accanto all’EXE | `I:/CliZr/Tommaso/Database` | 1528 / 45680 |
+| Launcher JAR | `config/application.properties` accanto al JAR | Come distribuzione | 1528 / 45680 |
 
-Un precedente database `TonV3Database` non viene rinominato o migrato automaticamente:
-l'app crea `OrodentEcoS` nella directory configurata. Eventuali dati precedenti
-restano nel vecchio database e richiedono una migrazione separata.
-La vecchia variabile `TON_DATABASE_HOME` non viene più letta.
-Non viene eseguita alcuna fusione con il database di Statistiche.
+Il nome Derby resta `OrodentEcoS`: la sua cartella è creata **dentro** la directory
+HOST. Nel file properties usare `/` anche nei percorsi Windows, oppure raddoppiare
+le barre `\\`. I percorsi relativi del file sono risolti rispetto alla cartella del file.
 
-Vedere [configurazione e discovery](docs/database-discovery.md) e
-[provenienza del codice](docs/reuse-statistiche.md).
+Priorità della directory: **proprietà JVM `ton.database.home` → variabile
+`ORODENT_ECOS_DATABASE_HOME` → `database.home` nel file → default di sviluppo**.
+Per le porte: proprietà JVM → file. Il default di sviluppo senza file è
+`~/.orodent-ecos/development`, TCP 1529, UDP 45681.
+
+Per un file diverso usare l’opzione JVM:
+
+```text
+-Dorodent.ecos.config=C:/percorso/application.properties
+```
+
+Un file indicato esplicitamente ma mancante/illeggibile produce un errore: non
+viene sostituito silenziosamente con un altro database. Nell’EXE il percorso è
+configurato automaticamente; la distribuzione non richiede variabili d’ambiente.
+
+**In IntelliJ**, per usare i dati di sviluppo, impostare la working directory alla
+radice della repository e rimuovere l’eventuale `ORODENT_ECOS_DATABASE_HOME` di
+produzione e la proprietà `ton.database.home` dalla configurazione Run. Evitare
+una variabile globale di Windows che punti alla produzione per tutti i processi.
+Se serve, impostare esplicitamente la directory di sviluppo nella sola Run configuration.
+Le porte diverse impediscono il discovery incrociato: sviluppo e produzione possono
+avere due HOST contemporaneamente, senza condividere i dati.
+
+Il file della distribuzione si modifica dopo aver estratto lo ZIP; riavviare l’app
+per applicare cambiamenti. Per modificare il valore predefinito delle distribuzioni
+future, editare `orodent-launcher/src/distribution/config/application.properties`.
+Quando si aggiorna il programma conservare le personalizzazioni del proprio file config.
+
+Non viene eseguita alcuna migrazione dal precedente database `TonV3Database` né
+fusione con Statistiche. Vedere [discovery](docs/database-discovery.md).
 
 ## Aggiungere un componente
 

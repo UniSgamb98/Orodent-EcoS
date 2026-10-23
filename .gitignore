@@ -37,3 +37,5 @@ build/
 
 ### Mac OS ###
 .DS_Store
+# Local development database
+.local/

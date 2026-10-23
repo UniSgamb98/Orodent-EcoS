@@ -13,6 +13,14 @@
   </dependencies>
   <build><plugins>
     <plugin>
+      <groupId>org.apache.maven.plugins</groupId><artifactId>maven-resources-plugin</artifactId><version>3.3.1</version>
+      <executions><execution><id>distribution-config</id><phase>prepare-package</phase><goals><goal>copy-resources</goal></goals>
+        <configuration><outputDirectory>${project.build.directory}/distribution</outputDirectory>
+          <resources><resource><directory>src/distribution</directory><filtering>false</filtering></resource></resources>
+        </configuration>
+      </execution></executions>
+    </plugin>
+    <plugin>
       <groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId>
       <executions><execution><id>default-testCompile</id>
         <configuration><useModulePath>false</useModulePath></configuration>

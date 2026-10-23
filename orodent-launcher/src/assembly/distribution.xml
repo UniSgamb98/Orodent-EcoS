@@ -4,5 +4,5 @@
   <formats><format>zip</format></formats>
   <includeBaseDirectory>true</includeBaseDirectory>
   <baseDirectory>Orodent-EcoS</baseDirectory>
-  <fileSets><fileSet><directory>${project.build.directory}/distribution</directory><outputDirectory>/</outputDirectory></fileSet><fileSet><directory>src/distribution</directory><outputDirectory>/</outputDirectory></fileSet></fileSets>
+  <fileSets><fileSet><directory>${project.build.directory}/distribution</directory><outputDirectory>/</outputDirectory></fileSet></fileSets>
 </assembly>

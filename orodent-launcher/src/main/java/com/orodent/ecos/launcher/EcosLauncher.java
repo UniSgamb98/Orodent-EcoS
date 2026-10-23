@@ -66,10 +66,11 @@ public final class EcosLauncher {
         Path java = javaHome.resolve("bin").resolve(executable);
         if (!Files.isRegularFile(java)) throw new IOException("Runtime Java non trovato: " + java);
         List<String> command = new ArrayList<>(List.of(java.toString()));
-        String home = databaseHome(System.getProperty("ton.database.home"),
-                System.getenv("ORODENT_ECOS_DATABASE_HOME"), Boolean.getBoolean("orodent.ecos.packaged"),
-                userDataDirectory());
-        if (home != null) command.add("-Dton.database.home=" + home);
+        String config = System.getProperty("orodent.ecos.config");
+        if (config == null || config.isBlank()) config = installation.resolve("config/application.properties").toString();
+        command.add("-Dorodent.ecos.config=" + config);
+        String home = System.getProperty("ton.database.home");
+        if (home != null && !home.isBlank()) command.add("-Dton.database.home=" + home);
         for (String property : List.of("ton.database.port", "ton.discovery.port", "ton.discovery.timeout.ms")) {
             String value = System.getProperty(property);
             if (value != null) command.add("-D" + property + "=" + value);
@@ -78,12 +79,6 @@ public final class EcosLauncher {
                 "--module", "com.orodent.ecos.app/com.orodent.ecos.app.MainApp"));
         command.addAll(List.of(arguments));
         return List.copyOf(command);
-    }
-
-    static String databaseHome(String property, String environment, boolean packaged, Path userData) {
-        if (property != null && !property.isBlank()) return property;
-        if (environment != null && !environment.isBlank()) return null; // The child inherits the binding.
-        return packaged ? userData.resolve("data").toString() : null;
     }
 
     private static Path userDataDirectory() {

@@ -18,15 +18,23 @@ L'HOST rilascia esclusivamente le risorse che ha avviato.
 
 ## Configurazione
 
-| Proprietà JVM | Valore predefinito | Utilizzo |
-| --- | --- | --- |
-| `ton.database.port` | `1528` | Porta TCP del server Derby locale |
-| `ton.discovery.port` | `45680` | Porta UDP condivisa dalle istanze Ton-V3 |
-| `ton.discovery.timeout.ms` | `1500` | Attesa per ciascun tentativo discovery |
-| `ton.database.home` | Windows: `C:\`; altri sistemi: `~/.ton-v3/database` | Directory del database HOST |
+Il file di produzione `config/application.properties` si trova accanto all'EXE
+(o al JAR del launcher). Il profilo di sviluppo è `config/development.properties`
+nella repository. La proprietà `orodent.ecos.config` permette un file esplicito.
 
-`ORODENT_ECOS_DATABASE_HOME` può impostare la directory quando la proprietà
-`ton.database.home` non è specificata. La directory di un CLIENT non viene creata.
+| Chiave file | Produzione | Sviluppo | Override JVM |
+| --- | --- | --- | --- |
+| `database.home` | `I:/CliZr/Tommaso/Database` | `../.local/database`, relativo al file | `ton.database.home` |
+| `database.port` | 1528 | 1529 | `ton.database.port` |
+| `discovery.port` | 45680 | 45681 | `ton.discovery.port` |
+| `discovery.timeout.ms` | 1500 | 1500 | `ton.discovery.timeout.ms` |
+
+`ORODENT_ECOS_DATABASE_HOME` sovrascrive solo la directory del file; la proprietà
+JVM ha precedenza anche sulla variabile. Il CLIENT usa il DB dell'HOST scoperto,
+non la propria directory. I profili hanno porte diverse per impedire connessioni
+accidentali tra sviluppo e produzione. Non sovrascriverle con gli stessi valori.
+Senza file e senza override l'avvio diretto usa `~/.orodent-ecos/development`
+con le porte di sviluppo. Un file esplicito mancante genera errore.
 
 Per collegamenti tra computer, consentire sul firewall dell'HOST TCP 1528 e UDP 45680
 (o le porte configurate). Il discovery utilizza broadcast IPv4 e funziona sulla stessa
