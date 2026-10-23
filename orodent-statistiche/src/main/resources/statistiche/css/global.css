@@ -10,7 +10,7 @@
 }
 
 .app-header {
-    -fx-padding: 18px 30px;
+    -fx-padding: 10px 24px;
     -fx-background-color: white;
     -fx-border-color: transparent transparent #dde4ee transparent;
     -fx-border-width: 0 0 1px 0;
@@ -31,7 +31,7 @@
     -fx-border-color: #0f2e46;
     -fx-border-width: 2px;
     -fx-border-radius: 9px;
-    -fx-padding: 10px 16px;
+    -fx-padding: 8px 12px;
     -fx-text-fill: white;
     -fx-font-size: 13px;
     -fx-font-weight: 700;
