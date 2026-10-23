@@ -9,6 +9,7 @@
   </parent>
   <artifactId>orodent-ton</artifactId>
   <dependencies>
+    <dependency><groupId>com.orodent</groupId><artifactId>orodent-module-api</artifactId></dependency>
     <dependency><groupId>org.openjfx</groupId><artifactId>javafx-controls</artifactId></dependency>
   </dependencies>
 </project>

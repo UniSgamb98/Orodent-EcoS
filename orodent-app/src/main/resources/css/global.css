@@ -170,3 +170,17 @@
     -fx-padding: 8px 12px;
     -fx-font-size: 13px;
 }
+
+.home-scroll,
+.home-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.module-icon-box {
+    -fx-background-color: #e5f2f5;
+    -fx-background-radius: 12px;
+}
+
+.module-icon {
+    -fx-fill: #176b87;
+}

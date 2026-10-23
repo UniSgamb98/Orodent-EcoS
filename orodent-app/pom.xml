@@ -9,6 +9,7 @@
   </parent>
   <artifactId>orodent-app</artifactId>
   <dependencies>
+    <dependency><groupId>com.orodent</groupId><artifactId>orodent-module-api</artifactId></dependency>
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-core</artifactId></dependency>
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-database</artifactId></dependency>
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-ton</artifactId></dependency>

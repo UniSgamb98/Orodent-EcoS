@@ -3,7 +3,5 @@ package com.orodent.ecos.app.navigation;
 public interface AppNavigator {
     void showHome();
 
-    void showTon();
-
-    void showStatistiche();
+    void showModule(String moduleId);
 }

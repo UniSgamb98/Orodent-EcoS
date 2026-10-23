@@ -72,9 +72,19 @@ public class Database implements ConnectionProvider {
             if (failure instanceof DatabaseInitializationException initialization) throw initialization;
             String message = failure instanceof DatabaseResourceBusyException
                     ? "Database o porte occupati: nessun host Orodent-EcoS disponibile. Verifica che l'istanza principale sia avviata."
-                    : "Impossibile avviare il database.";
+                    : initializationMessage(failure);
             throw new DatabaseInitializationException(message, failure);
         }
+    }
+
+    private static String initializationMessage(Exception failure) {
+        for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLException sql && (DatabaseBackup.FAILURE_STATE.equals(sql.getSQLState())
+                    || DatabaseSchema.INCOMPATIBLE_SCHEMA.equals(sql.getSQLState()))) {
+                return sql.getMessage();
+            }
+        }
+        return "Impossibile avviare il database.";
     }
 
     private boolean connectToDiscoveredHost() throws java.io.IOException {

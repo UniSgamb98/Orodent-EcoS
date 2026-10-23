@@ -57,6 +57,21 @@ public final class DatabaseSchema {
 
     /** Baselines legacy APP data and moves it atomically to the shared domain schemas. */
     public void initialize() {
+        initialize(connection -> null);
+    }
+
+    /** The HOST supplies a consistent backup; no schema writes precede this callback. */
+    void initialize(ConnectionProvider.ConnectionWork<Void> beforeMigration) {
+        connectionProvider.withConnection(connection -> {
+            if (tableExists(connection, "ECOS", HISTORY)) {
+                verifyCompatible(connection);
+            } else if (tableExists(connection, "APP", "CLIENTI")
+                    || tableExists(connection, "APP", "VENDITE_DETTAGLIO")
+                    || tableExists(connection, "APP", HISTORY)) {
+                beforeMigration.execute(connection);
+            }
+            return null;
+        });
         connectionProvider.withTransaction(connection -> {
             connection.setSchema("APP");
             if (tableExists(connection, "ECOS", HISTORY)) {

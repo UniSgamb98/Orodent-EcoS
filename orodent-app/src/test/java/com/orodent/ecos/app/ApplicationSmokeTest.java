@@ -2,6 +2,9 @@ package com.orodent.ecos.app;
 
 import com.orodent.ecos.core.ConnectionProvider;
 import com.orodent.ecos.database.DatabaseConfiguration;
+import com.orodent.ecos.database.DatabaseMode;
+import com.orodent.ecos.features.home.view.HomeView;
+import com.orodent.ecos.module.ModuleDescriptor;
 import com.orodent.ecos.database.service.ClientiCsvImportService;
 import com.orodent.ecos.database.service.ClientiImportReport;
 import com.orodent.ecos.database.service.VenditeCsvImportService;
@@ -9,6 +12,7 @@ import com.orodent.ecos.database.service.VenditeImportReport;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -38,6 +42,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 
@@ -97,6 +102,7 @@ class ApplicationSmokeTest {
             runFx(() -> {
                 assertTrue(stage.isShowing());
                 assertHome(stage);
+                assertAdditionalModuleAppearsAutomatically();
                 button(stage, "open-ton-button").fire();
                 assertEquals("Orodent-EcoS - Ton", stage.getTitle());
                 assertNotNull(stage.getScene().lookup("#ton-view"));
@@ -127,7 +133,11 @@ class ApplicationSmokeTest {
                 button(stage, "ecosystem-home-button").fire();
                 assertHome(stage);
                 assertNotNull(stage.getScene().lookup("#open-statistiche-button"));
+                // A new visit must get a fresh module session after the old one's cleanup.
+                button(stage, "open-statistiche-button").fire();
             });
+            awaitDashboard(stage);
+            runFx(() -> button(stage, "ecosystem-home-button").fire());
         } finally {
             try {
                 if (started.isDone() && !started.isCompletedExceptionally()) {
@@ -275,7 +285,11 @@ class ApplicationSmokeTest {
     }
 
     private static void assertHome(Stage stage) {
+        stage.getScene().getRoot().applyCss();
         assertEquals("Orodent-EcoS - Home", stage.getTitle());
+        assertNotNull(stage.getScene().lookup("#module-catalog"));
+        assertNotNull(stage.getScene().lookup("#module-ton"));
+        assertNotNull(stage.getScene().lookup("#module-statistiche"));
         Label status = (Label) stage.getScene().lookup("#database-status");
         assertNotNull(status);
         assertTrue(status.getText().contains("HOST"), status.getText());
@@ -289,10 +303,25 @@ class ApplicationSmokeTest {
     }
 
     private static Button button(Stage stage, String id) {
+        stage.getScene().getRoot().applyCss();
         Button button = (Button) stage.getScene().lookup("#" + id);
         assertNotNull(button, "Pulsante non trovato: " + id);
         assertFalse(button.isDisabled(), "Pulsante disabilitato: " + id);
         return button;
+    }
+
+    private static void assertAdditionalModuleAppearsAutomatically() {
+        AtomicReference<String> selected = new AtomicReference<>();
+        HomeView home = new HomeView(DatabaseMode.HOST, List.of(new ModuleDescriptor(
+                "ufficio", "Ufficio", "Un nuovo strumento", "M0 0h24v24H0z")), selected::set);
+        new Scene(home, 860, 620);
+        home.applyCss();
+        assertNotNull(home.lookup("#module-ufficio"));
+        Button open = (Button) home.lookup("#open-ufficio-button");
+        assertNotNull(open);
+        assertEquals("Apri Ufficio", open.getText());
+        open.fire();
+        assertEquals("ufficio", selected.get());
     }
 
     private static MenuItem menuItem(Stage stage, String id) {
