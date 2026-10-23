@@ -219,6 +219,21 @@ class DatabaseSchemaTest {
     }
 
     @Test
+    void refusesToDiscardUnrecognizedLegacyColumns() throws Exception {
+        createLegacySchema(UnaryOperator.identity());
+        seedLegacyData();
+        execute("ALTER TABLE APP.CLIENTI ADD COLUMN note_personali VARCHAR(200)",
+                "UPDATE APP.CLIENTI SET note_personali='Da conservare' WHERE codice_cliente='OLD'");
+        assertThrows(RuntimeException.class, this::migrate);
+        assertEquals(List.of(List.of("Da conservare")), rows("SELECT note_personali FROM APP.CLIENTI"));
+        connections.withConnection(connection -> {
+            assertFalse(tableExists(connection, "ANAGRAFICHE", "CLIENTI"));
+            assertTrue(tableExists(connection, "APP", "VENDITE_DETTAGLIO"));
+            return null;
+        });
+    }
+
+    @Test
     void rejectsChangedColumnsEvenWhenMigrationVersionIsCurrent() {
         migrate();
         execute("ALTER TABLE ANAGRAFICHE.CLIENTI DROP COLUMN codice_iso");

@@ -144,6 +144,9 @@ public final class DatabaseSchema {
                         "YES".equals(columns.getString("IS_AUTOINCREMENT")), columns.getString("COLUMN_DEF")));
             }
         }
+        if ("APP".equals(schema) && actual.size() != expected.size()) {
+            throw incompatible("Colonne legacy non previste in APP." + table + ": migrazione annullata per conservarne i dati.");
+        }
         for (Column column : expected) {
             Column existing = actual.get(column.name());
             if (existing == null || existing.type() != column.type()
