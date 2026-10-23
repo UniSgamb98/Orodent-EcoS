@@ -26,7 +26,9 @@ class DatabaseBackupTest {
     @BeforeEach
     void open() throws Exception {
         previousLog = System.getProperty("derby.stream.error.file");
-        System.setProperty("derby.stream.error.file", temporary.resolve("derby.log").toString());
+        // The Derby engine owns this log until JVM shutdown, beyond an individual DB/test.
+        // Keep it outside @TempDir so Windows can remove each test's files after DB shutdown.
+        System.setProperty("derby.stream.error.file", "target/backup-test-derby.log");
         Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
         home = Files.createDirectories(temporary.resolve("Ufficio d'Italia à"));
         connections = database(home.resolve("OrodentEcoS"), ";create=true");
