@@ -18,6 +18,16 @@ class EcosLauncherTest {
     private final Path javaHome = Path.of(System.getProperty("java.home"));
 
     @Test
+    void packagedApplicationUsesWritableUserDataUnlessConfigured() {
+        Path data = temporary.resolve("user data");
+        assertEquals(data.resolve("data").toString(), EcosLauncher.databaseHome(null, null, true, data));
+        assertEquals("custom", EcosLauncher.databaseHome("custom", "environment", true, data));
+        assertNull(EcosLauncher.databaseHome(null, "environment", true, data));
+        assertNull(EcosLauncher.databaseHome(null, null, false, data));
+        assertEquals(data.resolve("data").toString(), EcosLauncher.databaseHome(" ", " ", true, data));
+    }
+
+    @Test
     void reportsAnIncompleteInstallation() {
         IOException missing = assertThrows(IOException.class, () -> EcosLauncher.command(temporary, javaHome));
         assertTrue(missing.getMessage().contains("app/lib"));

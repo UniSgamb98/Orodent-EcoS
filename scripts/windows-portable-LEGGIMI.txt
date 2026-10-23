@@ -1,0 +1,23 @@
+Orodent-EcoS - Windows portabile
+
+Estrarre tutto lo ZIP e fare doppio clic su Orodent-EcoS.exe.
+Java e incluso nella cartella runtime; non serve installarlo sul computer.
+Non spostare il solo EXE: runtime e app devono restare nella stessa cartella.
+Questa versione non installa collegamenti e non scarica ancora aggiornamenti.
+
+DATI E LOG
+Senza configurazione esplicita, questa versione confezionata salva il database in:
+%LOCALAPPDATA%\Orodent-EcoS\data\OrodentEcoS
+I log dell'applicazione si trovano in:
+%LOCALAPPDATA%\Orodent-EcoS\logs\application.log
+Se LOCALAPPDATA non e disponibile, usa la cartella Orodent-EcoS nel profilo utente.
+
+ORODENT_ECOS_DATABASE_HOME puo indicare una directory dati diversa.
+La proprieta JVM ton.database.home mantiene la precedenza sulla variabile.
+Nessun database precedente viene spostato o migrato automaticamente.
+Per riutilizzare dati gia presenti, configurare la directory che li contiene.
+I CLIENT collegati a un HOST usano i dati dell'HOST e non ne creano una copia.
+
+Chiudere l'app prima di sostituire la cartella con una nuova distribuzione.
+Conservare separatamente i dati; lo ZIP contiene soltanto i file del programma.
+Il pacchetto e per la stessa architettura Windows del JDK usato per generarlo.

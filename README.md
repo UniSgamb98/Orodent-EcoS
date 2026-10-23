@@ -97,6 +97,60 @@ l’installazione. Questa separazione prepara il prossimo passaggio: catalogo de
 release, download verificati e attivazione di una versione compatibile prima dell’avvio.
 Il database è esterno alla distribuzione e non viene sostituito dal launcher.
 
+## Windows portabile con EXE e Java incluso
+
+Eseguire su **Windows** con un **JDK 21 completo** della stessa architettura delle
+postazioni di destinazione. Servono `java`, `javac`, `jlink`, `jpackage` e `jmods`;
+un JRE o il solo runtime di IntelliJ non bastano. Per `app-image` non serve WiX.
+
+Dal terminale PowerShell nella radice del progetto:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-windows.ps1 -JdkHome "$env:USERPROFILE\.jdks\liberica-full-21.0.10"
+```
+
+Sostituire il percorso con quello del JDK indicato in IntelliJ, in
+**File → Project Structure → SDKs**. `-JdkHome` è facoltativo se `JAVA_HOME` indica
+già il JDK 21 completo oppure `jpackage.exe` è disponibile nel PATH.
+L'opzione di esecuzione vale per il solo processo PowerShell avviato.
+
+Lo script seleziona quel JDK anche per Maven, esegue `clean package` con i test
+headless, verifica la presenza delle librerie JavaFX Windows e crea:
+
+```text
+target/
+├── windows-portable/
+│   └── Orodent-EcoS/
+│       ├── Orodent-EcoS.exe
+│       ├── LEGGIMI.txt
+│       ├── runtime/
+│       └── app/
+└── Orodent-EcoS-windows-portable.zip
+```
+
+Chiudere prima le copie del programma avviate da `target`: `clean` rigenera i file
+di build. Il runtime mantiene `bin/java.exe` perché il launcher avvia l'app in
+una seconda JVM; non dipende da Java installato sul PC di destinazione.
+
+Estrarre lo ZIP interamente e fare doppio clic su `Orodent-EcoS.exe`.
+Distribuire tutta la cartella, mai il solo EXE. Il contenuto interno sotto `app`
+è gestito da jpackage; non spostare manualmente i JAR.
+
+Solo per l'avvio confezionato (`orodent.ecos.packaged=true`), in assenza di una
+configurazione esplicita, il database viene creato in
+`%LOCALAPPDATA%\Orodent-EcoS\data\OrodentEcoS` e i log in
+`%LOCALAPPDATA%\Orodent-EcoS\logs\application.log`.
+Se `LOCALAPPDATA` manca viene usata la cartella `Orodent-EcoS` sotto il profilo utente.
+`ton.database.home` e `ORODENT_ECOS_DATABASE_HOME` mantengono la precedenza.
+L'avvio diretto da IntelliJ o dal JAR mantiene invece i percorsi predefiniti precedenti.
+Nessun dato esistente viene spostato: per riutilizzare il proprio database occorre
+impostare la sua directory padre tramite la variabile o la proprietà JVM.
+
+Il pacchetto non include database, installer, collegamenti o aggiornamenti automatici.
+Lo script Windows richiede una prova sul PC Windows; la disposizione dei file
+jpackage e l'avvio del launcher con runtime incorporato sono verificabili anche
+con un'immagine Linux equivalente, ma questo non verifica l'EXE Windows.
+
 ## Database e compatibilità
 
 Il database Derby si chiama `OrodentEcoS`. La variabile opzionale
