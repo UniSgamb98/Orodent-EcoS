@@ -52,6 +52,29 @@ bash mvnw -pl orodent-database -am verify
 Il test grafico usa database temporaneo e porte dedicate.
 Il wrapper è conservato nella radice; non esistono wrapper separati per modulo.
 
+## Configurazione IntelliJ condivisa
+
+La repository include `.run/Orodent-EcoS Sviluppo.run.xml`.
+Dopo il pull e l'importazione del POM principale, selezionare **Orodent-EcoS - Sviluppo**
+nel menu Run/Debug. La configurazione avvia `com.orodent.ecos.Launcher`, compila prima
+di partire e usa il profilo sviluppo con percorsi relativi a `$PROJECT_DIR$`.
+La variabile DB è vuota nella Run configuration per non ereditare una directory di
+produzione da Windows; restano validi i valori di `config/development.properties`.
+
+Selezionare una volta **File → Project Structure → Project → SDK** e indicare un
+JDK 21 standard (Temurin o Liberica Standard, non Full): la configurazione eredita
+il JDK del progetto, senza salvare il percorso personale del JDK nella repository.
+Il vecchio `.idea/misc.xml` può ancora indicare Liberica Full: correggere l'SDK del
+progetto prima del primo avvio della configurazione condivisa.
+Se il modulo appare non risolto, ricaricare Maven e selezionare `orodent-app`
+(o `orodent-app.main` se la propria importazione usa moduli distinti per source set).
+
+Per condividere altre configurazioni: **Run → Edit Configurations → Store as project file**,
+salvarle in `.run/` e committare soltanto quelle senza percorsi o credenziali personali.
+Se esiste già una configurazione locale con lo stesso nome, eliminare la copia locale
+o rinominarla per evitare due voci identiche. La configurazione condivisa riguarda
+lo sviluppo; non serve per creare lo ZIP o l'EXE Windows.
+
 ## Prima distribuzione con launcher
 
 ```sh
