@@ -29,8 +29,9 @@ solo una verifica di compatibilità. Vedere [integrazione Statistiche](docs/reus
 
 Lo schema DB 2 organizza le tabelle in `ECOS`, `ANAGRAFICHE` e `VENDITE`.
 I dati delle precedenti tabelle `APP` vengono migrati dall'HOST in transazione.
-Il passaggio richiede una nuova distribuzione completa su tutte le postazioni:
-vedere [struttura e migrazione del database](docs/database-schema.md).
+Il passaggio può arrivare tramite una normale release dei componenti, mantenendo
+il launcher installato: il contatore delle migrazioni è distinto dal contratto
+degli aggiornamenti. Vedere [struttura e migrazione del database](docs/database-schema.md).
 
 ## Build e avvio
 

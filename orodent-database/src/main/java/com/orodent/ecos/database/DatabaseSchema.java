@@ -2,6 +2,7 @@ package com.orodent.ecos.database;
 
 import com.orodent.ecos.core.ConnectionProvider;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -10,10 +11,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 
 /** Applies the shared schema once on the HOST; CLIENT checks never modify it. */
 public final class DatabaseSchema {
-    public static final int CURRENT_VERSION = 2;
+    public static final int CURRENT_VERSION = currentVersion();
     private static final String HISTORY = "ECOS_SCHEMA_HISTORY";
     private static final SchemaMigration BASELINE = new SchemaMigration(1,
             "Shared customers and sales baseline", "/database/schema.sql");
@@ -35,6 +37,19 @@ public final class DatabaseSchema {
             timestamp("IMPORTATO_IL"));
 
     private final ConnectionProvider connectionProvider;
+
+    private static int currentVersion() {
+        try (var input = DatabaseSchema.class.getResourceAsStream("/database/version.properties")) {
+            if (input == null) throw new IllegalStateException("Versione database non configurata.");
+            Properties properties = new Properties();
+            properties.load(input);
+            int version = Integer.parseInt(properties.getProperty("current"));
+            if (version < 1) throw new IllegalStateException("Versione database non valida.");
+            return version;
+        } catch (IOException | NumberFormatException failure) {
+            throw new IllegalStateException("Impossibile leggere la versione database.", failure);
+        }
+    }
 
     public DatabaseSchema(ConnectionProvider connectionProvider) {
         this.connectionProvider = Objects.requireNonNull(connectionProvider, "connectionProvider");
@@ -85,7 +100,7 @@ public final class DatabaseSchema {
     /** CLIENT probes never baseline or migrate a remote HOST. */
     public static void verifyCompatible(Connection connection) throws SQLException {
         if (!tableExists(connection, "ECOS", HISTORY)) {
-            throw incompatible("Schema database 2 richiesto: aggiornare e riavviare l'HOST con la nuova distribuzione.");
+            throw incompatible("Schema database " + CURRENT_VERSION + " richiesto: aggiornare e riavviare l'HOST.");
         }
         verifyHistory(connection, "ECOS", CURRENT_VERSION);
         verifyTables(connection, "ANAGRAFICHE", "VENDITE");

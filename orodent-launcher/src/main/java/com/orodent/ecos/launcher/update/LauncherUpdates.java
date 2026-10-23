@@ -41,7 +41,7 @@ public final class LauncherUpdates {
                     JProgressBar bar = new JProgressBar(); bar.setIndeterminate(true); panel.add(bar);
                     dialog.setContentPane(panel); dialog.pack(); dialog.setLocationRelativeTo(null); dialog.setVisible(true);
                 });
-                UpdateManager manager = new UpdateManager(userData.resolve("updates/windows-x64-schema2"), key,
+                UpdateManager manager = new UpdateManager(userData.resolve("updates/windows-x64"), key,
                         metadata().getProperty("runtime"), new GithubTransfer(), libraries -> {
                     Path output = Files.createTempFile(userData, "runtime-check-", ".log");
                     try {

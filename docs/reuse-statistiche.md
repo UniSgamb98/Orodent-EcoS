@@ -70,5 +70,6 @@ analisi e dei componenti sono in `orodent-statistiche/src/test`.
 Il normale package include automaticamente il JAR `orodent-statistiche` in
 `app/lib` e nei componenti delle release. Non occorre cambiare lo script Windows
 o configurare un secondo aggiornamento: il launcher aggiorna l'insieme coerente
-dei JAR. Il passaggio dallo schema 1 al 2 richiede una distribuzione completa con
-il nuovo launcher; le successive release di schema 2 si aggiornano normalmente.
+dei JAR. Il contatore delle migrazioni DB è separato dal contratto del launcher:
+anche il passaggio da schema 1 a 2 può arrivare tramite una normale release firmata.
+Riavviare prima l'HOST e poi i CLIENT; vedere [la procedura](database-schema.md).

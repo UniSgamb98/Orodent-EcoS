@@ -5,6 +5,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
 import java.util.zip.*;
+import java.util.jar.JarFile;
 
 /** Run with Java 21 source-file mode. Never prints private signing material. */
 public class ReleaseTool {
@@ -37,7 +38,13 @@ public class ReleaseTool {
         if (jars.isEmpty() || jars.size() > 128 || jars.stream().noneMatch(p -> p.getFileName().toString().startsWith("orodent-app-")))
             throw new IllegalStateException("Componenti mancanti");
         Properties manifest = new Properties();
-        manifest.setProperty("protocol", "1"); manifest.setProperty("database.schema", "2");
+        manifest.setProperty("protocol", "1");
+        // Keep the contract accepted by already installed launchers. Internal DB migrations
+        // are handled by the application HOST and declared separately in the signed catalog.
+        manifest.setProperty("database.schema", "1");
+        Properties database = databaseVersion(jars);
+        manifest.setProperty("database.migration.minimum", database.getProperty("minimum"));
+        manifest.setProperty("database.migration.target", database.getProperty("current"));
         manifest.setProperty("runtime", "windows-x64-java21-v1"); manifest.setProperty("version", version);
         List<String> names = new ArrayList<>();
         Path archive = output.resolve("Orodent-EcoS-components.zip");
@@ -61,6 +68,22 @@ public class ReleaseTool {
     }
     private static String pem(String type, byte[] value) {
         return "-----BEGIN " + type + "-----\n" + Base64.getMimeEncoder(64, new byte[]{'\n'}).encodeToString(value) + "\n-----END " + type + "-----\n";
+    }
+    private static Properties databaseVersion(List<Path> jars) throws Exception {
+        List<Path> databases = jars.stream()
+                .filter(path -> path.getFileName().toString().startsWith("orodent-database-"))
+                .toList();
+        if (databases.size() != 1) throw new IllegalStateException("Componente database mancante o duplicato");
+        try (var jar = new JarFile(databases.getFirst().toFile())) {
+            var entry = jar.getJarEntry("database/version.properties");
+            if (entry == null) throw new IllegalStateException("Metadati migrazioni database assenti");
+            Properties properties = new Properties();
+            try (var input = jar.getInputStream(entry)) { properties.load(input); }
+            int minimum = Integer.parseInt(properties.getProperty("minimum"));
+            int current = Integer.parseInt(properties.getProperty("current"));
+            if (minimum < 1 || current < minimum) throw new IllegalStateException("Intervallo migrazioni database non valido");
+            return properties;
+        }
     }
     private static byte[] decode(String pem, String type) {
         return Base64.getDecoder().decode(pem.replace("-----BEGIN " + type + "-----", "").replace("-----END " + type + "-----", "").replaceAll("\\s", ""));

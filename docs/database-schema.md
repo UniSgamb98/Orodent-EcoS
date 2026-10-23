@@ -48,26 +48,50 @@ Il CLIENT verifica soltanto lo schema 2 e lo storico; non migra il database remo
 Se scopre un HOST precedente, interrompe l'avvio con un messaggio che chiede di
 aggiornare l'HOST, senza creare un altro database locale.
 
-## Distribuzione della versione 2
+## Distribuzione e migrazioni automatiche
 
-I launcher della linea precedente accettano soltanto cataloghi con `database.schema=1`.
-La nuova linea dichiara `database.schema=2`: occorre installare una distribuzione
-completa con il nuovo launcher su tutte le postazioni. Il runtime Java resta della
-stessa linea. Le successive release con schema 2 possono usare gli aggiornamenti
-automatici dei componenti.
+Il contatore delle migrazioni è indipendente dalla compatibilità del launcher.
+`database/version.properties`, nel JAR `orodent-database`, dichiara le versioni
+interna corrente e minima supportata. L'applicazione legge da lì la versione
+corrente; il publisher legge lo stesso file dai componenti che firma.
+
+Il catalogo mantiene `database.schema=1`: il nome è storico e rappresenta il
+contratto accettato dai launcher installati, non il contatore delle migrazioni.
+Due campi aggiuntivi firmati dichiarano `database.migration.minimum=1` e
+`database.migration.target=2`. Il vecchio launcher ignora i campi aggiuntivi e
+continua a verificare firma, checksum, runtime e protocollo prima di attivare
+l'intero insieme dei nuovi JAR. Il nuovo launcher verifica anche la validità
+dell'intervallo dichiarato, senza vincolarlo a un singolo contatore DB.
+
+La verifica del database effettivo avviene nell'applicazione: l'HOST applica le
+migrazioni supportate e il CLIENT verifica la compatibilità dell'HOST. I valori del
+catalogo non autorizzano la modifica di un database incompatibile e non sostituiscono
+lo storico. I cataloghi precedenti, senza i campi aggiuntivi, restano leggibili.
+
+Per questo passaggio non occorre sostituire EXE, launcher o Java: pubblicare una
+normale release firmata dei componenti. Ogni postazione la riceve al successivo
+avvio del launcher, se gli aggiornamenti sono abilitati e la chiave è quella fidata.
 
 Per il passaggio in produzione:
 
-1. Chiudere tutte le istanze. Conservare una copia della directory `OrodentEcoS`
-   con il database fermo.
-2. Installare il nuovo pacchetto conservando il proprio file di configurazione e
-   lo stesso percorso `database.home`.
-3. Avviare la postazione HOST per prima: applica la migrazione al database esistente.
-4. Avviare le postazioni CLIENT aggiornate. Conservare separati i profili sviluppo
-   e produzione, come descritto in [database-discovery.md](database-discovery.md).
+1. Chiudere le istanze prima della migrazione e conservare una copia della directory
+   `OrodentEcoS` con il database fermo.
+2. Pubblicare la release firmata mantenendo runtime, protocollo e contratto attuali.
+3. Riavviare per prima la postazione che ospita il DB. Il launcher scarica i nuovi
+   JAR e l'HOST migra automaticamente il database nello stesso percorso.
+4. Riavviare le postazioni CLIENT: anche queste scaricano i nuovi JAR. Conservare
+   separati i profili sviluppo e produzione, come in [database-discovery.md](database-discovery.md).
+
+Un CLIENT riavviato prima dell'HOST aggiornato segnala che l'HOST va aggiornato;
+non viene creato un database alternativo. Gli aggiornamenti avvengono all'avvio:
+non vengono chiusi o sostituiti automaticamente processi già in esecuzione.
+Una distribuzione completa rimane necessaria per modificare parti che l'updater
+non sostituisce, come Java o il launcher, o per cambiare il contratto richiesto.
 
 I sinonimi legacy sono una protezione durante il passaggio, non il supporto
 all'uso contemporaneo di versioni diverse. Dopo la migrazione non riavviare vecchie
 distribuzioni sullo stesso database. Tornare allo schema 1 richiede il ripristino
 della copia precedente con tutte le istanze ferme; il launcher non esegue downgrade
-del database. Nessuna migrazione importa i dati della vecchia app Statistiche.
+del database. Il fallback a una release disponibile offline non annulla una migrazione:
+un'app incompatibile deve rifiutare il DB. Nessuna migrazione importa i dati della
+vecchia app Statistiche.
