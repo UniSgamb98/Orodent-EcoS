@@ -39,3 +39,6 @@ build/
 .DS_Store
 # Local development database
 .local/
+
+# Private release signing material: never commit
+.release-keys/

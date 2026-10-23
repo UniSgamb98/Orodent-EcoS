@@ -12,4 +12,5 @@ ORODENT_ECOS_DATABASE_HOME consente di scegliere la directory dati.
 
 Questo pacchetto contiene librerie JavaFX per il sistema operativo su cui viene
 compilato. Non contiene ancora un runtime Java, un installer Windows o un updater.
-Il launcher non controlla e non scarica aggiornamenti in questa prima fase.
+Il controllo aggiornamenti richiede una release firmata e updates.enabled=true nel config.
+I pacchetti manuali lo lasciano disabilitato.

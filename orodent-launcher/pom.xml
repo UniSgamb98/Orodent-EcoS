@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>com.orodent</groupId><artifactId>orodent-ecos</artifactId><version>1.0-SNAPSHOT</version>
+    <groupId>com.orodent</groupId><artifactId>orodent-ecos</artifactId><version>0.1.0-SNAPSHOT</version>
   </parent>
   <artifactId>orodent-launcher</artifactId>
   <dependencies>
@@ -11,7 +11,14 @@
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-app</artifactId><version>${project.version}</version><scope>runtime</scope></dependency>
     <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
   </dependencies>
-  <build><plugins>
+  <build>
+    <resources>
+      <resource><directory>src/main/resources</directory><filtering>true</filtering></resource>
+      <resource><directory>../config</directory><targetPath>updates</targetPath>
+        <includes><include>update-public-key.pem</include></includes><filtering>false</filtering>
+      </resource>
+    </resources>
+    <plugins>
     <plugin>
       <groupId>org.apache.maven.plugins</groupId><artifactId>maven-resources-plugin</artifactId><version>3.3.1</version>
       <executions><execution><id>distribution-config</id><phase>prepare-package</phase><goals><goal>copy-resources</goal></goals>
@@ -28,7 +35,7 @@
     </plugin>
     <plugin>
       <groupId>org.apache.maven.plugins</groupId><artifactId>maven-dependency-plugin</artifactId><version>3.8.1</version>
-      <executions><execution><id>application-files</id><phase>prepare-package</phase><goals><goal>copy-dependencies</goal></goals>
+      <executions><execution><id>application-files</id><phase>process-test-classes</phase><goals><goal>copy-dependencies</goal></goals>
         <configuration><includeScope>runtime</includeScope><outputDirectory>${project.build.directory}/distribution/app/lib</outputDirectory></configuration>
       </execution></executions>
     </plugin>

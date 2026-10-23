@@ -59,7 +59,7 @@ bash mvnw clean package
 ```
 
 Lo ZIP è generato in
-`orodent-launcher/target/orodent-launcher-1.0-SNAPSHOT-distribution.zip`.
+`orodent-launcher/target/orodent-launcher-0.1.0-SNAPSHOT-distribution.zip`.
 Estrarlo interamente; la struttura interna è:
 
 ```text
@@ -92,10 +92,10 @@ Windows su Windows. Il test di distribuzione è stato eseguito su Linux; il wrap
 Launch4j e l’esecuzione Windows sono passaggi successivi da verificare.
 Usare `clean package` per evitare JAR di vecchie versioni nella cartella di distribuzione.
 
-**Non è ancora un updater:** non consulta server, non scarica file e non modifica
-l’installazione. Questa separazione prepara il prossimo passaggio: catalogo delle
-release, download verificati e attivazione di una versione compatibile prima dell’avvio.
-Il database è esterno alla distribuzione e non viene sostituito dal launcher.
+Il launcher include il controllo degli aggiornamenti pubblici firmati su GitHub Releases.
+Nei pacchetti manuali resta disabilitato finché non vengono configurate le chiavi e
+pubblicata una release: seguire [la guida release](docs/releases.md).
+Il database e il config personale rimangono esterni agli aggiornamenti.
 
 ## Windows portabile con EXE e Java incluso
 
@@ -151,7 +151,8 @@ I log rimangono in `%LOCALAPPDATA%\Orodent-EcoS\logs\application.log`
 Non copiare il file della configurazione di produzione nella configurazione di sviluppo.
 Nessun database precedente viene spostato o migrato automaticamente.
 
-Il pacchetto non include database, installer, collegamenti o aggiornamenti automatici.
+Il pacchetto non include database, installer o collegamenti. Per gli aggiornamenti
+firmati occorre completare la [configurazione release](docs/releases.md).
 Lo script Windows richiede una prova sul PC Windows; la disposizione dei file
 jpackage e l'avvio del launcher con runtime incorporato sono verificabili anche
 con un'immagine Linux equivalente, ma questo non verifica l'EXE Windows.
@@ -207,8 +208,8 @@ fusione con Statistiche. Vedere [discovery](docs/database-discovery.md).
 4. Esporre la pagina iniziale del componente e collegarla dalla navigazione di `orodent-app`.
 5. Aggiungere test per la sua logica e verificare l'intero reactor con `bash mvnw verify`.
 
-I moduli vengono compilati e distribuiti insieme; il sistema di aggiornamento
-automatico non è ancora implementato.
+I moduli vengono compilati e aggiornati insieme; runtime, launcher e schema DB
+richiedono una gestione distinta. Vedere [release e aggiornamenti](docs/releases.md).
 
 ## Rinominare la repository su GitHub
 

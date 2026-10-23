@@ -35,7 +35,10 @@ public final class HomeView extends BorderPane {
         databaseStatus.getStyleClass().add("muted-label");
         tonButton.setId("open-ton-button");
         tonButton.getStyleClass().add("primary-button");
-        VBox content = new VBox(18, welcome, databaseStatus, tonButton);
+        Label version = new Label("Versione " + System.getProperty("orodent.ecos.version", "sviluppo"));
+        version.setId("app-version");
+        version.getStyleClass().add("muted-label");
+        VBox content = new VBox(18, welcome, databaseStatus, version, tonButton);
         content.setPadding(new Insets(28, 34, 36, 34));
         setCenter(content);
     }

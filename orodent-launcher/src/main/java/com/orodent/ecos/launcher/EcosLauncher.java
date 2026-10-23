@@ -1,6 +1,7 @@
 package com.orodent.ecos.launcher;
 
 import javax.swing.JOptionPane;
+import com.orodent.ecos.launcher.update.LauncherUpdates;
 import java.awt.GraphicsEnvironment;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,8 +33,12 @@ public final class EcosLauncher {
     }
 
     static int launch(Path installation, String... arguments) throws IOException, InterruptedException {
-        ProcessBuilder builder = new ProcessBuilder(command(installation,
-                Path.of(System.getProperty("java.home")), arguments)).directory(installation.toFile());
+        Path javaHome = Path.of(System.getProperty("java.home"));
+        String executable = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).contains("win") ? "java.exe" : "java";
+        var selected = LauncherUpdates.select(installation, configurationFile(installation), userDataDirectory(),
+                javaHome.resolve("bin").resolve(executable));
+        ProcessBuilder builder = new ProcessBuilder(command(installation, javaHome, selected.libraries(),
+                selected.version().toString(), arguments)).directory(installation.toFile());
         if (Boolean.getBoolean("orodent.ecos.packaged")) {
             Path logs = userDataDirectory().resolve("logs");
             Files.createDirectories(logs);
@@ -51,7 +56,11 @@ public final class EcosLauncher {
     }
 
     static List<String> command(Path installation, Path javaHome, String... arguments) throws IOException {
-        Path libraries = installation.toAbsolutePath().resolve("app/lib");
+        return command(installation, javaHome, installation.toAbsolutePath().resolve("app/lib"),
+                LauncherUpdates.bundledVersion().toString(), arguments);
+    }
+
+    private static List<String> command(Path installation, Path javaHome, Path libraries, String version, String... arguments) throws IOException {
         if (!Files.isDirectory(libraries)) {
             throw new IOException("Cartella app/lib non trovata. Estrarre l'intera distribuzione, non solo il launcher.");
         }
@@ -66,9 +75,8 @@ public final class EcosLauncher {
         Path java = javaHome.resolve("bin").resolve(executable);
         if (!Files.isRegularFile(java)) throw new IOException("Runtime Java non trovato: " + java);
         List<String> command = new ArrayList<>(List.of(java.toString()));
-        String config = System.getProperty("orodent.ecos.config");
-        if (config == null || config.isBlank()) config = installation.resolve("config/application.properties").toString();
-        command.add("-Dorodent.ecos.config=" + config);
+        command.add("-Dorodent.ecos.config=" + configurationFile(installation));
+        command.add("-Dorodent.ecos.version=" + version);
         String home = System.getProperty("ton.database.home");
         if (home != null && !home.isBlank()) command.add("-Dton.database.home=" + home);
         for (String property : List.of("ton.database.port", "ton.discovery.port", "ton.discovery.timeout.ms")) {
@@ -79,6 +87,11 @@ public final class EcosLauncher {
                 "--module", "com.orodent.ecos.app/com.orodent.ecos.app.MainApp"));
         command.addAll(List.of(arguments));
         return List.copyOf(command);
+    }
+
+    private static Path configurationFile(Path installation) {
+        String config = System.getProperty("orodent.ecos.config");
+        return config == null || config.isBlank() ? installation.resolve("config/application.properties") : Path.of(config);
     }
 
     private static Path userDataDirectory() {

@@ -3,7 +3,8 @@ Orodent-EcoS - Windows portabile
 Estrarre tutto lo ZIP e fare doppio clic su Orodent-EcoS.exe.
 Java e incluso nella cartella runtime; non serve installarlo sul computer.
 Non spostare il solo EXE: runtime e app devono restare nella stessa cartella.
-Questa versione non installa collegamenti e non scarica ancora aggiornamenti.
+Questa versione non installa collegamenti. Gli aggiornamenti richiedono release firmate
+e updates.enabled=true; i pacchetti manuali lasciano il controllo disabilitato.
 
 DATI E CONFIGURAZIONE
 Modificare config\application.properties accanto all'EXE.
