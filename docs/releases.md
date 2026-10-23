@@ -123,3 +123,11 @@ avviando i componenti inclusi nel pacchetto originario. Usare questa opzione per
 una prova diagnostica soltanto quando il vecchio codice è compatibile con i dati.
 Il config personale, la directory database e il runtime non sono mai nel pacchetto
 componenti e non vengono sovrascritti dall'updater.
+
+## Se il primo tag fallisce nei test
+
+I workflow sono associati al commit del tag: rilanciare lo stesso job non usa le
+correzioni successive. Correggere il codice su un branch, attendere il workflow
+Windows tests e integrare la PR, poi creare un nuovo tag (ad esempio `v0.1.1`
+se `v0.1.0` e fallito). Non spostare il tag precedente. I report di errore sono
+scaricabili negli artifact `windows-test-reports` o `release-test-reports`.

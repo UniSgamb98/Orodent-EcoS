@@ -17,6 +17,24 @@ class DatabaseDiscoveryIntegrationTest {
     @TempDir Path temporary;
 
     @Test
+    void waitsForAColdHostBeyondTheOldThreeAttemptWindow() throws Exception {
+        int tcp = tcpPort();
+        int udp = udpPort();
+        Path shared = temporary.resolve("cold-host");
+        try (var host = start(shared, tcp, udp, "warming")) {
+            assertEquals("STARTING HOST", host.line());
+            try (var client = start(shared, tcp, udp)) {
+                assertEquals("READY HOST", host.line());
+                assertEquals("READY CLIENT", client.line());
+                assertEquals("INSERTED", client.command("INSERT"));
+                assertEquals("COUNT 1", host.command("COUNT"));
+                assertEquals("STOPPED", client.command("STOP"));
+            }
+            assertEquals("STOPPED", host.command("STOP"));
+        }
+    }
+
+    @Test
     void separateDevelopmentAndProductionPortsKeepTheirDataIndependent() throws Exception {
         try (var development = start(temporary.resolve("development"), tcpPort(), udpPort())) {
             assertEquals("READY HOST", development.line());
@@ -139,7 +157,7 @@ class DatabaseDiscoveryIntegrationTest {
                 if (output.ready() || !process.isAlive()) {
                     String line = output.readLine();
                     if (line == null) fail("Database process exited: " + process.exitValue());
-                    if (line.startsWith("READY ") || line.startsWith("FAILED ") || line.startsWith("COUNT ")
+                    if (line.equals("STARTING HOST") || line.startsWith("READY ") || line.startsWith("FAILED ") || line.startsWith("COUNT ")
                             || line.equals("INSERTED") || line.equals("STOPPED") || line.equals("INDEPENDENT OK")) return line;
                 }
                 Thread.sleep(20);

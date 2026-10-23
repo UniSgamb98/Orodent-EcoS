@@ -10,6 +10,7 @@ import java.sql.SQLException;
 
 /** Chooses the startup role; connection and resource ownership belong to the selected backend. */
 public class Database implements ConnectionProvider {
+    private static final long HOST_STARTUP_GRACE_MS = 15_000;
     private static final System.Logger LOG = System.getLogger(Database.class.getName());
     private final DatabaseConfiguration configuration;
     private volatile State state = State.NEW;
@@ -46,10 +47,16 @@ public class Database implements ConnectionProvider {
                 } catch (DatabaseResourceBusyException busy) {
                     host.close();
                     host = null;
-                    // Another instance can be initializing its schema before it starts advertising.
+                    // Schema initialization can outlast several discovery requests on a cold machine.
+                    // Wait against a time budget instead of assuming a fixed number of attempts is enough.
+                    long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(HOST_STARTUP_GRACE_MS);
                     boolean connected = false;
-                    for (int attempt = 0; attempt < 3 && !connected; attempt++) {
-                        connected = connectToDiscoveredHost();
+                    while (!connected) {
+                        if (Thread.currentThread().isInterrupted()) throw new InterruptedIOException("Avvio database interrotto");
+                        long remaining = java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(deadline - System.nanoTime());
+                        if (remaining <= 0) break;
+                        connected = connectToDiscoveredHost((int) Math.min(remaining,
+                                Math.min(configuration.discoveryTimeoutMs(), 500)));
                     }
                     if (!connected) throw busy;
                 }
@@ -63,14 +70,18 @@ public class Database implements ConnectionProvider {
             if (failure instanceof InterruptedException || failure instanceof InterruptedIOException)
                 Thread.currentThread().interrupt();
             String message = failure instanceof DatabaseResourceBusyException
-                    ? "Database o porte occupati: nessun host Ton-V3 disponibile. Verifica che l'istanza principale sia avviata."
+                    ? "Database o porte occupati: nessun host Orodent-EcoS disponibile. Verifica che l'istanza principale sia avviata."
                     : "Impossibile avviare il database.";
             throw new DatabaseInitializationException(message, failure);
         }
     }
 
     private boolean connectToDiscoveredHost() throws java.io.IOException {
-        DiscoveryClient discovery = new DiscoveryClient(configuration.discoveryPort(), configuration.discoveryTimeoutMs());
+        return connectToDiscoveredHost(configuration.discoveryTimeoutMs());
+    }
+
+    private boolean connectToDiscoveredHost(int timeoutMs) throws java.io.IOException {
+        DiscoveryClient discovery = new DiscoveryClient(configuration.discoveryPort(), timeoutMs);
         return discovery.findHost(candidate -> {
             DerbyClient client = new DerbyClient(candidate, configuration.discoveryTimeoutMs());
             try {

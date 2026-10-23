@@ -8,7 +8,8 @@ Se non trova un host utilizzabile, avvia il proprio database, inizializza lo sch
 avvia il server Derby. Solo a quel punto risponde alle richieste discovery.
 Un lock sulla directory e la prenotazione della porta discovery impediscono a due
 istanze locali di diventare contemporaneamente HOST. Se il database o le porte sono
-occupati, ripete la ricerca per consentire a un'altra istanza di terminare l'avvio.
+occupati, ripete la ricerca per un massimo di 15 secondi per consentire a un'altra
+istanza di terminare l'avvio, anche su un computer lento.
 Errori di filesystem, schema o configurazione vengono segnalati senza trattarli come
 un semplice database occupato.
 
