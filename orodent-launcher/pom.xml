@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.orodent</groupId><artifactId>orodent-ecos</artifactId><version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>orodent-launcher</artifactId>
+  <dependencies>
+    <!-- Packaging dependency only: the launcher starts the app in a separate JVM. -->
+    <dependency><groupId>com.orodent</groupId><artifactId>orodent-app</artifactId><version>${project.version}</version><scope>runtime</scope></dependency>
+    <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
+  </dependencies>
+  <build>
+    <resources>
+      <resource><directory>src/main/resources</directory><filtering>true</filtering></resource>
+      <resource><directory>../config</directory><targetPath>updates</targetPath>
+        <includes><include>update-public-key.pem</include></includes><filtering>false</filtering>
+      </resource>
+    </resources>
+    <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId><artifactId>maven-resources-plugin</artifactId><version>3.3.1</version>
+      <executions><execution><id>distribution-config</id><phase>prepare-package</phase><goals><goal>copy-resources</goal></goals>
+        <configuration><outputDirectory>${project.build.directory}/distribution</outputDirectory>
+          <resources><resource><directory>src/distribution</directory><filtering>false</filtering></resource></resources>
+        </configuration>
+      </execution></executions>
+    </plugin>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId>
+      <executions><execution><id>default-testCompile</id>
+        <configuration><useModulePath>false</useModulePath></configuration>
+      </execution></executions>
+    </plugin>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId><artifactId>maven-dependency-plugin</artifactId><version>3.8.1</version>
+      <executions><execution><id>application-files</id><phase>process-test-classes</phase><goals><goal>copy-dependencies</goal></goals>
+        <configuration><includeScope>runtime</includeScope><outputDirectory>${project.build.directory}/distribution/app/lib</outputDirectory></configuration>
+      </execution></executions>
+    </plugin>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId><artifactId>maven-jar-plugin</artifactId><version>3.4.2</version>
+      <configuration>
+        <finalName>orodent-launcher</finalName>
+        <outputDirectory>${project.build.directory}/distribution</outputDirectory>
+        <archive><manifest><mainClass>com.orodent.ecos.launcher.EcosLauncher</mainClass></manifest></archive>
+      </configuration>
+    </plugin>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId><artifactId>maven-assembly-plugin</artifactId><version>3.7.1</version>
+      <executions><execution><id>distribution</id><phase>package</phase><goals><goal>single</goal></goals>
+        <configuration><descriptors><descriptor>src/assembly/distribution.xml</descriptor></descriptors></configuration>
+      </execution></executions>
+    </plugin>
+  </plugins></build>
+</project>

@@ -1,0 +1,33 @@
+Orodent-EcoS - Windows portabile
+
+Estrarre tutto lo ZIP e fare doppio clic su Orodent-EcoS.exe.
+Java e incluso nella cartella runtime; non serve installarlo sul computer.
+Non spostare il solo EXE: runtime e app devono restare nella stessa cartella.
+Questa versione non installa collegamenti. Gli aggiornamenti richiedono release firmate
+e updates.enabled=true; i pacchetti manuali lasciano il controllo disabilitato.
+
+DATI E CONFIGURAZIONE
+Modificare config\application.properties accanto all'EXE.
+Il valore predefinito e database.home=I:/CliZr/Tommaso/Database.
+Derby crea I:\CliZr\Tommaso\Database\OrodentEcoS sull'HOST.
+Usare / nei percorsi del file properties oppure raddoppiare le barre inverse.
+Riavviare l'app dopo le modifiche e conservare il file personalizzato agli aggiornamenti.
+ORODENT_ECOS_DATABASE_HOME prevale sul percorso del file.
+La proprieta JVM ton.database.home mantiene la precedenza sulla variabile.
+Le porte di produzione sono TCP 1528 e UDP 45680; lo sviluppo usa porte diverse.
+
+I log dell'applicazione si trovano in:
+%LOCALAPPDATA%\Orodent-EcoS\logs\application.log
+Se LOCALAPPDATA non e disponibile, usa la cartella Orodent-EcoS nel profilo utente.
+Nessun database precedente viene spostato o migrato automaticamente.
+Per conservare i dati gia presenti, indicare nel file la loro directory padre.
+I CLIENT collegati a un HOST usano i dati dell'HOST e non ne creano una copia.
+
+Chiudere l'app prima di sostituire la cartella con una nuova distribuzione.
+Conservare separatamente i dati; lo ZIP contiene soltanto i file del programma.
+Il pacchetto e per la stessa architettura Windows del JDK usato per generarlo.
+
+Se il log contiene "Hash of javafx.base ... recorded in java.base", il pacchetto
+e stato creato con un runtime che include una versione diversa di JavaFX.
+Rigenerarlo con lo script aggiornato e un JDK 21 standard (non Liberica Full).
+Non rimuovere manualmente JAR o disabilitare la verifica degli hash.
