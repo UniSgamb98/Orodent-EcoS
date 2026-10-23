@@ -26,6 +26,16 @@ public final class DatabaseProcessProbe {
             }
             return;
         }
+        if (args.length > 3 && args[3].equals("warming")) {
+            // Model a cold host that has reserved ownership but cannot advertise yet.
+            java.nio.file.Files.createDirectories(Path.of(args[0]));
+            try (var channel = java.nio.channels.FileChannel.open(Path.of(args[0]).resolve(".ton-host.lock"),
+                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.WRITE);
+                 var lock = channel.lock()) {
+                System.out.println("STARTING HOST");
+                Thread.sleep(4500);
+            }
+        }
         var database = new Database(new DatabaseConfiguration(Path.of(args[0]),
                 Integer.parseInt(args[1]), Integer.parseInt(args[2]), 800));
         try {
