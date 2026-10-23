@@ -12,6 +12,7 @@
     <module>orodent-database</module>
     <module>orodent-ton</module>
     <module>orodent-app</module>
+    <module>orodent-launcher</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

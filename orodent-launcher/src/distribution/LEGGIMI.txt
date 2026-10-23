@@ -1,0 +1,15 @@
+Orodent-EcoS - distribuzione iniziale con launcher
+
+1. Estrarre tutto lo ZIP in una cartella.
+2. Con Java 21 installato, aprire un terminale nella cartella estratta ed eseguire:
+
+   java -jar orodent-launcher.jar
+
+Il launcher avvia l'applicazione in un processo Java separato.
+Mantenere la cartella app/lib accanto al JAR del launcher.
+Il database non si trova in app/lib e non viene incluso nello ZIP.
+ORODENT_ECOS_DATABASE_HOME consente di scegliere la directory dati.
+
+Questo pacchetto contiene librerie JavaFX per il sistema operativo su cui viene
+compilato. Non contiene ancora un runtime Java, un installer Windows o un updater.
+Il launcher non controlla e non scarica aggiornamenti in questa prima fase.

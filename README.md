@@ -7,6 +7,7 @@ Ton è il primo componente; Statistiche verrà integrato successivamente.
 
 | Modulo | Responsabilità |
 | --- | --- |
+| `orodent-launcher` | Avvio dell’app in un processo separato e creazione dello ZIP di distribuzione |
 | `orodent-app` | Avvio JavaFX, AppContainer, navigazione, Home e composizione delle dipendenze |
 | `orodent-core` | Contratti comuni, ConnectionProvider e strumenti CSV indipendenti dalla UI |
 | `orodent-database` | Derby HOST/CLIENT, discovery, schema, modelli, repository e servizi di importazione |
@@ -14,7 +15,8 @@ Ton è il primo componente; Statistiche verrà integrato successivamente.
 
 Le dipendenze hanno una sola direzione: `app` utilizza `core`, `database` e `ton`;
 `database` utilizza `core`. `ton` per ora richiede solo JavaFX e non dipende dall'app.
-Il modulo `core` non dipende da JavaFX o Derby. I package Java iniziano con
+Il launcher dipende dall’app solo per assemblare la distribuzione: il suo codice non
+carica JavaFX o classi dei componenti. Il modulo `core` non dipende da JavaFX o Derby. I package Java iniziano con
 `com.orodent.ecos`; ogni modulo ha il proprio descrittore `module-info.java`.
 
 Il POM principale centralizza versioni e plugin. `AppContainer` compone i servizi
@@ -49,6 +51,51 @@ bash mvnw -pl orodent-database -am verify
 
 Il test grafico usa database temporaneo e porte dedicate.
 Il wrapper è conservato nella radice; non esistono wrapper separati per modulo.
+
+## Prima distribuzione con launcher
+
+```sh
+bash mvnw clean package
+```
+
+Lo ZIP è generato in
+`orodent-launcher/target/orodent-launcher-1.0-SNAPSHOT-distribution.zip`.
+Estrarlo interamente; la struttura interna è:
+
+```text
+Orodent-EcoS/
+├── orodent-launcher.jar
+├── LEGGIMI.txt
+└── app/
+    └── lib/                 # app, moduli e dipendenze runtime
+```
+
+Dalla cartella estratta:
+
+```sh
+java -jar orodent-launcher.jar
+```
+
+Il launcher usa lo stesso Java con cui è stato avviato, avvia l’app in una JVM
+separata e ne restituisce il codice di uscita. La cartella di lavoro corrente
+non deve coincidere con quella del launcher: i file sono cercati accanto al JAR.
+Gli argomenti sono inoltrati all’app senza una shell intermedia.
+La variabile `ORODENT_ECOS_DATABASE_HOME` viene ereditata dal processo figlio;
+sono inoltrate anche le proprietà JVM `ton.database.home`, `ton.database.port`,
+`ton.discovery.port` e `ton.discovery.timeout.ms` se impostate sul launcher.
+Gli errori di avvio sono scritti su stderr e mostrati in una finestra quando
+è disponibile un ambiente grafico.
+
+Per questa prima fase occorre Java 21 già installato. Il pacchetto contiene le
+librerie native JavaFX del sistema su cui viene compilato: generare la distribuzione
+Windows su Windows. Il test di distribuzione è stato eseguito su Linux; il wrapping
+Launch4j e l’esecuzione Windows sono passaggi successivi da verificare.
+Usare `clean package` per evitare JAR di vecchie versioni nella cartella di distribuzione.
+
+**Non è ancora un updater:** non consulta server, non scarica file e non modifica
+l’installazione. Questa separazione prepara il prossimo passaggio: catalogo delle
+release, download verificati e attivazione di una versione compatibile prima dell’avvio.
+Il database è esterno alla distribuzione e non viene sostituito dal launcher.
 
 ## Database e compatibilità
 
