@@ -57,7 +57,11 @@ public final class DerbyHost implements ConnectionProvider, AutoCloseable {
                     }
                     throw failure;
                 }
-                new DatabaseSchema(this).initialize();
+                DatabaseBackup backup = new DatabaseBackup(configuration.home());
+                new DatabaseSchema(this).initialize(connection -> {
+                    backup.create(connection);
+                    return null;
+                });
             }
         } catch (BindException busy) {
             throw new DatabaseResourceBusyException("Porta database o discovery già occupata.", busy);

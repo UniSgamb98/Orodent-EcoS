@@ -22,9 +22,12 @@ L'integrazione non copia automaticamente i dati dal vecchio database Statistiche
 
 ## Confini del modulo
 
-`StatisticheModule` è l'unico punto d'ingresso esportato dal modulo Java.
-`AppController` gli passa il `ConnectionProvider`, l'executor di background,
-i due servizi di importazione e il callback di ritorno alla Home. La composizione
+`StatisticheModule` implementa il contratto comune `EcosModule` ed è registrato
+come provider JPMS e classpath. Il catalogo ne legge nome, descrizione e icona;
+`AppController` lo apre attraverso `ModuleContext`, con il `ConnectionProvider`,
+l'executor di background, i due servizi CSV e il ritorno alla Home.
+La sessione restituita espone la radice e rilascia le risorse alla chiusura.
+Vedere [contratto dei moduli](modules.md). La composizione
 dei servizi analitici e la navigazione interna restano in `statistiche.internal`;
 ogni funzionalità conserva i propri controller, servizi, modelli e viste.
 
