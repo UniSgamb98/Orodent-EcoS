@@ -25,6 +25,37 @@
     -fx-font-weight: 800;
 }
 
+.ecos-home-button {
+    -fx-background-color: #173f5f;
+    -fx-background-radius: 9px;
+    -fx-border-color: #0f2e46;
+    -fx-border-width: 2px;
+    -fx-border-radius: 9px;
+    -fx-padding: 10px 16px;
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(23, 63, 95, 0.2), 5, 0, 0, 2);
+}
+
+.ecos-home-button:hover {
+    -fx-background-color: #225b7c;
+}
+
+.ecos-home-button:pressed {
+    -fx-background-color: #0f2e46;
+    -fx-effect: none;
+}
+
+.ecos-home-button:focused {
+    -fx-border-color: #40b5ad;
+}
+
+.ecos-home-icon {
+    -fx-fill: white;
+}
+
 .page-title {
     -fx-font-size: 20px;
     -fx-font-weight: 700;

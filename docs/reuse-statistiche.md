@@ -3,8 +3,9 @@
 Il modulo `orodent-statistiche` integra il codice di
 [`UniSgamb98/Statistiche`](https://github.com/UniSgamb98/Statistiche/tree/codex/statistiche-app-icon),
 branch `codex/statistiche-app-icon`, commit `1e7c4fdf8dd6fa0e648093ad26c4ee4a757374fd`.
-Dalla Home di EcoS selezionare **Apri Statistiche**. Il pulsante **Orodent-EcoS**
-nell'intestazione del modulo torna alla Home; **Dashboard** torna al riepilogo vendite.
+Dalla Home di EcoS selezionare **Apri Statistiche**. Il pulsante con icona casa
+**Home Orodent-EcoS**, in alto a sinistra nell'intestazione del modulo, torna
+al catalogo delle applicazioni; **Dashboard** torna al riepilogo vendite.
 
 ## Funzionalità incluse
 
