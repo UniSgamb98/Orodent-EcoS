@@ -49,7 +49,7 @@ class LegacyLauncherCompatibilityTest {
         Path probe = copyResource("/upgrade-probe/UpgradeDatabaseProbe.java", temporary.resolve("UpgradeDatabaseProbe.java"));
         Path data = temporary.resolve("existing-database");
         run(temporary, temporary.resolve("seed.log"),
-                List.of("-cp", libraries.resolve("*").toString(), probe.toString(), "seed", data.toString()));
+                List.of("-cp", classPath(libraries), probe.toString(), "seed", data.toString()));
         Path installed = Files.createDirectories(temporary.resolve("installed/app/lib"));
         Files.writeString(temporary.resolve("installed/application.properties"), "database.home=unchanged");
 
@@ -70,7 +70,7 @@ class LegacyLauncherCompatibilityTest {
             assertEquals("database.home=unchanged", Files.readString(temporary.resolve("installed/application.properties")));
 
             Path log = temporary.resolve("upgrade.log");
-            run(temporary, log, List.of("-cp", downloaded.resolve("*").toString(), probe.toString(),
+            run(temporary, log, List.of("-cp", classPath(downloaded), probe.toString(),
                     "upgrade", data.toString(), catalog.getProperty("database.migration.target")));
             assertTrue(Files.readString(log).contains("UPGRADED 2 PRESERVED CUSTOMER AND SALE 42 NEXT 43"));
         }
@@ -127,6 +127,14 @@ class LegacyLauncherCompatibilityTest {
             Files.copy(input, destination);
         }
         return destination;
+    }
+
+    private static String classPath(Path libraries) throws Exception {
+        try (var files = Files.list(libraries)) {
+            return files.filter(path -> path.getFileName().toString().endsWith(".jar"))
+                    .sorted().map(Path::toString)
+                    .collect(java.util.stream.Collectors.joining(java.io.File.pathSeparator));
+        }
     }
 
     private static ProcessBuilder process(Path directory, Path log, List<String> arguments) {

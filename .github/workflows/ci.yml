@@ -21,6 +21,23 @@ jobs:
         run: |
           .\mvnw.cmd -B -ntp verify
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Summarize failed Java tests
+        if: failure()
+        shell: pwsh
+        run: |
+          Get-ChildItem -Recurse -Filter 'TEST-*.xml' | Where-Object {
+            $_.DirectoryName -like '*surefire-reports*'
+          } | ForEach-Object {
+            [xml]$report = Get-Content -Raw -LiteralPath $_.FullName
+            foreach ($case in $report.SelectNodes('//testcase[failure or error]')) {
+              $detail = $case.SelectSingleNode('failure|error')
+              $message = "$($case.classname).$($case.name): $($detail.InnerText)"
+              if ($message.Length -gt 6000) { $message = $message.Substring(0, 6000) }
+              Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value $message
+              $encoded = $message.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+              Write-Output "::error title=Test Java fallito::$encoded"
+            }
+          }
       - name: Upload failed test reports
         if: failure()
         uses: actions/upload-artifact@v4
