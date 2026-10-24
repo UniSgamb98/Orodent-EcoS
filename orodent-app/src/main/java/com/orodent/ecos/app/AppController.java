@@ -2,8 +2,9 @@ package com.orodent.ecos.app;
 
 import com.orodent.ecos.app.navigation.AppNavigator;
 import com.orodent.ecos.features.home.view.HomeView;
-import com.orodent.ecos.ton.view.TonView;
-import com.orodent.ecos.statistiche.StatisticheModule;
+import com.orodent.ecos.module.EcosModule;
+import com.orodent.ecos.module.ModuleContext;
+import com.orodent.ecos.module.ModuleSession;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -28,32 +29,23 @@ public final class AppController implements AppNavigator {
 
     @Override
     public void showHome() {
-        HomeView view = new HomeView(app.databaseMode());
+        HomeView view = new HomeView(app.databaseMode(), app.modules().descriptors(), this::showModule);
         view.homeButton().setOnAction(event -> showHome());
-        view.tonButton().setOnAction(event -> showTon());
-        view.statisticheButton().setOnAction(event -> showStatistiche());
         showView(view, () -> { });
         stage.setTitle("Orodent-EcoS - Home");
     }
 
     @Override
-    public void showTon() {
-        TonView view = new TonView();
-        view.homeButton().setOnAction(event -> showHome());
-        showView(view, () -> { });
-        stage.setTitle("Orodent-EcoS - Ton");
-    }
-
-    @Override
-    public void showStatistiche() {
-        StatisticheModule module = new StatisticheModule(
+    public void showModule(String moduleId) {
+        EcosModule module = app.modules().require(moduleId);
+        ModuleSession session = module.open(new ModuleContext(
                 app.connectionProvider(), app.backgroundExecutor(),
-                app.clientiCsvImportService(), app.venditeCsvImportService(), this::showHome);
-        showView(module.root(), module::dispose);
-        stage.setTitle("Orodent-EcoS - Statistiche");
+                app.clientiCsvImportService(), app.venditeCsvImportService(), this::showHome));
+        showView(session.root(), session::close);
+        stage.setTitle("Orodent-EcoS - " + module.descriptor().name());
     }
 
-    private void showView(Parent root, Runnable cleanup, String... extraCss) {
+    private void showView(Parent root, Runnable cleanup) {
         runActivePageCleanup();
         activePageCleanup = cleanup;
         if (scene == null) {
@@ -63,10 +55,6 @@ public final class AppController implements AppNavigator {
             scene.setRoot(root);
         }
         scene.getStylesheets().setAll(globalCss);
-        for (String css : extraCss) {
-            scene.getStylesheets().add(Objects.requireNonNull(
-                    getClass().getResource(css), "CSS non trovato: " + css).toExternalForm());
-        }
     }
 
     private void runActivePageCleanup() {

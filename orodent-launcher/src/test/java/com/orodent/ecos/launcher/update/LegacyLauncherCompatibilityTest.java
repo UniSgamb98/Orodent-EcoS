@@ -61,6 +61,14 @@ class LegacyLauncherCompatibilityTest {
                 Files.copy(output.resolve(file), destination);
             });
             assertNotEquals(installed, downloaded, "The old launcher must activate the new components");
+            Path discoveryProbe = copyResource("/upgrade-probe/ModuleDiscoveryProbe.java",
+                    temporary.resolve("ModuleDiscoveryProbe.java"));
+            Path discoveryLog = temporary.resolve("module-discovery.log");
+            run(temporary, discoveryLog, List.of("--module-path", downloaded.toString(),
+                    "--add-modules", "com.orodent.ecos.app",
+                    "--add-exports", "com.orodent.ecos.app/com.orodent.ecos.app.modules=ALL-UNNAMED",
+                    discoveryProbe.toString()));
+            assertTrue(Files.readString(discoveryLog).contains("DISCOVERED statistiche,ton"));
             try (var files = Files.list(downloaded)) {
                 assertTrue(files.anyMatch(path -> path.getFileName().toString().startsWith("orodent-database-")));
             }
@@ -73,6 +81,12 @@ class LegacyLauncherCompatibilityTest {
             run(temporary, log, List.of("-cp", classPath(downloaded), probe.toString(),
                     "upgrade", data.toString(), catalog.getProperty("database.migration.target")));
             assertTrue(Files.readString(log).contains("UPGRADED 2 PRESERVED CUSTOMER AND SALE 42 NEXT 43"));
+            try (var snapshots = Files.list(data.resolve("backups"))) {
+                List<Path> copies = snapshots.toList();
+                assertEquals(1, copies.size(), "The upgraded HOST must back up the existing database");
+                assertTrue(Files.isRegularFile(copies.getFirst().resolve("backup.properties")));
+                assertTrue(Files.isRegularFile(copies.getFirst().resolve("OrodentEcoS/service.properties")));
+            }
         }
     }
 

@@ -11,12 +11,16 @@ La Home permette di aprire Ton e Statistiche nello stesso processo JavaFX.
 | `orodent-app` | Avvio JavaFX, AppContainer, navigazione, Home e composizione delle dipendenze |
 | `orodent-core` | Contratti comuni, ConnectionProvider e strumenti CSV indipendenti dalla UI |
 | `orodent-database` | Derby HOST/CLIENT, discovery, schema, modelli, repository e servizi di importazione |
+| `orodent-module-api` | Contratto dei moduli, metadati, servizi condivisi e ciclo di vita della UI |
 | `orodent-ton` | Componente Ton, attualmente con una schermata iniziale |
 | `orodent-statistiche` | Dashboard vendite, analisi clienti/prodotti/sconti/resi, archivio e importazioni CSV |
+| `orodent-performance` | Solo con profilo `performance`: misure su dati sintetici, fuori dai pacchetti distribuiti |
 
-Le dipendenze hanno una sola direzione: `app` compone `core`, `database`, `ton` e
-`statistiche`; `statistiche` utilizza `core` e `database`, mentre `database` utilizza
-`core`. `ton` per ora richiede solo JavaFX. I componenti non dipendono dall'app.
+Le dipendenze hanno una sola direzione: `app` compone i servizi e scopre i provider
+`EcosModule` tramite `ServiceLoader`. TON e Statistiche implementano il contratto
+di `module-api`, che espone JavaFX e i servizi condivisi; `database` utilizza `core`.
+I componenti non dipendono dall'app. La Home genera il catalogo dai loro metadati,
+con nome, icona, descrizione e apertura della schermata iniziale.
 Il launcher dipende dall’app solo per assemblare la distribuzione: il suo codice non
 carica JavaFX o classi dei componenti. Il modulo `core` non dipende da JavaFX o Derby. I package Java iniziano con
 `com.orodent.ecos`; ogni modulo ha il proprio descrittore `module-info.java`.
@@ -32,6 +36,9 @@ I dati delle precedenti tabelle `APP` vengono migrati dall'HOST in transazione.
 Il passaggio può arrivare tramite una normale release dei componenti, mantenendo
 il launcher installato: il contatore delle migrazioni è distinto dal contratto
 degli aggiornamenti. Vedere [struttura e migrazione del database](docs/database-schema.md).
+Prima di migrare dati esistenti, l'HOST salva un backup consistente sotto
+`database.home/backups`; se la copia fallisce, la migrazione si ferma.
+Vedere [backup e ripristino](docs/database-backup.md).
 
 ## Build e avvio
 
@@ -60,6 +67,24 @@ bash mvnw -pl orodent-database -am verify
 
 Il test grafico usa database temporaneo e porte dedicate.
 Il wrapper è conservato nella radice; non esistono wrapper separati per modulo.
+
+## Misure di prestazioni su richiesta
+
+Gli strumenti di misura rimangono versionati in `orodent-performance/src/test`.
+Non vengono eseguiti nelle build ordinarie e non sono inclusi nello ZIP o nell'EXE.
+
+```sh
+# Servizi e database, senza display
+bash mvnw -Pperformance -pl orodent-performance -am verify
+# Anche avvio, navigazione, memoria e reattività JavaFX
+bash mvnw -Pperformance,performance-ui -pl orodent-performance -am verify
+```
+
+Su Windows usare `.\mvnw.cmd`. Ogni esecuzione genera un database nuovo sotto
+`orodent-performance/target/performance/run-...`, senza usare quello di sviluppo
+o dell'ufficio. La stessa cartella contiene `report.md`, misure CSV e log.
+Il carico predefinito è di 50.000 vendite su tre anni; parametri, isolamento e
+limiti delle misurazioni sono nella [guida alle prestazioni](docs/performance.md).
 
 ## Configurazione IntelliJ condivisa
 
@@ -180,7 +205,8 @@ Il percorso deve essere disponibile e scrivibile sulla macchina HOST.
 I log rimangono in `%LOCALAPPDATA%\Orodent-EcoS\logs\application.log`
 (con fallback sotto il profilo utente se LOCALAPPDATA manca).
 Non copiare il file della configurazione di produzione nella configurazione di sviluppo.
-Nessun database precedente viene spostato o migrato automaticamente.
+Il database non viene spostato: le migrazioni supportate aggiornano lo schema
+nel percorso configurato, con backup preventivo sull'HOST.
 
 Il pacchetto non include database, installer o collegamenti. Per gli aggiornamenti
 firmati occorre completare la [configurazione release](docs/releases.md).
@@ -233,14 +259,16 @@ fusione con Statistiche. Vedere [discovery](docs/database-discovery.md).
 
 ## Aggiungere un componente
 
-1. Creare un modulo Maven figlio, ad esempio `orodent-statistiche`, con lo stesso parent.
+1. Creare un modulo Maven figlio con lo stesso parent e dipendenza da `orodent-module-api`.
 2. Registrarlo in `<modules>` e in `<dependencyManagement>` del POM principale.
 3. Dichiarare soltanto le dipendenze necessarie, senza copiare database o executor.
-4. Esporre la pagina iniziale del componente e collegarla dalla navigazione di `orodent-app`.
+4. Implementare `EcosModule` e registrare il provider in JPMS e `META-INF/services`.
+   Aggiungere la dipendenza Maven in `orodent-app`: la Home lo rileva automaticamente.
 5. Aggiungere test per la sua logica e verificare l'intero reactor con `bash mvnw verify`.
 
 I moduli vengono compilati e aggiornati insieme; runtime, launcher e schema DB
 richiedono una gestione distinta. Vedere [release e aggiornamenti](docs/releases.md).
+Il contratto e il ciclo di vita sono descritti nella [guida ai moduli](docs/modules.md).
 
 ## Rinominare la repository su GitHub
 

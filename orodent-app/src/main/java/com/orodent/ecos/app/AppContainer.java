@@ -1,6 +1,7 @@
 package com.orodent.ecos.app;
 
 import com.orodent.ecos.core.ApplicationInitializer;
+import com.orodent.ecos.app.modules.ModuleCatalog;
 
 import com.orodent.ecos.core.ConnectionProvider;
 import com.orodent.ecos.database.Database;
@@ -19,12 +20,14 @@ public final class AppContainer implements ApplicationInitializer {
     private static final int SHUTDOWN_TIMEOUT_SECONDS = 5;
 
     private final Database database;
+    private final ModuleCatalog modules;
     private final ExecutorService backgroundExecutor;
     private final ExecutorService importExecutor;
     private final VenditeCsvImportService venditeCsvImportService;
     private final ClientiCsvImportService clientiCsvImportService;
 
     public AppContainer() {
+        modules = ModuleCatalog.discover();
         database = new Database();
         backgroundExecutor = Executors.newFixedThreadPool(
                 BACKGROUND_WORKERS,
@@ -44,6 +47,8 @@ public final class AppContainer implements ApplicationInitializer {
     public Executor backgroundExecutor() {
         return backgroundExecutor;
     }
+
+    public ModuleCatalog modules() { return modules; }
 
     public ConnectionProvider connectionProvider() {
         return database;

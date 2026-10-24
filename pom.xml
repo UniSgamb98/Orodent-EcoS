@@ -10,6 +10,7 @@
   <modules>
     <module>orodent-core</module>
     <module>orodent-database</module>
+    <module>orodent-module-api</module>
     <module>orodent-ton</module>
     <module>orodent-statistiche</module>
     <module>orodent-app</module>
@@ -23,10 +24,12 @@
     <derby.version>10.17.1.0</derby.version>
     <test.excludedGroups>javafx</test.excludedGroups>
     <junit.version>5.12.1</junit.version>
+    <performance.ui>false</performance.ui>
   </properties>
   <dependencyManagement><dependencies>
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-core</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-database</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.orodent</groupId><artifactId>orodent-module-api</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-ton</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-statistiche</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>org.openjfx</groupId><artifactId>javafx-controls</artifactId><version>${javafx.version}</version></dependency>
@@ -55,6 +58,14 @@
     </plugins>
   </build>
   <profiles>
+    <profile>
+      <id>performance</id>
+      <modules><module>orodent-performance</module></modules>
+    </profile>
+    <profile>
+      <id>performance-ui</id>
+      <properties><performance.ui>true</performance.ui></properties>
+    </profile>
     <profile>
       <id>ui-smoke</id>
       <properties><test.excludedGroups>none</test.excludedGroups></properties>

@@ -20,7 +20,11 @@ Connessioni, transazioni e importazioni restano gestite dai servizi condivisi.
 ## Migrazione dalla versione 1 alla 2
 
 La migrazione viene eseguita soltanto dall'HOST, prima di pubblicare il servizio
-discovery. Tutte le operazioni seguenti sono nella stessa transazione:
+discovery. Prima delle scritture, un database legacy esistente viene salvato con
+il backup consistente di Derby in `database.home/backups`. Un errore di backup
+interrompe l'avvio senza applicare la migrazione; un database nuovo o già corrente
+non richiede questa copia. Vedere [backup e ripristino](database-backup.md).
+Tutte le operazioni seguenti sono nella stessa transazione:
 
 1. Verifica della struttura e dello storico precedenti. I database senza storico
    vengono registrati come versione 1 usando lo script originale, immutato.

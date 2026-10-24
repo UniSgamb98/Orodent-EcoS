@@ -3,8 +3,9 @@
 Il modulo `orodent-statistiche` integra il codice di
 [`UniSgamb98/Statistiche`](https://github.com/UniSgamb98/Statistiche/tree/codex/statistiche-app-icon),
 branch `codex/statistiche-app-icon`, commit `1e7c4fdf8dd6fa0e648093ad26c4ee4a757374fd`.
-Dalla Home di EcoS selezionare **Apri Statistiche**. Il pulsante **Orodent-EcoS**
-nell'intestazione del modulo torna alla Home; **Dashboard** torna al riepilogo vendite.
+Dalla Home di EcoS selezionare **Apri Statistiche**. Il pulsante con icona casa
+**Home Orodent-EcoS**, in alto a sinistra nell'intestazione del modulo, torna
+al catalogo delle applicazioni; **Dashboard** torna al riepilogo vendite.
 
 ## Funzionalità incluse
 
@@ -22,9 +23,12 @@ L'integrazione non copia automaticamente i dati dal vecchio database Statistiche
 
 ## Confini del modulo
 
-`StatisticheModule` è l'unico punto d'ingresso esportato dal modulo Java.
-`AppController` gli passa il `ConnectionProvider`, l'executor di background,
-i due servizi di importazione e il callback di ritorno alla Home. La composizione
+`StatisticheModule` implementa il contratto comune `EcosModule` ed è registrato
+come provider JPMS e classpath. Il catalogo ne legge nome, descrizione e icona;
+`AppController` lo apre attraverso `ModuleContext`, con il `ConnectionProvider`,
+l'executor di background, i due servizi CSV e il ritorno alla Home.
+La sessione restituita espone la radice e rilascia le risorse alla chiusura.
+Vedere [contratto dei moduli](modules.md). La composizione
 dei servizi analitici e la navigazione interna restano in `statistiche.internal`;
 ogni funzionalità conserva i propri controller, servizi, modelli e viste.
 

@@ -1,30 +1,31 @@
 package com.orodent.ecos.statistiche;
 
-import com.orodent.ecos.core.ConnectionProvider;
-import com.orodent.ecos.database.service.ClientiCsvImportService;
-import com.orodent.ecos.database.service.VenditeCsvImportService;
+import com.orodent.ecos.module.EcosModule;
+import com.orodent.ecos.module.ModuleContext;
+import com.orodent.ecos.module.ModuleDescriptor;
+import com.orodent.ecos.module.ModuleSession;
 import com.orodent.ecos.statistiche.internal.StatisticheController;
 import com.orodent.ecos.statistiche.internal.StatisticheServices;
 import javafx.scene.Parent;
 
-import java.util.concurrent.Executor;
+/** Embedded entry point. Services and the main window remain owned by EcoS. */
+public final class StatisticheModule implements EcosModule {
+    private static final ModuleDescriptor DESCRIPTOR = new ModuleDescriptor(
+            "statistiche", "Statistiche", "Vendite, clienti e prodotti: analisi, andamento e importazioni.",
+            "M3 13h4v8H3z M10 8h4v13h-4z M17 3h4v18h-4z");
 
-/** Embedded Statistiche entry point. It never owns a database, stage or worker pool. */
-public final class StatisticheModule {
-    private final StatisticheController controller;
+    @Override
+    public ModuleDescriptor descriptor() { return DESCRIPTOR; }
 
-    public StatisticheModule(ConnectionProvider connections, Executor workers,
-                             ClientiCsvImportService customersImport, VenditeCsvImportService salesImport,
-                             Runnable onEcosHome) {
-        controller = new StatisticheController(
-                new StatisticheServices(connections, workers, customersImport, salesImport), onEcosHome);
+    @Override
+    public ModuleSession open(ModuleContext context) {
+        StatisticheController controller = new StatisticheController(new StatisticheServices(
+                context.connections(), context.workers(), context.customersImport(), context.salesImport()),
+                context.showHome());
         controller.showHome();
+        return new ModuleSession() {
+            @Override public Parent root() { return controller.root(); }
+            @Override public void close() { controller.dispose(); }
+        };
     }
-
-    public Parent root() { return controller.root(); }
-
-    public void showDashboard() { controller.showHome(); }
-
-    /** Releases page callbacks, without shutting down ecosystem-owned services. */
-    public void dispose() { controller.dispose(); }
 }
