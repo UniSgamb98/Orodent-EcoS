@@ -14,6 +14,7 @@ La Home permette di aprire Ton e Statistiche nello stesso processo JavaFX.
 | `orodent-module-api` | Contratto dei moduli, metadati, servizi condivisi e ciclo di vita della UI |
 | `orodent-ton` | Componente Ton, attualmente con una schermata iniziale |
 | `orodent-statistiche` | Dashboard vendite, analisi clienti/prodotti/sconti/resi, archivio e importazioni CSV |
+| `orodent-performance` | Solo con profilo `performance`: misure su dati sintetici, fuori dai pacchetti distribuiti |
 
 Le dipendenze hanno una sola direzione: `app` compone i servizi e scopre i provider
 `EcosModule` tramite `ServiceLoader`. TON e Statistiche implementano il contratto
@@ -66,6 +67,24 @@ bash mvnw -pl orodent-database -am verify
 
 Il test grafico usa database temporaneo e porte dedicate.
 Il wrapper è conservato nella radice; non esistono wrapper separati per modulo.
+
+## Misure di prestazioni su richiesta
+
+Gli strumenti di misura rimangono versionati in `orodent-performance/src/test`.
+Non vengono eseguiti nelle build ordinarie e non sono inclusi nello ZIP o nell'EXE.
+
+```sh
+# Servizi e database, senza display
+bash mvnw -Pperformance -pl orodent-performance -am verify
+# Anche avvio, navigazione, memoria e reattività JavaFX
+bash mvnw -Pperformance,performance-ui -pl orodent-performance -am verify
+```
+
+Su Windows usare `.\mvnw.cmd`. Ogni esecuzione genera un database nuovo sotto
+`orodent-performance/target/performance/run-...`, senza usare quello di sviluppo
+o dell'ufficio. La stessa cartella contiene `report.md`, misure CSV e log.
+Il carico predefinito è di 50.000 vendite su tre anni; parametri, isolamento e
+limiti delle misurazioni sono nella [guida alle prestazioni](docs/performance.md).
 
 ## Configurazione IntelliJ condivisa
 

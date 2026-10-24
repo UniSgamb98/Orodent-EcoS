@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.orodent</groupId><artifactId>orodent-ecos</artifactId><version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>orodent-performance</artifactId>
+  <name>Orodent-EcoS performance measurements (development only)</name>
+  <properties>
+    <performance.sales>50000</performance.sales>
+    <performance.customers>1000</performance.customers>
+    <performance.products>100</performance.products>
+    <performance.years>3</performance.years>
+    <performance.lastYear>2025</performance.lastYear>
+    <performance.seed>42</performance.seed>
+    <performance.iterations>5</performance.iterations>
+    <performance.cycles>5</performance.cycles>
+    <performance.importRows>5000</performance.importRows>
+    <performance.heapMb>512</performance.heapMb>
+    <performance.timeoutSeconds>180</performance.timeoutSeconds>
+  </properties>
+  <dependencies>
+    <!-- Only test code: no instrumentation or dependencies enter the application artifacts. -->
+    <dependency><groupId>com.orodent</groupId><artifactId>orodent-app</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
+  </dependencies>
+  <build><plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId>
+      <executions><execution><id>default-testCompile</id>
+        <configuration><useModulePath>false</useModulePath></configuration>
+      </execution></executions>
+    </plugin>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId>
+      <configuration>
+        <systemPropertyVariables>
+          <performance.outputDirectory>${project.build.directory}/performance</performance.outputDirectory>
+          <performance.ui>${performance.ui}</performance.ui>
+          <performance.sales>${performance.sales}</performance.sales>
+          <performance.customers>${performance.customers}</performance.customers>
+          <performance.products>${performance.products}</performance.products>
+          <performance.years>${performance.years}</performance.years>
+          <performance.lastYear>${performance.lastYear}</performance.lastYear>
+          <performance.seed>${performance.seed}</performance.seed>
+          <performance.iterations>${performance.iterations}</performance.iterations>
+          <performance.cycles>${performance.cycles}</performance.cycles>
+          <performance.importRows>${performance.importRows}</performance.importRows>
+          <performance.heapMb>${performance.heapMb}</performance.heapMb>
+          <performance.timeoutSeconds>${performance.timeoutSeconds}</performance.timeoutSeconds>
+        </systemPropertyVariables>
+      </configuration>
+    </plugin>
+  </plugins></build>
+</project>
