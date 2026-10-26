@@ -198,6 +198,12 @@ Estrarre lo ZIP interamente e fare doppio clic su `Orodent-EcoS.exe`.
 Distribuire tutta la cartella, mai il solo EXE. Il contenuto interno sotto `app`
 è gestito da jpackage; non spostare manualmente i JAR.
 
+L'icona Orodent è visibile nella Home e nella finestra anche avviando da IntelliJ.
+Il pacchetto Windows usa `packaging/windows/orodent-ecos.ico` per l'EXE;
+il PNG per JavaFX è in `orodent-app/src/main/resources/icons/orodent-ecos.png`.
+Gli aggiornamenti dei componenti aggiornano l'icona della finestra e della Home;
+per cambiare quella dell'EXE già distribuito serve il nuovo ZIP completo.
+
 Nella cartella estratta il file **`config/application.properties`**, accanto all’EXE,
 sceglie la directory database e le porte. Il valore distribuito è
 `database.home=I:/CliZr/Tommaso/Database`: Derby crea la sottocartella `OrodentEcoS`.

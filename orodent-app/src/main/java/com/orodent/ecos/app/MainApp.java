@@ -1,5 +1,6 @@
 package com.orodent.ecos.app;
 
+import com.orodent.ecos.ui.AppIcon;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -15,6 +16,7 @@ public final class MainApp extends Application {
 
     @Override
     public void start(Stage stage) {
+        stage.getIcons().add(AppIcon.image());
         appContainer = new AppContainer();
         StartupView startupView = new StartupView();
         Scene startupScene = new Scene(startupView, 960, 680);

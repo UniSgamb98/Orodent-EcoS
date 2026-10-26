@@ -11,6 +11,10 @@ if ($env:OS -ne 'Windows_NT') {
 }
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$appIcon = Join-Path $projectRoot 'packaging\windows\orodent-ecos.ico'
+if (-not (Test-Path -LiteralPath $appIcon -PathType Leaf)) {
+    throw "Icona dell'applicazione non trovata: $appIcon"
+}
 if ([string]::IsNullOrWhiteSpace($JdkHome)) {
     $jpackageCommand = Get-Command jpackage.exe -ErrorAction SilentlyContinue
     if ($null -eq $jpackageCommand) {
@@ -86,6 +90,7 @@ try {
         '--app-version', $appVersion,
         '--vendor', 'Orodent',
         '--description', 'Ecosistema applicativo Orodent',
+        '--icon', $appIcon,
         '--input', $distribution,
         '--main-jar', 'orodent-launcher.jar',
         '--main-class', 'com.orodent.ecos.launcher.EcosLauncher',
