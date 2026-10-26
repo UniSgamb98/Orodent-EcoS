@@ -1,6 +1,7 @@
 package com.orodent.ecos.app;
 
 import com.orodent.ecos.ui.AppIcon;
+import com.orodent.ecos.ui.windows.WindowsWindowAppearance;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -35,6 +36,7 @@ public final class MainApp extends Application {
         stage.setTitle("Orodent-EcoS - Avvio");
         stage.setScene(startupScene);
         stage.show();
+        WindowsWindowAppearance.hideTitleIcon(stage.getTitle());
         startupController.initialize();
     }
 
