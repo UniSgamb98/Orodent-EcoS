@@ -40,14 +40,77 @@ public final class DatabaseProcessProbe {
                 Integer.parseInt(args[1]), Integer.parseInt(args[2]), 800));
         try {
             database.start();
+            var sawLoss = new java.util.concurrent.atomic.AtomicBoolean();
+            var recoveries = new java.util.concurrent.atomic.AtomicInteger();
+            database.observeStatus(status -> {
+                if (status.state() == Database.State.RECONNECTING) sawLoss.set(true);
+                if (status.state() == Database.State.READY && sawLoss.compareAndSet(true, false)) recoveries.incrementAndGet();
+            });
+            int consumedRecoveries = 0;
+            var releaseWrite = new java.util.concurrent.CountDownLatch(1);
+            var writeStarted = new java.util.concurrent.CountDownLatch(1);
+            var writeAttempts = new java.util.concurrent.atomic.AtomicInteger();
+            java.util.concurrent.CompletableFuture<Void> write = null;
             System.out.println("READY " + database.getMode());
             try (var input = new BufferedReader(new InputStreamReader(System.in))) {
                 for (String command; (command = input.readLine()) != null;) {
                     if (command.equals("STOP")) break;
-                    if (command.equals("INSERT")) {
-                        database.withConnection(connection -> {
+                    if (command.equals("WAIT_RECOVERY")) {
+                        long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(25);
+                        while (recoveries.get() <= consumedRecoveries && System.nanoTime() < deadline) Thread.sleep(30);
+                        if (recoveries.get() <= consumedRecoveries) throw new AssertionError("Recovery timeout: " + database.status());
+                        consumedRecoveries = recoveries.get();
+                        System.out.println("RECOVERED " + database.getMode());
+                    } else if (command.equals("WAIT_DISCONNECTED")) {
+                        long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(15);
+                        while (database.state() != Database.State.RECONNECTING && System.nanoTime() < deadline) Thread.sleep(30);
+                        if (database.state() != Database.State.RECONNECTING) throw new AssertionError("Disconnection timeout: " + database.status());
+                        System.out.println("DISCONNECTED");
+                    } else if (command.equals("STATUS")) {
+                        System.out.println("STATUS " + database.status());
+                    } else if (command.equals("WAIT_IDENTITY_MISMATCH")) {
+                        long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(15);
+                        while (!database.status().message().contains("diverso") && System.nanoTime() < deadline) Thread.sleep(30);
+                        if (!database.status().message().contains("diverso")) throw new AssertionError("Identity mismatch not detected: " + database.status());
+                        System.out.println("WRONG ARCHIVE REJECTED");
+                    } else if (command.equals("STOP_NETWORK")) {
+                        new org.apache.derby.drda.NetworkServerControl(java.net.InetAddress.getLoopbackAddress(), Integer.parseInt(args[1])).shutdown();
+                        System.out.println("NETWORK STOPPED");
+                    } else if (command.equals("START_NETWORK")) {
+                        new org.apache.derby.drda.NetworkServerControl(java.net.InetAddress.getByName("0.0.0.0"), Integer.parseInt(args[1])).start(null);
+                        System.out.println("NETWORK STARTED");
+                    } else if (command.equals("BEGIN_WRITE")) {
+                        write = java.util.concurrent.CompletableFuture.runAsync(() -> database.withTransaction(connection -> {
+                            writeAttempts.incrementAndGet();
                             try (var statement = connection.createStatement()) {
-                                statement.executeUpdate("INSERT INTO ANAGRAFICHE.CLIENTI (codice_cliente, ragione_sociale) VALUES ('TEST', 'Test')");
+                                statement.executeUpdate("INSERT INTO ANAGRAFICHE.CLIENTI (codice_cliente, ragione_sociale) VALUES ('PENDING', 'Pending')");
+                            }
+                            writeStarted.countDown();
+                            try {
+                                if (!releaseWrite.await(35, java.util.concurrent.TimeUnit.SECONDS)) throw new IllegalStateException("Write timeout");
+                            } catch (InterruptedException interrupted) {
+                                Thread.currentThread().interrupt();
+                                throw new IllegalStateException(interrupted);
+                            }
+                            return null;
+                        }));
+                        if (!writeStarted.await(5, java.util.concurrent.TimeUnit.SECONDS)) throw new AssertionError("Write did not start");
+                        System.out.println("WRITE STARTED");
+                    } else if (command.equals("FINISH_WRITE")) {
+                        releaseWrite.countDown();
+                        try {
+                            write.get(10, java.util.concurrent.TimeUnit.SECONDS);
+                            throw new AssertionError("Broken transaction unexpectedly committed");
+                        } catch (java.util.concurrent.ExecutionException expected) {
+                            if (!(expected.getCause() instanceof DatabaseDisconnectedException)) throw expected;
+                            System.out.println("WRITE FAILED ATTEMPTS " + writeAttempts.get());
+                        }
+                    } else if (command.equals("INSERT") || command.equals("INSERT_SECOND")) {
+                        String code = command.equals("INSERT") ? "TEST" : "SECOND";
+                        database.withConnection(connection -> {
+                            try (var statement = connection.prepareStatement("INSERT INTO ANAGRAFICHE.CLIENTI (codice_cliente, ragione_sociale) VALUES (?, 'Test')")) {
+                                statement.setString(1, code);
+                                statement.executeUpdate();
                             }
                             return null;
                         });
@@ -80,6 +143,14 @@ public final class DatabaseProcessProbe {
                             first.rollback();
                         }
                         System.out.println("INDEPENDENT OK");
+                    } else if (command.equals("VALIDATION_FAILURE")) {
+                        try {
+                            database.withTransaction(connection -> { throw new IllegalArgumentException("Invalid input"); });
+                            throw new AssertionError("Validation should fail");
+                        } catch (IllegalArgumentException expected) {
+                            if (database.state() != Database.State.READY) throw new AssertionError("Validation disconnected database");
+                            System.out.println("VALIDATION FAILED DATABASE READY");
+                        }
                     }
                 }
             }

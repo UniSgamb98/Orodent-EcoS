@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 
 public final class HomeView extends BorderPane {
     private final Button homeButton = new Button("Home");
+    private final Label databaseStatus = new Label();
 
     public HomeView(DatabaseMode mode, List<ModuleDescriptor> modules, Consumer<String> openModule) {
         getStyleClass().add("page");
@@ -40,7 +41,7 @@ public final class HomeView extends BorderPane {
         Label introduction = new Label("Un unico spazio per gli strumenti del tuo ufficio.");
         introduction.getStyleClass().add("muted-label");
         introduction.setWrapText(true);
-        Label databaseStatus = new Label("Database connesso · Modalità " + mode);
+        databaseStatus.setText("Database connesso · Modalità " + mode);
         databaseStatus.setId("database-status");
         databaseStatus.getStyleClass().add("muted-label");
         Label version = new Label("Versione " + System.getProperty("orodent.ecos.version", "sviluppo"));
@@ -93,4 +94,5 @@ public final class HomeView extends BorderPane {
     }
 
     public Button homeButton() { return homeButton; }
+    public void showDatabaseStatus(String message) { databaseStatus.setText(message); }
 }

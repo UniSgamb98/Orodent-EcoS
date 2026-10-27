@@ -153,6 +153,12 @@ Nei pacchetti manuali resta disabilitato finché non vengono configurate le chia
 pubblicata una release: seguire [la guida release](docs/releases.md).
 Il database e il config personale rimangono esterni agli aggiornamenti.
 
+Se l'HOST si arresta, i CLIENT già aperti cercano un nuovo HOST e possono subentrare
+sullo stesso archivio condiviso, rispettandone identità e lock esclusivo. Le
+operazioni interrotte non vengono ripetute automaticamente. Configurazione,
+aggiornamento dell'HOST e prove sulla rete sono descritti nella
+[guida HOST/CLIENT](docs/database-discovery.md#recupero-della-connessione-e-subentro).
+
 ## Windows portabile con EXE e Java incluso
 
 Eseguire su **Windows** con un **JDK 21 standard completo, senza JavaFX incorporato** della stessa architettura delle

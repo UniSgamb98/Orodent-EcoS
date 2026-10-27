@@ -9,6 +9,13 @@
     -fx-background-color: #f4f7fb;
 }
 
+.database-connection-banner {
+    -fx-background-color: #fff3cd;
+    -fx-text-fill: #654b00;
+    -fx-padding: 10px 24px;
+    -fx-font-weight: 700;
+}
+
 .app-header {
     -fx-padding: 18px 30px;
     -fx-background-color: white;

@@ -43,9 +43,59 @@ rete locale; non attraversa automaticamente router o sottoreti.
 Il protocollo è specifico di Ton-V3 e correla le risposte a ogni richiesta,
 ma non introduce autenticazione o cifratura del discovery.
 
-La scelta HOST/CLIENT avviene all'avvio. Se l'HOST viene chiuso, i CLIENT perdono
-l'accesso ai dati: non viene promosso automaticamente un nuovo HOST durante la sessione.
-Il database non viene copiato sul computer CLIENT.
+## Recupero della connessione e subentro
+
+I CLIENT già aperti controllano periodicamente il collegamento (ogni due secondi,
+con probe JDBC a timeout). Anche gli errori di connessione delle operazioni gestite
+da `Database` segnalano la disconnessione. La finestra rimane aperta, mostra un
+avviso e disabilita temporaneamente le pagine di lavoro. Il recupero avviene su un
+thread dedicato, senza occupare il thread JavaFX o gli executor dei moduli.
+
+Il CLIENT cerca nuovamente l'HOST. Se non ne trova uno, tenta di aprire **soltanto
+il database già esistente nella propria `database.home`**. Per subentrare deve
+ottenere il lock esclusivo `.ton-host.lock` e quello interno di Derby. Se il vecchio
+HOST è ancora acceso e mantiene il lock, il CLIENT attende e continua a cercarlo:
+una semplice perdita della rete non autorizza un secondo proprietario.
+
+L'HOST registra un UUID persistente nella proprietà Derby
+`orodent.ecos.database.identity`, senza modificare la versione dello schema. Ogni
+CLIENT conserva l'identità verificata all'avvio e controlla quella dell'archivio
+durante la riconnessione e prima di usare una nuova connessione. Un altro archivio
+con lo stesso nome e schema viene rifiutato. La promozione apre Derby senza
+`create=true`, verifica identità e schema e **non esegue migrazioni**.
+
+Quando il subentro riesce, il nuovo HOST pubblica il discovery e gli altri CLIENT
+si riconnettono a lui. Il ruolo visualizzato nella Home viene aggiornato. Le
+schermate e le bozze in memoria rimangono aperte; i dati già visualizzati non sono
+ricaricati automaticamente, per non sovrascrivere modifiche dell'utente. Ricaricare
+la pagina o usare `Riprova` per aggiornare i risultati.
+
+Le operazioni fallite **non vengono rieseguite automaticamente**. Una transazione
+senza commit viene annullata da Derby; se si perde la risposta al commit, il
+risultato può essere incerto. Verificare il contenuto prima di ripetere un
+salvataggio. Questo recupero non introduce un registro di comandi idempotenti né
+garantisce che tutte le chiamate JDBC già in corso terminino immediatamente durante
+un'interruzione di rete: il probe a timeout consente al monitor di procedere
+indipendentemente dalle operazioni applicative.
+
+Per il subentro fra PC, tutti devono puntare alla **stessa cartella fisica di rete**,
+con permessi di lettura/scrittura e supporto affidabile dei lock tra macchine.
+Lo stesso testo `I:/...` non basta se le unità mappate indicano condivisioni diverse.
+Se la condivisione è indisponibile, il CLIENT resta in riconnessione: non crea un
+database vuoto alternativo. Il database non viene copiato o replicato. Una copia
+di backup conserva anche l'UUID e non deve essere avviata come archivio parallelo
+nello stesso ambiente di discovery.
+
+La creazione iniziale rimane consentita al normale avvio su una nuova home; il
+divieto di creazione riguarda il recupero di una sessione già collegata. Spegnere
+il programma arresta anche il monitor e non lascia tentativi di promozione in
+background.
+
+Per introdurre questa versione, aggiornare e riavviare prima l'HOST: i nuovi CLIENT
+richiedono che esponga l'identità persistente e segnalano chiaramente un HOST ancora
+precedente. Non occorre una nuova migrazione SQL; i contratti di release e discovery
+UDP rimangono invariati. Le future migrazioni si eseguono durante un riavvio
+pianificato dell'HOST, con le altre istanze chiuse e backup preventivo.
 
 ## Responsabilità
 
@@ -66,6 +116,13 @@ Vedere [struttura e migrazione del database](database-schema.md).
 I test di integrazione avviano JVM separate con directory temporanee e porte dedicate:
 verificano dati condivisi, avvio contemporaneo, connessioni indipendenti, chiusura del
 CLIENT e conflitti con risorse occupate da processi che non partecipano al discovery.
+Comprendono arresto ordinato e improvviso dell'HOST, elezione con due CLIENT,
+rollback di una scrittura interrotta senza replay, perdita/ripristino della rete con
+proprietario ancora attivo, home indisponibile e archivio esistente di identità
+diversa. Il test JavaFX opzionale controlla avviso, disabilitazione e aggiornamento
+del ruolo nella finestra reale. Le prove automatiche usano il filesystem locale:
+prima dell'uso in ufficio verificare il subentro su due PC Windows e sulla
+condivisione SMB effettiva, compresi i tempi di rilascio dei lock dopo un arresto.
 
 ## Cambio del nome database
 

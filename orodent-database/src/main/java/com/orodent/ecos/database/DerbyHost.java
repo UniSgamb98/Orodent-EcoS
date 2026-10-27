@@ -26,12 +26,25 @@ public final class DerbyHost implements ConnectionProvider, AutoCloseable {
     private NetworkServerControl server;
     private boolean databaseStarted;
     private boolean serverStarted;
+    private java.util.UUID identity;
 
     public DerbyHost(DatabaseConfiguration configuration) {
         this.configuration = configuration;
     }
 
     public void start() throws Exception {
+        start(null);
+    }
+
+    /** Recovery opens only the pinned existing archive, without DDL or create=true. */
+    public void startExisting(java.util.UUID expectedIdentity) throws Exception {
+        java.util.Objects.requireNonNull(expectedIdentity, "expectedIdentity");
+        if (!Files.isRegularFile(configuration.home().resolve(DatabaseConfiguration.DATABASE_NAME).resolve("service.properties")))
+            throw new java.io.IOException("Archivio condiviso non disponibile. Nessun database alternativo è stato creato.");
+        start(expectedIdentity);
+    }
+
+    private void start(java.util.UUID expectedIdentity) throws Exception {
         Files.createDirectories(configuration.home());
         lockChannel = FileChannel.open(configuration.home().resolve(".ton-host.lock"),
                 StandardOpenOption.CREATE, StandardOpenOption.WRITE);
@@ -49,19 +62,28 @@ public final class DerbyHost implements ConnectionProvider, AutoCloseable {
                 System.setProperty("derby.system.home", configuration.home().toString());
                 System.setProperty("derby.drda.startNetworkServer", "false");
                 Class.forName("org.apache.derby.jdbc.EmbeddedDriver").getConstructor().newInstance();
-                try (Connection ignored = connect(true)) {
+                try (Connection connection = connect(expectedIdentity == null)) {
                     databaseStarted = true;
+                    if (expectedIdentity != null) {
+                        identity = DatabaseIdentity.require(connection, expectedIdentity);
+                        DatabaseSchema.verifyCompatible(connection);
+                    }
                 } catch (SQLException failure) {
                     if (isDatabaseOccupied(failure)) {
                         throw new DatabaseResourceBusyException("Database occupato da un'altra istanza.", failure);
                     }
                     throw failure;
                 }
-                DatabaseBackup backup = new DatabaseBackup(configuration.home());
-                new DatabaseSchema(this).initialize(connection -> {
-                    backup.create(connection);
-                    return null;
-                });
+                if (expectedIdentity == null) {
+                    DatabaseBackup backup = new DatabaseBackup(configuration.home());
+                    new DatabaseSchema(this).initialize(connection -> {
+                        backup.create(connection);
+                        return null;
+                    });
+                    try (Connection connection = connect(false)) {
+                        identity = DatabaseIdentity.initialize(connection);
+                    }
+                }
             }
         } catch (BindException busy) {
             throw new DatabaseResourceBusyException("Porta database o discovery già occupata.", busy);
@@ -108,6 +130,8 @@ public final class DerbyHost implements ConnectionProvider, AutoCloseable {
             throw new IllegalStateException("Impossibile connettersi al database locale.", failure);
         }
     }
+
+    public java.util.UUID identity() { return identity; }
 
     @Override
     public void close() {

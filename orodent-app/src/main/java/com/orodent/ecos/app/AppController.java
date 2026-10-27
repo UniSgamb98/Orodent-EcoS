@@ -1,12 +1,17 @@
 package com.orodent.ecos.app;
 
 import com.orodent.ecos.app.navigation.AppNavigator;
+import com.orodent.ecos.database.Database;
 import com.orodent.ecos.features.home.view.HomeView;
 import com.orodent.ecos.module.EcosModule;
 import com.orodent.ecos.module.ModuleContext;
 import com.orodent.ecos.module.ModuleSession;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.application.Platform;
+import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 import java.util.Objects;
@@ -18,12 +23,26 @@ public final class AppController implements AppNavigator {
     private final AppContainer app;
     private final String globalCss;
     private Scene scene;
+    private final BorderPane shell = new BorderPane();
+    private final StackPane page = new StackPane();
+    private final Label connectionBanner = new Label();
+    private final Runnable unsubscribeStatus;
+    private boolean closed;
     private Runnable activePageCleanup = () -> { };
 
     public AppController(Stage stage, AppContainer app, String globalCss) {
         this.stage = Objects.requireNonNull(stage, "stage");
         this.app = Objects.requireNonNull(app, "app");
         this.globalCss = Objects.requireNonNull(globalCss, "globalCss");
+        connectionBanner.setId("database-connection-banner");
+        connectionBanner.setWrapText(true);
+        connectionBanner.setMaxWidth(Double.MAX_VALUE);
+        connectionBanner.getStyleClass().add("database-connection-banner");
+        shell.setTop(connectionBanner);
+        shell.setCenter(page);
+        unsubscribeStatus = app.observeDatabaseStatus(status -> Platform.runLater(() -> {
+            if (!closed) updateDatabaseStatus(status);
+        }));
         showHome();
     }
 
@@ -49,12 +68,22 @@ public final class AppController implements AppNavigator {
         runActivePageCleanup();
         activePageCleanup = cleanup;
         if (scene == null) {
-            scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+            scene = new Scene(shell, INITIAL_WIDTH, INITIAL_HEIGHT);
             stage.setScene(scene);
-        } else {
-            scene.setRoot(root);
         }
+        page.getChildren().setAll(root);
         scene.getStylesheets().setAll(globalCss);
+        updateDatabaseStatus(app.databaseStatus());
+    }
+
+    private void updateDatabaseStatus(Database.Status status) {
+        boolean ready = status.state() == Database.State.READY;
+        connectionBanner.setText(status.message());
+        connectionBanner.setVisible(!ready);
+        connectionBanner.setManaged(!ready);
+        page.setDisable(!ready);
+        if (!page.getChildren().isEmpty() && page.getChildren().getFirst() instanceof HomeView home)
+            home.showDatabaseStatus(status.message());
     }
 
     private void runActivePageCleanup() {
@@ -66,6 +95,9 @@ public final class AppController implements AppNavigator {
     }
 
     public void shutdown() {
+        if (closed) return;
+        closed = true;
+        unsubscribeStatus.run();
         runActivePageCleanup();
         activePageCleanup = () -> { };
         app.shutdown();

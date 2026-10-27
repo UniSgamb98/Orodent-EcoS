@@ -17,6 +17,128 @@ class DatabaseDiscoveryIntegrationTest {
     @TempDir Path temporary;
 
     @Test
+    void failoverRefusesAnotherExistingDatabaseAndPreservesItsContents() throws Exception {
+        Path wrong = temporary.resolve("other-archive");
+        int separateTcp = tcpPort();
+        int separateUdp = udpPort();
+        try (var seed = start(wrong, separateTcp, separateUdp)) {
+            assertEquals("READY HOST", seed.line());
+            assertEquals("STOPPED", seed.command("STOP"));
+        }
+        int udp = udpPort();
+        Path correct = temporary.resolve("correct-archive");
+        try (var host = start(correct, tcpPort(), udp)) {
+            assertEquals("READY HOST", host.line());
+            assertEquals("INSERTED", host.command("INSERT"));
+            try (var client = start(wrong, tcpPort(), udp)) {
+                assertEquals("READY CLIENT", client.line());
+                assertEquals("VALIDATION FAILED DATABASE READY", client.command("VALIDATION_FAILURE"));
+                assertEquals("STOPPED", host.command("STOP"));
+                assertEquals("WRONG ARCHIVE REJECTED", client.command("WAIT_IDENTITY_MISMATCH"));
+                assertEquals("STOPPED", client.command("STOP"));
+            }
+        }
+        try (var inspect = start(wrong, separateTcp, separateUdp)) {
+            assertEquals("READY HOST", inspect.line());
+            assertEquals("COUNT 0", inspect.command("COUNT"));
+            assertEquals("STOPPED", inspect.command("STOP"));
+        }
+    }
+
+    @Test
+    void idleClientTakesOverSameArchiveAfterHostShutdown() throws Exception {
+        int udp = udpPort();
+        Path shared = temporary.resolve("graceful-failover");
+        try (var host = start(shared, tcpPort(), udp)) {
+            assertEquals("READY HOST", host.line());
+            assertEquals("INSERTED", host.command("INSERT"));
+            try (var client = start(shared, tcpPort(), udp)) {
+                assertEquals("READY CLIENT", client.line());
+                assertEquals("STOPPED", host.command("STOP"));
+                assertEquals("RECOVERED HOST", client.command("WAIT_RECOVERY"));
+                assertEquals("COUNT 1", client.command("COUNT"));
+                assertEquals("INSERTED", client.command("INSERT_SECOND"));
+                assertEquals("COUNT 2", client.command("COUNT"));
+                assertEquals("STOPPED", client.command("STOP"));
+            }
+        }
+    }
+
+    @Test
+    void hostCrashElectsOneSuccessorAndReconnectsOtherClientWithoutReplayingWrite() throws Exception {
+        int udp = udpPort();
+        Path shared = temporary.resolve("crash-failover");
+        try (var original = start(shared, tcpPort(), udp)) {
+            assertEquals("READY HOST", original.line());
+            assertEquals("INSERTED", original.command("INSERT"));
+            try (var first = start(shared, tcpPort(), udp); var second = start(shared, tcpPort(), udp)) {
+                assertEquals("READY CLIENT", first.line());
+                assertEquals("READY CLIENT", second.line());
+                assertEquals("WRITE STARTED", first.command("BEGIN_WRITE"));
+                original.process.destroyForcibly();
+                assertTrue(original.process.waitFor(5, TimeUnit.SECONDS));
+                String role1 = first.command("WAIT_RECOVERY");
+                String role2 = second.command("WAIT_RECOVERY");
+                assertTrue((role1.equals("RECOVERED HOST") && role2.equals("RECOVERED CLIENT"))
+                        || (role2.equals("RECOVERED HOST") && role1.equals("RECOVERED CLIENT")), role1 + " / " + role2);
+                assertEquals("WRITE FAILED ATTEMPTS 1", first.command("FINISH_WRITE"));
+                assertEquals("COUNT 1", first.command("COUNT"));
+                assertEquals("COUNT 1", second.command("COUNT"));
+                Probe successor = role1.endsWith("HOST") ? first : second;
+                Probe client = successor == first ? second : first;
+                assertEquals("STOPPED", client.command("STOP"));
+                assertEquals("STOPPED", successor.command("STOP"));
+            }
+        }
+    }
+
+    @Test
+    void networkLossDoesNotStealArchiveFromLiveOwnerAndReconnectsWhenNetworkReturns() throws Exception {
+        int udp = udpPort();
+        Path shared = temporary.resolve("network-loss");
+        try (var host = start(shared, tcpPort(), udp)) {
+            assertEquals("READY HOST", host.line());
+            assertEquals("INSERTED", host.command("INSERT"));
+            try (var client = start(shared, tcpPort(), udp)) {
+                assertEquals("READY CLIENT", client.line());
+                assertEquals("NETWORK STOPPED", host.command("STOP_NETWORK"));
+                assertEquals("DISCONNECTED", client.command("WAIT_DISCONNECTED"));
+                assertEquals("COUNT 1", host.command("COUNT"));
+                assertEquals("NETWORK STARTED", host.command("START_NETWORK"));
+                assertEquals("RECOVERED CLIENT", client.command("WAIT_RECOVERY"));
+                assertEquals("COUNT 1", client.command("COUNT"));
+                assertEquals("STOPPED", client.command("STOP"));
+            }
+            assertEquals("STOPPED", host.command("STOP"));
+        }
+    }
+
+    @Test
+    void recoveryNeverCreatesAnArchiveInAnUnavailableOrDifferentHome() throws Exception {
+        int tcp = tcpPort();
+        int udp = udpPort();
+        Path shared = temporary.resolve("real-shared");
+        Path unavailable = temporary.resolve("unavailable-share");
+        try (var host = start(shared, tcp, udp)) {
+            assertEquals("READY HOST", host.line());
+            assertEquals("INSERTED", host.command("INSERT"));
+            try (var client = start(unavailable, tcpPort(), udp)) {
+                assertEquals("READY CLIENT", client.line());
+                assertEquals("STOPPED", host.command("STOP"));
+                assertEquals("DISCONNECTED", client.command("WAIT_DISCONNECTED"));
+                assertFalse(Files.exists(unavailable));
+                try (var restarted = start(shared, tcp, udp)) {
+                    assertEquals("READY HOST", restarted.line());
+                    assertEquals("RECOVERED CLIENT", client.command("WAIT_RECOVERY"));
+                    assertEquals("COUNT 1", client.command("COUNT"));
+                    assertEquals("STOPPED", client.command("STOP"));
+                    assertEquals("STOPPED", restarted.command("STOP"));
+                }
+            }
+        }
+    }
+
+    @Test
     void waitsForAColdHostBeyondTheOldThreeAttemptWindow() throws Exception {
         int tcp = tcpPort();
         int udp = udpPort();
@@ -175,7 +297,7 @@ class DatabaseDiscoveryIntegrationTest {
             input = new PrintWriter(process.getOutputStream(), true);
         }
         String line() throws Exception {
-            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(35);
             while (System.nanoTime() < deadline) {
                 if (output.ready() || !process.isAlive()) {
                     String line = output.readLine();
@@ -183,6 +305,9 @@ class DatabaseDiscoveryIntegrationTest {
                     if (line.equals("STARTING HOST") || line.startsWith("READY ") || line.startsWith("FAILED ") || line.startsWith("COUNT ")
                             || line.equals("INSERTED") || line.equals("STOPPED") || line.equals("INDEPENDENT OK")
                             || line.equals("SCHEMA FUTURE")) return line;
+                    if (line.startsWith("RECOVERED ") || line.startsWith("STATUS ") || line.equals("DISCONNECTED")
+                            || line.startsWith("NETWORK ") || line.equals("WRITE STARTED") || line.startsWith("WRITE FAILED")) return line;
+                    if (line.equals("WRONG ARCHIVE REJECTED") || line.equals("VALIDATION FAILED DATABASE READY")) return line;
                 }
                 Thread.sleep(20);
             }

@@ -44,6 +44,12 @@ public final class AppContainer implements ApplicationInitializer {
         return database.getMode();
     }
 
+    public Database.Status databaseStatus() { return database.status(); }
+
+    public Runnable observeDatabaseStatus(java.util.function.Consumer<Database.Status> listener) {
+        return database.observeStatus(listener);
+    }
+
     public Executor backgroundExecutor() {
         return backgroundExecutor;
     }
