@@ -77,7 +77,7 @@ public final class ApplicationFailoverProbe {
         // Test fixture only: the application module deliberately has no direct Derby-server API dependency.
         Class<?> control = Class.forName("org.apache.derby.drda.NetworkServerControl");
         Object server = control.getConstructor(InetAddress.class, int.class)
-                .newInstance(InetAddress.getByName("0.0.0.0"), port);
+                .newInstance(InetAddress.getByName(start ? "0.0.0.0" : "127.0.0.1"), port);
         if (start) control.getMethod("start", java.io.PrintWriter.class).invoke(server, new Object[]{null});
         else control.getMethod("shutdown").invoke(server);
     }
