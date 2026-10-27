@@ -110,6 +110,8 @@ class ApplicationSmokeTest {
                 assertHome(stage);
             });
 
+            managesTonProductsAndKeepsThemWhenReopeningTheModule(stage);
+
             // Import the same CSV formats used by the application, away from the FX thread.
             importRepresentativeData(databasePort);
             runFx(() -> {
@@ -155,6 +157,66 @@ class ApplicationSmokeTest {
                 });
             }
         }
+    }
+
+    private void managesTonProductsAndKeepsThemWhenReopeningTheModule(Stage stage) throws Exception {
+        runFx(() -> {
+            button(stage, "open-ton-button").fire();
+            button(stage, "ton-products-button").fire();
+            button(stage, "ton-product-save").fire();
+            assertTrue(((Label) stage.getScene().lookup("#ton-product-feedback")).getText().contains("codice"));
+            ((javafx.scene.control.TextField) stage.getScene().lookup("#ton-product-code")).setText(" zr a2 ");
+            ((javafx.scene.control.TextArea) stage.getScene().lookup("#ton-product-description")).setText("Materiale di prova TON");
+            button(stage, "ton-product-save").fire();
+            assertTrue(buttonUnchecked(stage, "ton-home-button").isDisabled(), "Il salvataggio deve completarsi prima di lasciare la pagina");
+        });
+        awaitFx(() -> tonProductRow(stage, "ZR A2", "Attivo"), "Il prodotto TON non è stato salvato");
+        runFx(() -> {
+            TableView<?> table = (TableView<?>) stage.getScene().lookup("#ton-products-table");
+            table.getSelectionModel().select(0);
+            button(stage, "ton-product-edit").fire();
+            ((javafx.scene.control.TextField) stage.getScene().lookup("#ton-product-code")).setText("ZR A3");
+            button(stage, "ton-product-save").fire();
+        });
+        awaitFx(() -> tonProductRow(stage, "ZR A3", "Attivo"), "La modifica del prodotto TON non è stata salvata");
+        runFx(() -> {
+            ((javafx.scene.control.CheckBox) stage.getScene().lookup("#ton-product-active")).setSelected(false);
+            button(stage, "ton-product-save").fire();
+        });
+        awaitFx(() -> {
+            TableView<?> table = (TableView<?>) stage.getScene().lookup("#ton-products-table");
+            return table != null && table.getItems().isEmpty() && !table.isDisabled()
+                    && !buttonUnchecked(stage, "ton-product-save").isDisabled();
+        }, "Il prodotto archiviato è ancora nell'elenco attivo");
+        runFx(() -> {
+            button(stage, "ton-home-button").fire();
+            assertHome(stage);
+            button(stage, "open-ton-button").fire();
+            button(stage, "ton-products-button").fire();
+            ((javafx.scene.control.CheckBox) stage.getScene().lookup("#ton-products-include-inactive")).fire();
+        });
+        awaitFx(() -> tonProductRow(stage, "ZR A3", "Archiviato"), "Il prodotto archiviato non è stato conservato");
+        runFx(() -> {
+            button(stage, "ton-home-button").fire();
+            assertHome(stage);
+            // Leaving during an initial query must not update the next page.
+            button(stage, "open-ton-button").fire();
+            button(stage, "ton-products-button").fire();
+            button(stage, "ton-home-button").fire();
+            assertHome(stage);
+        });
+    }
+
+    private boolean tonProductRow(Stage stage, String code, String state) {
+        TableView<?> table = (TableView<?>) stage.getScene().lookup("#ton-products-table");
+        if (table == null || table.isDisabled() || table.getItems().size() != 1) return false;
+        return code.equals(table.getColumns().get(0).getCellData(0))
+                && state.equals(table.getColumns().get(2).getCellData(0))
+                && !buttonUnchecked(stage, "ton-product-save").isDisabled();
+    }
+
+    private static Button buttonUnchecked(Stage stage, String id) {
+        return (Button) stage.getScene().lookup("#" + id);
     }
 
     private void importRepresentativeData(int databasePort) throws Exception {

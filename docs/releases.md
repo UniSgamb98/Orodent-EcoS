@@ -24,7 +24,7 @@ I vecchi launcher ignorano questi campi aggiuntivi, mantenendo tutte le verifich
 esistenti; l'applicazione HOST esegue la migrazione supportata in transazione al primo
 avvio. Per il passaggio da DB 1 a 2 basta quindi una normale release firmata, senza
 sostituire il launcher. Conservare config e percorso dei dati e riavviare prima
-l'HOST, poi i CLIENT: vedere il [passaggio allo schema 2](database-schema.md).
+l'HOST, poi i CLIENT: vedere il [passaggio allo schema corrente](database-schema.md).
 
 Cambiare il runtime, il launcher o un contratto non supportato dalle installazioni
 esistenti richiede ancora una distribuzione completa. Aumentare soltanto il contatore

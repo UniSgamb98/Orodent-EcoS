@@ -52,8 +52,8 @@ Statistiche le condivide con gli altri moduli; non mantiene copie proprie.
 `DatabaseSchema` migra i database precedenti da `APP` ai nuovi schemi in un'unica
 transazione, conservando dati, identificativi, timestamp e sequenza delle vendite.
 Lo storico delle versioni 1 e 2 è in `ECOS.ECOS_SCHEMA_HISTORY`.
-Il CLIENT richiede lo schema 2 e controlla la compatibilità senza scrivere.
-Vedere [struttura e passaggio allo schema 2](database-schema.md).
+Il CLIENT richiede lo schema corrente 3 e controlla la compatibilità senza scrivere.
+Vedere [struttura e migrazioni del database](database-schema.md).
 
 ## Build, test e distribuzione
 

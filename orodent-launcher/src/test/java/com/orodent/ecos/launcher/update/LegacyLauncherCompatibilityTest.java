@@ -40,7 +40,7 @@ class LegacyLauncherCompatibilityTest {
         try (var input = Files.newInputStream(output.resolve("update.properties"))) { catalog.load(input); }
         assertEquals("1", catalog.getProperty("database.schema"), "Installed launchers must keep accepting this contract");
         assertEquals("1", catalog.getProperty("database.migration.minimum"));
-        assertEquals("2", catalog.getProperty("database.migration.target"));
+        assertEquals(Integer.toString(com.orodent.ecos.database.DatabaseSchema.CURRENT_VERSION), catalog.getProperty("database.migration.target"));
         PublicKey key = UpdateCatalog.publicKey(Files.readString(publisher.resolve("config/update-public-key.pem")));
         assertEquals(ReleaseVersion.parse("0.1.4"), UpdateCatalog.verify(
                 Files.readAllBytes(output.resolve("update.properties")),
@@ -80,7 +80,8 @@ class LegacyLauncherCompatibilityTest {
             Path log = temporary.resolve("upgrade.log");
             run(temporary, log, List.of("-cp", classPath(downloaded), probe.toString(),
                     "upgrade", data.toString(), catalog.getProperty("database.migration.target")));
-            assertTrue(Files.readString(log).contains("UPGRADED 2 PRESERVED CUSTOMER AND SALE 42 NEXT 43"));
+            assertTrue(Files.readString(log).contains("UPGRADED " + com.orodent.ecos.database.DatabaseSchema.CURRENT_VERSION
+                    + " PRESERVED CUSTOMER AND SALE 42 NEXT 43"));
             try (var snapshots = Files.list(data.resolve("backups"))) {
                 List<Path> copies = snapshots.toList();
                 assertEquals(1, copies.size(), "The upgraded HOST must back up the existing database");

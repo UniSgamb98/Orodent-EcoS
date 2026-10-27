@@ -2,8 +2,8 @@
 
 ## Backup automatico prima delle migrazioni
 
-Quando l'HOST rileva tabelle della precedente struttura `APP`, prima di qualsiasi
-scrittura di baseline o migrazione esegue `SYSCS_UTIL.SYSCS_BACKUP_DATABASE`.
+Quando l'HOST rileva un archivio supportato da aggiornare, legacy `APP` o schema
+2, prima di qualsiasi scrittura di baseline o migrazione esegue `SYSCS_UTIL.SYSCS_BACKUP_DATABASE`.
 È il motore Derby a produrre una copia consistente, completa di dati e log.
 In questo momento il server di rete e il discovery non sono ancora pubblicati.
 Un backup fallito interrompe l'avvio: nessuna modifica dello schema viene applicata.
@@ -16,7 +16,7 @@ di produzione attuale, la struttura è:
 I:/CliZr/Tommaso/Database/
 ├── OrodentEcoS/                         # database attivo
 └── backups/
-    └── before-schema-2-<data-UTC>-<id>/
+    └── before-schema-3-<data-UTC>-<id>/
         ├── backup.properties           # marcatore di backup completato
         └── OrodentEcoS/                 # copia consistente precedente alla migrazione
             ├── service.properties
@@ -33,8 +33,9 @@ Una migrazione fallita conserva il backup completato e annulla la transazione.
 Un database nuovo non richiede un backup di migrazione. Un normale riavvio su
 schema già corrente e le verifiche CLIENT non creano backup. I database futuri
 o con storico corrente incompatibile vengono rifiutati senza modificarli.
-Questo protegge l'attuale passaggio dallo schema legacy 1 al 2; le future
-migrazioni devono passare dallo stesso punto di backup prima delle scritture.
+Il backup copre i passaggi dagli schemi 1 o 2 allo schema corrente 3 e precede
+anche la registrazione di una baseline mancante. Il ripristino della copia conserva
+i dati precedenti e l'identità del database, quando già presente.
 
 Le copie non vengono cancellate automaticamente. Controllare spazio e permessi
 prima della distribuzione e conservare separatamente le copie importanti.
@@ -61,7 +62,7 @@ modifiche successive a quel momento non saranno presenti nella copia ripristinat
    senza una sottocartella `OrodentEcoS/OrodentEcoS`. Non unire file al database
    precedente e non copiare la sola `seg0`.
 5. Avviare prima l'HOST con una release compatibile con il database ripristinato.
-   La versione attuale sa migrare lo schema 1: al riavvio crea un nuovo backup
+   La versione attuale sa migrare gli schemi 1 e 2: al riavvio crea un nuovo backup
    e riprova la migrazione. Se si sta investigando una migrazione fallita,
    correggere la causa prima di riprovarla. Per rimanere sulla vecchia release,
    disabilitare temporaneamente `updates.enabled` nel suo config prima dell'avvio.

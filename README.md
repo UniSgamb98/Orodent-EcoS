@@ -3,6 +3,18 @@
 Un'unica applicazione desktop JavaFX, organizzata come monorepo Maven.
 La Home permette di aprire Ton e Statistiche nello stesso processo JavaFX.
 
+## TON: primo blocco riscritto
+
+Aprire **TON → Apri catalogo prodotti** per gestire famiglie e materiali tecnici.
+Il catalogo permette ricerca paginata, creazione, modifica e archiviazione, con
+controllo delle modifiche concorrenti. I dati sono in `TON.PRODOTTI`, distinti
+dagli articoli di vendita. Vedere [uso e organizzazione del modulo](docs/ton.md).
+
+La migrazione V3 conserva clienti e vendite e salva un backup degli archivi
+esistenti prima delle modifiche. Per distribuire questa versione, chiudere le
+istanze e riavviare prima l'HOST aggiornato, poi i CLIENT. I normali aggiornamenti
+firmati dei componenti supportano il passaggio senza sostituire Java o launcher.
+
 ## Moduli
 
 | Modulo | Responsabilità |
@@ -12,7 +24,7 @@ La Home permette di aprire Ton e Statistiche nello stesso processo JavaFX.
 | `orodent-core` | Contratti comuni, ConnectionProvider e strumenti CSV indipendenti dalla UI |
 | `orodent-database` | Derby HOST/CLIENT, discovery, schema, modelli, repository e servizi di importazione |
 | `orodent-module-api` | Contratto dei moduli, metadati, servizi condivisi e ciclo di vita della UI |
-| `orodent-ton` | Componente Ton, attualmente con una schermata iniziale |
+| `orodent-ton` | Laboratorio TON: primo catalogo dei prodotti tecnici, con ricerca, modifica e archiviazione |
 | `orodent-statistiche` | Dashboard vendite, analisi clienti/prodotti/sconti/resi, archivio e importazioni CSV |
 | `orodent-performance` | Solo con profilo `performance`: misure su dati sintetici, fuori dai pacchetti distribuiti |
 
@@ -31,7 +43,7 @@ Anagrafiche e vendite risiedono in `orodent-database`, nello stesso database
 `OrodentEcoS`. La versione dello schema è registrata dall'HOST; i CLIENT eseguono
 solo una verifica di compatibilità. Vedere [integrazione Statistiche](docs/reuse-statistiche.md).
 
-Lo schema DB 2 organizza le tabelle in `ECOS`, `ANAGRAFICHE` e `VENDITE`.
+Lo schema DB 3 organizza le tabelle in `ECOS`, `ANAGRAFICHE`, `VENDITE` e `TON`.
 I dati delle precedenti tabelle `APP` vengono migrati dall'HOST in transazione.
 Il passaggio può arrivare tramite una normale release dei componenti, mantenendo
 il launcher installato: il contatore delle migrazioni è distinto dal contratto

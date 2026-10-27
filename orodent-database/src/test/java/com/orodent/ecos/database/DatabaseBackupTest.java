@@ -46,6 +46,46 @@ class DatabaseBackupTest {
     }
 
     @Test
+    void backsUpVersionTwoBeforeCreatingTheTonCatalogueAndKeepsTheArchiveIdentity() throws Exception {
+        SchemaV2Fixture.create(connections);
+        execute("INSERT INTO ANAGRAFICHE.CLIENTI(codice_cliente,ragione_sociale) VALUES ('OLD','Cliente da conservare')");
+        var identity = connections.withConnection(DatabaseIdentity::initialize);
+        migrate();
+        var snapshot = onlySnapshot();
+        var restored = restore(snapshot);
+        assertCustomer(restored, "ANAGRAFICHE.CLIENTI");
+        assertEquals(identity, restored.withConnection(DatabaseIdentity::read));
+        assertEquals(identity, connections.withConnection(DatabaseIdentity::read));
+        restored.withConnection(connection -> {
+            try (var statement = connection.createStatement(); var rows = statement.executeQuery("SELECT MAX(version) FROM ECOS.ECOS_SCHEMA_HISTORY")) {
+                rows.next(); assertEquals(2, rows.getInt(1));
+            }
+            try (var tables = connection.getMetaData().getTables(null, "TON", "PRODOTTI", new String[]{"TABLE"})) {
+                assertFalse(tables.next());
+            }
+            return null;
+        });
+        migrate();
+        assertEquals(snapshot, onlySnapshot());
+    }
+
+    @Test
+    void failedVersionTwoBackupLeavesItsSchemaAndDataUnchanged() throws Exception {
+        SchemaV2Fixture.create(connections);
+        execute("INSERT INTO ANAGRAFICHE.CLIENTI(codice_cliente,ragione_sociale) VALUES ('OLD','Cliente da conservare')");
+        Files.writeString(home.resolve("backups"), "Directory non disponibile");
+        RuntimeException failure = assertThrows(RuntimeException.class, this::migrate);
+        assertEquals("XEC02", ((SQLException) failure.getCause()).getSQLState());
+        assertCustomer(connections, "ANAGRAFICHE.CLIENTI");
+        connections.withConnection(connection -> {
+            try (var statement = connection.createStatement(); var rows = statement.executeQuery("SELECT MAX(version) FROM ECOS.ECOS_SCHEMA_HISTORY")) {
+                rows.next(); assertEquals(2, rows.getInt(1));
+            }
+            return null;
+        });
+    }
+
+    @Test
     void takesARestorableSnapshotBeforeAnyBaselineOrMigrationWrites() throws Exception {
         legacyData();
         migrate();
@@ -53,7 +93,7 @@ class DatabaseBackupTest {
         Properties metadata = new Properties();
         try (var input = Files.newInputStream(snapshot.resolve("backup.properties"))) { metadata.load(input); }
         assertEquals("OrodentEcoS", metadata.getProperty("database"));
-        assertEquals("2", metadata.getProperty("migration.target"));
+        assertEquals(Integer.toString(DatabaseSchema.CURRENT_VERSION), metadata.getProperty("migration.target"));
         assertEquals(home.resolve("OrodentEcoS").toString(), metadata.getProperty("source.database"));
         ConnectionProvider restored = restore(snapshot);
         assertCustomer(restored, "APP.CLIENTI");

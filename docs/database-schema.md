@@ -7,9 +7,11 @@ EcoS usa un solo database Derby, organizzato per dominio dei dati.
 | `ECOS` | `ECOS_SCHEMA_HISTORY` | Versioni, checksum e date delle migrazioni |
 | `ANAGRAFICHE` | `CLIENTI` | Anagrafica condivisa tra i moduli |
 | `VENDITE` | `VENDITE_DETTAGLIO` | Vendite e rettifiche condivise |
+| `TON` | `PRODOTTI` | Famiglie e materiali tecnici del laboratorio |
 
-Statistiche legge clienti e vendite da questi schemi. Gli schemi `STATISTICHE` e
-`TON` saranno creati quando i rispettivi moduli avranno dati propri da salvare.
+Statistiche legge clienti e vendite dagli schemi condivisi; TON gestisce il proprio
+catalogo tecnico in `TON.PRODOTTI`. Lo schema `STATISTICHE` sarà creato soltanto
+quando il modulo avrà dati propri da salvare.
 I nomi degli schemi descrivono l'ambito dei dati; gli utenti JDBC e i permessi
 restano un tema distinto. Non vengono creati utenti differenti per modulo.
 
@@ -48,9 +50,28 @@ disponibili. Tabelle di destinazione già presenti senza uno storico valido non
 vengono unite o sovrascritte automaticamente. Una seconda inizializzazione non
 ricopia i dati né aggiunge altre righe allo storico.
 
-Il CLIENT verifica soltanto lo schema 2 e lo storico; non migra il database remoto.
+Il CLIENT verifica soltanto lo schema corrente e lo storico; non migra il database remoto.
 Se scopre un HOST precedente, interrompe l'avvio con un messaggio che chiede di
 aggiornare l'HOST, senza creare un altro database locale.
+
+## Migrazione dalla versione 2 alla 3
+
+`V3__ton_products.sql` aggiunge lo schema `TON` e il catalogo `TON.PRODOTTI`.
+I clienti e le vendite rimangono nelle stesse tabelle: non vengono ricopiati.
+Il runner verifica lo storico V1/V2 e la struttura, esegue un backup consistente
+prima delle scritture e applica soltanto la migrazione pendente. Storico e DDL
+vengono confermati nella stessa transazione. L'UUID del database rimane invariato.
+
+Un archivio V1 passa attraverso V2 e V3 nella stessa transazione, preceduta da
+un solo backup. Un archivio nuovo non richiede backup. Un normale riavvio sullo
+schema 3 non aggiunge righe allo storico e non crea altre copie. Script V1 e V2
+rimangono immutati; tabelle TON preesistenti senza migrazione registrata non
+vengono adottate o cancellate automaticamente.
+
+La verifica CLIENT è in sola lettura e richiede lo schema 3. Il recupero della
+connessione può soltanto aprire un archivio già compatibile: non esegue V3 durante
+un subentro. Per l'aggiornamento, chiudere le istanze e riavviare prima l'HOST
+aggiornato, poi i CLIENT. Vedere [il primo catalogo TON](ton.md).
 
 ## Distribuzione e migrazioni automatiche
 
@@ -62,7 +83,7 @@ corrente; il publisher legge lo stesso file dai componenti che firma.
 Il catalogo mantiene `database.schema=1`: il nome è storico e rappresenta il
 contratto accettato dai launcher installati, non il contatore delle migrazioni.
 Due campi aggiuntivi firmati dichiarano `database.migration.minimum=1` e
-`database.migration.target=2`. Il vecchio launcher ignora i campi aggiuntivi e
+`database.migration.target=3`. Il vecchio launcher ignora i campi aggiuntivi e
 continua a verificare firma, checksum, runtime e protocollo prima di attivare
 l'intero insieme dei nuovi JAR. Il nuovo launcher verifica anche la validità
 dell'intervallo dichiarato, senza vincolarlo a un singolo contatore DB.

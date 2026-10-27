@@ -45,19 +45,71 @@ class DatabaseSchemaTest {
     }
 
     @Test
+    void upgradesVersionTwoWithoutReplacingSharedDataOrTheExistingHistory() {
+        SchemaV2Fixture.create(connections);
+        execute("INSERT INTO ANAGRAFICHE.CLIENTI(codice_cliente,ragione_sociale) VALUES ('KEEP','Da conservare')");
+        var customers = rows("SELECT * FROM ANAGRAFICHE.CLIENTI");
+        var history = rows("SELECT * FROM ECOS.ECOS_SCHEMA_HISTORY ORDER BY version");
+        var backups = new java.util.concurrent.atomic.AtomicInteger();
+        new DatabaseSchema(connections).initialize(connection -> {
+            assertEquals(List.of(List.of(1), List.of(2)), rows("SELECT version FROM ECOS.ECOS_SCHEMA_HISTORY ORDER BY version"));
+            assertFalse(tableExists(connection, "TON", "PRODOTTI"));
+            backups.incrementAndGet();
+            return null;
+        });
+        assertEquals(customers, rows("SELECT * FROM ANAGRAFICHE.CLIENTI"));
+        assertEquals(history, rows("SELECT * FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version <= 2 ORDER BY version"));
+        migrate();
+        assertEquals(1, backups.get());
+        assertEquals(List.of(List.of(0)), rows("SELECT COUNT(*) FROM TON.PRODOTTI"));
+    }
+
+    @Test
+    void clientRejectsVersionTwoInReadOnlyModeWithoutCreatingTonTables() {
+        SchemaV2Fixture.create(connections);
+        connections.withConnection(connection -> {
+            connection.setReadOnly(true);
+            SQLException failure = assertThrows(SQLException.class, () -> DatabaseSchema.verifyCompatible(connection));
+            assertTrue(failure.getMessage().contains("aggiornare e riavviare l'HOST"));
+            assertFalse(tableExists(connection, "TON", "PRODOTTI"));
+            return null;
+        });
+    }
+
+    @Test
+    void migrationDoesNotAdoptOrEraseAnUntrackedTonCatalogue() {
+        SchemaV2Fixture.create(connections);
+        execute("CREATE SCHEMA TON", "CREATE TABLE TON.PRODOTTI(note VARCHAR(100))", "INSERT INTO TON.PRODOTTI VALUES ('KEEP')");
+        assertThrows(RuntimeException.class, this::migrate);
+        assertEquals(List.of(List.of("KEEP")), rows("SELECT note FROM TON.PRODOTTI"));
+        assertEquals(List.of(List.of(1), List.of(2)), rows("SELECT version FROM ECOS.ECOS_SCHEMA_HISTORY ORDER BY version"));
+    }
+
+    @Test
+    void currentVersionChecksTheTechnicalCatalogueStructure() {
+        migrate();
+        execute("ALTER TABLE TON.PRODOTTI DROP COLUMN attivo");
+        assertThrows(RuntimeException.class, this::migrate);
+        connections.withConnection(connection -> {
+            assertThrows(SQLException.class, () -> DatabaseSchema.verifyCompatible(connection));
+            return null;
+        });
+    }
+
+    @Test
     void initializesDomainSchemasAndRecordsEachMigrationExactlyOnce() {
         migrate();
         migrate();
-        assertEquals(List.of(List.of(1), List.of(2)), rows("SELECT version FROM ECOS.ECOS_SCHEMA_HISTORY ORDER BY version"));
+        assertEquals(List.of(List.of(1), List.of(2), List.of(3)), rows("SELECT version FROM ECOS.ECOS_SCHEMA_HISTORY ORDER BY version"));
         connections.withConnection(connection -> {
             DatabaseSchema.verifyCompatible(connection);
             assertTrue(tableExists(connection, "ANAGRAFICHE", "CLIENTI"));
             assertTrue(tableExists(connection, "VENDITE", "VENDITE_DETTAGLIO"));
+            assertTrue(tableExists(connection, "TON", "PRODOTTI"));
             assertLegacyTablesAbsent(connection);
             try (var schemas = connection.getMetaData().getSchemas()) {
                 while (schemas.next()) {
                     assertNotEquals("STATISTICHE", schemas.getString("TABLE_SCHEM"));
-                    assertNotEquals("TON", schemas.getString("TABLE_SCHEM"));
                 }
             }
             return null;
@@ -90,7 +142,7 @@ class DatabaseSchemaTest {
         List<List<Object>> history = rows("SELECT * FROM APP.ECOS_SCHEMA_HISTORY");
         migrate();
         assertEquals(history, rows("SELECT * FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version=1"));
-        assertEquals(2, rows("SELECT version FROM ECOS.ECOS_SCHEMA_HISTORY").size());
+        assertEquals(DatabaseSchema.CURRENT_VERSION, rows("SELECT version FROM ECOS.ECOS_SCHEMA_HISTORY").size());
     }
 
     @Test
@@ -122,14 +174,16 @@ class DatabaseSchemaTest {
     @Test
     void rejectsFutureSchemaForBothHostAndClient() {
         migrate();
-        execute("UPDATE ECOS.ECOS_SCHEMA_HISTORY SET version=3 WHERE version=2");
+        execute("UPDATE ECOS.ECOS_SCHEMA_HISTORY SET version=" + (DatabaseSchema.CURRENT_VERSION + 1)
+                + " WHERE version=" + DatabaseSchema.CURRENT_VERSION);
         assertThrows(RuntimeException.class, this::migrate);
         connections.withConnection(connection -> {
             SQLException failure = assertThrows(SQLException.class, () -> DatabaseSchema.verifyCompatible(connection));
             assertEquals("XEC01", failure.getSQLState());
             return null;
         });
-        assertEquals(List.of(List.of(1), List.of(3)), rows("SELECT version FROM ECOS.ECOS_SCHEMA_HISTORY ORDER BY version"));
+        assertEquals(List.of(List.of(1), List.of(2), List.of(DatabaseSchema.CURRENT_VERSION + 1)),
+                rows("SELECT version FROM ECOS.ECOS_SCHEMA_HISTORY ORDER BY version"));
     }
 
     @Test

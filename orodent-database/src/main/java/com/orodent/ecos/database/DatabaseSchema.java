@@ -21,7 +21,9 @@ public final class DatabaseSchema {
             "Shared customers and sales baseline", "/database/schema.sql");
     private static final SchemaMigration DOMAINS = new SchemaMigration(2,
             "Separate ecosystem, master data and sales schemas", "/database/migrations/V2__domain_schemas.sql");
-    private static final List<SchemaMigration> MIGRATIONS = List.of(BASELINE, DOMAINS);
+    private static final SchemaMigration TON_PRODUCTS = new SchemaMigration(3,
+            "TON technical product catalogue", "/database/migrations/V3__ton_products.sql");
+    private static final List<SchemaMigration> MIGRATIONS = List.of(BASELINE, DOMAINS, TON_PRODUCTS);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS = List.of(
             varchar("CODICE_CLIENTE", 50), varchar("CODICE_ISO", 10), varchar("CATEGORIA", 100),
@@ -35,6 +37,10 @@ public final class DatabaseSchema {
             decimal("SCONTO_PERCENTUALE", 7, 4), decimal("SCONTO_IMPORTO", 15, 2), decimal("IMPORTO_NETTO", 15, 2),
             varchar("TIPO_OPERAZIONE", 20), varchar("CANALE", 50), varchar("AGENTE", 150),
             timestamp("IMPORTATO_IL"));
+    private static final List<Column> PRODUCTS = List.of(
+            identity("PRODOTTO_ID"), varchar("CODICE", 50), varchar("DESCRIZIONE", 200),
+            column("ATTIVO", Types.BOOLEAN), column("VERSIONE_MODIFICA", Types.INTEGER),
+            timestamp("CREATO_IL"), timestamp("AGGIORNATO_IL"));
 
     private final ConnectionProvider connectionProvider;
 
@@ -55,7 +61,7 @@ public final class DatabaseSchema {
         this.connectionProvider = Objects.requireNonNull(connectionProvider, "connectionProvider");
     }
 
-    /** Baselines legacy APP data and moves it atomically to the shared domain schemas. */
+    /** Applies only pending immutable migrations, in a single transaction. */
     public void initialize() {
         initialize(connection -> null);
     }
@@ -63,53 +69,84 @@ public final class DatabaseSchema {
     /** The HOST supplies a consistent backup; no schema writes precede this callback. */
     void initialize(ConnectionProvider.ConnectionWork<Void> beforeMigration) {
         connectionProvider.withConnection(connection -> {
-            if (tableExists(connection, "ECOS", HISTORY)) {
-                verifyCompatible(connection);
-            } else if (tableExists(connection, "APP", "CLIENTI")
-                    || tableExists(connection, "APP", "VENDITE_DETTAGLIO")
-                    || tableExists(connection, "APP", HISTORY)) {
+            int version = existingVersion(connection);
+            if (version < CURRENT_VERSION && (version > 0 || tableExists(connection, "APP", "CLIENTI")
+                    || tableExists(connection, "APP", "VENDITE_DETTAGLIO"))) {
                 beforeMigration.execute(connection);
             }
             return null;
         });
         connectionProvider.withTransaction(connection -> {
             connection.setSchema("APP");
-            if (tableExists(connection, "ECOS", HISTORY)) {
-                verifyCompatible(connection);
-                return null;
+            int version = existingVersion(connection);
+            if (version == CURRENT_VERSION) return null;
+            if (!tableExists(connection, "ECOS", HISTORY)) {
+                migrateLegacy(connection);
+                version = DOMAINS.version();
             }
-            // A failed transaction rolls its DDL back. Pre-existing target tables need investigation,
-            // rather than an implicit merge or replacement of either copy of the user's data.
-            if (tableExists(connection, "ANAGRAFICHE", "CLIENTI")
-                    || tableExists(connection, "VENDITE", "VENDITE_DETTAGLIO")) {
-                throw incompatible("Schemi di destinazione già presenti senza uno storico valido: migrazione annullata.");
-            }
-            if (tableExists(connection, "APP", HISTORY)) {
-                verifyHistory(connection, "APP", 1);
-                verifyTables(connection, "APP", "APP");
-            } else {
-                BASELINE.apply(connection, true);
-                verifyTables(connection, "APP", "APP");
-                try (Statement statement = connection.createStatement()) {
-                    statement.executeUpdate("""
-                            CREATE TABLE APP.ECOS_SCHEMA_HISTORY (
-                                version INTEGER PRIMARY KEY,
-                                description VARCHAR(200) NOT NULL,
-                                checksum CHAR(64) NOT NULL,
-                                applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-                            )
-                            """);
+            for (SchemaMigration migration : MIGRATIONS) {
+                if (migration.version() > version) {
+                    migration.apply(connection, false);
+                    recordMigration(connection, "ECOS", migration);
                 }
-                recordMigration(connection, "APP", BASELINE);
             }
-            DOMAINS.apply(connection, false);
-            DomainSchemaMigration.copyData(connection);
-            recordMigration(connection, "ECOS", DOMAINS);
-            verifyHistory(connection, "ECOS", CURRENT_VERSION);
-            verifyTables(connection, "ANAGRAFICHE", "VENDITE");
-            DomainSchemaMigration.removeLegacyTables(connection);
+            verifyCompatible(connection);
             return null;
         });
+    }
+
+    private static void migrateLegacy(Connection connection) throws SQLException {
+        // A failed transaction rolls its DDL back. Pre-existing target tables need investigation,
+        // rather than an implicit merge or replacement of either copy of the user's data.
+        if (tableExists(connection, "ANAGRAFICHE", "CLIENTI")
+                || tableExists(connection, "VENDITE", "VENDITE_DETTAGLIO")) {
+            throw incompatible("Schemi di destinazione già presenti senza uno storico valido: migrazione annullata.");
+        }
+        if (tableExists(connection, "APP", HISTORY)) {
+            verifyHistory(connection, "APP", 1);
+            verifyTables(connection, "APP", "APP");
+        } else {
+            BASELINE.apply(connection, true);
+            verifyTables(connection, "APP", "APP");
+            try (Statement statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                        CREATE TABLE APP.ECOS_SCHEMA_HISTORY (
+                            version INTEGER PRIMARY KEY,
+                            description VARCHAR(200) NOT NULL,
+                            checksum CHAR(64) NOT NULL,
+                            applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                        )
+                        """);
+            }
+            recordMigration(connection, "APP", BASELINE);
+        }
+        DOMAINS.apply(connection, false);
+        DomainSchemaMigration.copyData(connection);
+        recordMigration(connection, "ECOS", DOMAINS);
+        verifyTables(connection, "ANAGRAFICHE", "VENDITE");
+        DomainSchemaMigration.removeLegacyTables(connection);
+    }
+
+    private static int existingVersion(Connection connection) throws SQLException {
+        if (tableExists(connection, "ECOS", HISTORY)) {
+            int version;
+            try (var statement = connection.createStatement();
+                 var rows = statement.executeQuery("SELECT MAX(version) FROM ECOS." + HISTORY)) {
+                rows.next();
+                version = rows.getInt(1);
+            }
+            if (version < DOMAINS.version()) throw incompatible("Storico migrazioni incompleto o non valido.");
+            verifyHistory(connection, "ECOS", version);
+            verifyTables(connection, "ANAGRAFICHE", "VENDITE");
+            if (version >= TON_PRODUCTS.version()) verifyColumns(connection, "TON", "PRODOTTI", PRODUCTS);
+            return version;
+        }
+        if (tableExists(connection, "APP", HISTORY)) {
+            verifyHistory(connection, "APP", BASELINE.version());
+            verifyTables(connection, "APP", "APP");
+            return BASELINE.version();
+        }
+        return 0;
     }
 
     /** CLIENT probes never baseline or migrate a remote HOST. */
@@ -117,8 +154,8 @@ public final class DatabaseSchema {
         if (!tableExists(connection, "ECOS", HISTORY)) {
             throw incompatible("Schema database " + CURRENT_VERSION + " richiesto: aggiornare e riavviare l'HOST.");
         }
-        verifyHistory(connection, "ECOS", CURRENT_VERSION);
-        verifyTables(connection, "ANAGRAFICHE", "VENDITE");
+        if (existingVersion(connection) != CURRENT_VERSION)
+            throw incompatible("Schema database " + CURRENT_VERSION + " richiesto: aggiornare e riavviare l'HOST.");
     }
 
     private static void verifyHistory(Connection connection, String schema, int expectedVersion) throws SQLException {
@@ -128,7 +165,7 @@ public final class DatabaseSchema {
             try (var rows = statement.executeQuery("SELECT version, checksum FROM " + schema + "." + HISTORY + " ORDER BY version")) {
                 while (rows.next()) {
                     int version = rows.getInt("version");
-                    if (version > expectedVersion) {
+                    if (version > expectedVersion || version > CURRENT_VERSION) {
                         throw incompatible("Versione schema database non supportata: " + version);
                     }
                     if (version != expected || version < 1) {
