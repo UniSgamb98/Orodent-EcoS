@@ -16,7 +16,7 @@ con il nuovo launcher e la chiave va installata manualmente, una volta.
 La linea attuale supporta Windows x64, Java 21 e protocollo updater 1. Aggiorna i JAR
 come un insieme; EXE, launcher e Java rimangono quelli installati. Il contratto di
 compatibilità resta `database.schema=1`, come richiesto dai launcher già distribuiti.
-Il contatore interno delle migrazioni DB è distinto: attualmente vale 2.
+Il contatore interno delle migrazioni DB è distinto: attualmente vale 4.
 
 `ReleaseTool` legge `database/version.properties` dal JAR database che sta firmando
 e dichiara nel catalogo `database.migration.minimum` e `database.migration.target`.

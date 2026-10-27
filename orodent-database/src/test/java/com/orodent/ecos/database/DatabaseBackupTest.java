@@ -46,6 +46,61 @@ class DatabaseBackupTest {
     }
 
     @Test
+    void backsUpVersionThreeBeforeDomainDdlAndRestoresTheOriginalCatalogue() throws Exception {
+        SchemaV3Fixture.create(connections);
+        execute("INSERT INTO TON.PRODOTTI(codice,descrizione,versione_modifica) VALUES ('ZR A2','Catalogo precedente',3)");
+        var identity = connections.withConnection(DatabaseIdentity::initialize);
+        migrate();
+        Path snapshot = onlySnapshot();
+        var restored = restore(snapshot);
+        restored.withConnection(connection -> {
+            try (var statement = connection.createStatement();
+                 var rows = statement.executeQuery("SELECT codice,descrizione,versione_modifica FROM TON.PRODOTTI")) {
+                assertTrue(rows.next());
+                assertEquals("ZR A2", rows.getString(1));
+                assertEquals("Catalogo precedente", rows.getString(2));
+                assertEquals(3, rows.getInt(3));
+            }
+            try (var statement = connection.createStatement();
+                 var rows = statement.executeQuery("SELECT MAX(version) FROM ECOS.ECOS_SCHEMA_HISTORY")) {
+                assertTrue(rows.next()); assertEquals(3, rows.getInt(1));
+            }
+            try (var tables = connection.getMetaData().getTables(null, "TON", "LINEE", new String[]{"TABLE"})) {
+                assertFalse(tables.next(), "Il backup precede la prima tabella della V4");
+            }
+            return null;
+        });
+        assertEquals(identity, restored.withConnection(DatabaseIdentity::read));
+        assertEquals(identity, connections.withConnection(DatabaseIdentity::read));
+        // A restored V3 archive must itself remain migratable.
+        new DatabaseSchema(restored).initialize();
+        restored.withConnection(connection -> { DatabaseSchema.verifyCompatible(connection); return null; });
+        migrate();
+        assertEquals(snapshot, onlySnapshot());
+    }
+
+    @Test
+    void failedVersionThreeBackupPreventsDomainCreationAndKeepsProducts() throws Exception {
+        SchemaV3Fixture.create(connections);
+        execute("INSERT INTO TON.PRODOTTI(codice) VALUES ('KEEP')");
+        Files.writeString(home.resolve("backups"), "Directory non disponibile");
+        var failure = assertThrows(RuntimeException.class, this::migrate);
+        assertEquals("XEC02", ((SQLException) failure.getCause()).getSQLState());
+        connections.withConnection(connection -> {
+            try (var statement = connection.createStatement(); var rows = statement.executeQuery("SELECT codice FROM TON.PRODOTTI")) {
+                assertTrue(rows.next()); assertEquals("KEEP", rows.getString(1));
+            }
+            try (var statement = connection.createStatement(); var rows = statement.executeQuery("SELECT MAX(version) FROM ECOS.ECOS_SCHEMA_HISTORY")) {
+                assertTrue(rows.next()); assertEquals(3, rows.getInt(1));
+            }
+            try (var tables = connection.getMetaData().getTables(null, "TON", "LINEE", new String[]{"TABLE"})) {
+                assertFalse(tables.next());
+            }
+            return null;
+        });
+    }
+
+    @Test
     void backsUpVersionTwoBeforeCreatingTheTonCatalogueAndKeepsTheArchiveIdentity() throws Exception {
         SchemaV2Fixture.create(connections);
         execute("INSERT INTO ANAGRAFICHE.CLIENTI(codice_cliente,ragione_sociale) VALUES ('OLD','Cliente da conservare')");

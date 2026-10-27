@@ -94,7 +94,7 @@ background.
 Per introdurre questa versione, aggiornare e riavviare prima l'HOST: i nuovi CLIENT
 richiedono che esponga l'identità persistente e segnalano chiaramente un HOST ancora
 precedente. L'identità persistente non aggiunge tabelle; i contratti di release e discovery
-UDP rimangono invariati. Il catalogo TON richiede invece la migrazione SQL V3,
+UDP rimangono invariati. Lo schema completo TON richiede invece la migrazione SQL V4,
 eseguita soltanto al riavvio pianificato dell'HOST. Le future migrazioni si eseguono durante un riavvio
 pianificato dell'HOST, con le altre istanze chiuse e backup preventivo.
 
@@ -110,7 +110,7 @@ pianificato dell'HOST, con le altre istanze chiuse e backup preventivo.
 
 La versione 2 separa anagrafica e vendite negli schemi `ANAGRAFICHE` e `VENDITE`.
 L'HOST migra le vecchie tabelle `APP` in transazione, conservandone i dati.
-Il CLIENT richiede lo schema corrente 3 e non tenta un database locale alternativo
+Il CLIENT richiede lo schema corrente 4 e non tenta un database locale alternativo
 se trova un HOST incompatibile.
 Il passaggio richiede tutte le postazioni aggiornate: avviare prima l'HOST.
 Vedere [struttura e migrazione del database](database-schema.md).

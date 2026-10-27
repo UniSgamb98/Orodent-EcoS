@@ -7,7 +7,7 @@ EcoS usa un solo database Derby, organizzato per dominio dei dati.
 | `ECOS` | `ECOS_SCHEMA_HISTORY` | Versioni, checksum e date delle migrazioni |
 | `ANAGRAFICHE` | `CLIENTI` | Anagrafica condivisa tra i moduli |
 | `VENDITE` | `VENDITE_DETTAGLIO` | Vendite e rettifiche condivise |
-| `TON` | `PRODOTTI` | Famiglie e materiali tecnici del laboratorio |
+| `TON` | 25 tabelle: cataloghi, specifiche versionate, produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
 
 Statistiche legge clienti e vendite dagli schemi condivisi; TON gestisce il proprio
 catalogo tecnico in `TON.PRODOTTI`. Lo schema `STATISTICHE` sarà creato soltanto
@@ -68,10 +68,34 @@ schema 3 non aggiunge righe allo storico e non crea altre copie. Script V1 e V2
 rimangono immutati; tabelle TON preesistenti senza migrazione registrata non
 vengono adottate o cancellate automaticamente.
 
-La verifica CLIENT è in sola lettura e richiede lo schema 3. Il recupero della
-connessione può soltanto aprire un archivio già compatibile: non esegue V3 durante
+La verifica CLIENT è in sola lettura e richiede lo schema corrente. Il recupero della
+connessione può soltanto aprire un archivio già compatibile: non esegue migrazioni durante
 un subentro. Per l'aggiornamento, chiudere le istanze e riavviare prima l'HOST
 aggiornato, poi i CLIENT. Vedere [il primo catalogo TON](ton.md).
+
+## Migrazione dalla versione 3 alla 4
+
+`V4__ton_domain.sql` crea 24 tabelle TON oltre al catalogo V3. Comprende schede
+tecniche versionate, composizioni per strato, modelli e configurazioni articolo,
+produzioni, forni/cicli/carichi/lotti e documenti. Non inserisce dati dimostrativi
+e non importa il database TON-V2. La struttura precede l'implementazione dei nuovi
+flussi utente: [campi, collegamenti e limiti applicativi](ton-schema-proposta.md).
+
+Il runner salva un backup V3 prima del DDL, conserva prodotti e relative sequenze,
+clienti/vendite, storico V1/V2/V3 e UUID, poi applica V4 in una sola transazione.
+Un errore anche nell'ultima tabella annulla tutte le creazioni V4. Le tabelle
+preesistenti senza lo storico corrispondente non vengono adottate o cancellate.
+V1 e V2 possono raggiungere direttamente V4 passando per le migrazioni mancanti,
+con un solo backup preventivo. V1/V2/V3 restano immutabili.
+
+HOST e CLIENT controllano in lettura la struttura V4, inclusi colonne, tipi,
+nullabilità, default richiesti e presenza dei vincoli nominati. Un V3 senza V4
+viene rifiutato dal CLIENT con l'indicazione di aggiornare l'HOST. La verifica
+non ricrea colonne o vincoli rimossi manualmente. Il failover non applica DDL.
+
+La migrazione non cambia EXE, Java, protocollo o configurazione: arriva con la
+normale release firmata. Chiudere le istanze e riavviare prima l'HOST aggiornato,
+poi i CLIENT. Un riavvio su V4 non aggiunge backup o righe allo storico.
 
 ## Distribuzione e migrazioni automatiche
 
@@ -83,7 +107,7 @@ corrente; il publisher legge lo stesso file dai componenti che firma.
 Il catalogo mantiene `database.schema=1`: il nome è storico e rappresenta il
 contratto accettato dai launcher installati, non il contatore delle migrazioni.
 Due campi aggiuntivi firmati dichiarano `database.migration.minimum=1` e
-`database.migration.target=3`. Il vecchio launcher ignora i campi aggiuntivi e
+`database.migration.target=4`. Il vecchio launcher ignora i campi aggiuntivi e
 continua a verificare firma, checksum, runtime e protocollo prima di attivare
 l'intero insieme dei nuovi JAR. Il nuovo launcher verifica anche la validità
 dell'intervallo dichiarato, senza vincolarlo a un singolo contatore DB.

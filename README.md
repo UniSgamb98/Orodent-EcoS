@@ -10,7 +10,10 @@ Il catalogo permette ricerca paginata, creazione, modifica e archiviazione, con
 controllo delle modifiche concorrenti. I dati sono in `TON.PRODOTTI`, distinti
 dagli articoli di vendita. Vedere [uso e organizzazione del modulo](docs/ton.md).
 
-La migrazione V3 conserva clienti e vendite e salva un backup degli archivi
+La migrazione V4 completa la struttura TON con 25 tabelle, compresi documenti e
+modelli di stampa; le nuove funzioni verranno implementate gradualmente.
+Vedere [tabelle e collegamenti](docs/ton-schema-proposta.md).
+Conserva catalogo prodotti, clienti e vendite e salva un backup degli archivi
 esistenti prima delle modifiche. Per distribuire questa versione, chiudere le
 istanze e riavviare prima l'HOST aggiornato, poi i CLIENT. I normali aggiornamenti
 firmati dei componenti supportano il passaggio senza sostituire Java o launcher.
@@ -43,7 +46,7 @@ Anagrafiche e vendite risiedono in `orodent-database`, nello stesso database
 `OrodentEcoS`. La versione dello schema è registrata dall'HOST; i CLIENT eseguono
 solo una verifica di compatibilità. Vedere [integrazione Statistiche](docs/reuse-statistiche.md).
 
-Lo schema DB 3 organizza le tabelle in `ECOS`, `ANAGRAFICHE`, `VENDITE` e `TON`.
+Lo schema DB 4 organizza le tabelle in `ECOS`, `ANAGRAFICHE`, `VENDITE` e `TON`.
 I dati delle precedenti tabelle `APP` vengono migrati dall'HOST in transazione.
 Il passaggio può arrivare tramite una normale release dei componenti, mantenendo
 il launcher installato: il contatore delle migrazioni è distinto dal contratto

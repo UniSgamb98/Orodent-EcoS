@@ -100,7 +100,9 @@ class DatabaseSchemaTest {
     void initializesDomainSchemasAndRecordsEachMigrationExactlyOnce() {
         migrate();
         migrate();
-        assertEquals(List.of(List.of(1), List.of(2), List.of(3)), rows("SELECT version FROM ECOS.ECOS_SCHEMA_HISTORY ORDER BY version"));
+        assertEquals(java.util.stream.IntStream.rangeClosed(1, DatabaseSchema.CURRENT_VERSION)
+                        .mapToObj(version -> List.of((Object) version)).toList(),
+                rows("SELECT version FROM ECOS.ECOS_SCHEMA_HISTORY ORDER BY version"));
         connections.withConnection(connection -> {
             DatabaseSchema.verifyCompatible(connection);
             assertTrue(tableExists(connection, "ANAGRAFICHE", "CLIENTI"));
@@ -182,7 +184,9 @@ class DatabaseSchemaTest {
             assertEquals("XEC01", failure.getSQLState());
             return null;
         });
-        assertEquals(List.of(List.of(1), List.of(2), List.of(DatabaseSchema.CURRENT_VERSION + 1)),
+        assertEquals(java.util.stream.IntStream.rangeClosed(1, DatabaseSchema.CURRENT_VERSION)
+                        .mapToObj(version -> List.of((Object) (version == DatabaseSchema.CURRENT_VERSION
+                                ? version + 1 : version))).toList(),
                 rows("SELECT version FROM ECOS.ECOS_SCHEMA_HISTORY ORDER BY version"));
     }
 

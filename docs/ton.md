@@ -1,5 +1,9 @@
 # TON: primo catalogo tecnico
 
+Lo [schema completo TON](ton-schema-proposta.md) descrive le 25 tabelle introdotte
+da V3/V4, i collegamenti e un esempio di produzione e cottura. La struttura SQL
+è disponibile; i flussi applicativi successivi al catalogo restano da realizzare.
+
 Il primo blocco riscritto da TON-V2 è il catalogo dei prodotti tecnici, accessibile
 con **TON → Apri catalogo prodotti**. Un prodotto rappresenta una famiglia o un
 materiale del laboratorio, per esempio `ZR A2`. Non viene associato automaticamente
@@ -49,10 +53,17 @@ stato attivo, revisione per il controllo concorrente e timestamp. È applicata
 solo dall'HOST, con backup prima dell'aggiornamento di archivi esistenti. I dati
 Statistiche e l'identità del DB vengono conservati; i CLIENT verificano lo schema
 senza migrarlo. Chiudere le istanze prima dell'aggiornamento e riavviare l'HOST
-aggiornato prima dei CLIENT. Non è necessario cambiare Java o launcher per V3:
+aggiornato prima dei CLIENT. Non è necessario cambiare Java o launcher per V3/V4:
 la normale release firmata dei componenti dichiara il nuovo target di migrazione.
 
-Il catalogo parte vuoto. Questo passaggio non importa automaticamente il database
-TON-V2 e non aggiunge tabelle per funzioni ancora assenti. Polveri, modelli disco,
-composizioni, produzione e forni verranno nei passi successivi; cubaggio resta
-rinviato.
+La V4 aggiunge le altre 24 tabelle: linee e articoli; polveri e revisioni;
+composizioni e ingredienti; modelli e configurazioni; produzioni e scarti;
+forni, programmi, cicli, carichi e lotti; modelli documento e documenti emessi.
+Conserva integralmente il catalogo V3, gli ID, la sequenza e le revisioni; non
+importa automaticamente TON-V2 e non crea dati dimostrativi. Un database nuovo
+parte vuoto. Il cubaggio resta rinviato.
+
+Sono già attivi i vincoli SQL di identità, unicità, riferimenti, percentuali,
+quantità e coerenza dei campi. I servizi futuri dovranno completare i controlli
+transazionali su somme, disponibilità, approvazione e immutabilità: creare le
+tabelle non introduce già le relative schermate o il sistema di stampa.
