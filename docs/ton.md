@@ -1,4 +1,20 @@
-# TON: primo catalogo tecnico
+# TON: navigazione e catalogo tecnico
+
+La finestra TON ha un menu laterale con **Panoramica**, **Produzione**, **Forni e
+cotture**, **Dati tecnici**, **Tracciabilità** e **Documenti**. Il percorso in alto
+indica la pagina corrente; il pulsante **Home Orodent-EcoS** torna al catalogo
+principale, mentre **Panoramica** resta dentro TON.
+
+Aprire il catalogo prodotti dalla Panoramica oppure da **Dati tecnici → Prodotti
+tecnici**. Le altre aree presentano le funzioni previste con lo stato **In
+preparazione**, senza contatori fittizi o comandi di lavorazione non implementati.
+Il cubaggio rimane rinviato e non compare come funzione operativa.
+
+Il pulsante **Menu TON / Chiudi menu** permette di richiudere la barra. Sotto
+1020 pixel si richiude automaticamente, e dopo la selezione di un'area lascia
+spazio al contenuto. **Esc** la richiude nella modalità compatta. Gli elenchi e
+le schede scorrono quando lo spazio non basta. Allargando la finestra il menu
+torna visibile.
 
 Lo [schema completo TON](ton-schema-proposta.md) descrive le 25 tabelle introdotte
 da V3/V4, i collegamenti e un esempio di produzione e cottura. La struttura SQL
@@ -41,6 +57,16 @@ interrotti dalla disconnessione non vengono ripetuti automaticamente.
   richieste superate; annulla solo le letture, senza interrompere le scritture.
 - `features/products/view`: controlli JavaFX e stati visivi.
 - `TonController`: navigazione del modulo e rilascio della pagina attiva.
+- `navigation/TonSection` e `TonFeature`: mappa delle aree e stato delle funzioni.
+- `view/TonView`: struttura persistente, menu, percorso e comportamento compatto.
+- `view/TonPages`: pagine introduttive create alla selezione, senza query DB.
+
+Una nuova funzione si aggiunge alla mappa, alla sua pagina e al dispatcher di
+`TonController`; diventa disponibile solo quando esiste il flusso operativo.
+Le aree non aprono finestre separate e non costruiscono in anticipo tutti i
+controller. Quando si lascia il catalogo, il controller verifica le modifiche
+non salvate prima di cambiare pagina o voce evidenziata. Durante il salvataggio
+sono disabilitati sia la Home di EcoS sia i collegamenti di navigazione.
 
 Il provider del modulo non apre il DB e non crea controlli quando viene caricato
 nel catalogo EcoS. I servizi condivisi e la finestra principale restano di EcoS.

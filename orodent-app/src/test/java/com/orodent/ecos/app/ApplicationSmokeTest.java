@@ -110,6 +110,7 @@ class ApplicationSmokeTest {
                 assertHome(stage);
             });
 
+            navigatesTonAreasAndProtectsAnUnsavedProduct(stage);
             managesTonProductsAndKeepsThemWhenReopeningTheModule(stage);
 
             // Import the same CSV formats used by the application, away from the FX thread.
@@ -170,6 +171,8 @@ class ApplicationSmokeTest {
             ((javafx.scene.control.TextArea) stage.getScene().lookup("#ton-product-description")).setText("Materiale di prova TON");
             button(stage, "ton-product-save").fire();
             assertTrue(buttonUnchecked(stage, "ton-home-button").isDisabled(), "Il salvataggio deve completarsi prima di lasciare la pagina");
+            assertTrue(buttonUnchecked(stage, "ton-nav-documents").isDisabled(), "Anche il menu deve attendere il salvataggio");
+            assertTrue(buttonUnchecked(stage, "ton-nav-production").isDisabled());
         });
         awaitFx(() -> tonProductRow(stage, "ZR A2", "Attivo"), "Il prodotto TON non è stato salvato");
         runFx(() -> {
@@ -206,6 +209,67 @@ class ApplicationSmokeTest {
             button(stage, "ton-home-button").fire();
             assertHome(stage);
         });
+    }
+
+    private void navigatesTonAreasAndProtectsAnUnsavedProduct(Stage stage) throws Exception {
+        runFx(() -> {
+            button(stage, "open-ton-button").fire();
+            view(stage, "ton-overview-page");
+            for (String area : List.of("production", "firing", "technical", "traceability", "documents")) {
+                button(stage, "ton-nav-" + area).fire();
+                Node page = view(stage, "ton-" + area + "-page");
+                assertTrue(buttonUnchecked(stage, "ton-nav-" + area).getPseudoClassStates().contains(
+                        javafx.css.PseudoClass.getPseudoClass("selected")), "Il menu deve evidenziare la pagina reale");
+                assertTrue(page.lookupAll(".label").stream().filter(Label.class::isInstance)
+                        .map(Label.class::cast).anyMatch(label -> "In preparazione".equals(label.getText())));
+            }
+            button(stage, "ton-nav-technical").fire();
+            button(stage, "ton-tech-products-button").fire();
+        });
+        awaitFx(() -> stage.getScene().lookup("#ton-products-table") instanceof TableView<?> table && !table.isDisabled(),
+                "Il catalogo deve essere raggiungibile da Dati tecnici");
+        runFx(() -> {
+            assertEquals("TON › Dati tecnici › Prodotti tecnici", ((Label) stage.getScene().lookup("#ton-breadcrumb")).getText());
+            ((javafx.scene.control.TextField) stage.getScene().lookup("#ton-product-code")).setText("NON SALVATO");
+            Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.NO));
+            button(stage, "ton-nav-documents").fire();
+            assertNotNull(stage.getScene().lookup("#ton-products-view"));
+            assertEquals("NON SALVATO", ((javafx.scene.control.TextField) stage.getScene().lookup("#ton-product-code")).getText());
+            assertTrue(buttonUnchecked(stage, "ton-nav-technical").getPseudoClassStates().contains(
+                    javafx.css.PseudoClass.getPseudoClass("selected")));
+            Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.YES));
+            button(stage, "ton-nav-documents").fire();
+            view(stage, "ton-documents-page");
+            assertTrue(stage.getScene().lookup("#ton-products-view") == null);
+            stage.setWidth(860);
+        });
+        awaitFx(() -> stage.getScene().lookup("#ton-sidebar") == null,
+                "Il menu deve lasciare spazio al contenuto nelle finestre strette");
+        runFx(() -> {
+            button(stage, "ton-menu-button").fire();
+            assertNotNull(stage.getScene().lookup("#ton-sidebar"));
+            button(stage, "ton-nav-firing").fire();
+            view(stage, "ton-firing-page");
+            assertTrue(stage.getScene().lookup("#ton-sidebar") == null);
+            assertNotNull(stage.getScene().lookup("#ton-home-button"));
+            stage.setWidth(1120);
+        });
+        awaitFx(() -> stage.getScene().lookup("#ton-sidebar") != null, "Il menu deve tornare visibile allargando la finestra");
+        runFx(() -> {
+            button(stage, "ton-overview-button").fire();
+            view(stage, "ton-overview-page");
+            button(stage, "ton-home-button").fire();
+            assertHome(stage);
+        });
+    }
+
+    private static void respondToProductDiscard(javafx.scene.control.ButtonType answer) {
+        javafx.scene.control.DialogPane dialog = javafx.stage.Window.getWindows().stream()
+                .filter(javafx.stage.Window::isShowing).filter(window -> window.getScene() != null)
+                .map(window -> window.getScene().getRoot().lookup(".dialog-pane"))
+                .filter(javafx.scene.control.DialogPane.class::isInstance)
+                .map(javafx.scene.control.DialogPane.class::cast).findFirst().orElseThrow();
+        ((Button) dialog.lookupButton(answer)).fire();
     }
 
     private boolean tonProductRow(Stage stage, String code, String state) {

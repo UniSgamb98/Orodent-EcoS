@@ -5,42 +5,54 @@ import com.orodent.ecos.ton.features.products.controller.ProductsController;
 import com.orodent.ecos.ton.features.products.service.ProductService;
 import com.orodent.ecos.ton.features.products.view.ProductsView;
 import com.orodent.ecos.ton.view.TonView;
+import com.orodent.ecos.ton.navigation.TonSection;
+import com.orodent.ecos.ton.navigation.TonFeature;
 
 final class TonController {
     private final TonView view = new TonView();
     private final ProductService products;
     private ProductsController active;
+    private TonSection section = TonSection.OVERVIEW;
 
     TonController(ModuleContext context) {
         products = new ProductService(context.connections(), context.workers());
         view.homeButton().setOnAction(event -> { if (canLeave()) context.showHome().run(); });
-        view.overviewButton().setOnAction(event -> { if (canLeave()) { closePage(); view.showOverview(); } });
-        view.productsButton().setOnAction(event -> showProducts());
+        view.onSection(this::showSection);
+        view.onFeature(feature -> {
+            switch (feature) {
+                case PRODUCTS -> showProducts();
+                default -> throw new IllegalArgumentException("Funzione TON non ancora disponibile: " + feature);
+            }
+        });
     }
 
     TonView root() { return view; }
 
     private boolean canLeave() { return active == null || active.canLeave(); }
 
+    private void showSection(TonSection next) {
+        if ((active == null && section == next) || !canLeave()) return;
+        closePage(); section = next; view.showSection(next);
+    }
+
     private void showProducts() {
-        if (!canLeave()) return;
+        if (active != null || !canLeave()) return;
         closePage();
         ProductsView page = new ProductsView();
         active = new ProductsController(page, products);
-        view.homeButton().disableProperty().bind(active.savingProperty());
-        view.overviewButton().disableProperty().bind(active.savingProperty());
+        section = TonSection.TECHNICAL;
+        view.navigationBlockedProperty().bind(active.savingProperty());
         view.showProducts(page);
         active.loadInitialData();
     }
 
     private void closePage() {
-        view.homeButton().disableProperty().unbind(); view.homeButton().setDisable(false);
-        view.overviewButton().disableProperty().unbind(); view.overviewButton().setDisable(false);
+        view.navigationBlockedProperty().unbind(); view.navigationBlockedProperty().set(false);
         if (active != null) { active.dispose(); active = null; }
     }
 
     void dispose() {
         closePage();
-        view.homeButton().setOnAction(null); view.overviewButton().setOnAction(null); view.productsButton().setOnAction(null);
+        view.dispose();
     }
 }

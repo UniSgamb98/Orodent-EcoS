@@ -3,7 +3,12 @@
 Un'unica applicazione desktop JavaFX, organizzata come monorepo Maven.
 La Home permette di aprire Ton e Statistiche nello stesso processo JavaFX.
 
-## TON: primo blocco riscritto
+## TON: navigazione e primo catalogo
+
+TON dispone di Panoramica e menu laterale per Produzione, Forni e cotture, Dati
+tecnici, Tracciabilità e Documenti. Le aree future sono descritte come **In
+preparazione**; il catalogo prodotti è già operativo. Il menu è richiudibile e
+si adatta alle finestre strette. [Navigazione e uso](docs/ton.md).
 
 Aprire **TON → Apri catalogo prodotti** per gestire famiglie e materiali tecnici.
 Il catalogo permette ricerca paginata, creazione, modifica e archiviazione, con

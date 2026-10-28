@@ -1,0 +1,75 @@
+.ton-module > .app-header { -fx-padding: 12px 24px; }
+.ton-module .ton-sidebar {
+    -fx-background-color: white;
+    -fx-border-color: transparent #dce5ef transparent transparent;
+    -fx-padding: 14px 12px;
+    -fx-min-width: 224px;
+    -fx-pref-width: 224px;
+    -fx-max-width: 224px;
+}
+.ton-module .ton-nav-group {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #7a8b9d;
+    -fx-padding: 14px 12px 4px 12px;
+}
+.ton-module .ton-nav-item {
+    -fx-background-color: transparent;
+    -fx-background-radius: 7px;
+    -fx-text-fill: #405a71;
+    -fx-font-size: 13px;
+    -fx-padding: 12px;
+    -fx-graphic-text-gap: 10px;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+    -fx-border-radius: 7px;
+}
+.ton-module .ton-nav-item:hover { -fx-background-color: #f0f5f9; }
+.ton-module .ton-nav-item:selected {
+    -fx-background-color: #e1eff4;
+    -fx-text-fill: #165c76;
+    -fx-font-weight: bold;
+}
+.ton-module .ton-nav-item:focused { -fx-border-color: #176b87; }
+.ton-module .ton-nav-icon { -fx-fill: #607d93; }
+.ton-module .ton-nav-item:selected .ton-nav-icon { -fx-fill: #176b87; }
+.ton-module .ton-home-icon { -fx-fill: white; }
+.ton-module .ton-page-scroll,
+.ton-module .ton-page-scroll > .viewport {
+    -fx-background-color: #f4f7fb;
+    -fx-background: #f4f7fb;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+}
+.ton-module .ton-breadcrumb {
+    -fx-background-color: #f4f7fb;
+    -fx-text-fill: #6a7f93;
+    -fx-font-size: 11px;
+    -fx-padding: 13px 26px 0 26px;
+}
+.ton-module .ton-page-heading { -fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #173f5f; }
+.ton-module .ton-card-title { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #173f5f; }
+.ton-module .ton-description { -fx-font-size: 13px; -fx-text-fill: #637c93; -fx-line-spacing: 3px; }
+.ton-module .ton-feature-card {
+    -fx-padding: 18px;
+    -fx-background-color: white;
+    -fx-background-radius: 10px;
+    -fx-border-color: #dce5ef;
+    -fx-border-radius: 10px;
+}
+.ton-module .ton-ready-card { -fx-border-color: #9ec5d2; -fx-background-color: #f5fbfd; }
+.ton-module .ton-badge-ready, .ton-module .ton-badge-planned {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 4px 8px;
+    -fx-background-radius: 5px;
+}
+.ton-module .ton-badge-ready { -fx-background-color: #dcefe9; -fx-text-fill: #26614f; }
+.ton-module .ton-badge-planned { -fx-background-color: #eef2f6; -fx-text-fill: #6b7d8c; }
+.ton-module .ton-area-status {
+    -fx-padding: 12px 15px;
+    -fx-background-color: #eaf2f7;
+    -fx-background-radius: 7px;
+    -fx-font-size: 12px;
+    -fx-text-fill: #46677e;
+}
