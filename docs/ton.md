@@ -103,3 +103,9 @@ transazionali su disponibilità e flussi produttivi. Per le polveri sono già
 implementati somme, approvazione, immutabilità delle schede approvate e
 assegnazione concorrente delle versioni. Creare le altre tabelle non introduce
 già le relative schermate o il sistema di stampa.
+
+La V5 aggiunge `TON.POLVERI.colore`, usato nell'anagrafica e per ordinare il
+catalogo: bianche, gialle, rosa, grigie, poi codice. Le polveri V4 restano senza
+colore finché l'operatore lo specifica; il vecchio numero viene conservato solo
+come dato legacy. Anche V5 arriva attraverso la normale release dei componenti,
+con backup e migrazione eseguiti dall'HOST prima di accettare i CLIENT aggiornati.

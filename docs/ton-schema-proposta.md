@@ -1,6 +1,6 @@
 # Proposta di schema TON per Orodent-EcoS
 
-Stato: **struttura SQL implementata nella migrazione V4**. `TON.PRODOTTI` esiste
+Stato: **struttura SQL implementata nella migrazione V4, colore polveri aggiunto in V5**. `TON.PRODOTTI` esiste
 dalla V3; `V4__ton_domain.sql` aggiunge le altre 24 tabelle, senza importare dati
 da TON-V2. I cataloghi prodotti e polveri sono operativi; per le polveri sono
 implementati anche versioni, ossidi e approvazione. Questo documento descrive
@@ -137,10 +137,14 @@ possono cambiare senza riscrivere le produzioni passate.
 | `polvere_id` | BIGINT PK | Identità stabile della polvere |
 | `codice` | VARCHAR(50) UQ | Per esempio `P-BIANCA` |
 | `nome` | VARCHAR(100) | Nome leggibile |
-| `ordine_visualizzazione` | INTEGER | Ordinamento, non negativo |
+| `colore` | VARCHAR(10) | BIANCA, GIALLA, ROSA o GRIGIA; da V5 |
 
 Più i campi comuni dei cataloghi. Questa tabella identifica il tipo di polvere,
-non un lotto fisico acquistato.
+non un lotto fisico acquistato; il colore è comune alle versioni.
+L'ordinamento è bianche, gialle, rosa, grigie,
+poi codice. Per le anagrafiche precedenti alla V5 `colore` può essere NULL
+(da specificare); il vecchio `ordine_visualizzazione` resta conservato ma non
+viene più usato per ordinare né modificato dal catalogo.
 
 ### 6. `TON.POLVERI_REVISIONI`
 

@@ -19,7 +19,9 @@ In **TON → Dati tecnici → Polveri** si gestiscono anagrafiche e versioni del
 schede tecniche: classe Y (anche 6Y), caratteristiche e ossidi in percentuale in
 peso, con incolla da Excel. Una scheda approvata conserva i dati storici: per
 modificarla si crea una nuova bozza. [Uso delle polveri](docs/ton-polveri.md).
-La funzione usa le tabelle V4 esistenti, senza una nuova migrazione.
+Il colore si sceglie nell'anagrafica: bianche, gialle, rosa e grigie compaiono in
+quest'ordine, poi per codice. La migrazione V5 aggiunge il colore conservando i
+dati esistenti; le polveri precedenti restano **Da specificare** finché lo si sceglie.
 
 La migrazione V4 completa la struttura TON con 25 tabelle, compresi documenti e
 modelli di stampa; le nuove funzioni verranno implementate gradualmente.
@@ -57,7 +59,7 @@ Anagrafiche e vendite risiedono in `orodent-database`, nello stesso database
 `OrodentEcoS`. La versione dello schema è registrata dall'HOST; i CLIENT eseguono
 solo una verifica di compatibilità. Vedere [integrazione Statistiche](docs/reuse-statistiche.md).
 
-Lo schema DB 4 organizza le tabelle in `ECOS`, `ANAGRAFICHE`, `VENDITE` e `TON`.
+Lo schema DB 5 organizza le tabelle in `ECOS`, `ANAGRAFICHE`, `VENDITE` e `TON`.
 I dati delle precedenti tabelle `APP` vengono migrati dall'HOST in transazione.
 Il passaggio può arrivare tramite una normale release dei componenti, mantenendo
 il launcher installato: il contatore delle migrazioni è distinto dal contratto

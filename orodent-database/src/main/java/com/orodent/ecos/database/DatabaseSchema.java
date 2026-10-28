@@ -25,7 +25,9 @@ public final class DatabaseSchema {
             "TON technical product catalogue", "/database/migrations/V3__ton_products.sql");
     private static final SchemaMigration TON_DOMAIN = new SchemaMigration(4,
             "TON versioned specifications, production, firing and documents", "/database/migrations/V4__ton_domain.sql");
-    private static final List<SchemaMigration> MIGRATIONS = List.of(BASELINE, DOMAINS, TON_PRODUCTS, TON_DOMAIN);
+    private static final SchemaMigration TON_POWDER_COLORS = new SchemaMigration(5,
+            "TON powder colors", "/database/migrations/V5__ton_powder_colors.sql");
+    private static final List<SchemaMigration> MIGRATIONS = List.of(BASELINE, DOMAINS, TON_PRODUCTS, TON_DOMAIN, TON_POWDER_COLORS);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS = List.of(
             varchar("CODICE_CLIENTE", 50), varchar("CODICE_ISO", 10), varchar("CATEGORIA", 100),
@@ -141,7 +143,7 @@ public final class DatabaseSchema {
             verifyHistory(connection, "ECOS", version);
             verifyTables(connection, "ANAGRAFICHE", "VENDITE");
             if (version >= TON_PRODUCTS.version()) verifyColumns(connection, "TON", "PRODOTTI", PRODUCTS);
-            if (version >= TON_DOMAIN.version()) TonSchema.verify(connection);
+            if (version >= TON_DOMAIN.version()) TonSchema.verify(connection, version);
             return version;
         }
         if (tableExists(connection, "APP", HISTORY)) {

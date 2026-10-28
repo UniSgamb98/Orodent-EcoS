@@ -55,6 +55,7 @@ public final class PowderService {
     public CompletableFuture<Detail> create(
             IdentityDraft identity, TechnicalDraft technical, boolean approve) {
         Objects.requireNonNull(identity);
+        identity.requireColor();
         Objects.requireNonNull(technical);
         if (approve) technical.requireApprovable();
         return command(
@@ -75,10 +76,11 @@ public final class PowderService {
             TechnicalDraft technical,
             boolean approve) {
         requireOwned(expected, revision);
+        identity.requireColor();
         if (revision.state() != State.BOZZA)
             throw new IllegalArgumentException(
                     "Le schede approvate o ritirate non sono modificabili. Crea una nuova"
-                        + " versione.");
+                            + " versione.");
         if (approve) technical.requireApprovable();
         return command(
                 () ->
@@ -92,6 +94,7 @@ public final class PowderService {
     }
 
     public CompletableFuture<Detail> saveIdentity(Detail expected, IdentityDraft identity) {
+        identity.requireColor();
         return command(
                 () ->
                         connections.withTransaction(
@@ -118,7 +121,7 @@ public final class PowderService {
                                     if (current.hasDraft())
                                         throw new IllegalArgumentException(
                                                 "Esiste già una bozza per questa polvere. Aprila"
-                                                    + " dal selettore delle versioni.");
+                                                        + " dal selettore delle versioni.");
                                     Revision actualSource = current.revision(source.id());
                                     int number =
                                             Math.addExact(
@@ -163,7 +166,7 @@ public final class PowderService {
                                     && "23505".equals(sql.getSQLState()))
                                 throw new IllegalArgumentException(
                                         "Esiste già una polvere con questo codice. Nessuna modifica"
-                                            + " è stata salvata.",
+                                                + " è stata salvata.",
                                         failure);
                         throw failure;
                     }

@@ -27,7 +27,30 @@ public final class PowderModel {
         }
     }
 
-    public record IdentityDraft(String code, String name, int order, boolean active) {
+    public enum PowderColor {
+        BIANCA("Bianca"),
+        GIALLA("Gialla"),
+        ROSA("Rosa"),
+        GRIGIA("Grigia");
+
+        private final String label;
+
+        PowderColor(String label) {
+            this.label = label;
+        }
+
+        public String label() {
+            return label;
+        }
+
+        @Override
+        public String toString() {
+            return label;
+        }
+    }
+
+    /** Color may be unknown when reading a catalogue record created before V5. */
+    public record IdentityDraft(String code, String name, PowderColor color, boolean active) {
         public IdentityDraft {
             code = text(code).toUpperCase(Locale.ROOT);
             name = text(name);
@@ -35,7 +58,10 @@ public final class PowderModel {
                 throw invalid("Il codice è obbligatorio, massimo 50 caratteri.");
             if (name.isEmpty() || name.length() > 100)
                 throw invalid("Il nome è obbligatorio, massimo 100 caratteri.");
-            if (order < 0) throw invalid("L'ordine di visualizzazione non può essere negativo.");
+        }
+
+        public void requireColor() {
+            if (color == null) throw invalid("Seleziona il colore della polvere.");
         }
     }
 
@@ -88,7 +114,7 @@ public final class PowderModel {
             if (total().compareTo(BigDecimal.valueOf(100)) > 0)
                 throw invalid(
                         "Il totale degli ossidi supera il 100 wt%. Correggi la bozza prima di"
-                            + " approvarla.");
+                                + " approvarla.");
             if (translucency != null && notes.isBlank())
                 throw invalid(
                         "Indica nelle note il metodo e la scala di misura della traslucenza.");
@@ -96,9 +122,13 @@ public final class PowderModel {
     }
 
     public record Powder(
-            long id, String code, String name, int order, boolean active, int revision) {
+            long id, String code, String name, PowderColor color, boolean active, int revision) {
         public IdentityDraft identity() {
-            return new IdentityDraft(code, name, order, active);
+            return new IdentityDraft(code, name, color, active);
+        }
+
+        public String colorLabel() {
+            return color == null ? "Da specificare" : color.label();
         }
     }
 
@@ -152,7 +182,7 @@ public final class PowderModel {
         public Conflict() {
             super(
                     "La scheda è stata modificata da un altro operatore. Ricaricala prima di"
-                        + " riprovare; i tuoi dati non sono stati sovrascritti.");
+                            + " riprovare; i tuoi dati non sono stati sovrascritti.");
         }
     }
 

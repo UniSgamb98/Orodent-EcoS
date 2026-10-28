@@ -42,8 +42,9 @@ public final class PowderRepository {
                 connection.prepareStatement(
                         "SELECT * FROM TON.POLVERI"
                                 + where
-                                + " ORDER BY ordine_visualizzazione,codice,polvere_id OFFSET ? ROWS"
-                                + " FETCH NEXT ? ROWS ONLY")) {
+                                + " ORDER BY CASE colore WHEN 'BIANCA' THEN 0 WHEN 'GIALLA' THEN 1"
+                                + " WHEN 'ROSA' THEN 2 WHEN 'GRIGIA' THEN 3 ELSE 4"
+                                + " END,codice,polvere_id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY")) {
             query.setString(1, pattern);
             query.setString(2, pattern);
             query.setInt(3, offset);
@@ -58,7 +59,7 @@ public final class PowderRepository {
             try (var query =
                     connection.prepareStatement(
                             "SELECT polvere_id,numero_versione,stato,classe_ittria_y FROM"
-                                + " TON.POLVERI_REVISIONI WHERE polvere_id IN ("
+                                    + " TON.POLVERI_REVISIONI WHERE polvere_id IN ("
                                     + parameters
                                     + ") ORDER BY numero_versione DESC")) {
                 for (int i = 0; i < powders.size(); i++) query.setLong(i + 1, powders.get(i).id());
@@ -139,7 +140,7 @@ public final class PowderRepository {
         try (var query =
                 connection.prepareStatement(
                         "SELECT * FROM TON.POLVERI_REVISIONI WHERE polvere_id=? ORDER BY"
-                            + " numero_versione DESC")) {
+                                + " numero_versione DESC")) {
             query.setLong(1, id);
             try (var rows = query.executeQuery()) {
                 while (rows.next()) {
@@ -169,8 +170,7 @@ public final class PowderRepository {
     public long insertPowder(IdentityDraft draft) throws SQLException {
         try (var statement =
                 connection.prepareStatement(
-                        "INSERT INTO TON.POLVERI(codice,nome,ordine_visualizzazione,attivo) VALUES"
-                            + " (?,?,?,?)",
+                        "INSERT INTO TON.POLVERI(codice,nome,colore,attivo) VALUES" + " (?,?,?,?)",
                         Statement.RETURN_GENERATED_KEYS)) {
             identity(statement, draft);
             statement.executeUpdate();
@@ -188,7 +188,7 @@ public final class PowderRepository {
         try (var statement =
                 connection.prepareStatement(
                         """
-                        UPDATE TON.POLVERI SET codice=?,nome=?,ordine_visualizzazione=?,attivo=?,
+                        UPDATE TON.POLVERI SET codice=?,nome=?,colore=?,attivo=?,
                         versione_modifica=versione_modifica+1,aggiornato_il=CURRENT_TIMESTAMP
                         WHERE polvere_id=? AND versione_modifica=?
                         """)) {
@@ -283,7 +283,7 @@ WHERE polvere_revisione_id=? AND polvere_id=? AND versione_modifica=? AND stato=
             throws SQLException {
         statement.setString(1, draft.code());
         statement.setString(2, draft.name());
-        statement.setInt(3, draft.order());
+        statement.setString(3, draft.color() == null ? null : draft.color().name());
         statement.setBoolean(4, draft.active());
     }
 
@@ -300,7 +300,9 @@ WHERE polvere_revisione_id=? AND polvere_id=? AND versione_modifica=? AND stato=
                 rows.getLong("polvere_id"),
                 rows.getString("codice"),
                 rows.getString("nome"),
-                rows.getInt("ordine_visualizzazione"),
+                rows.getString("colore") == null
+                        ? null
+                        : PowderColor.valueOf(rows.getString("colore")),
                 rows.getBoolean("attivo"),
                 rows.getInt("versione_modifica"));
     }

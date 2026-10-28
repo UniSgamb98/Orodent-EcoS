@@ -97,6 +97,23 @@ La migrazione non cambia EXE, Java, protocollo o configurazione: arriva con la
 normale release firmata. Chiudere le istanze e riavviare prima l'HOST aggiornato,
 poi i CLIENT. Un riavvio su V4 non aggiunge backup o righe allo storico.
 
+## Migrazione dalla versione 4 alla 5
+
+`V5__ton_powder_colors.sql` aggiunge `TON.POLVERI.colore`, con i valori ammessi
+`BIANCA`, `GIALLA`, `ROSA` e `GRIGIA`. I record esistenti rimangono con colore
+NULL: il vecchio numero di visualizzazione non permette di dedurlo con certezza.
+L'interfaccia li mostra come **Da specificare** e richiede la scelta al prossimo
+salvataggio dell'anagrafica. L'ordine del catalogo è bianche, gialle, rosa,
+grigie, poi codice; i record senza colore compaiono in fondo.
+
+La vecchia colonna `ordine_visualizzazione` rimane come dato legacy, senza essere
+usata dall'applicazione. Identificativi, versioni tecniche, ossidi e riferimenti
+delle ricette restano invariati. Il runner applica il DDL e registra V5 nella
+stessa transazione, dopo il backup dell'HOST. Il CLIENT non migra un HOST V4;
+il controllo dello schema V5 verifica anche colonna e vincolo del colore.
+V1–V4 rimangono immutabili. La normale release firmata dei componenti distribuisce
+questo aggiornamento; riavviare prima l'HOST aggiornato, poi i CLIENT.
+
 ## Distribuzione e migrazioni automatiche
 
 Il contatore delle migrazioni è indipendente dalla compatibilità del launcher.
@@ -107,7 +124,7 @@ corrente; il publisher legge lo stesso file dai componenti che firma.
 Il catalogo mantiene `database.schema=1`: il nome è storico e rappresenta il
 contratto accettato dai launcher installati, non il contatore delle migrazioni.
 Due campi aggiuntivi firmati dichiarano `database.migration.minimum=1` e
-`database.migration.target=4`. Il vecchio launcher ignora i campi aggiuntivi e
+`database.migration.target=5`. Il vecchio launcher ignora i campi aggiuntivi e
 continua a verificare firma, checksum, runtime e protocollo prima di attivare
 l'intero insieme dei nuovi JAR. Il nuovo launcher verifica anche la validità
 dell'intervallo dichiarato, senza vincolarlo a un singolo contatore DB.

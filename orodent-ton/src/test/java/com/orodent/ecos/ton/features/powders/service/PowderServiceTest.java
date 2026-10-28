@@ -62,6 +62,71 @@ class PowderServiceTest {
     }
 
     @Test
+    void colorsDetermineTheOrderBeforeCodeAndUnspecifiedLegacyRowsComeLast() {
+        for (var entry :
+                List.of(
+                        Map.entry("A-GRIGIA", PowderColor.GRIGIA),
+                        Map.entry("B-ROSA", PowderColor.ROSA),
+                        Map.entry("C-GIALLA", PowderColor.GIALLA),
+                        Map.entry("Z-BIANCA", PowderColor.BIANCA),
+                        Map.entry("Y-BIANCA", PowderColor.BIANCA))) {
+            var created =
+                    service.create(
+                                    new IdentityDraft(
+                                            entry.getKey(), entry.getKey(), entry.getValue(), true),
+                                    data("5.150", 6),
+                                    false)
+                            .join();
+            assertEquals(
+                    entry.getValue(), service.load(created.powder().id()).join().powder().color());
+        }
+        var legacy = service.create(identity("0-LEGACY"), data("5.150", 3), true).join();
+        database.withTransaction(
+                connection -> {
+                    try (var statement =
+                            connection.prepareStatement(
+                                    "UPDATE TON.POLVERI SET colore=NULL,ordine_visualizzazione=0"
+                                        + " WHERE polvere_id=?")) {
+                        statement.setLong(1, legacy.powder().id());
+                        statement.executeUpdate();
+                    }
+                    return null;
+                });
+        assertEquals(
+                List.of("Y-BIANCA", "Z-BIANCA", "C-GIALLA", "B-ROSA", "A-GRIGIA", "0-LEGACY"),
+                service.findPage("", false, 0).join().rows().stream()
+                        .map(r -> r.powder().code())
+                        .toList());
+        var unspecified = service.load(legacy.powder().id()).join();
+        assertNull(unspecified.powder().color());
+        assertEquals("Da specificare", unspecified.powder().colorLabel());
+        var corrected =
+                service.saveIdentity(
+                                unspecified,
+                                new IdentityDraft(
+                                        "0-LEGACY", "Polvere recuperata", PowderColor.GIALLA, true))
+                        .join();
+        assertEquals(
+                legacy.latest(),
+                corrected.latest(),
+                "Il colore non riscrive la scheda tecnica approvata");
+        assertEquals(
+                "0-LEGACY", service.findPage("", false, 0).join().rows().get(2).powder().code());
+    }
+
+    @Test
+    void aMissingColorIsRejectedBeforeOpeningAnyDatabaseConnection() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        service.create(
+                                new IdentityDraft("A", "Polvere", null, true),
+                                data("5.150", 6),
+                                false));
+        assertEquals(0, opened.get());
+    }
+
+    @Test
     void savesExactWeightsAndIndependentSixYOnBorrowedWorkers() {
         var detail = service.create(identity(" p001 "), data("5.150", 6), false).join();
         assertEquals("P001", detail.powder().code());
@@ -121,7 +186,9 @@ class PowderServiceTest {
                                 data("9.350", 3),
                                 false));
         var renamed =
-                service.saveIdentity(approved, new IdentityDraft("A", "Nome corretto", 5, true))
+                service.saveIdentity(
+                                approved,
+                                new IdentityDraft("A", "Nome corretto", PowderColor.ROSA, true))
                         .join();
         assertEquals(approved.latest(), renamed.latest());
         assertEquals("Nome corretto", renamed.powder().name());
@@ -279,7 +346,8 @@ class PowderServiceTest {
                         service.save(
                                         initial,
                                         initial.latest(),
-                                        new IdentityDraft("A", "Da annullare", 0, true),
+                                        new IdentityDraft(
+                                                "A", "Da annullare", PowderColor.BIANCA, true),
                                         data("9.350", 6),
                                         false)
                                 .join());
@@ -295,10 +363,10 @@ class PowderServiceTest {
                         s.executeUpdate("INSERT INTO TON.PRODOTTI(codice) VALUES ('ZR A2')");
                         s.executeUpdate(
                                 "INSERT INTO TON.COMPOSIZIONI(prodotto_id,numero_versione) VALUES"
-                                    + " (1,1)");
+                                        + " (1,1)");
                         s.executeUpdate(
                                 "INSERT INTO TON.COMPOSIZIONE_STRATI(composizione_id,numero_strato)"
-                                    + " VALUES (1,1)");
+                                        + " VALUES (1,1)");
                         s.executeUpdate(
                                 "INSERT INTO TON.COMPOSIZIONE_INGREDIENTI VALUES (1,1,"
                                         + initial.latest().id()
@@ -328,7 +396,10 @@ class PowderServiceTest {
     void archiveAndReactivateKeepIdentityAndHistoricalVersions() {
         var initial = service.create(identity("A"), data("5.150", 3), false).join();
         var archived =
-                service.saveIdentity(initial, new IdentityDraft("A", "Polvere A", 0, false)).join();
+                service.saveIdentity(
+                                initial,
+                                new IdentityDraft("A", "Polvere A", PowderColor.BIANCA, false))
+                        .join();
         assertEquals(0, service.findPage("", false, 0).join().total());
         assertEquals(1, service.findPage("", true, 0).join().total());
         var active = service.saveIdentity(archived, identity("A")).join();
@@ -359,7 +430,7 @@ class PowderServiceTest {
     }
 
     private static IdentityDraft identity(String code) {
-        return new IdentityDraft(code, "Polvere " + code.strip(), 0, true);
+        return new IdentityDraft(code, "Polvere " + code.strip(), PowderColor.BIANCA, true);
     }
 
     private static TechnicalDraft data(String yttria, int yClass) {

@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Exercises V4 against real Derby, including relationships no screen can bypass. */
+/** Exercises TON migrations against real Derby, including relationships no screen can bypass. */
 class TonSchemaTest {
     private String url;
     private String previousLog;
@@ -41,6 +41,84 @@ class TonSchemaTest {
             if (previousLog == null) System.clearProperty("derby.stream.error.file");
             else System.setProperty("derby.stream.error.file", previousLog);
         }
+    }
+
+    @Test
+    void upgradesVersionFourWithoutGuessingColorsOrChangingHistoricalPowderData() {
+        SchemaV4Fixture.create(connections);
+        execute("INSERT INTO TON.POLVERI(codice,nome,ordine_visualizzazione,attivo,versione_modifica) VALUES ('OLD','Da conservare',7,FALSE,9)",
+                "INSERT INTO TON.POLVERI_REVISIONI(polvere_id,numero_versione,stato,approvato_il) VALUES (1,1,'APPROVATA',CURRENT_TIMESTAMP)",
+                "INSERT INTO TON.POLVERE_OSSIDI VALUES (1,'Y2O3',5.150)",
+                "INSERT INTO TON.PRODOTTI(codice) VALUES ('KEEP')",
+                "INSERT INTO TON.COMPOSIZIONI(prodotto_id,numero_versione) VALUES (1,1)",
+                "INSERT INTO TON.COMPOSIZIONE_STRATI VALUES (1,1,'Strato unico')",
+                "INSERT INTO TON.COMPOSIZIONE_INGREDIENTI VALUES (1,1,1,100)");
+        var identity = connections.withConnection(DatabaseIdentity::initialize);
+        var revisions = rows("SELECT * FROM TON.POLVERI_REVISIONI");
+        var oxides = rows("SELECT * FROM TON.POLVERE_OSSIDI");
+        var ingredients = rows("SELECT * FROM TON.COMPOSIZIONE_INGREDIENTI");
+        var history = rows("SELECT * FROM ECOS.ECOS_SCHEMA_HISTORY ORDER BY version");
+        var backups = new AtomicInteger();
+        new DatabaseSchema(connections).initialize(connection -> {
+            assertEquals(4, scalar("SELECT MAX(version) FROM ECOS.ECOS_SCHEMA_HISTORY"));
+            backups.incrementAndGet();
+            return null;
+        });
+        new DatabaseSchema(connections).initialize(connection -> { fail("Nessun secondo backup"); return null; });
+        assertEquals(1, backups.get());
+        assertEquals(identity, connections.withConnection(DatabaseIdentity::read));
+        assertEquals(history, rows("SELECT * FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version<=4 ORDER BY version"));
+        assertEquals(revisions, rows("SELECT * FROM TON.POLVERI_REVISIONI"));
+        assertEquals(oxides, rows("SELECT * FROM TON.POLVERE_OSSIDI"));
+        assertEquals(ingredients, rows("SELECT * FROM TON.COMPOSIZIONE_INGREDIENTI"));
+        assertEquals(List.of(List.of("OLD", "Da conservare", 7, false, 9)),
+                rows("SELECT codice,nome,ordine_visualizzazione,attivo,versione_modifica FROM TON.POLVERI"));
+        assertEquals(1, scalar("SELECT COUNT(*) FROM TON.POLVERI WHERE colore IS NULL"));
+        execute("UPDATE TON.POLVERI SET colore='ROSA'");
+        reject("23513", "UPDATE TON.POLVERI SET colore='BLU'");
+        assertEquals(List.of(List.of("ROSA")), rows("SELECT colore FROM TON.POLVERI"));
+    }
+
+    @Test
+    void versionFiveClientRejectsV4WithoutWritingAndChecksTheColorContract() {
+        SchemaV4Fixture.create(connections);
+        connections.withConnection(connection -> {
+            connection.setReadOnly(true);
+            SQLException failure = assertThrows(SQLException.class, () -> DatabaseSchema.verifyCompatible(connection));
+            assertEquals("XEC01", failure.getSQLState());
+            return null;
+        });
+        assertEquals(4, scalar("SELECT MAX(version) FROM ECOS.ECOS_SCHEMA_HISTORY"));
+        migrate();
+        connections.withConnection(connection -> {
+            connection.setReadOnly(true);
+            DatabaseSchema.verifyCompatible(connection);
+            return null;
+        });
+        execute("ALTER TABLE TON.POLVERI DROP CONSTRAINT ck_ton_pol_colore");
+        connections.withConnection(connection -> {
+            assertThrows(SQLException.class, () -> DatabaseSchema.verifyCompatible(connection));
+            return null;
+        });
+    }
+
+    @Test
+    void aFailedColorConstraintRollsBackTheAddedColumnAndKeepsV4Usable() {
+        SchemaV4Fixture.create(connections);
+        execute("INSERT INTO TON.POLVERI(codice,nome) VALUES ('KEEP','Da conservare')",
+                "ALTER TABLE TON.POLVERI ADD CONSTRAINT ck_ton_pol_colore CHECK (ordine_visualizzazione>=0)");
+        assertThrows(RuntimeException.class, this::migrate);
+        assertEquals(4, scalar("SELECT MAX(version) FROM ECOS.ECOS_SCHEMA_HISTORY"));
+        assertEquals(List.of(List.of("KEEP")), rows("SELECT codice FROM TON.POLVERI"));
+        connections.withConnection(connection -> {
+            try (var columns = connection.getMetaData().getColumns(null, "TON", "POLVERI", "COLORE")) {
+                assertFalse(columns.next(), "Il DDL della migrazione fallita deve essere annullato");
+            }
+            return null;
+        });
+        execute("ALTER TABLE TON.POLVERI DROP CONSTRAINT ck_ton_pol_colore");
+        migrate();
+        assertEquals(5, scalar("SELECT MAX(version) FROM ECOS.ECOS_SCHEMA_HISTORY"));
     }
 
     @Test

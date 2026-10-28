@@ -3,6 +3,7 @@ package com.orodent.ecos.database;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/** Read-only structural contract of the V4 TON tables, checked on startup/reconnection. */
+/** Read-only structural contract of the TON tables, checked on startup/reconnection. */
 final class TonSchema {
     private TonSchema() { }
 
@@ -254,7 +255,11 @@ final class TonSchema {
                     column("TIPO_CONTENUTO", Types.VARCHAR, 100, 0, false, false, null)),
                     List.of("PK_TON_DOC", "FK_TON_DOC_MODELLO", "FK_TON_DOC_PRODUZIONE", "FK_TON_DOC_CICLO", "CK_TON_DOC_ORIGINE", "CK_TON_DOC_CONTENUTO")));
 
-    static void verify(Connection connection) throws SQLException {
+    private static final Table POWDER_COLORS = new Table("POLVERI",
+            List.of(column("COLORE", Types.VARCHAR, 10, 0, true, false, null)),
+            List.of("CK_TON_POL_COLORE"));
+
+    static void verify(Connection connection, int schemaVersion) throws SQLException {
         // One metadata scan for the entire domain, rather than one round-trip per column.
         Map<String, Map<String, Column>> actual = new HashMap<>();
         try (var rows = connection.getMetaData().getColumns(null, "TON", null, null)) {
@@ -279,7 +284,9 @@ final class TonSchema {
                 while (rows.next()) constraints.add(rows.getString(1) + "." + rows.getString(2));
             }
         }
-        for (Table table : TABLES) {
+        var tables = new ArrayList<>(TABLES);
+        if (schemaVersion >= 5) tables.add(POWDER_COLORS);
+        for (Table table : tables) {
             Map<String, Column> columns = actual.getOrDefault(table.name(), Map.of());
             for (Column expected : table.columns()) {
                 Column found = columns.get(expected.name());

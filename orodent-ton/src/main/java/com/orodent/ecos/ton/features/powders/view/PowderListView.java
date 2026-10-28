@@ -36,7 +36,7 @@ public final class PowderListView extends VBox {
         Label intro =
                 new Label(
                         "Anagrafiche e schede tecniche versionate. Gli ossidi sono espressi in"
-                            + " percentuale in peso (wt%).");
+                                + " percentuale in peso (wt%).");
         intro.setWrapText(true);
         intro.getStyleClass().add("muted-label");
         search.setId("ton-powders-search");
@@ -50,17 +50,18 @@ public final class PowderListView extends VBox {
         table.getColumns()
                 .setAll(
                         List.of(
-                                column("Codice", r -> r.powder().code(), 120),
-                                column("Nome", r -> r.powder().name(), 230),
+                                column("Codice", r -> r.powder().code(), 110),
+                                column("Nome", r -> r.powder().name(), 200),
+                                column("Colore", r -> r.powder().colorLabel(), 110),
                                 column(
                                         "Classe Y",
                                         r -> r.yttriaClass() == null ? "—" : r.yttriaClass() + "Y",
-                                        90),
-                                column("Schede tecniche", PowderListView::versions, 220),
+                                        80),
+                                column("Schede tecniche", PowderListView::versions, 200),
                                 column(
                                         "Polvere",
                                         r -> r.powder().active() ? "Attiva" : "Archiviata",
-                                        100)));
+                                        90)));
         table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         table.setPlaceholder(new Label("Nessuna polvere. Usa Nuova polvere per iniziare."));
         feedback.setId("ton-powders-feedback");

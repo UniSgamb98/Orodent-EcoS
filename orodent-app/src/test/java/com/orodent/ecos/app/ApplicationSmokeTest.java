@@ -49,6 +49,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -285,6 +286,10 @@ class ApplicationSmokeTest {
             button(stage,"ton-powder-new").fire();
             text(stage,"ton-powder-code").setText(" p001 ");
             text(stage,"ton-powder-name").setText("Polvere prova 6Y");
+            assertNull(stage.getScene().lookup("#ton-powder-order"));
+            button(stage,"ton-powder-save").fire();
+            assertTrue(powderFeedback(stage,"Seleziona il colore"));
+            ((javafx.scene.control.ComboBox<?>)stage.getScene().lookup("#ton-powder-color")).getSelectionModel().select(1);
             powderTab(stage,"Dati tecnici");
             ((javafx.scene.control.ComboBox<?>)stage.getScene().lookup("#ton-powder-class")).getEditor().setText("6Y");
             text(stage,"ton-powder-strength").setText("1200");
@@ -344,8 +349,9 @@ class ApplicationSmokeTest {
                 "L'elenco deve conservare la scheda approvata e la nuova bozza");
         runFx(() -> {
             TableView<?> table=(TableView<?>)stage.getScene().lookup("#ton-powders-table");
-            assertTrue(table.getColumns().get(3).getCellData(0).toString().contains("v1 approvata"));
-            assertTrue(table.getColumns().get(3).getCellData(0).toString().contains("bozza v2"));
+            assertEquals("Gialla",table.getColumns().get(2).getCellData(0));
+            assertTrue(table.getColumns().get(4).getCellData(0).toString().contains("v1 approvata"));
+            assertTrue(table.getColumns().get(4).getCellData(0).toString().contains("bozza v2"));
             button(stage,"ton-home-button").fire();assertHome(stage);
             button(stage,"open-ton-button").fire();button(stage,"ton-powders-button").fire();
         });

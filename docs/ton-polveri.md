@@ -2,20 +2,27 @@
 
 Aprire **TON → Dati tecnici → Polveri**, oppure **Apri polveri** dalla Panoramica.
 La funzione utilizza il database condiviso e le tabelle introdotte dalla V4;
-non richiede un nuovo aggiornamento dello schema e non inserisce dati dimostrativi.
+la V5 aggiunge il colore della polvere. Le migrazioni sono gestite dall'HOST con
+il normale backup preventivo; non vengono inseriti dati dimostrativi.
 
 ## Elenco e scheda
 
 L'elenco cerca codice o nome, con pagine di 50 polveri. **Mostra anche archiviate**
-include le anagrafiche disattivate. Le colonne distinguono l'ultima versione
+include le anagrafiche disattivate. L'ordine predefinito è **bianche → gialle →
+rosa → grigie**, poi per codice all'interno dello stesso colore. Il colore è
+visibile anche nell'elenco. Le colonne distinguono l'ultima versione
 approvata dall'eventuale bozza; la classe Y mostrata appartiene alla scheda
 approvata, se presente, altrimenti alla versione più recente.
 
 Con **Nuova polvere** o **Apri scheda** si entra nell'editor a quattro schede:
 
 - **Anagrafica**: codice obbligatorio e univoco (50 caratteri), nome obbligatorio
-  (100 caratteri), ordine di visualizzazione e stato attivo. Questi campi sono
+  (100 caratteri), colore obbligatorio e stato attivo. Questi campi sono
   comuni a tutte le versioni; il codice viene normalizzato in maiuscolo.
+  Il colore si sceglie tra **Bianca, Gialla, Rosa e Grigia**: non occorre assegnare
+  un numero per ordinare i risultati. Le polveri create prima della V5 sono mostrate
+  come **Da specificare**, dopo i quattro colori, e richiedono la scelta al
+  successivo salvataggio. Non si deduce il colore dal vecchio ordine numerico.
 - **Dati tecnici**: classe Y, resistenza in MPa, eventuale traslucenza e note.
   Tutti sono facoltativi. La classe Y è un intero positivo: i suggerimenti
   comprendono 3Y, 4Y, 5Y e 6Y, ma si possono digitare altre classi. Non viene
@@ -60,7 +67,7 @@ a 100 wt%.
 
 **Salva bozza** conserva i dati modificabili. **Salva e approva** salva anagrafica,
 caratteristiche e ossidi insieme, quindi rende le caratteristiche di sola lettura.
-Si possono ancora modificare nome, codice, ordine e stato dell'anagrafica con
+Si possono ancora modificare nome, codice, colore e stato dell'anagrafica con
 **Salva anagrafica**.
 
 **Crea nuova versione** copia una scheda approvata o ritirata in una nuova bozza,

@@ -32,7 +32,7 @@ public final class PowderEditorView extends VBox {
     private final ComboBox<Revision> versions = new ComboBox<>();
     private final TextField code = field("ton-powder-code", "Es. P001");
     private final TextField name = field("ton-powder-name", "Nome della polvere");
-    private final TextField order = field("ton-powder-order", "0");
+    private final ComboBox<PowderColor> color = new ComboBox<>();
     private final CheckBox active = new CheckBox("Polvere attiva");
     private final TextField strength = field("ton-powder-strength", "Facoltativa");
     private final TextField translucency = field("ton-powder-translucency", "Facoltativa");
@@ -56,6 +56,11 @@ public final class PowderEditorView extends VBox {
         status.getStyleClass().add("ton-area-status");
         status.setWrapText(true);
         active.setId("ton-powder-active");
+        color.setId("ton-powder-color");
+        color.getItems().setAll(PowderColor.values());
+        color.setPromptText("Seleziona il colore");
+        color.setAccessibleText("Colore della polvere");
+        color.setMaxWidth(Double.MAX_VALUE);
         versions.setId("ton-powder-version");
         versions.setPrefWidth(190);
         yttria.setId("ton-powder-class");
@@ -70,14 +75,17 @@ public final class PowderEditorView extends VBox {
         Label generalHint =
                 hint(
                         "Codice, nome e stato della polvere sono comuni a tutte le versioni della"
-                            + " scheda tecnica.");
+                                + " scheda tecnica.");
         VBox identity =
                 new VBox(
                         12,
                         generalHint,
                         form("Codice *", code),
                         form("Nome *", name),
-                        form("Ordine di visualizzazione", order),
+                        form("Colore *", color),
+                        hint(
+                                "Ordine dell'elenco: bianche, gialle, rosa, grigie. A parità di"
+                                    + " colore, per codice."),
                         active);
         identity.getStyleClass().add("ton-powder-tab");
         technical =
@@ -85,13 +93,13 @@ public final class PowderEditorView extends VBox {
                         12,
                         hint(
                                 "La classe 3Y / 4Y / 5Y / 6Y è distinta dalla percentuale in peso"
-                                    + " di Y₂O₃. Puoi specificare anche altre classi Y."),
+                                        + " di Y₂O₃. Puoi specificare anche altre classi Y."),
                         form("Classe Y", yttria),
                         form("Resistenza · MPa", strength),
                         form("Traslucenza · valore dichiarato", translucency),
                         hint(
                                 "Se indichi la traslucenza, riporta nelle note il metodo e la scala"
-                                    + " del produttore prima di approvare."),
+                                        + " del produttore prima di approvare."),
                         form("Note della versione", notes));
         technical.getStyleClass().add("ton-powder-tab");
         oxides.getStyleClass().add("ton-powder-tab");
@@ -135,8 +143,8 @@ public final class PowderEditorView extends VBox {
                         12,
                         hint(
                                 "Le schede approvate non vengono riscritte. Le nuove versioni"
-                                    + " conservano lo storico e i riferimenti delle ricette"
-                                    + " precedenti."),
+                                        + " conservano lo storico e i riferimenti delle ricette"
+                                        + " precedenti."),
                         history,
                         openHistory);
         historyPane.getStyleClass().add("ton-powder-tab");
@@ -176,7 +184,7 @@ public final class PowderEditorView extends VBox {
             versions.setDisable(detail == null);
             code.setText(powder == null ? "" : powder.code());
             name.setText(powder == null ? "" : powder.name());
-            order.setText(powder == null ? "0" : Integer.toString(powder.order()));
+            color.setValue(powder == null ? null : powder.color());
             active.setSelected(powder == null || powder.active());
             var data =
                     revision == null
@@ -219,16 +227,16 @@ public final class PowderEditorView extends VBox {
         newVersion.setTooltip(
                 new Tooltip(
                         "Copia questa scheda in una nuova bozza. Se esiste già una bozza, aprila"
-                            + " dal selettore delle versioni."));
+                                + " dal selettore delle versioni."));
         reload.setDisable(detail == null);
     }
 
     public IdentityDraft identity() {
-        return new IdentityDraft(
-                code.getText(),
-                name.getText(),
-                PowderFormats.integer(order.getText(), "Ordine di visualizzazione"),
-                active.isSelected());
+        var identity =
+                new IdentityDraft(
+                        code.getText(), name.getText(), color.getValue(), active.isSelected());
+        identity.requireColor();
+        return identity;
     }
 
     public TechnicalDraft technical() {
@@ -246,7 +254,7 @@ public final class PowderEditorView extends VBox {
                         List.of(
                                 code.getText().strip(),
                                 name.getText().strip(),
-                                order.getText().strip(),
+                                color.getValue() == null ? "" : color.getValue().name(),
                                 Boolean.toString(active.isSelected()),
                                 strength.getText().strip(),
                                 translucency.getText().strip(),
