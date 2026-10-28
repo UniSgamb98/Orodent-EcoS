@@ -18,7 +18,7 @@ import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
-public final class ProductsController {
+public final class ProductsController implements com.orodent.ecos.ton.navigation.FeatureController {
     private final ProductsView view;
     private final ProductService service;
     private final PauseTransition debounce = new PauseTransition(Duration.millis(250));

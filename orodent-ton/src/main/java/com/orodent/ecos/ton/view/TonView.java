@@ -90,8 +90,12 @@ public final class TonView extends BorderPane {
     }
 
     public void showProducts(Parent page) {
+        showFeature(page, TonFeature.PRODUCTS);
+    }
+
+    public void showFeature(Parent page, TonFeature feature) {
         viewport.setContent(page);
-        select(TonSection.TECHNICAL, "TON › Dati tecnici › Prodotti tecnici");
+        select(feature.section(), "TON › " + feature.section().title() + " › " + feature.title());
     }
 
     private Button navigation(TonSection section) {

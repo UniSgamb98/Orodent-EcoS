@@ -112,6 +112,7 @@ class ApplicationSmokeTest {
 
             navigatesTonAreasAndProtectsAnUnsavedProduct(stage);
             managesTonProductsAndKeepsThemWhenReopeningTheModule(stage);
+            managesPowderOxidesAndImmutableTechnicalVersions(stage);
 
             // Import the same CSV formats used by the application, away from the FX thread.
             importRepresentativeData(databasePort);
@@ -270,6 +271,122 @@ class ApplicationSmokeTest {
                 .filter(javafx.scene.control.DialogPane.class::isInstance)
                 .map(javafx.scene.control.DialogPane.class::cast).findFirst().orElseThrow();
         ((Button) dialog.lookupButton(answer)).fire();
+    }
+
+    private void managesPowderOxidesAndImmutableTechnicalVersions(Stage stage) throws Exception {
+        runFx(() -> {
+            button(stage, "open-ton-button").fire();
+            button(stage, "ton-nav-technical").fire();
+            button(stage, "ton-tech-powders-button").fire();
+        });
+        awaitFx(() -> stage.getScene().lookup("#ton-powders-table") instanceof TableView<?> table && !table.isDisabled(),
+                "Il catalogo Polveri deve caricarsi da Dati tecnici");
+        runFx(() -> {
+            button(stage,"ton-powder-new").fire();
+            text(stage,"ton-powder-code").setText(" p001 ");
+            text(stage,"ton-powder-name").setText("Polvere prova 6Y");
+            powderTab(stage,"Dati tecnici");
+            ((javafx.scene.control.ComboBox<?>)stage.getScene().lookup("#ton-powder-class")).getEditor().setText("6Y");
+            text(stage,"ton-powder-strength").setText("1200");
+            powderTab(stage,"Ossidi");
+            button(stage,"ton-oxide-add").fire();
+        });
+        awaitFx(() -> stage.getScene().lookup("#ton-oxide-code-0") instanceof javafx.scene.control.TextField,
+                "Gli ossidi devono essere modificabili direttamente nella tabella");
+        runFx(() -> {
+            text(stage,"ton-oxide-code-0").setText("Y2O3");
+            text(stage,"ton-oxide-percent-0").setText("5,150");
+            var clipboard=new javafx.scene.input.ClipboardContent(); clipboard.putString("Ossido\twt%\nZrO2\t94,850");
+            javafx.scene.input.Clipboard.getSystemClipboard().setContent(clipboard);
+            Platform.runLater(() -> {
+                var dialog=activeDialog();
+                var answer=dialog.getButtonTypes().stream().filter(type -> type.getButtonData()==javafx.scene.control.ButtonBar.ButtonData.OK_DONE).findFirst().orElseThrow();
+                ((Button)dialog.lookupButton(answer)).fire();
+            });
+            button(stage,"ton-oxide-paste").fire();
+            assertTrue(((Label)stage.getScene().lookup("#ton-oxides-total")).getText().contains("100,000"));
+            // Saving immediately after typing must include the last cell, without pressing Enter.
+            button(stage,"ton-powder-save").fire();
+            assertTrue(buttonUnchecked(stage,"ton-home-button").isDisabled());
+        });
+        awaitFx(() -> powderFeedback(stage,"Bozza salvata"), "La polvere e gli ossidi non sono stati salvati insieme");
+        runFx(() -> {
+            assertEquals("P001",text(stage,"ton-powder-code").getText());
+            assertEquals("5,150",oxidePercent(stage,"Y2O3").getText());
+            Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.YES));
+            button(stage,"ton-powder-approve").fire();
+        });
+        awaitFx(() -> powderFeedback(stage,"Scheda approvata"),"L'approvazione della scheda deve completarsi");
+        runFx(() -> {
+            assertTrue(oxidePercent(stage,"Y2O3").isDisabled(),"La versione approvata deve essere in sola lettura");
+            assertEquals("6Y",((javafx.scene.control.ComboBox<?>)stage.getScene().lookup("#ton-powder-class")).getEditor().getText());
+            button(stage,"ton-powder-new-version").fire();
+        });
+        awaitFx(() -> powderFeedback(stage,"Nuova bozza creata"),"La nuova versione deve copiare quella approvata");
+        runFx(() -> {
+            assertEquals("5,150",oxidePercent(stage,"Y2O3").getText());
+            assertFalse(oxidePercent(stage,"Y2O3").isDisabled());
+            oxidePercent(stage,"Y2O3").setText("9,350");oxidePercent(stage,"ZRO2").setText("90,650");
+            button(stage,"ton-powder-save").fire();
+        });
+        awaitFx(() -> powderFeedback(stage,"Bozza salvata"),"La seconda versione deve essere salvata come bozza");
+        runFx(() -> {
+            var versions=(javafx.scene.control.ComboBox<?>)stage.getScene().lookup("#ton-powder-version");
+            assertEquals(2,versions.getItems().size());versions.getSelectionModel().select(1);
+            stage.getScene().getRoot().applyCss();
+            assertEquals("5,150",oxidePercent(stage,"Y2O3").getText(),"La versione approvata non deve cambiare");
+            assertTrue(oxidePercent(stage,"Y2O3").isDisabled());
+            versions.getSelectionModel().select(0);stage.getScene().getRoot().applyCss();
+            assertEquals("9,350",oxidePercent(stage,"Y2O3").getText());
+            button(stage,"ton-powders-back").fire();
+        });
+        awaitFx(() -> stage.getScene().lookup("#ton-powders-table") instanceof TableView<?> table && !table.isDisabled() && table.getItems().size()==1,
+                "L'elenco deve conservare la scheda approvata e la nuova bozza");
+        runFx(() -> {
+            TableView<?> table=(TableView<?>)stage.getScene().lookup("#ton-powders-table");
+            assertTrue(table.getColumns().get(3).getCellData(0).toString().contains("v1 approvata"));
+            assertTrue(table.getColumns().get(3).getCellData(0).toString().contains("bozza v2"));
+            button(stage,"ton-home-button").fire();assertHome(stage);
+            button(stage,"open-ton-button").fire();button(stage,"ton-powders-button").fire();
+        });
+        awaitFx(() -> stage.getScene().lookup("#ton-powders-table") instanceof TableView<?> table && !table.isDisabled() && table.getItems().size()==1,
+                "Le polveri devono restare disponibili dopo la riapertura del modulo");
+        runFx(() -> {
+            TableView<?> table=(TableView<?>)stage.getScene().lookup("#ton-powders-table");table.getSelectionModel().select(0);
+            button(stage,"ton-powder-open").fire();
+            button(stage,"ton-home-button").fire();assertHome(stage);
+        });
+    }
+
+    private static boolean powderFeedback(Stage stage,String expected) {
+        Node feedback=stage.getScene().lookup("#ton-powder-feedback");
+        return feedback instanceof Label label && label.getText().contains(expected);
+    }
+    private static javafx.scene.control.TextField text(Stage stage,String id) {
+        stage.getScene().getRoot().applyCss();
+        var field=(javafx.scene.control.TextField)stage.getScene().lookup("#"+id);
+        assertNotNull(field,id);return field;
+    }
+    private static void powderTab(Stage stage,String title) {
+        stage.getScene().getRoot().applyCss();
+        TabPane tabs=(TabPane)stage.getScene().lookup("#ton-powder-tabs");
+        tabs.getSelectionModel().select(tabs.getTabs().stream().filter(tab -> tab.getText().equals(title)).findFirst().orElseThrow());
+        stage.getScene().getRoot().applyCss();stage.getScene().getRoot().layout();
+    }
+    private static javafx.scene.control.TextField oxidePercent(Stage stage,String code) {
+        stage.getScene().getRoot().applyCss();stage.getScene().getRoot().layout();
+        TableView<?> table=(TableView<?>)stage.getScene().lookup("#ton-oxides-table");
+        for(int index=0;index<table.getItems().size();index++) {
+            Node field=stage.getScene().lookup("#ton-oxide-code-"+index);
+            if(field instanceof javafx.scene.control.TextField input && java.text.Normalizer.normalize(input.getText(),java.text.Normalizer.Form.NFKC).toUpperCase(Locale.ROOT).equals(code))
+                return text(stage,"ton-oxide-percent-"+index);
+        }
+        throw new AssertionError("Ossido non trovato: "+code);
+    }
+    private static javafx.scene.control.DialogPane activeDialog() {
+        return javafx.stage.Window.getWindows().stream().filter(javafx.stage.Window::isShowing).filter(window -> window.getScene()!=null)
+                .map(window -> window.getScene().getRoot().lookup(".dialog-pane")).filter(javafx.scene.control.DialogPane.class::isInstance)
+                .map(javafx.scene.control.DialogPane.class::cast).findFirst().orElseThrow();
     }
 
     private boolean tonProductRow(Stage stage, String code, String state) {

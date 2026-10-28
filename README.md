@@ -3,17 +3,23 @@
 Un'unica applicazione desktop JavaFX, organizzata come monorepo Maven.
 La Home permette di aprire Ton e Statistiche nello stesso processo JavaFX.
 
-## TON: navigazione e primo catalogo
+## TON: navigazione e cataloghi tecnici
 
 TON dispone di Panoramica e menu laterale per Produzione, Forni e cotture, Dati
 tecnici, Tracciabilità e Documenti. Le aree future sono descritte come **In
-preparazione**; il catalogo prodotti è già operativo. Il menu è richiudibile e
+preparazione**; i cataloghi prodotti e polveri sono già operativi. Il menu è richiudibile e
 si adatta alle finestre strette. [Navigazione e uso](docs/ton.md).
 
 Aprire **TON → Apri catalogo prodotti** per gestire famiglie e materiali tecnici.
 Il catalogo permette ricerca paginata, creazione, modifica e archiviazione, con
 controllo delle modifiche concorrenti. I dati sono in `TON.PRODOTTI`, distinti
 dagli articoli di vendita. Vedere [uso e organizzazione del modulo](docs/ton.md).
+
+In **TON → Dati tecnici → Polveri** si gestiscono anagrafiche e versioni delle
+schede tecniche: classe Y (anche 6Y), caratteristiche e ossidi in percentuale in
+peso, con incolla da Excel. Una scheda approvata conserva i dati storici: per
+modificarla si crea una nuova bozza. [Uso delle polveri](docs/ton-polveri.md).
+La funzione usa le tabelle V4 esistenti, senza una nuova migrazione.
 
 La migrazione V4 completa la struttura TON con 25 tabelle, compresi documenti e
 modelli di stampa; le nuove funzioni verranno implementate gradualmente.
@@ -32,7 +38,7 @@ firmati dei componenti supportano il passaggio senza sostituire Java o launcher.
 | `orodent-core` | Contratti comuni, ConnectionProvider e strumenti CSV indipendenti dalla UI |
 | `orodent-database` | Derby HOST/CLIENT, discovery, schema, modelli, repository e servizi di importazione |
 | `orodent-module-api` | Contratto dei moduli, metadati, servizi condivisi e ciclo di vita della UI |
-| `orodent-ton` | Laboratorio TON: primo catalogo dei prodotti tecnici, con ricerca, modifica e archiviazione |
+| `orodent-ton` | Laboratorio TON: cataloghi prodotti e polveri, schede tecniche versionate e ossidi |
 | `orodent-statistiche` | Dashboard vendite, analisi clienti/prodotti/sconti/resi, archivio e importazioni CSV |
 | `orodent-performance` | Solo con profilo `performance`: misure su dati sintetici, fuori dai pacchetti distribuiti |
 

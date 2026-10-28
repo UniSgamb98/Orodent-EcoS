@@ -1,4 +1,4 @@
-# TON: navigazione e catalogo tecnico
+# TON: navigazione e cataloghi tecnici
 
 La finestra TON ha un menu laterale con **Panoramica**, **Produzione**, **Forni e
 cotture**, **Dati tecnici**, **Tracciabilità** e **Documenti**. Il percorso in alto
@@ -6,7 +6,9 @@ indica la pagina corrente; il pulsante **Home Orodent-EcoS** torna al catalogo
 principale, mentre **Panoramica** resta dentro TON.
 
 Aprire il catalogo prodotti dalla Panoramica oppure da **Dati tecnici → Prodotti
-tecnici**. Le altre aree presentano le funzioni previste con lo stato **In
+tecnici**. Il catalogo **Polveri** si apre dalla Panoramica oppure da **Dati
+tecnici → Polveri**: vedere [schede tecniche e ossidi](ton-polveri.md).
+Le altre aree presentano le funzioni previste con lo stato **In
 preparazione**, senza contatori fittizi o comandi di lavorazione non implementati.
 Il cubaggio rimane rinviato e non compare come funzione operativa.
 
@@ -18,7 +20,8 @@ torna visibile.
 
 Lo [schema completo TON](ton-schema-proposta.md) descrive le 25 tabelle introdotte
 da V3/V4, i collegamenti e un esempio di produzione e cottura. La struttura SQL
-è disponibile; i flussi applicativi successivi al catalogo restano da realizzare.
+è disponibile; oltre ai cataloghi prodotti e polveri, i flussi applicativi
+successivi restano da realizzare.
 
 Il primo blocco riscritto da TON-V2 è il catalogo dei prodotti tecnici, accessibile
 con **TON → Apri catalogo prodotti**. Un prodotto rappresenta una famiglia o un
@@ -56,6 +59,11 @@ interrotti dalla disconnessione non vengono ripetuti automaticamente.
 - `features/products/controller`: debounce, paginazione, editor e gestione delle
   richieste superate; annulla solo le letture, senza interrompere le scritture.
 - `features/products/view`: controlli JavaFX e stati visivi.
+- `features/powders`: stessa separazione model/repository/service/controller/view
+  per anagrafiche, revisioni e ossidi. Ogni comando aggiorna l'intera scheda in
+  transazione, acquisendo prima la revisione della polvere.
+- `navigation/FeatureController`: ciclo di vita comune delle pagine operative,
+  blocco della navigazione durante le scritture e verifica dei dati non salvati.
 - `TonController`: navigazione del modulo e rilascio della pagina attiva.
 - `navigation/TonSection` e `TonFeature`: mappa delle aree e stato delle funzioni.
 - `view/TonView`: struttura persistente, menu, percorso e comportamento compatto.
@@ -91,5 +99,7 @@ parte vuoto. Il cubaggio resta rinviato.
 
 Sono già attivi i vincoli SQL di identità, unicità, riferimenti, percentuali,
 quantità e coerenza dei campi. I servizi futuri dovranno completare i controlli
-transazionali su somme, disponibilità, approvazione e immutabilità: creare le
-tabelle non introduce già le relative schermate o il sistema di stampa.
+transazionali su disponibilità e flussi produttivi. Per le polveri sono già
+implementati somme, approvazione, immutabilità delle schede approvate e
+assegnazione concorrente delle versioni. Creare le altre tabelle non introduce
+già le relative schermate o il sistema di stampa.

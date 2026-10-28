@@ -2,9 +2,10 @@
 
 Stato: **struttura SQL implementata nella migrazione V4**. `TON.PRODOTTI` esiste
 dalla V3; `V4__ton_domain.sql` aggiunge le altre 24 tabelle, senza importare dati
-da TON-V2. Questo documento descrive anche regole applicative previste: le nuove
-schermate e i servizi transazionali non sono ancora implementati. Il cubaggio
-rimane fuori da questo passaggio.
+da TON-V2. I cataloghi prodotti e polveri sono operativi; per le polveri sono
+implementati anche versioni, ossidi e approvazione. Questo documento descrive
+anche regole applicative previste per i flussi ancora da costruire. Il cubaggio
+rimane fuori da questo passaggio. Vedere [uso delle polveri](ton-polveri.md).
 
 L'obiettivo è mantenere il percorso di TON-V2 — cataloghi, composizioni, modelli,
 produzioni, forni, lotti e documenti — rendendo espliciti i dati tecnici storici e
@@ -544,12 +545,12 @@ coerenti, eventualmente affiancati da trigger mirati. Un `CHECK` Derby non può
 essere usato come se verificasse automaticamente una somma su tabelle figlie:
 
 **Limite dell'implementazione V4:** sono attivi i vincoli SQL sulle singole righe
-e sui riferimenti. Le regole elencate qui sotto, compresa l'immutabilità dei
-contenuti approvati e dei documenti emessi, saranno applicate dai futuri servizi;
-non esistono ancora trigger che le impongano a chi scrive SQL direttamente.
-Non sono disponibili flussi utente che scrivano queste nuove tabelle. I controlli
-di stato/timestamp SQL verificano la validità di una riga, non l'intera sequenza
-delle transizioni di stato.
+e sui riferimenti. I servizi delle polveri applicano già approvazione atomica,
+immutabilità delle caratteristiche approvate, verifica della somma degli ossidi
+e numerazione delle versioni sotto blocco della polvere. Le altre regole elencate
+qui sotto saranno applicate dai futuri servizi; non esistono trigger che le
+impongano a chi scrive SQL direttamente. I controlli di stato/timestamp SQL
+verificano la validità di una riga, non l'intera sequenza delle transizioni di stato.
 
 - Approvazione: bloccare la testata; verificare ingredienti, somme, fasce,
   compatibilità e versioni dipendenti; approvare insieme ai figli. Ogni modifica

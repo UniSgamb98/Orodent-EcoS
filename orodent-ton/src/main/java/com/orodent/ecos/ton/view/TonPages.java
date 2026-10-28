@@ -24,9 +24,11 @@ final class TonPages {
     static VBox overview(Consumer<TonSection> navigate, Consumer<TonFeature> openFeature) {
         VBox page = page("ton-overview-page", "Panoramica TON", "Produzione, schede tecniche, cotture e tracciabilità.");
         VBox ready = card(); ready.getStyleClass().add("ton-ready-card");
-        ready.getChildren().addAll(badge("Disponibile", true), label("Catalogo prodotti tecnici", "ton-card-title"),
-                label("Gestisci i prodotti del laboratorio, cerca un codice o aggiorna una scheda.", "ton-description"),
-                action("Apri catalogo prodotti", "ton-products-button", () -> openFeature.accept(TonFeature.PRODUCTS), true));
+        ready.getChildren().addAll(badge("Disponibile", true), label("Cataloghi del laboratorio", "ton-card-title"),
+                label("Prodotti tecnici e schede delle polveri, con caratteristiche e composizione in ossidi.", "ton-description"),
+                new javafx.scene.layout.FlowPane(10, 8,
+                        action("Apri catalogo prodotti", "ton-products-button", () -> openFeature.accept(TonFeature.PRODUCTS), true),
+                        action("Apri polveri", "ton-powders-button", () -> openFeature.accept(TonFeature.POWDERS), true)));
         List<Node> areas = new ArrayList<>(); areas.add(ready);
         Arrays.stream(TonSection.values()).filter(section -> section != TonSection.OVERVIEW)
                 .map(section -> areaCard(section, navigate)).forEach(areas::add);
@@ -37,7 +39,7 @@ final class TonPages {
     static VBox section(TonSection section, Consumer<TonFeature> openFeature) {
         VBox page = page("ton-" + section.id() + "-page", section.title(), section.description());
         page.getChildren().add(label(section == TonSection.TECHNICAL
-                ? "Il catalogo prodotti è operativo. Le altre funzioni saranno attivate progressivamente."
+                ? "I cataloghi prodotti e polveri sono operativi. Le altre funzioni saranno attivate progressivamente."
                 : "Area in preparazione. Qui trovi le funzioni previste; le operazioni non sono ancora disponibili.", "ton-area-status"));
         List<Node> cards = TonFeature.in(section).stream().map(feature -> (Node) featureCard(feature, openFeature)).toList();
         page.getChildren().add(grid(cards));
@@ -57,7 +59,8 @@ final class TonPages {
         VBox card = card();
         card.getChildren().addAll(badge(feature.available() ? "Disponibile" : "In preparazione", feature.available()),
                 label(feature.title(), "ton-card-title"), label(feature.description(), "ton-description"));
-        if (feature.available()) card.getChildren().add(action("Apri catalogo prodotti", "ton-tech-products-button",
+        if (feature.available()) card.getChildren().add(action(feature == TonFeature.POWDERS ? "Apri polveri" : "Apri catalogo prodotti",
+                feature == TonFeature.POWDERS ? "ton-tech-powders-button" : "ton-tech-products-button",
                 () -> openFeature.accept(feature), true));
         return card;
     }

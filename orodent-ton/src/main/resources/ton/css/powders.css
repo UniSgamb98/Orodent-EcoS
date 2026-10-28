@@ -1,0 +1,13 @@
+.ton-powders .ton-powder-page { -fx-padding: 18px 24px; }
+.ton-powders .ton-powder-tab { -fx-padding: 12px; }
+.ton-powders .tab-pane > .tab-header-area > .tab-header-background { -fx-background-color: #eaf0f5; }
+.ton-powders .tab-pane > .tab-header-area > .headers-region > .tab { -fx-padding: 7px 15px; }
+.ton-powders .tab-pane > .tab-header-area > .headers-region > .tab:selected {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #176b87 transparent;
+    -fx-border-width: 0 0 3px 0;
+}
+.ton-powders .ton-powder-total { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #173f5f; }
+.ton-powders .table-cell { -fx-padding: 7px; }
+.ton-powders .table-cell .text-field, .ton-powders .table-cell .combo-box { -fx-background-radius: 5px; }
+.ton-powders .scroll-pane, .ton-powders .scroll-pane > .viewport { -fx-background-color: #f4f7fb; -fx-background: #f4f7fb; }
