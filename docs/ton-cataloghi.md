@@ -104,8 +104,9 @@ previsti dal DB, senza un catalogo principale separato per le configurazioni.
 Occorrono una composizione approvata dello stesso prodotto, un modello approvato
 e un riferimento al metodo di calcolo. Il riferimento identifica il metodo:
 questa schermata non implementa il calcolo delle dosi o il flusso delle produzioni.
-I cataloghi per creare composizioni e modelli sono un passaggio successivo;
-in loro assenza l'anagrafica dell'articolo resta utilizzabile.
+I [modelli disco](ton-modelli-disco.md) si creano nel catalogo dedicato;
+il catalogo delle composizioni è un passaggio successivo. In assenza di una
+composizione approvata l'anagrafica dell'articolo resta utilizzabile.
 
 - **Salva bozza** crea o aggiorna una versione modificabile. È ammessa una sola
   bozza per articolo; la numerazione viene assegnata sotto blocco dell'articolo.

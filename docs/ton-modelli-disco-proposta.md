@@ -1,6 +1,7 @@
 # Proposta grafica: Modelli disco
 
-Stato: **proposta navigabile**, senza collegamento al DB o modifiche all'applicazione.
+Stato: **modelli disco implementati**. Vedere la [guida d'uso](ton-modelli-disco.md).
+Il prototipo seguente resta un riferimento grafico senza collegamento al DB.
 Aprire [l'anteprima HTML](mockups/ton-modelli-disco.html) in un browser.
 Funziona offline; i dati sono dimostrativi e si azzerano ricaricando la pagina.
 

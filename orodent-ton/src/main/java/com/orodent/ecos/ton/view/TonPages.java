@@ -25,12 +25,13 @@ final class TonPages {
         VBox page = page("ton-overview-page", "Panoramica TON", "Produzione, schede tecniche, cotture e tracciabilità.");
         VBox ready = card(); ready.getStyleClass().add("ton-ready-card");
         ready.getChildren().addAll(badge("Disponibile", true), label("Cataloghi del laboratorio", "ton-card-title"),
-                label("Linee, prodotti, articoli e schede delle polveri. Naviga tra i cataloghi e consulta lo storico.", "ton-description"),
+                label("Linee, prodotti, articoli, modelli disco e schede delle polveri. Naviga tra i cataloghi e consulta lo storico.", "ton-description"),
                 new javafx.scene.layout.FlowPane(10, 8,
                         action("Apri articoli", "ton-articles-button", () -> openFeature.accept(TonFeature.ARTICLES), true),
                         action("Apri linee", "ton-lines-button", () -> openFeature.accept(TonFeature.LINES), false),
                         action("Apri catalogo prodotti", "ton-products-button", () -> openFeature.accept(TonFeature.PRODUCTS), true),
-                        action("Apri polveri", "ton-powders-button", () -> openFeature.accept(TonFeature.POWDERS), true)));
+                        action("Apri polveri", "ton-powders-button", () -> openFeature.accept(TonFeature.POWDERS), true),
+                        action("Apri modelli disco", "ton-models-button", () -> openFeature.accept(TonFeature.MODELS), false)));
         List<Node> areas = new ArrayList<>(); areas.add(ready);
         Arrays.stream(TonSection.values()).filter(section -> section != TonSection.OVERVIEW)
                 .map(section -> areaCard(section, navigate)).forEach(areas::add);
@@ -41,7 +42,7 @@ final class TonPages {
     static VBox section(TonSection section, Consumer<TonFeature> openFeature) {
         VBox page = page("ton-" + section.id() + "-page", section.title(), section.description());
         page.getChildren().add(label(section == TonSection.TECHNICAL
-                ? "I cataloghi linee, prodotti, articoli e polveri sono operativi. Le altre funzioni saranno attivate progressivamente."
+                ? "I cataloghi linee, prodotti, articoli, modelli disco e polveri sono operativi. Le altre funzioni saranno attivate progressivamente."
                 : "Area in preparazione. Qui trovi le funzioni previste; le operazioni non sono ancora disponibili.", "ton-area-status"));
         List<Node> cards = TonFeature.in(section).stream().map(feature -> (Node) featureCard(feature, openFeature)).toList();
         page.getChildren().add(grid(cards, section == TonSection.TECHNICAL ? 2 : 3));
@@ -66,6 +67,7 @@ final class TonPages {
                 case LINES -> "Apri linee";
                 case ARTICLES -> "Apri articoli";
                 case POWDERS -> "Apri polveri";
+                case MODELS -> "Apri modelli disco";
                 default -> "Apri catalogo prodotti";
             };
             card.getChildren().add(action(title, "ton-tech-" + feature.name().toLowerCase(java.util.Locale.ROOT) + "-button",

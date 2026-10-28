@@ -7,6 +7,9 @@ import com.orodent.ecos.ton.features.catalog.model.CatalogModels.Navigation;
 import com.orodent.ecos.ton.features.catalog.service.CatalogService;
 import com.orodent.ecos.ton.features.catalog.service.SpecificationService;
 import com.orodent.ecos.ton.features.catalog.view.CatalogView;
+import com.orodent.ecos.ton.features.diskmodels.controller.DiskModelsController;
+import com.orodent.ecos.ton.features.diskmodels.service.DiskModelService;
+import com.orodent.ecos.ton.features.diskmodels.view.DiskModelsView;
 import com.orodent.ecos.ton.features.powders.controller.PowdersController;
 import com.orodent.ecos.ton.features.powders.service.PowderService;
 import com.orodent.ecos.ton.features.powders.view.PowdersView;
@@ -22,6 +25,7 @@ final class TonController {
     private final CatalogService catalogues;
     private final SpecificationService specifications;
     private final PowderService powders;
+    private final DiskModelService models;
     private FeatureController active;
     private TonFeature activeFeature;
     private TonSection section = TonSection.OVERVIEW;
@@ -30,6 +34,7 @@ final class TonController {
         catalogues = new CatalogService(context.connections(), context.workers());
         specifications = new SpecificationService(context.connections(), context.workers());
         powders = new PowderService(context.connections(), context.workers());
+        models = new DiskModelService(context.connections(), context.workers());
         view.homeButton()
                 .setOnAction(
                         event -> {
@@ -67,6 +72,15 @@ final class TonController {
                 var page = new PowdersView();
                 var controller = new PowdersController(page, powders);
                 install(feature, page, controller, controller::loadInitialData);
+            }
+            case MODELS -> {
+                var page = new DiskModelsView();
+                var controller =
+                        new DiskModelsController(
+                                page,
+                                models,
+                                id -> openCatalogue(Navigation.open(CatalogKind.ARTICLES, id)));
+                install(feature, page, controller, controller::start);
             }
             default ->
                     throw new IllegalArgumentException(

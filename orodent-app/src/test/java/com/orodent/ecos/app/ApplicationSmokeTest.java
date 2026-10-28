@@ -113,7 +113,9 @@ class ApplicationSmokeTest {
 
             navigatesTonAreasAndProtectsAnUnsavedProduct(stage);
             managesPowderOxidesAndImmutableTechnicalVersions(stage);
+            managesDiskModelsAndImmutableVersions(stage);
             managesTonCataloguesAndVersionedSpecifications(stage, databasePort);
+            followsDiskModelUsagesBackToArticles(stage);
 
             // Import the same CSV formats used by the application, away from the FX thread.
             importRepresentativeData(databasePort);
@@ -345,6 +347,182 @@ class ApplicationSmokeTest {
         return javafx.stage.Window.getWindows().stream().filter(javafx.stage.Window::isShowing).filter(window -> window.getScene()!=null)
                 .map(window -> window.getScene().getRoot().lookup(".dialog-pane")).filter(javafx.scene.control.DialogPane.class::isInstance)
                 .map(javafx.scene.control.DialogPane.class::cast).findFirst().orElseThrow();
+    }
+
+    private void managesDiskModelsAndImmutableVersions(Stage stage) throws Exception {
+        runFx(() -> {
+            button(stage, "open-ton-button").fire();
+            button(stage, "ton-nav-technical").fire();
+            button(stage, "ton-tech-models-button").fire();
+        });
+        awaitFx(() -> catalogLoaded(stage, "models"), "I modelli devono essere raggiungibili da Dati tecnici");
+        runFx(() -> {
+            button(stage, "ton-model-new").fire();
+            fillModelParameters(stage, "SMOKE-98");
+            catalogTab(stage, "model", "Sovramateriali");
+            text(stage, "ton-model-top").setText("1");
+            text(stage, "ton-model-bottom").setText("0,5");
+            button(stage, "ton-model-range-add").fire();
+            text(stage, "ton-model-range-1-from").setText("10");
+            text(stage, "ton-model-range-1-to").setText("18");
+            text(stage, "ton-model-range-1-top").setText("1");
+            text(stage, "ton-model-range-1-bottom").setText("0,5");
+            button(stage, "ton-model-range-add").fire();
+            text(stage, "ton-model-range-2-from").setText("17");
+            text(stage, "ton-model-range-2-to").setText("26");
+            text(stage, "ton-model-range-2-top").setText("1,5");
+            text(stage, "ton-model-range-2-bottom").setText("0,8");
+            button(stage, "ton-model-save").fire();
+            assertTrue(catalogFeedback(stage, "model", "sovrapporsi"));
+            text(stage, "ton-model-range-2-from").setText("18");
+            catalogTab(stage, "model", "Strati");
+            text(stage, "ton-model-layer-1").setText("60");
+            button(stage, "ton-model-layer-add").fire();
+            assertEquals("60", text(stage, "ton-model-layer-1").getText());
+            button(stage, "ton-model-layer-add").fire();
+            Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.YES));
+            button(stage, "ton-model-layer-distribute").fire();
+            assertEquals("33,3333", text(stage, "ton-model-layer-1").getText());
+            assertEquals("33,3334", text(stage, "ton-model-layer-3").getText());
+            button(stage, "ton-model-layer-remove-3").fire();
+            text(stage, "ton-model-layer-1").setText("60");
+            text(stage, "ton-model-layer-2").setText("40");
+            button(stage, "ton-model-layer-down-1").fire();
+            assertEquals("40", text(stage, "ton-model-layer-1").getText());
+            button(stage, "ton-model-layer-up-2").fire();
+            assertTrue(((Label) stage.getScene().lookup("#ton-model-layer-total")).getText().contains("100%"));
+            assertNotNull(stage.getScene().lookup("#ton-model-preview-stack"));
+            button(stage, "ton-model-save").fire();
+            assertTrue(buttonUnchecked(stage, "ton-home-button").isDisabled());
+        });
+        awaitFx(() -> catalogFeedback(stage, "model", "Bozza salvata"), "Il modello e le sue fasce devono essere salvati");
+        runFx(() -> {
+            text(stage, "ton-model-layer-2").setText("35");
+            button(stage, "ton-model-approve").fire();
+            assertTrue(catalogFeedback(stage, "model", "totale esatto 100"));
+            text(stage, "ton-model-layer-2").setText("40");
+            approveModel(stage);
+        });
+        awaitFx(() -> catalogFeedback(stage, "model", "Modello approvato"), "La prima versione del modello deve essere approvata");
+        runFx(() -> {
+            assertTrue(text(stage, "ton-model-layer-1").isDisabled());
+            button(stage, "ton-model-copy").fire();
+        });
+        awaitFx(() -> catalogFeedback(stage, "model", "Nuova bozza creata"), "La copia deve creare v2 senza modificare v1");
+        runFx(() -> {
+            assertEquals("60", text(stage, "ton-model-layer-1").getText());
+            button(stage, "ton-model-layer-remove-2").fire();
+            text(stage, "ton-model-layer-1").setText("100");
+            approveModel(stage);
+        });
+        awaitFx(() -> catalogFeedback(stage, "model", "Modello approvato"), "La seconda versione deve essere monostrato");
+        runFx(() -> selectModelVersion(stage, 1));
+        awaitFx(() -> modelVersionReady(stage, 1), "La versione precedente deve riaprirsi dal DB");
+        runFx(() -> {
+            assertEquals("60", text(stage, "ton-model-layer-1").getText());
+            assertEquals("40", text(stage, "ton-model-layer-2").getText());
+            assertTrue(text(stage, "ton-model-layer-2").isDisabled());
+            catalogTab(stage, "model", "Sovramateriali");
+            assertEquals("18", text(stage, "ton-model-range-2-from").getText());
+            assertTrue(text(stage, "ton-model-range-2-from").isDisabled());
+            Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.YES));
+            button(stage, "ton-model-retire").fire();
+        });
+        awaitFx(() -> catalogFeedback(stage, "model", "Versione ritirata"), "La prima versione deve rimanere nello storico");
+        runFx(() -> selectModelVersion(stage, 2));
+        awaitFx(() -> modelVersionReady(stage, 2), "La versione approvata corrente deve riaprirsi");
+        runFx(() -> button(stage, "ton-model-copy").fire());
+        awaitFx(() -> catalogFeedback(stage, "model", "Nuova bozza creata"), "La terza versione deve essere una bozza separata");
+        runFx(() -> {
+            text(stage, "ton-model-layer-1");
+            button(stage, "ton-model-layer-add").fire();
+            Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.NO));
+            button(stage, "ton-home-button").fire();
+            assertNotNull(stage.getScene().lookup("#ton-model-editor"));
+            button(stage, "ton-model-layer-remove-2").fire();
+            button(stage, "ton-model-back").fire();
+        });
+        awaitFx(() -> catalogLoaded(stage, "models"), "L'elenco deve riaprire senza perdere le versioni");
+        runFx(() -> {
+            TableView<?> table = (TableView<?>) stage.getScene().lookup("#ton-models-table");
+            assertEquals(1, table.getItems().size());
+            assertEquals("v2", table.getColumns().get(3).getCellData(0));
+            assertEquals("v3", table.getColumns().get(4).getCellData(0));
+            button(stage, "ton-model-new").fire();
+            fillModelParameters(stage, "DELETE-ME");
+            button(stage, "ton-model-save").fire();
+        });
+        awaitFx(() -> catalogFeedback(stage, "model", "Bozza salvata"), "Una bozza inutilizzata deve poter essere eliminata");
+        runFx(() -> {
+            Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.YES));
+            button(stage, "ton-model-delete").fire();
+        });
+        awaitFx(() -> catalogLoaded(stage, "models")
+                && ((TableView<?>) stage.getScene().lookup("#ton-models-table")).getItems().size() == 1,
+                "L'eliminazione deve conservare l'altro modello e tutte le sue versioni");
+        runFx(() -> {
+            button(stage, "ton-home-button").fire();
+            assertHome(stage);
+        });
+    }
+
+    private static void fillModelParameters(Stage stage, String code) {
+        text(stage, "ton-model-code").setText(code);
+        text(stage, "ton-model-diameter").setText("98");
+        text(stage, "ton-model-pressure").setText("1000");
+        text(stage, "ton-model-grams").setText("20");
+    }
+
+    private static void approveModel(Stage stage) {
+        Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.YES));
+        button(stage, "ton-model-approve").fire();
+    }
+
+    private static void selectModelVersion(Stage stage, int number) {
+        var box = (javafx.scene.control.ComboBox<?>) stage.getScene().lookup("#ton-model-version");
+        for (int i = 0; i < box.getItems().size(); i++) {
+            if (box.getItems().get(i).toString().startsWith("v" + number + " ·")) {
+                box.getSelectionModel().select(i);
+                return;
+            }
+        }
+        throw new AssertionError("Versione del modello non trovata: " + number);
+    }
+
+    private static boolean modelVersionReady(Stage stage, int number) {
+        Node status = stage.getScene().lookup("#ton-model-status");
+        return status instanceof Label l && l.getText().startsWith("v" + number + " ·");
+    }
+
+    private void followsDiskModelUsagesBackToArticles(Stage stage) throws Exception {
+        runFx(() -> {
+            button(stage, "open-ton-button").fire();
+            button(stage, "ton-models-button").fire();
+        });
+        awaitFx(() -> catalogLoaded(stage, "models"), "Il modello deve essere conservato dopo la riapertura");
+        runFx(() -> {
+            ((TableView<?>) stage.getScene().lookup("#ton-models-table")).getSelectionModel().selectFirst();
+            button(stage, "ton-models-open").fire();
+        });
+        awaitFx(() -> modelVersionReady(stage, 3), "La bozza più recente deve aprirsi");
+        runFx(() -> selectModelVersion(stage, 2));
+        awaitFx(() -> modelVersionReady(stage, 2), "Le specifiche devono puntare alla versione approvata v2");
+        runFx(() -> catalogTab(stage, "model", "Utilizzi"));
+        awaitFx(() -> stage.getScene().lookup("#ton-model-usages-table") instanceof TableView<?> table
+                        && !table.isDisabled() && table.getItems().size() == 2,
+                "Gli utilizzi devono mostrare le due specifiche collegate alla versione precisa");
+        runFx(() -> {
+            TableView<?> table = (TableView<?>) stage.getScene().lookup("#ton-model-usages-table");
+            assertEquals(PRODUCT_CODE, table.getColumns().get(0).getCellData(0));
+            table.getSelectionModel().selectFirst();
+            button(stage, "ton-model-usages-open").fire();
+        });
+        awaitFx(() -> stage.getScene().lookup("#ton-article-heading") instanceof Label heading
+                && heading.getText().contains(PRODUCT_CODE), "Apri articolo deve aprire la scheda collegata");
+        runFx(() -> {
+            button(stage, "ton-home-button").fire();
+            assertHome(stage);
+        });
     }
 
     private void managesTonCataloguesAndVersionedSpecifications(Stage stage, int databasePort)
@@ -629,20 +807,6 @@ class ApplicationSmokeTest {
                                 + ",1,"
                                 + powder
                                 + ",100)");
-                q.executeUpdate(
-                        "INSERT INTO"
-                            + " TON.MODELLI_DISCO(codice,numero_versione,diametro_pressatura_mm,sovramateriale_superiore_mm,sovramateriale_inferiore_mm,pressione_kg_cm2,grammi_per_mm,stato,approvato_il)"
-                            + " VALUES"
-                            + " ('SMOKE-98',1,98,1,1,1000,20,'APPROVATA',CURRENT_TIMESTAMP)");
-                long model;
-                try (var r =
-                        q.executeQuery(
-                                "SELECT modello_id FROM TON.MODELLI_DISCO WHERE"
-                                    + " codice='SMOKE-98'")) {
-                    assertTrue(r.next());
-                    model = r.getLong(1);
-                }
-                q.executeUpdate("INSERT INTO TON.MODELLO_STRATI VALUES (" + model + ",1,100)");
             }
             c.commit();
         }

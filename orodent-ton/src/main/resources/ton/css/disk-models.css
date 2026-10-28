@@ -1,0 +1,16 @@
+.ton-models .ton-model-page { -fx-padding: 18px 24px; }
+.ton-models .ton-model-panel { -fx-background-color: white; -fx-border-color: #dce5ee; -fx-border-radius: 10px; -fx-background-radius: 10px; -fx-padding: 20px; }
+.ton-models .ton-model-panel-title { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #173f5f; }
+.ton-models .ton-model-caption { -fx-font-size: 11px; -fx-text-fill: #718498; }
+.ton-models .ton-model-total { -fx-padding: 12px; -fx-background-color: #eaf5f0; -fx-background-radius: 6px; -fx-text-fill: #2e7257; -fx-font-weight: bold; }
+.ton-models .ton-model-total.ton-model-invalid { -fx-background-color: #fff1ed; -fx-text-fill: #9e4334; }
+.ton-models .ton-model-overmaterial { -fx-padding: 8px; -fx-background-color: #e8edf2; -fx-text-fill: #647d90; -fx-font-size: 11px; -fx-alignment: center; }
+.ton-models .ton-model-readonly { -fx-padding: 12px 15px; -fx-background-color: #e7f3ed; -fx-background-radius: 7px; -fx-text-fill: #386f59; }
+.ton-models .ton-model-danger { -fx-text-fill: #9d4137; -fx-background-color: #fff0ef; }
+.ton-models .ton-model-actions { -fx-padding: 12px 0 0 0; -fx-border-color: #dce5ee transparent transparent transparent; }
+.ton-models .ton-model-row-action { -fx-padding: 4px 8px; }
+.ton-models .tab-pane > .tab-header-area > .tab-header-background { -fx-background-color: #eaf0f5; }
+.ton-models .tab-pane > .tab-header-area > .headers-region > .tab { -fx-padding: 7px 12px; }
+.ton-models .tab-pane > .tab-header-area > .headers-region > .tab:selected { -fx-background-color: white; -fx-border-color: transparent transparent #176d86 transparent; -fx-border-width: 0 0 3px 0; }
+.ton-models .scroll-pane, .ton-models .scroll-pane > .viewport { -fx-background-color: #f4f7fb; -fx-background: #f4f7fb; }
+.ton-models .tab-content-area { -fx-padding: 16px 0; }

@@ -12,12 +12,13 @@ Dati tecnici mantiene al massimo due colonne, disposte per righe:
 | Prodotti tecnici | Modelli disco |
 | Linee | Polveri |
 
-Linee, Prodotti tecnici, Articoli e Polveri sono operativi e si aprono anche dalla
+Linee, Prodotti tecnici, Articoli, Modelli disco e Polveri sono operativi e si aprono anche dalla
 Panoramica. Le altre funzioni sono indicate come **In preparazione**, senza
 contatori fittizi o comandi non implementati. Il cubaggio resta rinviato.
 
 - [Linee, prodotti, articoli, storico e specifiche produttive](ton-cataloghi.md).
 - [Polveri, ossidi e schede tecniche approvate](ton-polveri.md).
+- [Modelli disco, strati, sovramateriali e versioni](ton-modelli-disco.md).
 - [Struttura e collegamenti del dominio TON](ton-schema-proposta.md).
 - [Proposta grafica di riferimento](ton-cataloghi-proposta.md).
 

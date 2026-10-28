@@ -182,16 +182,14 @@ public final class CatalogService {
         if (expected instanceof Article a) productIds.add(a.product().id());
         if (draft instanceof ArticleDraft a) productIds.add(a.productId());
         for (long id : productIds) {
-            Product p = (Product) repo.load(CatalogKind.PRODUCTS, id);
-            observedLines.put(id, p.line() == null ? null : p.line().id());
-            if (p.line() != null) lineIds.add(p.line().id());
+            Long line = repo.productLine(id);
+            observedLines.put(id, line);
+            if (line != null) lineIds.add(line);
         }
         for (long id : lineIds) repo.lock(CatalogKind.LINES, id);
         for (long id : productIds) repo.lock(CatalogKind.PRODUCTS, id);
         for (long id : productIds) {
-            Product p = (Product) repo.load(CatalogKind.PRODUCTS, id);
-            if (!Objects.equals(observedLines.get(id), p.line() == null ? null : p.line().id()))
-                throw new Conflict();
+            if (!Objects.equals(observedLines.get(id), repo.productLine(id))) throw new Conflict();
         }
     }
 

@@ -56,7 +56,7 @@ public final class CatalogRepository {
         if (kind == CatalogKind.PRODUCTS)
             where +=
                     " AND b.linea_id IS NOT NULL AND b.colore_commerciale IS NOT NULL AND"
-                        + " l.attivo=TRUE";
+                            + " l.attivo=TRUE";
         var result = new ArrayList<Choice>();
         try (var query =
                 connection.prepareStatement(
@@ -110,6 +110,22 @@ public final class CatalogRepository {
             }
         }
         return List.copyOf(result);
+    }
+
+    /**
+     * Read only the parent key before acquiring locks; avoid joined counters on other aggregates.
+     */
+    public Long productLine(long id) throws SQLException {
+        try (var query =
+                connection.prepareStatement(
+                        "SELECT linea_id FROM TON.PRODOTTI WHERE prodotto_id=?")) {
+            query.setLong(1, id);
+            try (var rows = query.executeQuery()) {
+                if (!rows.next()) throw new Conflict();
+                long line = rows.getLong(1);
+                return rows.wasNull() ? null : line;
+            }
+        }
     }
 
     /** A no-op UPDATE locks the aggregate; it must not create a spurious audit revision. */
@@ -251,9 +267,9 @@ public final class CatalogRepository {
             case PRODUCTS -> " FROM TON.PRODOTTI b LEFT JOIN TON.LINEE l ON l.linea_id=b.linea_id";
             case ARTICLES ->
                     " FROM TON.ARTICOLI b JOIN TON.PRODOTTI p ON p.prodotto_id=b.prodotto_id LEFT"
-                        + " JOIN TON.LINEE l ON l.linea_id=p.linea_id LEFT JOIN"
-                        + " TON.CONFIGURAZIONI_ARTICOLO cfg ON"
-                        + " cfg.configurazione_id=b.configurazione_predefinita_id";
+                            + " JOIN TON.LINEE l ON l.linea_id=p.linea_id LEFT JOIN"
+                            + " TON.CONFIGURAZIONI_ARTICOLO cfg ON"
+                            + " cfg.configurazione_id=b.configurazione_predefinita_id";
         };
     }
 
