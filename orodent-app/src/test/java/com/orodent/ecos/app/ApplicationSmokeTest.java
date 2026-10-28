@@ -112,8 +112,8 @@ class ApplicationSmokeTest {
             });
 
             navigatesTonAreasAndProtectsAnUnsavedProduct(stage);
-            managesTonProductsAndKeepsThemWhenReopeningTheModule(stage);
             managesPowderOxidesAndImmutableTechnicalVersions(stage);
+            managesTonCataloguesAndVersionedSpecifications(stage, databasePort);
 
             // Import the same CSV formats used by the application, away from the FX thread.
             importRepresentativeData(databasePort);
@@ -163,56 +163,6 @@ class ApplicationSmokeTest {
         }
     }
 
-    private void managesTonProductsAndKeepsThemWhenReopeningTheModule(Stage stage) throws Exception {
-        runFx(() -> {
-            button(stage, "open-ton-button").fire();
-            button(stage, "ton-products-button").fire();
-            button(stage, "ton-product-save").fire();
-            assertTrue(((Label) stage.getScene().lookup("#ton-product-feedback")).getText().contains("codice"));
-            ((javafx.scene.control.TextField) stage.getScene().lookup("#ton-product-code")).setText(" zr a2 ");
-            ((javafx.scene.control.TextArea) stage.getScene().lookup("#ton-product-description")).setText("Materiale di prova TON");
-            button(stage, "ton-product-save").fire();
-            assertTrue(buttonUnchecked(stage, "ton-home-button").isDisabled(), "Il salvataggio deve completarsi prima di lasciare la pagina");
-            assertTrue(buttonUnchecked(stage, "ton-nav-documents").isDisabled(), "Anche il menu deve attendere il salvataggio");
-            assertTrue(buttonUnchecked(stage, "ton-nav-production").isDisabled());
-        });
-        awaitFx(() -> tonProductRow(stage, "ZR A2", "Attivo"), "Il prodotto TON non è stato salvato");
-        runFx(() -> {
-            TableView<?> table = (TableView<?>) stage.getScene().lookup("#ton-products-table");
-            table.getSelectionModel().select(0);
-            button(stage, "ton-product-edit").fire();
-            ((javafx.scene.control.TextField) stage.getScene().lookup("#ton-product-code")).setText("ZR A3");
-            button(stage, "ton-product-save").fire();
-        });
-        awaitFx(() -> tonProductRow(stage, "ZR A3", "Attivo"), "La modifica del prodotto TON non è stata salvata");
-        runFx(() -> {
-            ((javafx.scene.control.CheckBox) stage.getScene().lookup("#ton-product-active")).setSelected(false);
-            button(stage, "ton-product-save").fire();
-        });
-        awaitFx(() -> {
-            TableView<?> table = (TableView<?>) stage.getScene().lookup("#ton-products-table");
-            return table != null && table.getItems().isEmpty() && !table.isDisabled()
-                    && !buttonUnchecked(stage, "ton-product-save").isDisabled();
-        }, "Il prodotto archiviato è ancora nell'elenco attivo");
-        runFx(() -> {
-            button(stage, "ton-home-button").fire();
-            assertHome(stage);
-            button(stage, "open-ton-button").fire();
-            button(stage, "ton-products-button").fire();
-            ((javafx.scene.control.CheckBox) stage.getScene().lookup("#ton-products-include-inactive")).fire();
-        });
-        awaitFx(() -> tonProductRow(stage, "ZR A3", "Archiviato"), "Il prodotto archiviato non è stato conservato");
-        runFx(() -> {
-            button(stage, "ton-home-button").fire();
-            assertHome(stage);
-            // Leaving during an initial query must not update the next page.
-            button(stage, "open-ton-button").fire();
-            button(stage, "ton-products-button").fire();
-            button(stage, "ton-home-button").fire();
-            assertHome(stage);
-        });
-    }
-
     private void navigatesTonAreasAndProtectsAnUnsavedProduct(Stage stage) throws Exception {
         runFx(() -> {
             button(stage, "open-ton-button").fire();
@@ -232,7 +182,8 @@ class ApplicationSmokeTest {
                 "Il catalogo deve essere raggiungibile da Dati tecnici");
         runFx(() -> {
             assertEquals("TON › Dati tecnici › Prodotti tecnici", ((Label) stage.getScene().lookup("#ton-breadcrumb")).getText());
-            ((javafx.scene.control.TextField) stage.getScene().lookup("#ton-product-code")).setText("NON SALVATO");
+            button(stage,"ton-product-new").fire();
+            text(stage,"ton-product-code").setText("NON SALVATO");
             Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.NO));
             button(stage, "ton-nav-documents").fire();
             assertNotNull(stage.getScene().lookup("#ton-products-view"));
@@ -395,12 +346,315 @@ class ApplicationSmokeTest {
                 .map(javafx.scene.control.DialogPane.class::cast).findFirst().orElseThrow();
     }
 
-    private boolean tonProductRow(Stage stage, String code, String state) {
-        TableView<?> table = (TableView<?>) stage.getScene().lookup("#ton-products-table");
-        if (table == null || table.isDisabled() || table.getItems().size() != 1) return false;
-        return code.equals(table.getColumns().get(0).getCellData(0))
-                && state.equals(table.getColumns().get(2).getCellData(0))
-                && !buttonUnchecked(stage, "ton-product-save").isDisabled();
+    private void managesTonCataloguesAndVersionedSpecifications(Stage stage, int databasePort)
+            throws Exception {
+        runFx(
+                () -> {
+                    button(stage, "open-ton-button").fire();
+                    button(stage, "ton-lines-button").fire();
+                });
+        awaitFx(() -> catalogLoaded(stage, "lines"), "Il catalogo linee deve caricarsi");
+        runFx(
+                () -> {
+                    button(stage, "ton-line-new").fire();
+                    text(stage, "ton-line-code").setText(" zr-ms ");
+                    text(stage, "ton-line-name").setText("Linea MS");
+                    text(stage, "ton-line-technology").setText("Multistrato");
+                    ((javafx.scene.control.ComboBox<?>)
+                                    stage.getScene().lookup("#ton-line-material"))
+                            .getEditor()
+                            .setText("ZR");
+                    button(stage, "ton-line-save").fire();
+                    assertTrue(buttonUnchecked(stage, "ton-home-button").isDisabled());
+                    assertTrue(buttonUnchecked(stage, "ton-nav-documents").isDisabled());
+                });
+        awaitFx(
+                () -> catalogFeedback(stage, "line", "Anagrafica creata"),
+                "La linea deve essere salvata");
+        runFx(
+                () -> {
+                    assertEquals("ZR-MS", text(stage, "ton-line-code").getText());
+                    text(stage, "ton-line-name").setText("Linea MS corretta");
+                    button(stage, "ton-line-save").fire();
+                });
+        awaitFx(
+                () -> catalogFeedback(stage, "line", "Revisione salvata"),
+                "La correzione deve creare una revisione");
+        runFx(() -> catalogTab(stage, "line", "Storico"));
+        awaitFx(
+                () ->
+                        stage.getScene().lookup("#ton-line-history-table") instanceof TableView<?> t
+                                && t.getItems().size() == 2,
+                "Lo storico deve conservare entrambe le revisioni della linea");
+        runFx(() -> catalogTab(stage, "line", "Prodotti tecnici"));
+        awaitFx(
+                () ->
+                        stage.getScene().lookup("#ton-line-children-table")
+                                        instanceof TableView<?> t
+                                && !t.isDisabled(),
+                "I prodotti collegati devono caricarsi");
+        runFx(() -> button(stage, "ton-line-children-new").fire());
+        awaitFx(
+                () ->
+                        stage.getScene().lookup("#ton-product-parent")
+                                        instanceof javafx.scene.control.ComboBox<?> box
+                                && box.getValue() != null
+                                && box.getValue().toString().startsWith("ZR-MS"),
+                "La nuova scheda deve ereditare la linea");
+        runFx(
+                () -> {
+                    text(stage, "ton-product-code").setText(" zr-ms-a2 ");
+                    text(stage, "ton-product-description").setText("Prodotto MS A2");
+                    ((javafx.scene.control.ComboBox<?>)
+                                    stage.getScene().lookup("#ton-product-color"))
+                            .getEditor()
+                            .setText("a2");
+                    button(stage, "ton-product-save").fire();
+                });
+        awaitFx(
+                () -> catalogFeedback(stage, "product", "Anagrafica creata"),
+                "Il prodotto deve essere salvato con linea e colore");
+        runFx(() -> catalogTab(stage, "product", "Articoli"));
+        awaitFx(
+                () ->
+                        stage.getScene().lookup("#ton-product-children-table")
+                                        instanceof TableView<?> t
+                                && !t.isDisabled(),
+                "I formati del prodotto devono caricarsi");
+        runFx(() -> button(stage, "ton-product-children-new").fire());
+        awaitFx(
+                () ->
+                        stage.getScene().lookup("#ton-article-parent")
+                                        instanceof javafx.scene.control.ComboBox<?> box
+                                && box.getValue() != null
+                                && box.getValue().toString().startsWith("ZR-MS-A2"),
+                "Il nuovo articolo deve ereditare il prodotto");
+        runFx(
+                () -> {
+                    assertTrue(text(stage, "ton-article-inherited").getText().contains("ZR-MS"));
+                    assertTrue(text(stage, "ton-article-inherited").getText().contains("A2"));
+                    text(stage, "ton-article-code").setText(PRODUCT_CODE);
+                    text(stage, "ton-article-description").setText("Disco MS A2");
+                    text(stage, "ton-article-diameter").setText("98");
+                    text(stage, "ton-article-height").setText("16");
+                    button(stage, "ton-article-save").fire();
+                });
+        awaitFx(
+                () -> catalogFeedback(stage, "article", "Anagrafica creata"),
+                "L'articolo deve essere salvabile senza configurazione");
+        runFx(() -> catalogTab(stage, "article", "Specifiche di produzione"));
+        awaitFx(
+                () ->
+                        stage.getScene().lookup("#ton-article-spec-save") instanceof Button b
+                                && !b.isDisabled(),
+                "La sezione specifiche deve caricarsi anche senza composizioni e modelli");
+        runFx(
+                () -> {
+                    button(stage, "ton-article-spec-save").fire();
+                    assertTrue(catalogFeedback(stage, "article", "Seleziona composizione"));
+                });
+        seedTonTechnicalSpecifications(databasePort);
+        runFx(() -> button(stage, "ton-article-spec-refresh").fire());
+        awaitFx(
+                () ->
+                        stage.getScene().lookup("#ton-article-spec-composition")
+                                        instanceof javafx.scene.control.ComboBox<?> c
+                                && !c.getItems().isEmpty()
+                                && !c.isDisabled(),
+                "Le composizioni approvate devono essere selezionabili");
+        runFx(
+                () -> {
+                    ((javafx.scene.control.ComboBox<?>)
+                                    stage.getScene().lookup("#ton-article-spec-composition"))
+                            .getSelectionModel()
+                            .selectFirst();
+                    ((javafx.scene.control.ComboBox<?>)
+                                    stage.getScene().lookup("#ton-article-spec-model"))
+                            .getSelectionModel()
+                            .selectFirst();
+                    text(stage, "ton-article-spec-calculation").setText("dosi-v1");
+                    button(stage, "ton-article-spec-save").fire();
+                });
+        awaitFx(
+                () -> catalogFeedback(stage, "article", "Bozza salvata"),
+                "La specifica deve essere salvata in bozza");
+        awaitFx(
+                () -> !buttonUnchecked(stage, "ton-article-spec-approve").isDisabled(),
+                "La bozza deve ricaricarsi");
+        runFx(
+                () -> {
+                    Platform.runLater(
+                            () -> respondToProductDiscard(javafx.scene.control.ButtonType.YES));
+                    button(stage, "ton-article-spec-approve").fire();
+                });
+        awaitFx(
+                () -> catalogFeedback(stage, "article", "Versione approvata"),
+                "La specifica deve essere approvata");
+        awaitFx(
+                () ->
+                        stage.getScene().lookup("#ton-article-spec-calculation")
+                                        instanceof javafx.scene.control.TextField f
+                                && f.isDisabled(),
+                "I dati approvati devono essere in sola lettura");
+        runFx(() -> button(stage, "ton-article-spec-copy").fire());
+        awaitFx(
+                () -> catalogFeedback(stage, "article", "Nuova bozza"),
+                "La versione approvata deve essere copiabile");
+        awaitFx(
+                () -> !text(stage, "ton-article-spec-calculation").isDisabled(),
+                "La nuova bozza deve essere modificabile");
+        runFx(
+                () -> {
+                    text(stage, "ton-article-spec-calculation").setText("dosi-v2");
+                    button(stage, "ton-article-spec-save").fire();
+                });
+        awaitFx(
+                () -> catalogFeedback(stage, "article", "Bozza salvata"),
+                "La nuova versione deve essere salvata");
+        awaitFx(
+                () ->
+                        stage.getScene().lookup("#ton-article-spec-version")
+                                        instanceof javafx.scene.control.ComboBox<?> v
+                                && v.getItems().size() == 2,
+                "Entrambe le versioni devono restare disponibili");
+        runFx(
+                () -> {
+                    ((javafx.scene.control.ComboBox<?>)
+                                    stage.getScene().lookup("#ton-article-spec-version"))
+                            .getSelectionModel()
+                            .select(1);
+                    assertEquals("dosi-v1", text(stage, "ton-article-spec-calculation").getText());
+                    assertTrue(text(stage, "ton-article-spec-calculation").isDisabled());
+                    catalogTab(stage, "article", "Anagrafica");
+                    Platform.runLater(
+                            () -> respondToProductDiscard(javafx.scene.control.ButtonType.YES));
+                    button(stage, "ton-article-archive").fire();
+                });
+        awaitFx(
+                () -> catalogFeedback(stage, "article", "Stato aggiornato"),
+                "L'articolo deve essere archiviato conservando le versioni");
+        runFx(
+                () -> {
+                    button(stage, "ton-home-button").fire();
+                    assertHome(stage);
+                    button(stage, "open-ton-button").fire();
+                    button(stage, "ton-articles-button").fire();
+                });
+        awaitFx(() -> catalogLoaded(stage, "articles"), "Il catalogo articoli deve riaprirsi");
+        runFx(
+                () ->
+                        ((javafx.scene.control.CheckBox)
+                                        stage.getScene().lookup("#ton-articles-include-inactive"))
+                                .fire());
+        awaitFx(
+                () ->
+                        stage.getScene().lookup("#ton-articles-table") instanceof TableView<?> t
+                                && !t.isDisabled()
+                                && t.getItems().size() == 1,
+                "L'articolo archiviato deve essere conservato");
+        runFx(
+                () -> {
+                    TableView<?> table =
+                            (TableView<?>) stage.getScene().lookup("#ton-articles-table");
+                    assertEquals(PRODUCT_CODE, table.getColumns().get(0).getCellData(0));
+                    table.getSelectionModel().selectFirst();
+                    button(stage, "ton-article-edit").fire();
+                    button(stage, "ton-home-button").fire();
+                    assertHome(stage);
+                });
+    }
+
+    private void seedTonTechnicalSpecifications(int port) throws Exception {
+        try (var c =
+                DriverManager.getConnection(
+                        "jdbc:derby://127.0.0.1:"
+                                + port
+                                + "/"
+                                + DatabaseConfiguration.DATABASE_NAME,
+                        DatabaseConfiguration.USER,
+                        DatabaseConfiguration.PASSWORD)) {
+            c.setAutoCommit(false);
+            try (var q = c.createStatement()) {
+                long product;
+                try (var r =
+                        q.executeQuery(
+                                "SELECT prodotto_id FROM TON.PRODOTTI WHERE codice='ZR-MS-A2'")) {
+                    assertTrue(r.next());
+                    product = r.getLong(1);
+                }
+                long powder;
+                try (var r =
+                        q.executeQuery(
+                                "SELECT r.polvere_revisione_id FROM TON.POLVERI_REVISIONI r JOIN"
+                                    + " TON.POLVERI p ON p.polvere_id=r.polvere_id WHERE"
+                                    + " p.codice='P001' AND r.stato='APPROVATA'")) {
+                    assertTrue(r.next());
+                    powder = r.getLong(1);
+                }
+                q.executeUpdate(
+                        "INSERT INTO"
+                            + " TON.COMPOSIZIONI(prodotto_id,numero_versione,stato,approvato_il)"
+                            + " VALUES ("
+                                + product
+                                + ",1,'APPROVATA',CURRENT_TIMESTAMP)");
+                long composition;
+                try (var r =
+                        q.executeQuery(
+                                "SELECT composizione_id FROM TON.COMPOSIZIONI WHERE prodotto_id="
+                                        + product)) {
+                    assertTrue(r.next());
+                    composition = r.getLong(1);
+                }
+                q.executeUpdate(
+                        "INSERT INTO TON.COMPOSIZIONE_STRATI VALUES ("
+                                + composition
+                                + ",1,'Strato unico')");
+                q.executeUpdate(
+                        "INSERT INTO TON.COMPOSIZIONE_INGREDIENTI VALUES ("
+                                + composition
+                                + ",1,"
+                                + powder
+                                + ",100)");
+                q.executeUpdate(
+                        "INSERT INTO"
+                            + " TON.MODELLI_DISCO(codice,numero_versione,diametro_pressatura_mm,sovramateriale_superiore_mm,sovramateriale_inferiore_mm,pressione_kg_cm2,grammi_per_mm,stato,approvato_il)"
+                            + " VALUES"
+                            + " ('SMOKE-98',1,98,1,1,1000,20,'APPROVATA',CURRENT_TIMESTAMP)");
+                long model;
+                try (var r =
+                        q.executeQuery(
+                                "SELECT modello_id FROM TON.MODELLI_DISCO WHERE"
+                                    + " codice='SMOKE-98'")) {
+                    assertTrue(r.next());
+                    model = r.getLong(1);
+                }
+                q.executeUpdate("INSERT INTO TON.MODELLO_STRATI VALUES (" + model + ",1,100)");
+            }
+            c.commit();
+        }
+    }
+
+    private static boolean catalogLoaded(Stage stage, String plural) {
+        return stage.getScene().lookup("#ton-" + plural + "-table") instanceof TableView<?> t
+                && !t.isDisabled();
+    }
+
+    private static boolean catalogFeedback(Stage stage, String type, String message) {
+        Node n = stage.getScene().lookup("#ton-" + type + "-feedback");
+        return n instanceof Label l && l.getText().contains(message);
+    }
+
+    private static void catalogTab(Stage stage, String type, String title) {
+        stage.getScene().getRoot().applyCss();
+        TabPane tabs = (TabPane) stage.getScene().lookup("#ton-" + type + "-tabs");
+        tabs.getSelectionModel()
+                .select(
+                        tabs.getTabs().stream()
+                                .filter(t -> t.getText().equals(title))
+                                .findFirst()
+                                .orElseThrow());
+        stage.getScene().getRoot().applyCss();
+        stage.getScene().getRoot().layout();
     }
 
     private static Button buttonUnchecked(Stage stage, String id) {

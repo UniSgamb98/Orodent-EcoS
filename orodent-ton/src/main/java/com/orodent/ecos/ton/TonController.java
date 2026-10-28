@@ -1,12 +1,15 @@
 package com.orodent.ecos.ton;
 
 import com.orodent.ecos.module.ModuleContext;
+import com.orodent.ecos.ton.features.catalog.controller.CatalogController;
+import com.orodent.ecos.ton.features.catalog.model.CatalogKind;
+import com.orodent.ecos.ton.features.catalog.model.CatalogModels.Navigation;
+import com.orodent.ecos.ton.features.catalog.service.CatalogService;
+import com.orodent.ecos.ton.features.catalog.service.SpecificationService;
+import com.orodent.ecos.ton.features.catalog.view.CatalogView;
 import com.orodent.ecos.ton.features.powders.controller.PowdersController;
 import com.orodent.ecos.ton.features.powders.service.PowderService;
 import com.orodent.ecos.ton.features.powders.view.PowdersView;
-import com.orodent.ecos.ton.features.products.controller.ProductsController;
-import com.orodent.ecos.ton.features.products.service.ProductService;
-import com.orodent.ecos.ton.features.products.view.ProductsView;
 import com.orodent.ecos.ton.navigation.FeatureController;
 import com.orodent.ecos.ton.navigation.TonFeature;
 import com.orodent.ecos.ton.navigation.TonSection;
@@ -16,14 +19,16 @@ import javafx.scene.Parent;
 
 final class TonController {
     private final TonView view = new TonView();
-    private final ProductService products;
+    private final CatalogService catalogues;
+    private final SpecificationService specifications;
     private final PowderService powders;
     private FeatureController active;
     private TonFeature activeFeature;
     private TonSection section = TonSection.OVERVIEW;
 
     TonController(ModuleContext context) {
-        products = new ProductService(context.connections(), context.workers());
+        catalogues = new CatalogService(context.connections(), context.workers());
+        specifications = new SpecificationService(context.connections(), context.workers());
         powders = new PowderService(context.connections(), context.workers());
         view.homeButton()
                 .setOnAction(
@@ -54,10 +59,10 @@ final class TonController {
         closePage();
         switch (feature) {
             case PRODUCTS -> {
-                var page = new ProductsView();
-                var controller = new ProductsController(page, products);
-                install(feature, page, controller, controller::loadInitialData);
+                installCatalogue(Navigation.list(CatalogKind.PRODUCTS));
             }
+            case LINES -> installCatalogue(Navigation.list(CatalogKind.LINES));
+            case ARTICLES -> installCatalogue(Navigation.list(CatalogKind.ARTICLES));
             case POWDERS -> {
                 var page = new PowdersView();
                 var controller = new PowdersController(page, powders);
@@ -67,6 +72,20 @@ final class TonController {
                     throw new IllegalArgumentException(
                             "Funzione TON non ancora disponibile: " + feature);
         }
+    }
+
+    private void openCatalogue(Navigation route) {
+        if (!canLeave()) return;
+        closePage();
+        installCatalogue(route);
+    }
+
+    private void installCatalogue(Navigation route) {
+        var page = new CatalogView(route.kind());
+        var controller =
+                new CatalogController(
+                        route.kind(), page, catalogues, specifications, this::openCatalogue);
+        install(route.kind().feature(), page, controller, () -> controller.start(route));
     }
 
     private void install(

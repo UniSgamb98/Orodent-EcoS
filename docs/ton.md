@@ -1,119 +1,59 @@
 # TON: navigazione e cataloghi tecnici
 
-La finestra TON ha un menu laterale con **Panoramica**, **Produzione**, **Forni e
-cotture**, **Dati tecnici**, **Tracciabilità** e **Documenti**. Il percorso in alto
-indica la pagina corrente; il pulsante **Home Orodent-EcoS** torna al catalogo
-principale, mentre **Panoramica** resta dentro TON.
+TON dispone di **Panoramica**, **Produzione**, **Forni e cotture**, **Dati tecnici**,
+**Tracciabilità** e **Documenti**. Il percorso indica la pagina corrente;
+**Home Orodent-EcoS** torna al catalogo principale e **Panoramica** resta in TON.
 
-Aprire il catalogo prodotti dalla Panoramica oppure da **Dati tecnici → Prodotti
-tecnici**. Il catalogo **Polveri** si apre dalla Panoramica oppure da **Dati
-tecnici → Polveri**: vedere [schede tecniche e ossidi](ton-polveri.md).
-Le altre aree presentano le funzioni previste con lo stato **In
-preparazione**, senza contatori fittizi o comandi di lavorazione non implementati.
-Il cubaggio rimane rinviato e non compare come funzione operativa.
+Dati tecnici mantiene al massimo due colonne, disposte per righe:
 
-In Dati tecnici l'ordine per righe è **Articoli / Composizioni**, **Prodotti
-tecnici / Modelli disco**, **Linee / Polveri**, con un massimo di due colonne
-anche nelle finestre larghe. Il nome Articoli comprende anche
-le future specifiche di produzione, senza una scheda principale separata per
-le configurazioni. Vedere la [proposta per i tre cataloghi](ton-cataloghi-proposta.md),
-con anteprima HTML navigabile. La nuova gerarchia Linea → Prodotto → Articolo e
-il relativo storico restano da implementare.
+| Sinistra | Destra |
+| --- | --- |
+| Articoli | Composizioni |
+| Prodotti tecnici | Modelli disco |
+| Linee | Polveri |
 
-Il pulsante **Menu TON / Chiudi menu** permette di richiudere la barra. Sotto
-1020 pixel si richiude automaticamente, e dopo la selezione di un'area lascia
-spazio al contenuto. **Esc** la richiude nella modalità compatta. Gli elenchi e
-le schede scorrono quando lo spazio non basta. Allargando la finestra il menu
-torna visibile.
+Linee, Prodotti tecnici, Articoli e Polveri sono operativi e si aprono anche dalla
+Panoramica. Le altre funzioni sono indicate come **In preparazione**, senza
+contatori fittizi o comandi non implementati. Il cubaggio resta rinviato.
 
-Lo [schema completo TON](ton-schema-proposta.md) descrive le 25 tabelle introdotte
-da V3/V4, i collegamenti e un esempio di produzione e cottura. La struttura SQL
-è disponibile; oltre ai cataloghi prodotti e polveri, i flussi applicativi
-successivi restano da realizzare.
+- [Linee, prodotti, articoli, storico e specifiche produttive](ton-cataloghi.md).
+- [Polveri, ossidi e schede tecniche approvate](ton-polveri.md).
+- [Struttura e collegamenti del dominio TON](ton-schema-proposta.md).
+- [Proposta grafica di riferimento](ton-cataloghi-proposta.md).
 
-Il primo blocco riscritto da TON-V2 è il catalogo dei prodotti tecnici, accessibile
-con **TON → Apri catalogo prodotti**. Un prodotto rappresenta una famiglia o un
-materiale del laboratorio, per esempio `ZR A2`. Non viene associato automaticamente
-agli articoli commerciali analizzati da Statistiche.
+**Menu TON / Chiudi menu** richiude la barra laterale. Sotto 1020 pixel si
+richiude automaticamente e dopo la scelta di un'area lascia spazio al contenuto.
+**Esc** la richiude nella modalità compatta; allargando la finestra torna visibile.
+Le schede e gli elenchi scorrono quando lo spazio non basta.
 
-## Uso
+## Ciclo di vita
 
-- Creare un prodotto con codice obbligatorio (massimo 50 caratteri), descrizione
-  facoltativa (200 caratteri) e stato attivo. Il codice viene normalizzato in
-  maiuscolo e non può duplicare un altro codice, nemmeno di un prodotto archiviato.
-- Cercare per codice o descrizione. I risultati sono ordinati e paginati in gruppi
-  di 50; caratteri come `%` e `_` sono cercati letteralmente.
-- Selezionare una riga e scegliere **Modifica selezionato**. L'editor non cambia
-  automaticamente quando si seleziona una riga o si aggiorna l'elenco.
-- Disattivare **Prodotto attivo** per archiviarlo. **Mostra anche archiviati**
-  permette di ritrovarlo e riattivarlo. Non esiste una cancellazione fisica.
-- Le modifiche non salvate richiedono conferma prima di cambiare pagina o
-  sostituire il contenuto dell'editor. Durante un salvataggio la navigazione
-  interna è sospesa; chiudere la sessione non annulla il comando in corso.
+Il provider del modulo non apre il DB e non costruisce controlli prima della
+selezione. TonController crea la pagina richiesta e ne rilascia letture,
+listener e timer quando la si lascia. Tutti i cataloghi ricevono provider ed
+executor di EcoS; non aprono un database o un pool di thread autonomo.
 
-Due modifiche alla stessa revisione non possono sovrascriversi: la prima viene
-salvata, la seconda riceve un messaggio di conflitto e mantiene il proprio testo.
-Aggiornare l'elenco e riaprire la scheda per lavorare sulla revisione corrente.
-Un codice duplicato o un errore SQL annulla l'intera transazione. I salvataggi
-interrotti dalla disconnessione non vengono ripetuti automaticamente.
+FeatureController espone salvataggio, verifica delle modifiche non salvate e
+chiusura della pagina. Durante le scritture vengono disabilitati la Home di
+EcoS e i collegamenti interni. I salvataggi non sono cancellati né ripetuti
+quando si interrompe la connessione.
 
-## Organizzazione
+TonView mantiene header, menu, percorso e contenuto; TonFeature definisce ordine
+e disponibilità delle funzioni; TonPages costruisce le pagine introduttive senza
+query DB. Gli stili sono limitati alla radice TON. Le aree riutilizzano la stessa
+finestra, senza avviare un processo distinto per catalogo.
 
-- `features/products/model`: dati immutabili, normalizzazione e conflitto.
-- `features/products/repository`: SQL qualificato su `TON.PRODOTTI`, senza commit
-  o connessioni proprie.
-- `features/products/service`: connessioni e transazioni scoped, esecuzione sui
-  worker ricevuti da EcoS.
-- `features/products/controller`: debounce, paginazione, editor e gestione delle
-  richieste superate; annulla solo le letture, senza interrompere le scritture.
-- `features/products/view`: controlli JavaFX e stati visivi.
-- `features/powders`: stessa separazione model/repository/service/controller/view
-  per anagrafiche, revisioni e ossidi. Ogni comando aggiorna l'intera scheda in
-  transazione, acquisendo prima la revisione della polvere.
-- `navigation/FeatureController`: ciclo di vita comune delle pagine operative,
-  blocco della navigazione durante le scritture e verifica dei dati non salvati.
-- `TonController`: navigazione del modulo e rilascio della pagina attiva.
-- `navigation/TonSection` e `TonFeature`: mappa delle aree e stato delle funzioni.
-- `view/TonView`: struttura persistente, menu, percorso e comportamento compatto.
-- `view/TonPages`: pagine introduttive create alla selezione, senza query DB.
+## Database e aggiornamenti
 
-Una nuova funzione si aggiunge alla mappa, alla sua pagina e al dispatcher di
-`TonController`; diventa disponibile solo quando esiste il flusso operativo.
-Le aree non aprono finestre separate e non costruiscono in anticipo tutti i
-controller. Quando si lascia il catalogo, il controller verifica le modifiche
-non salvate prima di cambiare pagina o voce evidenziata. Durante il salvataggio
-sono disabilitati sia la Home di EcoS sia i collegamenti di navigazione.
+V3 crea il catalogo prodotti, V4 aggiunge il dominio produttivo e documentale,
+V5 il colore delle polveri e V6 la gerarchia dei cataloghi con storico reale.
+Il dominio TON comprende 28 tabelle. Le migrazioni pubblicate restano immutabili.
 
-Il provider del modulo non apre il DB e non crea controlli quando viene caricato
-nel catalogo EcoS. I servizi condivisi e la finestra principale restano di EcoS.
-Gli stili TON sono limitati alla radice del modulo.
+L'HOST salva il backup prima delle scritture e applica le migrazioni pendenti in
+transazione, prima di pubblicare il servizio. Il CLIENT verifica lo schema
+corrente in sola lettura; il failover non applica DDL. Clienti, vendite, ID e UUID
+restano conservati. Vedere [schema condiviso e migrazioni](database-schema.md).
 
-## Database e distribuzione
-
-La migrazione immutabile V3 crea `TON.PRODOTTI`, con ID stabile, codice univoco,
-stato attivo, revisione per il controllo concorrente e timestamp. È applicata
-solo dall'HOST, con backup prima dell'aggiornamento di archivi esistenti. I dati
-Statistiche e l'identità del DB vengono conservati; i CLIENT verificano lo schema
-senza migrarlo. Chiudere le istanze prima dell'aggiornamento e riavviare l'HOST
-aggiornato prima dei CLIENT. Non è necessario cambiare Java o launcher per V3/V4:
-la normale release firmata dei componenti dichiara il nuovo target di migrazione.
-
-La V4 aggiunge le altre 24 tabelle: linee e articoli; polveri e revisioni;
-composizioni e ingredienti; modelli e configurazioni; produzioni e scarti;
-forni, programmi, cicli, carichi e lotti; modelli documento e documenti emessi.
-Conserva integralmente il catalogo V3, gli ID, la sequenza e le revisioni; non
-importa automaticamente TON-V2 e non crea dati dimostrativi. Un database nuovo
-parte vuoto. Il cubaggio resta rinviato.
-
-Sono già attivi i vincoli SQL di identità, unicità, riferimenti, percentuali,
-quantità e coerenza dei campi. I servizi futuri dovranno completare i controlli
-transazionali su disponibilità e flussi produttivi. Per le polveri sono già
-implementati somme, approvazione, immutabilità delle schede approvate e
-assegnazione concorrente delle versioni. Creare le altre tabelle non introduce
-già le relative schermate o il sistema di stampa.
-
-La V5 aggiunge `TON.POLVERI.colore`, usato nell'anagrafica e per ordinare il
-catalogo: bianche, gialle, rosa, grigie, poi codice. Le polveri V4 restano senza
-colore finché l'operatore lo specifica; il vecchio numero viene conservato solo
-come dato legacy. Anche V5 arriva attraverso la normale release dei componenti,
-con backup e migrazione eseguiti dall'HOST prima di accettare i CLIENT aggiornati.
+L'aggiornamento arriva con la normale release firmata dei componenti: non occorre
+sostituire Java o launcher. Per migrare un archivio esistente chiudere le istanze
+e riavviare prima l'HOST aggiornato, poi i CLIENT.

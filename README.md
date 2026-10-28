@@ -7,13 +7,16 @@ La Home permette di aprire Ton e Statistiche nello stesso processo JavaFX.
 
 TON dispone di Panoramica e menu laterale per Produzione, Forni e cotture, Dati
 tecnici, Tracciabilità e Documenti. Le aree future sono descritte come **In
-preparazione**; i cataloghi prodotti e polveri sono già operativi. Il menu è richiudibile e
+preparazione**; i cataloghi linee, prodotti, articoli e polveri sono già operativi. Il menu è richiudibile e
 si adatta alle finestre strette. [Navigazione e uso](docs/ton.md).
 
-Aprire **TON → Apri catalogo prodotti** per gestire famiglie e materiali tecnici.
-Il catalogo permette ricerca paginata, creazione, modifica e archiviazione, con
-controllo delle modifiche concorrenti. I dati sono in `TON.PRODOTTI`, distinti
-dagli articoli di vendita. Vedere [uso e organizzazione del modulo](docs/ton.md).
+Aprire **TON → Dati tecnici** per i cataloghi **Linee → Prodotti tecnici →
+Articoli**. Un prodotto identifica linea e colore commerciale; l'articolo ne
+specifica diametro e altezza. Ricerca, filtri, creazione, modifica, archiviazione,
+eliminazione degli elementi mai usati e storico completo sono operativi.
+Dentro Articoli si gestiscono anche le specifiche produttive versionate, usando
+composizioni e modelli approvati già presenti. I loro cataloghi saranno il passo
+successivo. [Uso e migrazione dei cataloghi](docs/ton-cataloghi.md).
 
 In **TON → Dati tecnici → Polveri** si gestiscono anagrafiche e versioni delle
 schede tecniche: classe Y (anche 6Y), caratteristiche e ossidi in percentuale in
@@ -23,8 +26,9 @@ Il colore si sceglie nell'anagrafica: bianche, gialle, rosa e grigie compaiono i
 quest'ordine, poi per codice. La migrazione V5 aggiunge il colore conservando i
 dati esistenti; le polveri precedenti restano **Da specificare** finché lo si sceglie.
 
-La migrazione V4 completa la struttura TON con 25 tabelle, compresi documenti e
-modelli di stampa; le nuove funzioni verranno implementate gradualmente.
+La V4 ha introdotto le tabelle di produzione e documenti. La V6 adegua la
+gerarchia dei cataloghi e aggiunge tre tabelle di storico: TON conta 28 tabelle.
+Le funzioni di lavorazione e stampa saranno implementate gradualmente.
 Vedere [tabelle e collegamenti](docs/ton-schema-proposta.md).
 Conserva catalogo prodotti, clienti e vendite e salva un backup degli archivi
 esistenti prima delle modifiche. Per distribuire questa versione, chiudere le
@@ -40,7 +44,7 @@ firmati dei componenti supportano il passaggio senza sostituire Java o launcher.
 | `orodent-core` | Contratti comuni, ConnectionProvider e strumenti CSV indipendenti dalla UI |
 | `orodent-database` | Derby HOST/CLIENT, discovery, schema, modelli, repository e servizi di importazione |
 | `orodent-module-api` | Contratto dei moduli, metadati, servizi condivisi e ciclo di vita della UI |
-| `orodent-ton` | Laboratorio TON: cataloghi prodotti e polveri, schede tecniche versionate e ossidi |
+| `orodent-ton` | Laboratorio TON: linee, prodotti, articoli e polveri, storico e specifiche versionate |
 | `orodent-statistiche` | Dashboard vendite, analisi clienti/prodotti/sconti/resi, archivio e importazioni CSV |
 | `orodent-performance` | Solo con profilo `performance`: misure su dati sintetici, fuori dai pacchetti distribuiti |
 
@@ -59,7 +63,7 @@ Anagrafiche e vendite risiedono in `orodent-database`, nello stesso database
 `OrodentEcoS`. La versione dello schema è registrata dall'HOST; i CLIENT eseguono
 solo una verifica di compatibilità. Vedere [integrazione Statistiche](docs/reuse-statistiche.md).
 
-Lo schema DB 5 organizza le tabelle in `ECOS`, `ANAGRAFICHE`, `VENDITE` e `TON`.
+Lo schema DB 6 organizza le tabelle in `ECOS`, `ANAGRAFICHE`, `VENDITE` e `TON`.
 I dati delle precedenti tabelle `APP` vengono migrati dall'HOST in transazione.
 Il passaggio può arrivare tramite una normale release dei componenti, mantenendo
 il launcher installato: il contatore delle migrazioni è distinto dal contratto

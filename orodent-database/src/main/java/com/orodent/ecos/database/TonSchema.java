@@ -259,6 +259,70 @@ final class TonSchema {
             List.of(column("COLORE", Types.VARCHAR, 10, 0, true, false, null)),
             List.of("CK_TON_POL_COLORE"));
 
+    private static final List<Table> CATALOGUES = List.of(
+            new Table("LINEE", List.of(
+                    column("TECNOLOGIA", Types.VARCHAR, 200, 0, true, false, null),
+                    column("MATERIA_PRIMA", Types.VARCHAR, 30, 0, true, false, null),
+                    column("NOTE", Types.VARCHAR, 1000, 0, true, false, null)),
+                    List.of()),
+            new Table("PRODOTTI", List.of(
+                    column("LINEA_ID", Types.BIGINT, 0, 0, true, false, null),
+                    column("COLORE_COMMERCIALE", Types.VARCHAR, 30, 0, true, false, null),
+                    column("NOTE", Types.VARCHAR, 1000, 0, true, false, null)),
+                    List.of("FK_TON_PRO_LINEA","UQ_TON_PRO_LINEA_COLORE","CK_TON_PRO_COLORE")),
+            new Table("ARTICOLI", List.of(
+                    column("NOTE", Types.VARCHAR, 1000, 0, true, false, null)),
+                    List.of()),
+            new Table("LINEE_REVISIONI", List.of(
+                    column("LINEA_ID", Types.BIGINT, 0, 0, false, false, null),
+                    column("NUMERO_REVISIONE", Types.INTEGER, 0, 0, false, false, null),
+                    column("CODICE", Types.VARCHAR, 50, 0, false, false, null),
+                    column("NOME", Types.VARCHAR, 100, 0, false, false, null),
+                    column("TECNOLOGIA", Types.VARCHAR, 200, 0, true, false, null),
+                    column("MATERIA_PRIMA", Types.VARCHAR, 30, 0, true, false, null),
+                    column("NOTE", Types.VARCHAR, 1000, 0, true, false, null),
+                    column("ATTIVO", Types.BOOLEAN, 0, 0, false, false, null),
+                    column("REGISTRATO_IL", Types.TIMESTAMP, 0, 0, false, false, null),
+                    column("ORIGINE", Types.VARCHAR, 20, 0, false, false, null)),
+                    List.of("PK_TON_LIN_STOR","FK_TON_LIN_STOR","CK_TON_LIN_STOR_REV","CK_TON_LIN_STOR_ORI")),
+            new Table("PRODOTTI_REVISIONI", List.of(
+                    column("PRODOTTO_ID", Types.BIGINT, 0, 0, false, false, null),
+                    column("NUMERO_REVISIONE", Types.INTEGER, 0, 0, false, false, null),
+                    column("CODICE", Types.VARCHAR, 50, 0, false, false, null),
+                    column("DESCRIZIONE", Types.VARCHAR, 200, 0, true, false, null),
+                    column("LINEA_ID", Types.BIGINT, 0, 0, true, false, null),
+                    column("LINEA_CODICE", Types.VARCHAR, 50, 0, true, false, null),
+                    column("COLORE_COMMERCIALE", Types.VARCHAR, 30, 0, true, false, null),
+                    column("NOTE", Types.VARCHAR, 1000, 0, true, false, null),
+                    column("ATTIVO", Types.BOOLEAN, 0, 0, false, false, null),
+                    column("REGISTRATO_IL", Types.TIMESTAMP, 0, 0, false, false, null),
+                    column("ORIGINE", Types.VARCHAR, 20, 0, false, false, null)),
+                    List.of("PK_TON_PRO_STOR","FK_TON_PRO_STOR","CK_TON_PRO_STOR_REV","CK_TON_PRO_STOR_ORI","FK_TON_PRO_STOR_LINEA")),
+            new Table("ARTICOLI_REVISIONI", List.of(
+                    column("ARTICOLO_ID", Types.BIGINT, 0, 0, false, false, null),
+                    column("NUMERO_REVISIONE", Types.INTEGER, 0, 0, false, false, null),
+                    column("CODICE", Types.VARCHAR, 80, 0, false, false, null),
+                    column("DESCRIZIONE", Types.VARCHAR, 200, 0, true, false, null),
+                    column("PRODOTTO_ID", Types.BIGINT, 0, 0, false, false, null),
+                    column("PRODOTTO_CODICE", Types.VARCHAR, 50, 0, false, false, null),
+                    column("LINEA_ID", Types.BIGINT, 0, 0, true, false, null),
+                    column("LINEA_CODICE", Types.VARCHAR, 50, 0, true, false, null),
+                    column("COLORE_COMMERCIALE", Types.VARCHAR, 30, 0, true, false, null),
+                    column("DIAMETRO_MM", Types.DECIMAL, 6, 2, false, false, null),
+                    column("ALTEZZA_MM", Types.DECIMAL, 6, 2, false, false, null),
+                    column("CONFIGURAZIONE_PREDEFINITA_ID", Types.BIGINT, 0, 0, true, false, null),
+                    column("NOTE", Types.VARCHAR, 1000, 0, true, false, null),
+                    column("ATTIVO", Types.BOOLEAN, 0, 0, false, false, null),
+                    column("REGISTRATO_IL", Types.TIMESTAMP, 0, 0, false, false, null),
+                    column("ORIGINE", Types.VARCHAR, 20, 0, false, false, null)),
+                    List.of("PK_TON_ART_STOR","FK_TON_ART_STOR","CK_TON_ART_STOR_REV","CK_TON_ART_STOR_ORI","FK_TON_ART_STOR_PRO","FK_TON_ART_STOR_LINEA","FK_TON_ART_STOR_CFG")),
+            new Table("CONFIGURAZIONI_ARTICOLO", List.of(
+                    column("LINEA_ID", Types.BIGINT, 0, 0, true, false, null),
+                    column("LINEA_REVISIONE", Types.INTEGER, 0, 0, true, false, null),
+                    column("PRODOTTO_REVISIONE", Types.INTEGER, 0, 0, true, false, null),
+                    column("ARTICOLO_REVISIONE", Types.INTEGER, 0, 0, true, false, null)),
+                    List.of("FK_TON_CFG_LIN_STOR","FK_TON_CFG_PRO_STOR","FK_TON_CFG_ART_STOR","CK_TON_CFG_STOR")));
+
     static void verify(Connection connection, int schemaVersion) throws SQLException {
         // One metadata scan for the entire domain, rather than one round-trip per column.
         Map<String, Map<String, Column>> actual = new HashMap<>();
@@ -286,6 +350,7 @@ final class TonSchema {
         }
         var tables = new ArrayList<>(TABLES);
         if (schemaVersion >= 5) tables.add(POWDER_COLORS);
+        if (schemaVersion >= 6) tables.addAll(CATALOGUES);
         for (Table table : tables) {
             Map<String, Column> columns = actual.getOrDefault(table.name(), Map.of());
             for (Column expected : table.columns()) {

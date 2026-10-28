@@ -1,8 +1,8 @@
 # Proposta di schema TON per Orodent-EcoS
 
-Stato: **struttura SQL implementata nella migrazione V4, colore polveri aggiunto in V5**. `TON.PRODOTTI` esiste
+Stato: **struttura SQL V4, colore polveri V5 e cataloghi con storico V6**. `TON.PRODOTTI` esiste
 dalla V3; `V4__ton_domain.sql` aggiunge le altre 24 tabelle, senza importare dati
-da TON-V2. I cataloghi prodotti e polveri sono operativi; per le polveri sono
+da TON-V2. I cataloghi linee, prodotti, articoli e polveri sono operativi; per le polveri sono
 implementati anche versioni, ossidi e approvazione. Questo documento descrive
 anche regole applicative previste per i flussi ancora da costruire. Il cubaggio
 rimane fuori da questo passaggio. Vedere [uso delle polveri](ton-polveri.md).
@@ -10,8 +10,9 @@ rimane fuori da questo passaggio. Vedere [uso delle polveri](ton-polveri.md).
 L'obiettivo è mantenere il percorso di TON-V2 — cataloghi, composizioni, modelli,
 produzioni, forni, lotti e documenti — rendendo espliciti i dati tecnici storici e
 le regole di concorrenza. Tutte le tabelle risiedono nel database `OrodentEcoS`,
-nello schema `TON`. Gli articoli TON non sono automaticamente gli articoli
-commerciali di Statistiche.
+nello schema `TON`. I codici articolo coincidono con quelli delle vendite di
+Statistiche; il collegamento delle schermate sarà implementato successivamente.
+La [guida dei cataloghi](ton-cataloghi.md) descrive le regole effettivamente disponibili.
 
 ## Come leggere la proposta
 
@@ -44,7 +45,8 @@ commerciali di Statistiche.
 
 ```mermaid
 flowchart LR
-    P[PRODOTTI] --> A[ARTICOLI]
+    LN[LINEE] --> P[PRODOTTI linea/colore]
+    P --> A[ARTICOLI formato]
     P --> C[COMPOSIZIONI versionate]
     PR[POLVERI_REVISIONI] --> I[COMPOSIZIONE_INGREDIENTI]
     C --> S[COMPOSIZIONE_STRATI]
@@ -75,10 +77,14 @@ collega una quantità di una specifica riga produttiva a uno specifico ciclo.
 | `prodotto_id` | BIGINT PK | Identità del prodotto tecnico |
 | `codice` | VARCHAR(50) UQ | Per esempio `ZR A2` |
 | `descrizione` | VARCHAR(200) ? | Descrizione libera |
+| `linea_id` | BIGINT FK → LINEE ? | Unica linea canonica, da completare per i legacy ambigui |
+| `colore_commerciale` | VARCHAR(30) ? | Colore del prodotto; obbligatorio nei nuovi salvataggi |
+| `note` | VARCHAR(1000) ? | Note del prodotto |
 | `attivo`, `versione_modifica`, `creato_il`, `aggiornato_il` | Come sopra | Campi già presenti in V3 |
 
-Un prodotto identifica una famiglia/materiale, non una specifica ricetta né una
-singola altezza. La struttura V3 viene conservata.
+Un prodotto identifica una linea e un colore commerciale, non una specifica
+ricetta né una singola altezza. UQ (linea_id, colore_commerciale). Gli ID V3
+restano invariati. Codici precedenti e correzioni sono conservati nello storico.
 
 ### 2. `TON.LINEE`
 
@@ -87,10 +93,12 @@ singola altezza. La struttura V3 viene conservata.
 | `linea_id` | BIGINT PK | Identità della linea |
 | `codice` | VARCHAR(50) UQ | Codice stabile |
 | `nome` | VARCHAR(100) | Nome leggibile |
+| `tecnologia` | VARCHAR(200) ? | Descrizione della tecnologia |
+| `materia_prima` | VARCHAR(30) ? | Eventuale materia prima |
+| `note` | VARCHAR(1000) ? | Note della linea |
 
-Più i campi comuni dei cataloghi. Ipotesi: la linea è un raggruppamento operativo
-o commerciale che può comprendere più prodotti, non una macchina. In TON-V2 il
-nome si ripete in righe associate a prodotti diversi; qui ha un'anagrafica unica.
+Più i campi comuni dei cataloghi. Una linea raggruppa i prodotti pensati con
+la stessa tecnologia e ha un’anagrafica unica.
 
 ### 3. `TON.LINEE_PRODOTTI`
 
@@ -99,8 +107,9 @@ nome si ripete in righe associate a prodotti diversi; qui ha un'anagrafica unica
 | `linea_id` | BIGINT PK, FK → LINEE | Linea |
 | `prodotto_id` | BIGINT PK, FK → PRODOTTI | Prodotto appartenente alla linea |
 
-PK composta `(linea_id, prodotto_id)`. Un prodotto può essere in più linee. Le
-associazioni usate da produzioni confermate si conservano.
+PK composta `(linea_id, prodotto_id)`. **Tabella legacy conservata dalla V4**:
+le associazioni precedenti restano consultabili per completare i prodotti
+ambigui. Da V6 il catalogo corrente usa una sola PRODOTTI.linea_id.
 
 ### 4. `TON.ARTICOLI`
 
@@ -108,7 +117,7 @@ associazioni usate da produzioni confermate si conservano.
 |---|---|---|
 | `articolo_id` | BIGINT PK | Identità dell'articolo tecnico |
 | `codice` | VARCHAR(80) UQ | Per esempio `ZR-A2-D98-H14` |
-| `prodotto_id` | BIGINT FK → PRODOTTI | Famiglia/materiale |
+| `prodotto_id` | BIGINT FK → PRODOTTI | Linea e colore ereditati dal prodotto |
 | `diametro_mm` | DECIMAL(6,2) | Diametro nominale del formato |
 | `altezza_mm` | DECIMAL(6,2) | Altezza nominale del formato |
 | `descrizione` | VARCHAR(200) ? | Descrizione dell'articolo |
@@ -501,6 +510,20 @@ La produzione o la cottura viene salvata prima della generazione del documento:
 un errore di stampa non deve far ripetere l'operazione produttiva. Si può emettere
 il documento in un secondo momento dai dati già registrati.
 
+## Storico anagrafico: 3 tabelle aggiunte in V6
+
+TON.LINEE_REVISIONI, TON.PRODOTTI_REVISIONI e TON.ARTICOLI_REVISIONI hanno PK
+(identificativo del catalogo, numero_revisione), valori completi dei campi,
+registrato_il e origine. Le revisioni dei figli conservano anche i codici dei
+padri disponibili al salvataggio. Le revisioni articolo conservano la specifica
+predefinita. Gli snapshot hanno FK stabili e non vengono modificati dai servizi.
+
+CONFIGURAZIONI_ARTICOLO include inoltre linea_id, linea_revisione,
+prodotto_revisione e articolo_revisione, con FK composte ai tre storici.
+Le nuove approvazioni registrano tutti questi riferimenti; una configurazione
+legacy li mantiene NULL e richiede una nuova approvazione per nuovi impieghi.
+Non viene inventato uno storico precedente alla migrazione.
+
 ## Esempio: dal prodotto alla cottura
 
 Numeri e codici sono inventati e servono solo a illustrare i collegamenti.
@@ -549,7 +572,10 @@ coerenti, eventualmente affiancati da trigger mirati. Un `CHECK` Derby non può
 essere usato come se verificasse automaticamente una somma su tabelle figlie:
 
 **Limite dell'implementazione V4:** sono attivi i vincoli SQL sulle singole righe
-e sui riferimenti. I servizi delle polveri applicano già approvazione atomica,
+e sui riferimenti. Da V6 i servizi dei cataloghi applicano storico completo,
+gerarchia, unicità e immutabilità delle identità utilizzate; i servizi delle
+configurazioni registrano i riferimenti alle revisioni e verificano le dipendenze
+produttive prima dell'approvazione. I servizi delle polveri applicano già approvazione atomica,
 immutabilità delle caratteristiche approvate, verifica della somma degli ossidi
 e numerazione delle versioni sotto blocco della polvere. Le altre regole elencate
 qui sotto saranno applicate dai futuri servizi; non esistono trigger che le

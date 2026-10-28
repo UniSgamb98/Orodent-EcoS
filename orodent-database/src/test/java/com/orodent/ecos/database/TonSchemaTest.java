@@ -118,7 +118,7 @@ class TonSchemaTest {
         });
         execute("ALTER TABLE TON.POLVERI DROP CONSTRAINT ck_ton_pol_colore");
         migrate();
-        assertEquals(5, scalar("SELECT MAX(version) FROM ECOS.ECOS_SCHEMA_HISTORY"));
+        assertEquals(DatabaseSchema.CURRENT_VERSION, scalar("SELECT MAX(version) FROM ECOS.ECOS_SCHEMA_HISTORY"));
     }
 
     @Test
@@ -131,7 +131,7 @@ class TonSchemaTest {
                 "INSERT INTO VENDITE.VENDITE_DETTAGLIO(sorgente,documento_id,numero_riga,data_vendita,codice_cliente,codice_prodotto,quantita) "
                         + "VALUES ('TEST','KEEP',1,DATE('2026-01-01'),'KEEP','OLD',2)");
         var identity = connections.withConnection(DatabaseIdentity::initialize);
-        var products = rows("SELECT * FROM TON.PRODOTTI");
+        var products = rows("SELECT prodotto_id,codice,descrizione,attivo,versione_modifica,creato_il,aggiornato_il FROM TON.PRODOTTI");
         var sales = rows("SELECT * FROM VENDITE.VENDITE_DETTAGLIO");
         var history = rows("SELECT * FROM ECOS.ECOS_SCHEMA_HISTORY ORDER BY version");
         var backups = new AtomicInteger();
@@ -144,11 +144,11 @@ class TonSchemaTest {
         });
         new DatabaseSchema(connections).initialize(connection -> { fail("Nessun backup al riavvio ordinario"); return null; });
         assertEquals(1, backups.get());
-        assertEquals(products, rows("SELECT * FROM TON.PRODOTTI"));
+        assertEquals(products, rows("SELECT prodotto_id,codice,descrizione,attivo,versione_modifica,creato_il,aggiornato_il FROM TON.PRODOTTI"));
         assertEquals(sales, rows("SELECT * FROM VENDITE.VENDITE_DETTAGLIO"));
         assertEquals(history, rows("SELECT * FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version <= 3 ORDER BY version"));
         assertEquals(identity, connections.withConnection(DatabaseIdentity::read));
-        assertEquals(25, tonTableCount());
+        assertEquals(28, tonTableCount());
         execute("INSERT INTO TON.PRODOTTI(codice) VALUES ('NEXT')");
         assertEquals(100, scalar("SELECT prodotto_id FROM TON.PRODOTTI WHERE codice='NEXT'"));
     }
@@ -184,7 +184,7 @@ class TonSchemaTest {
         assertEquals(2, tonTableCount());
         execute("DROP TABLE TON.DOCUMENTI");
         migrate();
-        assertEquals(25, tonTableCount());
+        assertEquals(28, tonTableCount());
     }
 
     @Test

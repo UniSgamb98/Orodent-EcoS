@@ -1,11 +1,14 @@
 # Proposta: Linee, Prodotti tecnici e Articoli
 
-Stato: **proposta da valutare**, con [anteprima HTML navigabile](mockups/ton-cataloghi.html).
-Aprire il file HTML nel browser, anche senza connessione. I dati sono dimostrativi;
-le azioni della pagina non leggono né scrivono il database di EcoS.
+Stato: **cataloghi implementati con schema V6**. Vedere la
+[guida della versione effettiva](ton-cataloghi.md).
+L'[anteprima HTML originale](mockups/ton-cataloghi.html) resta un riferimento
+navigabile con dati dimostrativi, senza accesso al DB dell'applicazione.
+I cataloghi di composizioni e modelli restano un passaggio successivo; la gestione
+delle loro versioni già approvate è disponibile dentro Articoli.
 
-La modifica applicata all'app riguarda l'ordine delle sei schede e il nome
-**Articoli**. Le nuove schermate e le modifiche DB descritte qui restano una proposta.
+Le sezioni seguenti conservano il disegno concordato; i dettagli d'uso correnti,
+le regole della migrazione e i limiti operativi sono nella guida.
 
 ## Accessi e gerarchia
 
@@ -140,9 +143,10 @@ Statistiche distingue anche la materia prima, per esempio ZR e ZS, e alcune
 famiglie colorate/non colorate: questi discriminanti vanno conservati in un
 eventuale collegamento, senza unire gruppi diversi soltanto per il nome di famiglia.
 
-Non si cambiano importazioni o vendite in questo passaggio. In seguito si potranno
-collegare esplicitamente gli articoli TON ai codici commerciali, anche ammettendo
-più codici di vendita per lo stesso articolo tecnico quando necessario.
+I codici articolo TON coincidono con quelli commerciali usati nelle vendite,
+come confermato dall’utente. Questo permette il futuro collegamento diretto alle
+vendite. In questo passaggio importazioni e analisi di Statistiche restano autonome;
+gli ID interni e lo storico dei codici preservano la continuità dell’identità.
 
 ## Sequenza di implementazione
 

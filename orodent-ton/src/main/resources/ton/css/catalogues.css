@@ -1,0 +1,9 @@
+.ton-catalogue .ton-catalogue-page { -fx-padding: 18px 24px; }
+.ton-catalogue .ton-catalogue-tab { -fx-padding: 14px 12px; }
+.ton-catalogue .ton-catalogue-note { -fx-background-color: #eaf2f7; -fx-background-radius: 7px; -fx-padding: 12px; -fx-text-fill: #46677e; }
+.ton-catalogue .ton-catalogue-danger { -fx-text-fill: #a22b2b; -fx-background-color: #fff1ef; }
+.ton-catalogue .tab-pane > .tab-header-area > .tab-header-background { -fx-background-color: #eaf0f5; }
+.ton-catalogue .tab-pane > .tab-header-area > .headers-region > .tab { -fx-padding: 7px 14px; }
+.ton-catalogue .tab-pane > .tab-header-area > .headers-region > .tab:selected { -fx-background-color: white; -fx-border-color: transparent transparent #176b87 transparent; -fx-border-width: 0 0 3px 0; }
+.ton-catalogue .scroll-pane, .ton-catalogue .scroll-pane > .viewport { -fx-background-color: #f4f7fb; -fx-background: #f4f7fb; }
+.ton-catalogue .table-cell { -fx-padding: 8px; }

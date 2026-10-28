@@ -7,7 +7,7 @@ EcoS usa un solo database Derby, organizzato per dominio dei dati.
 | `ECOS` | `ECOS_SCHEMA_HISTORY` | Versioni, checksum e date delle migrazioni |
 | `ANAGRAFICHE` | `CLIENTI` | Anagrafica condivisa tra i moduli |
 | `VENDITE` | `VENDITE_DETTAGLIO` | Vendite e rettifiche condivise |
-| `TON` | 25 tabelle: cataloghi, specifiche versionate, produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
+| `TON` | 28 tabelle: cataloghi, specifiche versionate, produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
 
 Statistiche legge clienti e vendite dagli schemi condivisi; TON gestisce il proprio
 catalogo tecnico in `TON.PRODOTTI`. Lo schema `STATISTICHE` sarà creato soltanto
@@ -114,6 +114,30 @@ il controllo dello schema V5 verifica anche colonna e vincolo del colore.
 V1–V4 rimangono immutabili. La normale release firmata dei componenti distribuisce
 questo aggiornamento; riavviare prima l'HOST aggiornato, poi i CLIENT.
 
+## Migrazione dalla versione 5 alla 6
+
+V6 aggiunge la linea canonica e il colore commerciale al prodotto, i campi delle
+anagrafiche e le tabelle TON.LINEE_REVISIONI, TON.PRODOTTI_REVISIONI e
+TON.ARTICOLI_REVISIONI. Ogni catalogo mantiene snapshot tipizzati completi;
+le configurazioni possono riferirsi alle revisioni anagrafiche esatte usate
+nell'approvazione. Il numero di tabelle TON passa a 28.
+
+Gli ID e i dati precedenti restano conservati. Un'unica associazione legacy
+linea/prodotto viene riportata nel riferimento canonico; con zero o più linee
+il prodotto resta da completare. I colori commerciali non sono dedotti dal nome.
+LINEE_PRODOTTI rimane conservata come dato legacy: le nuove operazioni usano
+PRODOTTI.linea_id, con unicità della combinazione linea/colore.
+
+Lo storico iniziale registra soltanto lo stato disponibile alla migrazione,
+con il numero di revisione precedente e origine MIGRAZIONE. Le configurazioni
+precedenti conservano i loro contenuti ma non ricevono retroattivamente snapshot
+anagrafici non ricostruibili. Per nuovi impieghi si copiano e si approvano dopo
+aver completato le anagrafiche. Vedere [uso dei cataloghi](ton-cataloghi.md).
+
+V1–V5 non vengono modificate. Il backup precede il DDL; aggiunte, copia iniziale
+e registrazione V6 sono atomiche. La verifica CLIENT controlla anche i nuovi
+campi, le tre tabelle di storico e i relativi vincoli, senza applicare migrazioni.
+
 ## Distribuzione e migrazioni automatiche
 
 Il contatore delle migrazioni è indipendente dalla compatibilità del launcher.
@@ -124,7 +148,7 @@ corrente; il publisher legge lo stesso file dai componenti che firma.
 Il catalogo mantiene `database.schema=1`: il nome è storico e rappresenta il
 contratto accettato dai launcher installati, non il contatore delle migrazioni.
 Due campi aggiuntivi firmati dichiarano `database.migration.minimum=1` e
-`database.migration.target=5`. Il vecchio launcher ignora i campi aggiuntivi e
+`database.migration.target=6`. Il vecchio launcher ignora i campi aggiuntivi e
 continua a verificare firma, checksum, runtime e protocollo prima di attivare
 l'intero insieme dei nuovi JAR. Il nuovo launcher verifica anche la validità
 dell'intervallo dichiarato, senza vincolarlo a un singolo contatore DB.

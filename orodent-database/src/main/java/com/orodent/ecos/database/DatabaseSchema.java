@@ -27,7 +27,9 @@ public final class DatabaseSchema {
             "TON versioned specifications, production, firing and documents", "/database/migrations/V4__ton_domain.sql");
     private static final SchemaMigration TON_POWDER_COLORS = new SchemaMigration(5,
             "TON powder colors", "/database/migrations/V5__ton_powder_colors.sql");
-    private static final List<SchemaMigration> MIGRATIONS = List.of(BASELINE, DOMAINS, TON_PRODUCTS, TON_DOMAIN, TON_POWDER_COLORS);
+    private static final SchemaMigration TON_CATALOGUES = new SchemaMigration(6,
+            "TON catalogue hierarchy and history", "/database/migrations/V6__ton_catalogue_history.sql");
+    private static final List<SchemaMigration> MIGRATIONS = List.of(BASELINE, DOMAINS, TON_PRODUCTS, TON_DOMAIN, TON_POWDER_COLORS, TON_CATALOGUES);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS = List.of(
             varchar("CODICE_CLIENTE", 50), varchar("CODICE_ISO", 10), varchar("CATEGORIA", 100),
