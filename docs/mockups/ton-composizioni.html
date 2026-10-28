@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TON · Proposta composizioni</title>
+<style>
+:root{font:14px "Segoe UI",Arial,sans-serif;color:#28465b;background:#f4f7fb;--ink:#173f5f;--teal:#176d86;--border:#dce5ee;--muted:#718498}
+*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer;border:0;background:#eaf1f6;color:#28465b;border-radius:7px;padding:11px 15px;font-weight:600}button:hover{filter:brightness(.96)}button:disabled{cursor:default;opacity:.42}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #70b8ce;outline-offset:2px}.primary{background:var(--teal);color:white}.quiet{background:transparent;color:var(--teal)}.danger{background:#fff0ef;color:#9d4137}.grow{flex:1}.muted{color:var(--muted)}.small{font-size:12px;line-height:1.55}.eyebrow{text-transform:uppercase;letter-spacing:1.15px;font-size:10px;font-weight:700;color:var(--muted)}.header{height:68px;display:flex;align-items:center;gap:22px;padding:12px 24px;background:white;border-bottom:1px solid var(--border)}.header strong{color:var(--ink);font-size:20px}.demo{font-size:11px;color:#6d8193;border:1px solid var(--border);padding:5px 9px;border-radius:5px;font-weight:500}.shell{display:flex;min-height:calc(100vh - 68px)}.sidebar{background:white;border-right:1px solid var(--border);width:208px;flex-shrink:0;padding:24px 12px}.sidebar .eyebrow{display:block;margin:17px 12px 9px;font-size:9px;letter-spacing:.7px}.sidebar button{display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:none;margin-bottom:5px;padding:14px 12px;font-weight:400}.sidebar .selected{background:#e0eff3;color:var(--teal);font-weight:700}.sidebar button:disabled{opacity:.65}.navicon{width:16px;font-size:16px;color:#7790a3}.main{min-width:0;flex:1;padding:20px 28px 0;max-width:1600px;margin:0 auto}.breadcrumb{font-size:11px;color:var(--muted);margin-bottom:22px}.breadcrumb span{padding:0 7px;color:#a2b0bd}.back{font-size:12px;padding:0;margin-bottom:15px;font-weight:500}.heading{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:20px}h1{font-size:29px;color:var(--ink);margin:4px 0 6px;letter-spacing:-.6px}h2{font-size:18px;color:var(--ink);margin:0 0 9px}h3{font-size:14px;color:var(--ink);margin:0 0 8px}p{line-height:1.6;margin:0 0 14px}.badge{display:inline-block;font-size:11px;font-weight:650;padding:5px 9px;border-radius:5px;white-space:nowrap;background:#eaf0f5;color:#667e91}.approved{background:#e2f1e9;color:#2c7255}.draft{background:#fff1d8;color:#916613}.retired{background:#eceff2;color:#758393}.version-picker{display:flex;gap:10px;align-items:center}.version-picker label{margin:0;font-size:11px;color:var(--muted)}.version-picker select{width:205px}.tabs{display:flex;gap:5px;border-bottom:1px solid var(--border);margin-bottom:24px;overflow-x:auto}.tabs button{border-radius:0;background:transparent;border-bottom:3px solid transparent;white-space:nowrap;padding:13px 16px;font-weight:500;color:#6a8093}.tabs .selected{border-bottom-color:var(--teal);color:var(--teal);font-weight:700}.workspace{display:grid;grid-template-columns:minmax(0,1fr) 285px;gap:22px;align-items:start}.panel{background:white;border:1px solid var(--border);border-radius:11px;padding:22px}.panel+.panel{margin-top:18px}.panel-intro{display:flex;gap:15px;align-items:start;margin-bottom:17px}.panel-intro p{font-size:12px;margin:0;color:var(--muted)}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:19px 22px}.wide{grid-column:1/-1}label{display:block;font-weight:600;font-size:12px;margin:0 0 8px}input,select,textarea{width:100%;border:1px solid #cbd7e0;border-radius:6px;color:#28465b;background:white;padding:10px 11px;min-width:0}input[readonly],input:disabled,textarea:disabled,select:disabled{background:#f3f6f9;color:#718397}textarea{resize:vertical;min-height:85px}.unit-input{display:flex;align-items:center;position:relative}.unit-input input{padding-right:70px}.unit-input span{position:absolute;right:12px;color:var(--muted);font-size:11px;pointer-events:none}.field-help{font-size:11px;color:var(--muted);line-height:1.5;margin-top:7px}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;text-align:left}th{font-size:11px;color:#74899b;background:#f0f5f8;font-weight:600;padding:12px 13px}td{padding:12px 13px;border-bottom:1px solid #edf1f5;font-size:13px}tbody tr:last-child td{border-bottom:0}.layer-table td{height:67px}.layer-index{display:flex;align-items:center;gap:12px;font-weight:600;white-space:nowrap}.swatch{width:10px;height:25px;border-radius:3px;display:inline-block}.layer-table input{max-width:125px;padding:9px 10px}.layer-table .pct{display:flex;align-items:center;gap:10px}.row-actions{display:flex;gap:3px;justify-content:flex-end}.icon-button{background:transparent;font-size:16px;padding:6px 7px;font-weight:400;color:#8295a4}.total{display:flex;align-items:center;padding:14px 13px;background:#eef7f4;border-radius:6px;margin:10px 0 15px;color:#2e7257;font-size:12px}.total strong{font-size:18px}.total.invalid{background:#fff1ed;color:#9e4334}.inline-actions{display:flex;gap:8px;flex-wrap:wrap}.inline-actions button{font-size:12px;padding:9px 12px}.note{font-size:12px;line-height:1.6;color:#55768b;padding:13px 15px;border-radius:7px;background:#eaf3f7;margin-top:18px}.preview{padding:22px 22px 18px}.preview h2{font-size:15px}.preview .small{margin-bottom:18px}.orientation{display:flex;align-items:center;gap:9px;color:#8094a4;font-size:9px;font-weight:650;letter-spacing:1px;margin:10px 0}.orientation:after{content:"";height:1px;background:#e2e9f0;flex:1}.stack{display:flex;flex-direction:column;height:255px;gap:2px;margin:8px 0}.segment{display:flex;align-items:center;justify-content:center;position:relative;font-size:11px;color:#24465d;overflow:hidden;min-height:0;border-radius:2px;transition:flex-grow .15s}.segment span{position:relative;z-index:1}.segment[data-tiny="true"] span{font-size:8px}.overmaterial{height:24px;flex-shrink:0;background:repeating-linear-gradient(135deg,#edf1f4,#edf1f4 5px,#dde5eb 5px,#dde5eb 6px);font-size:9px;color:#647d90;border-radius:2px;display:flex;align-items:center;justify-content:center}.preview-key{display:flex;gap:8px;align-items:center;font-size:10px;color:var(--muted);margin:17px 0 0}.preview-key i{display:inline-block;width:13px;height:13px;background:#e7edf1;border:1px solid #d4dfe7}.preview-rule{font-size:10px;line-height:1.6;color:#8092a2;margin:13px 0 0;padding-top:12px;border-top:1px solid #edf1f5}.preview-metric{display:flex;justify-content:space-between;font-size:11px;margin:12px 0}.preview-metric strong{color:#3a5b72;font-weight:600}.footer{display:flex;gap:10px;align-items:center;position:sticky;bottom:0;background:#f4f7fbf5;border-top:1px solid var(--border);padding:16px 0;margin-top:24px;z-index:3;backdrop-filter:blur(6px)}.footer .status{font-size:11px;color:var(--muted)}.footer button{font-size:12px}.readonly-banner{margin:0 0 18px;padding:12px 15px;background:#e7f3ed;color:#386f59;border-radius:7px;font-size:12px}.ranges input{width:100%;min-width:64px;padding:9px 6px}.ranges th,.ranges td{padding:11px 8px}.range-message{margin-top:14px;font-size:12px;color:#637e90;line-height:1.6}.error{color:#a04536!important}.search-row{display:flex;gap:12px;margin:22px 0 16px}.search-row input{flex:1}.search-row select{width:175px}.list-table tbody tr:hover{background:#f5f9fb}.list-table th{white-space:nowrap}.list-table td{padding:17px 13px}.list-table .code{font-weight:700;color:var(--ink)}.table-action{padding:7px 12px;font-size:12px;white-space:nowrap}.list-caption{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:16px}.version-row{display:flex;align-items:center;gap:18px;padding:18px 0;border-bottom:1px solid #e9eff4}.version-row:last-child{border:0}.version-number{background:#eef4f7;border-radius:8px;width:47px;height:47px;display:grid;place-items:center;font-size:17px;font-weight:700;color:var(--ink)}.version-row p{font-size:12px;margin:6px 0 0;color:var(--muted)}.usages-label{display:inline-flex;gap:8px;align-items:center;font-size:12px;color:var(--muted)}.toast{position:fixed;bottom:24px;right:24px;z-index:10;max-width:420px;background:var(--ink);color:white;border-radius:8px;padding:15px 20px;box-shadow:0 4px 24px #173f5f25;font-size:13px;line-height:1.5}.empty{padding:35px;text-align:center;color:var(--muted)}[hidden]{display:none!important}
+@media(min-width:1450px){.main{padding-left:36px;padding-right:36px}.workspace{grid-template-columns:minmax(0,1fr) 310px}}
+@media(max-width:1120px){.sidebar{display:none}.main{padding:20px 22px 0}.workspace{grid-template-columns:minmax(0,1fr) 265px}.header{padding:12px 22px}}
+@media(max-width:760px){.workspace{grid-template-columns:1fr}.preview{max-width:none}.stack{max-width:260px;margin:0 auto;height:230px}.header{gap:12px;padding:10px 14px}.header strong{font-size:16px}.demo{display:none}.main{padding:16px 14px 0}.heading{gap:10px}.version-picker{width:100%;justify-content:space-between}.form-grid{grid-template-columns:1fr}.wide{grid-column:auto}.panel{padding:17px}.footer{flex-wrap:wrap}.footer .status{width:100%;order:4}.search-row{flex-wrap:wrap}.search-row select{width:100%}.version-row{flex-wrap:wrap}.tabs button{padding:12px}.layer-table th,.layer-table td{padding-left:7px;padding-right:7px}.row-actions{gap:0}}
+.composition-workspace{display:grid;grid-template-columns:148px minmax(0,1fr) 250px;gap:18px;align-items:start}
+.composition-workspace .panel{margin:0;padding:21px}.layer-navigation{display:flex;flex-direction:column;gap:9px}.layer-nav{width:100%;padding:14px;text-align:left;background:white;border:1px solid var(--border);font-weight:400}.layer-nav.selected{border-color:#77a9b8;background:#e8f2f6;box-shadow:inset 3px 0 #176d86}.layer-nav-top{display:flex;justify-content:space-between;font-weight:650;font-size:12px;color:var(--ink)}.nav-check{color:#39866b}.layer-nav-name{display:block;font-size:11px;color:#7d90a0;margin-top:7px;overflow:hidden;text-overflow:ellipsis}.layer-nav-total{display:block;font-size:17px;font-weight:650;color:var(--ink);margin-top:12px}.add-layer{font-size:12px;background:transparent;color:var(--teal);border:1px dashed #bdcfdc}.layer-name-field{margin:0 0 19px;max-width:360px}.ingredients td{padding:14px 6px;vertical-align:top}.ingredients th{padding:11px 7px;white-space:nowrap}.ingredients select{padding:10px 7px;font-size:12px}.ingredients td:first-child{width:61%}.ingredients td:nth-child(2){width:65px}.ingredients td:nth-child(3){width:98px}.ingredients td:last-child{width:30px}.mass-input{display:flex;align-items:center;gap:6px}.mass-input input{width:73px;min-width:60px;padding:10px 7px}.powder-choice{display:flex;gap:8px;align-items:center}.powder-choice select{min-width:140px}.powder-chip{display:inline-block;width:10px;height:25px;border-radius:3px;flex-shrink:0;border:1px solid #173f5f10}.revision-hint{font-size:10px;line-height:1.5;color:#8597a5;padding:7px 0 0 18px}.recipe-panel .total{margin-top:16px}.recipe-help{font-size:11px;line-height:1.7;color:#7990a2;padding:16px 0;border-bottom:1px solid #e9eff4;margin-top:4px}.layer-tools{display:flex;gap:5px;flex-wrap:wrap;margin-top:11px}.layer-tools button{font-size:10px;padding:7px}.danger-text{color:#9d4137}.composition-summary h2{font-size:16px;margin-top:8px}.mix-bar{display:flex;height:17px;gap:2px;border-radius:4px;overflow:hidden;margin:23px 0 14px;background:#f0f4f7}.mix-legend-row{display:flex;gap:8px;align-items:center;font-size:11px;margin:10px 0;color:#688397}.mix-legend-row .powder-chip{height:13px;width:9px}.mix-legend-row strong{margin-left:auto;color:#34546a;font-weight:600}.chemical-metric{border-top:1px solid #e8eef3;margin-top:22px;padding-top:20px}.chemical-metric span{display:block;color:#7790a2;font-size:11px;margin-bottom:8px}.chemical-metric strong{font-size:24px;color:var(--ink);letter-spacing:-.5px}.composition-summary p{margin-top:8px;font-size:10px;line-height:1.6}.composition-summary button{padding-left:0;font-size:11px}.summary-rule{font-size:10px;line-height:1.7;color:#8092a2;border-top:1px solid #e8eef3;margin-top:15px;padding-top:13px}.approval-progress{font-size:11px;color:#47765f;background:#edf6f1;padding:10px;border-radius:5px;margin-top:16px}.recipe-matrix th,.oxide-matrix th{white-space:nowrap}.recipe-matrix td,.oxide-matrix td{padding:15px 13px}.matrix-total td{font-weight:650;background:#f5f9fb}.ok{color:#2d7e5e}.partial{font-size:11px;color:#92703b}.partial small{display:block;color:#9b8b72;font-size:10px;margin-top:4px}.panel .note{font-size:11px}.heading h1{font-size:27px}.heading{margin-bottom:17px}.tabs{margin-bottom:21px}.tabs button{padding-left:12px;padding-right:12px;font-size:13px}
+@media(max-width:1250px) and (min-width:1121px){.composition-workspace{grid-template-columns:135px minmax(0,1fr)}.composition-summary{grid-column:2;display:grid;grid-template-columns:1fr 1fr;column-gap:22px}.composition-summary>.eyebrow,.composition-summary>h2{grid-column:1/-1}.composition-summary .mix-bar{grid-column:1}.composition-summary .chemical-metric{grid-column:2;grid-row:3/5;margin:20px 0 0}.composition-summary .summary-rule,.composition-summary .approval-progress{grid-column:1/-1}.ingredients td:first-child{width:auto}}
+@media(max-width:980px){.composition-workspace{grid-template-columns:132px minmax(0,1fr)}.composition-summary{grid-column:2}.composition-summary .mix-bar{max-width:350px}.ingredients td:first-child{width:auto}}
+@media(max-width:680px){.composition-workspace{grid-template-columns:1fr}.layer-navigation{flex-direction:row;overflow-x:auto;padding-bottom:7px}.layer-nav{min-width:130px}.add-layer{min-width:110px}.composition-summary{grid-column:1}.composition-workspace .panel{padding:15px}.ingredients .powder-choice select{min-width:140px}.heading h1{font-size:24px}.layer-name-field{max-width:none}.ingredients .revision-hint{max-width:200px}.tabs button{padding-left:9px;padding-right:9px}}
+
+</style>
+</head>
+<body>
+<header class="header"><button class="primary" id="home">⌂ &nbsp; Home Orodent-EcoS</button><strong>TON · Dati tecnici</strong><span class="grow"></span><span class="demo">Proposta interattiva · Dati di esempio</span><button id="toggle-menu">☰ &nbsp; Chiudi menu</button></header>
+<div class="shell">
+<aside class="sidebar" id="sidebar"><span class="eyebrow">Spazio TON</span><button disabled><span class="navicon">▦</span>Panoramica</button><span class="eyebrow">Lavoro</span><button disabled><span class="navicon">▥</span>Produzione</button><button disabled><span class="navicon">▣</span>Forni e cotture</button><span class="eyebrow">Preparazione</span><button class="selected" id="technical"><span class="navicon">☷</span>Dati tecnici</button><span class="eyebrow">Consultazione</span><button disabled><span class="navicon">⌘</span>Tracciabilità</button><button disabled><span class="navicon">▤</span>Documenti</button></aside>
+<main class="main" id="main"></main>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+<script>
+'use strict';
+
+// Small offline dataset. Revisions are explicit: editing a recipe never upgrades powders silently.
+const powders = [
+  {id:'BI-3',name:'Bianca',color:'#e4ebef',y:'3Y',revisions:[
+    {n:2,oxides:{ZrO2:'93.800',Y2O3:'5.150',HfO2:'1.000',Al2O3:'0.050'}},
+    {n:3,oxides:{ZrO2:'93.750',Y2O3:'5.200',HfO2:'1.000',Al2O3:'0.050'}}]},
+  {id:'GI-5',name:'Gialla',color:'#e8dca8',y:'5Y',revisions:[
+    {n:1,oxides:{ZrO2:'89.500',Y2O3:'9.350',HfO2:'1.000',Al2O3:'0.150'}}]},
+  {id:'RO-5',name:'Rosa',color:'#e6c7ce',y:'5Y',revisions:[
+    {n:1,oxides:{ZrO2:'89.950',Y2O3:'8.900',HfO2:'1.000',Al2O3:'0.150'}}]},
+  {id:'GR-3',name:'Grigia',color:'#b9c5cb',y:'3Y',revisions:[
+    {n:1,oxides:{ZrO2:'93.700',Y2O3:'5.200',HfO2:'1.000'}}]}
+];
+const ingredient = (id,revision,mass) => ({id,revision,mass});
+const recipe = () => [
+  {name:'Superiore',ingredients:[ingredient('BI-3',2,'75'),ingredient('GI-5',1,'25')]},
+  {name:'Intermedio 1',ingredients:[ingredient('BI-3',2,'50'),ingredient('GI-5',1,'50')]},
+  {name:'Intermedio 2',ingredients:[ingredient('BI-3',2,'25'),ingredient('GI-5',1,'75')]},
+  {name:'Inferiore',ingredients:[ingredient('GI-5',1,'100')]}
+];
+const versionData = (number,status) => ({number,status,date:'28/10/2026',notes:'Revisione della miscela degli strati superiori.',layers:recipe()});
+const previous = versionData(3,'APPROVATA');
+previous.layers[0].ingredients[0].mass='80';previous.layers[0].ingredients[1].mass='20';
+const products = [
+  {id:1,code:'MSTA2',name:'Thor A2',line:'MST · Thor',color:'A2',versions:[versionData(4,'BOZZA'),previous]},
+  {id:2,code:'MSTA3',name:'Thor A3',line:'MST · Thor',color:'A3',versions:[versionData(1,'APPROVATA')]},
+  {id:3,code:'HTA2',name:'High A2',line:'HT · High',color:'A2',versions:[]}
+];
+const models = [{code:'M98-4',version:3,diameter:98,layers:4},{code:'M95-4',version:1,diameter:95,layers:4},{code:'M98-1',version:2,diameter:98,layers:1}];
+const stateLabel={BOZZA:'Bozza',APPROVATA:'Approvata',RITIRATA:'Ritirata'};
+const stateClass={BOZZA:'draft',APPROVATA:'approved',RITIRATA:'retired'};
+let product=products[0],version=product.versions[0],tab=location.hash.slice(1)||'ricetta';
+let selectedLayer=0,listMode=tab==='elenco',dirty=false,query='',baseline=structuredClone(version);
+const main=document.getElementById('main');
+const frozen=()=>version.status!=='BOZZA';
+
+function el(tag,attrs={},...children){
+  const node=document.createElement(tag);
+  for(const [key,value] of Object.entries(attrs)){
+    if(key.startsWith('on'))node.addEventListener(key.slice(2),value);
+    else if(key==='class')node.className=value;
+    else if(value!==false&&value!=null)node.setAttribute(key,value===true?'':value);
+  }
+  for(const child of children.flat(Infinity))if(child!=null)node.append(child instanceof Node?child:document.createTextNode(String(child)));
+  return node;
+}
+function btn(text,action,style='',disabled=false){return el('button',{type:'button',class:style,onclick:action,disabled},text)}
+function pill(v){return el('span',{class:'badge '+stateClass[v.status]},stateLabel[v.status])}
+function say(text){const n=document.getElementById('toast');n.textContent=text;n.hidden=false;clearTimeout(say.timer);say.timer=setTimeout(()=>n.hidden=true,5000)}
+function fmt(n,digits=4){return Number.isFinite(n)?new Intl.NumberFormat('it-IT',{maximumFractionDigits:digits}).format(n):'—'}
+function fixed(n){return Number.isFinite(n)?new Intl.NumberFormat('it-IT',{minimumFractionDigits:3,maximumFractionDigits:3}).format(n):'—'}
+function scaled(text,scale=4){
+  const raw=String(text).trim().replace(',','.');
+  if(!new RegExp('^\\d+(\\.\\d{1,'+scale+'})?$').test(raw))return NaN;
+  const [whole,fraction='']=raw.split('.');const n=Number(whole)*10**scale+Number(fraction.padEnd(scale,'0'));
+  return Number.isSafeInteger(n)?n:NaN;
+}
+function powderOf(row){return powders.find(p=>p.id===row.id)}
+function revisionOf(row){return powderOf(row)?.revisions.find(r=>r.n===row.revision)}
+function layerState(layer){
+  const values=layer.ingredients.map(r=>scaled(r.mass));
+  const total=values.reduce((a,b)=>a+b,0),seen=new Set();
+  let valid=values.length>0&&values.every(v=>Number.isFinite(v)&&v>0&&v<=1000000)&&total===1000000;
+  for(const row of layer.ingredients){if(!revisionOf(row)||seen.has(row.id))valid=false;seen.add(row.id)}
+  return {total,valid};
+}
+function oxide(layer,code){
+  if(!layerState(layer).valid)return {value:null,coverage:0,ready:false};
+  let sum=0,coverage=0;
+  for(const row of layer.ingredients){
+    const raw=revisionOf(row)?.oxides[code],mass=scaled(row.mass);
+    if(raw!=null){coverage+=mass;sum+=mass*scaled(raw,5)}
+  }
+  return {value:coverage===1000000?sum/1000000/100000:null,coverage:coverage/10000,ready:true};
+}
+function markDirty(){dirty=true;const status=document.getElementById('save-status');if(status)status.textContent='Modifiche da salvare';updateRecipe()}
+function discard(){if(!dirty)return true;if(!confirm('Scartare le modifiche non salvate?'))return false;Object.assign(version,structuredClone(baseline));dirty=false;return true}
+function open(p,v,section='ricetta'){
+  if(!discard())return;product=p;version=v;baseline=structuredClone(v);tab=section;selectedLayer=0;listMode=false;dirty=false;render();
+}
+function table(headers,rows,classes=''){return el('div',{class:'table-wrap'},el('table',{class:classes},el('thead',{},el('tr',{},headers.map(h=>el('th',{},h)))),el('tbody',{},rows)))}
+function render(){
+  main.replaceChildren(el('div',{class:'breadcrumb'},'TON',el('span',{},'›'),'Dati tecnici',el('span',{},'›'),'Composizioni',listMode?null:[el('span',{},'›'),product.code]));
+  if(listMode)renderList();else renderEditor();
+}
+function renderList(){
+  main.append(el('div',{class:'heading'},el('div',{},el('div',{class:'eyebrow'},'Ricette del laboratorio'),el('h1',{},'Composizioni'),el('p',{class:'muted small'},'Una ricetta per prodotto, con polveri e revisioni definite per ogni strato.')),el('span',{class:'grow'}),btn('+ Nuova composizione',newComposition,'primary')));
+  const search=el('input',{type:'search',placeholder:'Cerca prodotto, linea o colore…',value:query,'aria-label':'Cerca composizione'});
+  const list=el('div',{class:'panel',id:'composition-list'});
+  search.oninput=()=>{query=search.value;rows()};main.append(el('div',{class:'search-row'},search),list);
+  function rows(){const matches=products.filter(p=>p.versions.length&&[p.code,p.name,p.line,p.color].join(' ').toLowerCase().includes(query.toLowerCase()));list.replaceChildren(table(['Prodotto','Linea','Colore','Strati','Approvata','Bozza',''],matches.map(p=>{
+    const latest=p.versions[0],approved=p.versions.find(v=>v.status==='APPROVATA'),draft=p.versions.find(v=>v.status==='BOZZA');
+    return el('tr',{},el('td',{},el('strong',{},p.code),el('div',{class:'muted small'},p.name)),el('td',{},p.line),el('td',{},p.color),el('td',{},latest.layers.length),el('td',{},approved?el('span',{class:'badge approved'},'v'+approved.number):'—'),el('td',{},draft?el('span',{class:'badge draft'},'v'+draft.number):'—'),el('td',{},btn('Apri scheda →',()=>open(p,latest),'table-action')));
+  }),'list-table'),el('div',{class:'list-caption'},matches.length+' prodotti con composizioni',el('span',{},'Una riga per prodotto · Storico nella scheda')))}rows();
+}
+function newComposition(){
+  const p=products.find(p=>!p.versions.length);
+  if(!p){say('Nell’applicazione sceglierai un prodotto attivo con ricerca dedicata.');return}
+  if(!discard())return;
+  const fresh={number:1,status:'BOZZA',date:'28/10/2026',notes:'',layers:[{name:'Strato 1',ingredients:[]}]};
+  p.versions.push(fresh);open(p,fresh,'dati');
+}
+function renderEditor(){
+  main.append(btn('← Elenco composizioni',()=>{if(discard()){listMode=true;render()}},'quiet back'));
+  const choice=el('select',{'aria-label':'Versione della composizione',id:'composition-version'},product.versions.map(v=>el('option',{value:v.number},'v'+v.number+' · '+stateLabel[v.status])));
+  choice.value=version.number;choice.onchange=()=>{const next=product.versions.find(v=>v.number===Number(choice.value));if(!discard()){choice.value=version.number;return}open(product,next,tab)};
+  main.append(el('div',{class:'heading'},el('div',{},el('div',{class:'eyebrow'},'Composizione · '+product.line),el('h1',{},product.code+' · '+product.name),el('div',{class:'muted small'},version.layers.length+' strati · Ricetta in percentuale in massa')),pill(version),el('span',{class:'grow'}),el('div',{class:'version-picker'},el('label',{},'Versione'),choice)));
+  const tabs=[['dati','Dati generali'],['ricetta','Ricetta per strato'],['riepilogo','Riepilogo'],['modelli','Modelli'],['utilizzi','Utilizzi'],['versioni','Versioni']];
+  if(!tabs.some(([key])=>key===tab))tab='ricetta';
+  main.append(el('nav',{class:'tabs','aria-label':'Schede della composizione'},tabs.map(([key,label])=>btn(label,()=>{tab=key;render()},tab===key?'selected':''))));
+  if(frozen())main.append(el('div',{class:'readonly-banner'},'Versione '+stateLabel[version.status].toLowerCase()+' · Ricetta e riferimenti alle polveri in sola lettura. Le modifiche si preparano in una nuova bozza.'));
+  switch(tab){case 'dati':renderData();break;case 'ricetta':renderRecipe();break;case 'riepilogo':renderSummary();break;case 'modelli':renderModels();break;case 'utilizzi':renderUsages();break;case 'versioni':renderVersions();break}
+  main.append(footer());updateRecipe();
+}
+function renderData(){
+  const notes=el('textarea',{disabled:frozen(),'aria-label':'Note della composizione'},version.notes);notes.oninput=()=>{version.notes=notes.value;markDirty()};
+  main.append(el('section',{class:'panel'},el('div',{class:'panel-intro'},el('div',{},el('h2',{},'Prodotto e revisione'),el('p',{},'Linea e colore derivano dal prodotto selezionato.'))),el('div',{class:'form-grid'},el('div',{},el('label',{},'Prodotto'),el('input',{value:product.code+' · '+product.name,readonly:true}),el('div',{class:'field-help'},'Per una nuova composizione scegli il prodotto dal catalogo. Dopo il salvataggio il collegamento rimane fisso.')),el('div',{},el('label',{},'Linea e colore'),el('input',{value:product.line+' · '+product.color,readonly:true})),el('div',{class:'wide'},el('label',{},'Note della versione'),notes))),el('div',{class:'note'},'La composizione definisce le polveri di ogni strato. Percentuali di altezza, pressione e sovramateriali appartengono al modello disco. L’abbinamento delle due versioni avviene nella specifica dell’articolo.'));
+}
+function renderRecipe(){
+  selectedLayer=Math.min(selectedLayer,version.layers.length-1);
+  const navigation=el('aside',{class:'layer-navigation',id:'layer-navigation'});
+  version.layers.forEach((layer,index)=>{
+    const s=layerState(layer);
+    navigation.append(btn('',()=>{selectedLayer=index;render()},'layer-nav '+(index===selectedLayer?'selected':'')));
+    navigation.lastChild.append(el('span',{class:'layer-nav-top'},'Strato '+(index+1),el('span',{class:'nav-check',id:'nav-check-'+index},s.valid?'✓':'○')),el('span',{class:'layer-nav-name'},layer.name),el('span',{class:'layer-nav-total',id:'nav-total-'+index},fmt(s.total/10000)+'%'));
+  });
+  navigation.append(btn('+ Strato',()=>{version.layers.push({name:'Strato '+(version.layers.length+1),ingredients:[]});selectedLayer=version.layers.length-1;markDirty();render()},'add-layer',frozen()));
+  const layer=version.layers[selectedLayer];
+  const name=el('input',{value:layer.name,disabled:frozen(),'aria-label':'Nome strato',id:'layer-name'});name.oninput=()=>{layer.name=name.value;markDirty();document.querySelectorAll('.layer-nav-name')[selectedLayer].textContent=name.value};
+  const rows=layer.ingredients.map((row,index)=>ingredientRow(row,index));
+  const panel=el('section',{class:'panel recipe-panel'},el('div',{class:'panel-intro'},el('div',{},el('div',{class:'eyebrow'},'Ricetta dello strato '+(selectedLayer+1)),el('h2',{},layer.name)),el('span',{class:'grow'}),el('span',{class:'badge'},'Quote in massa')),
+    el('div',{class:'layer-name-field'},el('label',{},'Nome strato'),name),
+    table(['Polvere','Versione','Percentuale',''],rows,'ingredients'),
+    el('div',{class:'total',id:'recipe-total'}),
+    el('div',{class:'inline-actions'},btn('+ Aggiungi polvere',()=>{layer.ingredients.push({id:'',revision:0,mass:''});markDirty();render()},'',frozen()),btn('Copia da strato…',copyLayer,'quiet',frozen()||version.layers.length<2)),
+    el('div',{class:'recipe-help'},'Ogni strato deve arrivare al 100%. Le percentuali indicano la quantità di polvere nella miscela, non l’altezza dello strato.'),
+    el('div',{class:'layer-tools'},btn('↑ Sposta su',()=>moveLayer(-1),'quiet',frozen()||selectedLayer===0),btn('↓ Sposta giù',()=>moveLayer(1),'quiet',frozen()||selectedLayer===version.layers.length-1),btn('Rimuovi strato',()=>{if(!confirm('Rimuovere questo strato e i suoi ingredienti?'))return;version.layers.splice(selectedLayer,1);selectedLayer=Math.max(0,selectedLayer-1);markDirty();render()},'quiet danger-text',frozen()||version.layers.length===1)));
+  const summary=el('aside',{class:'panel composition-summary'},el('div',{class:'eyebrow'},'Strato selezionato'),el('h2',{},'Riepilogo miscela'),el('div',{class:'mix-bar',id:'mix-bar'}),el('div',{id:'mix-legend'}),el('div',{class:'chemical-metric'},el('span',{},'Y₂O₃ nominale'),el('strong',{id:'yttria-value'})),el('p',{class:'small muted'},'Percentuale in peso dagli ossidi dichiarati nelle revisioni scelte.'),btn('Vedi tutti gli ossidi →',()=>{tab='riepilogo';render()},'quiet'),el('div',{class:'summary-rule'},'3Y / 5Y indicano le classi delle polveri. Il valore Y₂O₃ qui sopra è espresso in wt%.'),el('div',{class:'approval-progress',id:'approval-progress'}));
+  main.append(el('div',{class:'composition-workspace'},navigation,panel,summary));
+}
+function ingredientRow(row,index){
+  const p=powderOf(row),powder=el('select',{disabled:frozen(),'aria-label':'Polvere ingrediente '+(index+1),'data-powder':index},el('option',{value:''},'Scegli polvere…'),powders.map(p=>el('option',{value:p.id},p.id+' · '+p.name+' · '+p.y)));
+  powder.value=row.id;powder.onchange=()=>{row.id=powder.value;row.revision=powderOf(row)?.revisions.at(-1).n||0;markDirty();render()};
+  const revision=el('select',{disabled:frozen()||!p,'aria-label':'Versione polvere '+(index+1),'data-revision':index},(p?.revisions||[]).map(r=>el('option',{value:r.n},'v'+r.n)));
+  revision.value=row.revision;revision.onchange=()=>{row.revision=Number(revision.value);markDirty()};
+  const mass=el('input',{value:row.mass,disabled:frozen(),inputmode:'decimal','aria-label':'Percentuale ingrediente '+(index+1),'data-mass':index});mass.oninput=()=>{row.mass=mass.value;markDirty()};
+  return el('tr',{},el('td',{},el('div',{class:'powder-choice'},el('i',{class:'powder-chip',style:'background:'+(p?.color||'#edf1f5')}),powder),p&&p.revisions.at(-1).n>row.revision?el('div',{class:'revision-hint'},'Disponibile v'+p.revisions.at(-1).n+' · Nessuna sostituzione automatica'):null),el('td',{},revision),el('td',{},el('div',{class:'mass-input'},mass,el('span',{class:'muted'},'%'))),el('td',{},btn('×',()=>{version.layers[selectedLayer].ingredients.splice(index,1);markDirty();render()},'icon-button',frozen())));
+}
+function copyLayer(){
+  const options=version.layers.map((l,i)=>(i+1)+': '+l.name).join('\n');
+  const chosen=prompt('Copia la ricetta da quale strato?\n'+options,String(selectedLayer===0?2:1));
+  if(chosen==null)return;const index=Number(chosen)-1;
+  if(!Number.isInteger(index)||index<0||index>=version.layers.length||index===selectedLayer){say('Scegli un altro strato esistente.');return}
+  if(!confirm('Sostituire gli ingredienti dello strato selezionato con una copia?'))return;
+  version.layers[selectedLayer].ingredients=structuredClone(version.layers[index].ingredients);markDirty();render();
+}
+function moveLayer(direction){const next=selectedLayer+direction;[version.layers[selectedLayer],version.layers[next]]=[version.layers[next],version.layers[selectedLayer]];selectedLayer=next;markDirty();render()}
+function updateRecipe(){
+  const total=document.getElementById('recipe-total');if(!total)return;
+  version.layers.forEach((layer,i)=>{const s=layerState(layer);const totalNode=document.getElementById('nav-total-'+i),checkNode=document.getElementById('nav-check-'+i);if(totalNode)totalNode.textContent=fmt(s.total/10000)+'%';if(checkNode)checkNode.textContent=s.valid?'✓':'○'});
+  const layer=version.layers[selectedLayer],s=layerState(layer);total.className='total'+(s.valid?'':' invalid');
+  total.replaceChildren(el('span',{},s.valid?'✓ Miscela completa':'Miscela da completare'),el('span',{class:'grow'}),el('strong',{},fmt(s.total/10000)+'%'));
+  const bar=document.getElementById('mix-bar'),legend=document.getElementById('mix-legend');bar.replaceChildren();legend.replaceChildren();
+  if(s.valid)for(const row of layer.ingredients){const p=powderOf(row);bar.append(el('div',{style:'flex:'+scaled(row.mass)+';background:'+p.color,title:p.id+' · '+row.mass+'%'}));legend.append(el('div',{class:'mix-legend-row'},el('i',{class:'powder-chip',style:'background:'+p.color}),el('span',{},p.id+' · v'+row.revision),el('strong',{},row.mass+'%')))}else legend.append(el('p',{class:'small muted'},'Completa gli ingredienti e il totale per vedere il riepilogo.'));
+  const y=oxide(layer,'Y2O3');document.getElementById('yttria-value').textContent=y.value!=null?fixed(y.value)+' wt%':y.ready?'Dati parziali':'—';
+  const complete=version.layers.filter(l=>layerState(l).valid).length;document.getElementById('approval-progress').textContent=complete+' / '+version.layers.length+' strati completi';
+}
+function renderSummary(){
+  const layers=version.layers;
+  const references=[];
+  for(const layer of layers)for(const row of layer.ingredients)if(revisionOf(row)&&!references.some(r=>r.id===row.id&&r.revision===row.revision))references.push(row);
+  const headers=['Polvere · versione',...layers.map((l,i)=>'Strato '+(i+1))];
+  const rows=references.map(r=>el('tr',{},el('td',{},r.id+' · v'+r.revision),layers.map(l=>{const found=l.ingredients.find(i=>i.id===r.id&&i.revision===r.revision);return el('td',{},found?fmt(scaled(found.mass)/10000)+'%':'—')})));
+  rows.push(el('tr',{class:'matrix-total'},el('td',{},'Totale per strato'),layers.map(l=>el('td',{class:layerState(l).valid?'ok':'error'},fmt(layerState(l).total/10000)+'%'))));
+  main.append(el('section',{class:'panel'},el('h2',{},'Ricetta a colpo d’occhio'),el('p',{class:'muted small'},'Ogni colonna è una miscela distinta, con totale 100% in massa.'),table(headers,rows,'recipe-matrix')));
+  const oxideRows=['Y2O3','ZrO2','HfO2','Al2O3'].map(code=>el('tr',{},el('td',{},el('strong',{},code)),layers.map(layer=>{const result=oxide(layer,code);return el('td',{},result.value!=null?fixed(result.value)+' wt%':!result.ready?'Ricetta incompleta':el('span',{class:'partial'},'Dati parziali',el('small',{},'Copertura '+fmt(result.coverage)+'%')))})));
+  main.append(el('section',{class:'panel'},el('h2',{},'Composizione chimica nominale'),el('p',{class:'muted small'},'Bilancio di massa dagli ossidi delle revisioni di polvere effettivamente selezionate.'),table(['Ossido',...layers.map((l,i)=>'Strato '+(i+1))],oxideRows,'oxide-matrix'),el('div',{class:'note'},'Un valore mancante non vale zero. Se una polvere non dichiara un ossido, il risultato è indicato come parziale. La classe 3Y / 5Y e la percentuale in peso Y₂O₃ restano informazioni distinte.')));
+  main.append(el('p',{class:'small muted',style:'margin-top:16px'},'Resistenza e traslucenza della miscela richiedono dati o un modello validato: questa vista non le presenta come proprietà ottenute dalla media delle polveri.'));
+}
+function renderModels(){
+  main.append(el('section',{class:'panel'},el('h2',{},'Modelli per numero di strati'),el('p',{class:'muted small'},'La ricetta ha '+version.layers.length+' strati consecutivi. Questo controllo confronta la struttura; non assegna un modello alla composizione.'),table(['Modello','Versione','Diametro pressatura','Strati','Corrispondenza'],models.map(m=>el('tr',{},el('td',{},el('strong',{},m.code)),el('td',{},'v'+m.version+' · Approvata'),el('td',{},m.diameter+' mm'),el('td',{},m.layers),el('td',{},el('span',{class:'badge '+(m.layers===version.layers.length?'approved':'retired')},m.layers===version.layers.length?'Strati corrispondenti':'Numero diverso')))))),el('div',{class:'note'},'Nella specifica dell’articolo sceglierai insieme composizione e modello, nelle loro versioni precise. Le percentuali di altezza appartengono al modello; qui le percentuali sono quote di polvere nella miscela.'));
+}
+function renderUsages(){
+  const uses=product.id===1&&version.number===3?[['ZR9816MSTA2','98 × 16 mm','v2','M98-4 · v3'],['ZR9818MSTA2','98 × 18 mm','v1','M98-4 · v3']]:[];
+  main.append(el('section',{class:'panel'},el('h2',{},'Specifiche che utilizzano questa versione'),el('p',{class:'muted small'},'Approvare una nuova ricetta non modifica i riferimenti già utilizzati.'),uses.length?table(['Articolo','Formato','Specifica','Modello',''],uses.map(r=>el('tr',{},r.map(c=>el('td',{},c)),el('td',{},btn('Apri articolo →',()=>say('Nell’applicazione si aprirà la scheda dell’articolo collegato.'),'table-action'))))):el('div',{class:'empty'},'Questa versione non è ancora utilizzata dalle specifiche degli articoli.')));
+}
+function renderVersions(){
+  main.append(el('section',{class:'panel'},el('h2',{},'Versioni della composizione'),el('p',{class:'muted small'},'Ogni versione conserva ricetta, note e riferimenti precisi alle revisioni delle polveri.'),product.versions.map(v=>el('div',{class:'version-row'},el('div',{class:'version-number'},'v'+v.number),el('div',{},pill(v),el('p',{},v.layers.length+' strati · '+v.date)),el('span',{class:'grow'}),btn(v===version?'Versione aperta':'Apri versione',()=>open(product,v,'ricetta'),'table-action',v===version))),el('div',{class:'note'},'Una nuova scheda di polvere non riscrive la ricetta approvata. Per adottarla si crea una nuova bozza e si cambia esplicitamente il riferimento.')));
+}
+function validate(){
+  for(let i=0;i<version.layers.length;i++)if(!layerState(version.layers[i]).valid)return 'Strato '+(i+1)+': scegli polveri distinte, versioni valide e percentuali positive con totale esatto 100%.';
+  return version.layers.length?'':'Aggiungi almeno uno strato.';
+}
+function createVersion(){
+  const existing=product.versions.find(v=>v.status==='BOZZA');
+  if(existing){open(product,existing);say('È già presente una bozza: v'+existing.number+'.');return}
+  const copy=structuredClone(version);copy.number=Math.max(...product.versions.map(v=>v.number))+1;copy.status='BOZZA';product.versions.unshift(copy);open(product,copy);say('Ricetta copiata in una nuova bozza, mantenendo le revisioni di polvere già selezionate.');
+}
+function footer(){
+  const row=el('div',{class:'footer'},el('span',{class:'status',id:'save-status'},dirty?'Modifiche da salvare':'v'+version.number+' · Dati dimostrativi'),el('span',{class:'grow'}));
+  if(frozen()){
+    row.append(btn('Crea nuova versione',createVersion,'primary'));
+    if(version.status==='APPROVATA')row.append(btn('Ritira versione',()=>{if(confirm('Ritirare la versione nell’anteprima conservando i collegamenti precedenti?')){version.status='RITIRATA';render()}},'danger'));
+  }else{
+    row.append(btn('Salva bozza',()=>{baseline=structuredClone(version);dirty=false;document.getElementById('save-status').textContent='Bozza aggiornata nell’anteprima';say('Dati salvati solo in questa pagina. Ricaricando tornano gli esempi.')}),btn('Salva e approva',()=>{const error=validate();if(error){say(error);return}version.status='APPROVATA';dirty=false;render();say('Versione approvata nell’anteprima. I riferimenti degli articoli restano invariati.')},'primary'));
+  }
+  return row;
+}
+document.getElementById('home').onclick=()=>say('Nell’applicazione tornerai alla Home Orodent-EcoS.');
+document.getElementById('technical').onclick=()=>{if(discard()){listMode=true;render()}};
+document.getElementById('toggle-menu').onclick=()=>{const side=document.getElementById('sidebar');side.hidden=!side.hidden;document.getElementById('toggle-menu').textContent=side.hidden?'☰  Apri menu':'☰  Chiudi menu'};
+render();
+
+</script>
+</body>
+</html>
