@@ -1,6 +1,7 @@
 package com.orodent.ecos.ton.features.diskmodels.view;
 
 import com.orodent.ecos.ton.features.diskmodels.model.DiskModels.Range;
+import com.orodent.ecos.ton.features.technical.view.TechnicalUi;
 
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -10,8 +11,9 @@ import java.util.*;
 final class RangesEditor extends VBox {
     private final List<List<TextField>> rows = new ArrayList<>();
     private final VBox content = new VBox(10);
-    private final Label feedback = DiskUi.label("", "muted-label");
-    private final Button add = DiskUi.button("+ Aggiungi fascia", "ton-model-range-add", false);
+    private final Label feedback = TechnicalUi.label("", "muted-label");
+    private final Button add =
+            TechnicalUi.button("+ Aggiungi fascia", "ton-model-range-add", false);
     private final Runnable changed;
     private boolean frozen;
 
@@ -34,10 +36,10 @@ final class RangesEditor extends VBox {
         for (Range r : ranges)
             append(
                     List.of(
-                            DiskUi.number(r.from()),
-                            DiskUi.number(r.to()),
-                            DiskUi.number(r.top()),
-                            DiskUi.number(r.bottom())));
+                            TechnicalUi.number(r.from()),
+                            TechnicalUi.number(r.to()),
+                            TechnicalUi.number(r.top()),
+                            TechnicalUi.number(r.bottom())));
         layoutRows();
         add.setDisable(frozen);
     }
@@ -45,7 +47,7 @@ final class RangesEditor extends VBox {
     private void append(List<String> values) {
         var fields = new ArrayList<TextField>();
         for (int i = 0; i < 4; i++) {
-            var field = DiskUi.input("", "Valore in mm");
+            var field = TechnicalUi.input("", "Valore in mm");
             field.setText(values.get(i));
             field.setMinWidth(45);
             field.textProperty()
@@ -78,9 +80,9 @@ final class RangesEditor extends VBox {
                 grid.getColumnConstraints().add(c);
                 fields.get(i).setId("ton-model-range-" + (row + 1) + "-" + keys[i]);
                 fields.get(i).setDisable(frozen);
-                grid.add(DiskUi.field(titles[i], fields.get(i)), i, 0);
+                grid.add(TechnicalUi.field(titles[i], fields.get(i)), i, 0);
             }
-            var remove = DiskUi.button("×", "ton-model-range-remove-" + (row + 1), false);
+            var remove = TechnicalUi.button("×", "ton-model-range-remove-" + (row + 1), false);
             remove.setAccessibleText("Rimuovi fascia");
             remove.setDisable(frozen);
             remove.setOnAction(
@@ -102,10 +104,10 @@ final class RangesEditor extends VBox {
             String prefix = "Fascia " + (i + 1) + " · ";
             result.add(
                     new Range(
-                            DiskUi.decimal(r.get(0).getText(), prefix + "inizio"),
-                            DiskUi.decimal(r.get(1).getText(), prefix + "fine"),
-                            DiskUi.decimal(r.get(2).getText(), prefix + "superiore"),
-                            DiskUi.decimal(r.get(3).getText(), prefix + "inferiore")));
+                            TechnicalUi.decimal(r.get(0).getText(), prefix + "inizio"),
+                            TechnicalUi.decimal(r.get(1).getText(), prefix + "fine"),
+                            TechnicalUi.decimal(r.get(2).getText(), prefix + "superiore"),
+                            TechnicalUi.decimal(r.get(3).getText(), prefix + "inferiore")));
         }
         return result;
     }

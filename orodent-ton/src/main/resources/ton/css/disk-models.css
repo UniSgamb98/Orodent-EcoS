@@ -1,6 +1,6 @@
 .ton-models .ton-model-page { -fx-padding: 18px 24px; }
-.ton-models .ton-model-panel { -fx-background-color: white; -fx-border-color: #dce5ee; -fx-border-radius: 10px; -fx-background-radius: 10px; -fx-padding: 20px; }
-.ton-models .ton-model-panel-title { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #173f5f; }
+.ton-models .ton-technical-panel { -fx-background-color: white; -fx-border-color: #dce5ee; -fx-border-radius: 10px; -fx-background-radius: 10px; -fx-padding: 20px; }
+.ton-models .ton-technical-panel-title { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #173f5f; }
 .ton-models .ton-model-caption { -fx-font-size: 11px; -fx-text-fill: #718498; }
 .ton-models .ton-model-total { -fx-padding: 12px; -fx-background-color: #eaf5f0; -fx-background-radius: 6px; -fx-text-fill: #2e7257; -fx-font-weight: bold; }
 .ton-models .ton-model-total.ton-model-invalid { -fx-background-color: #fff1ed; -fx-text-fill: #9e4334; }

@@ -137,7 +137,8 @@ public final class DiskModels {
             String state,
             boolean preferred) {}
 
-    public record Page<T>(List<T> rows, long total, int offset, int limit) {
+    public record Page<T>(List<T> rows, long total, int offset, int limit)
+            implements com.orodent.ecos.ton.features.technical.model.PageData<T> {
         public Page {
             rows = List.copyOf(rows);
         }

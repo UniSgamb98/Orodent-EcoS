@@ -7,7 +7,7 @@ La Home permette di aprire Ton e Statistiche nello stesso processo JavaFX.
 
 TON dispone di Panoramica e menu laterale per Produzione, Forni e cotture, Dati
 tecnici, Tracciabilità e Documenti. Le aree future sono descritte come **In
-preparazione**; i cataloghi linee, prodotti, articoli, modelli disco e polveri sono già operativi. Il menu è richiudibile e
+preparazione**; tutti e sei i cataloghi di Dati tecnici sono operativi. Il menu è richiudibile e
 si adatta alle finestre strette. [Navigazione e uso](docs/ton.md).
 
 Aprire **TON → Dati tecnici** per i cataloghi **Linee → Prodotti tecnici →
@@ -15,8 +15,13 @@ Articoli**. Un prodotto identifica linea e colore commerciale; l'articolo ne
 specifica diametro e altezza. Ricerca, filtri, creazione, modifica, archiviazione,
 eliminazione degli elementi mai usati e storico completo sono operativi.
 Dentro Articoli si gestiscono anche le specifiche produttive versionate, usando
-composizioni e modelli approvati. Il catalogo delle composizioni sarà il passo
-successivo. [Uso e migrazione dei cataloghi](docs/ton-cataloghi.md).
+composizioni e modelli approvati. [Uso e migrazione dei cataloghi](docs/ton-cataloghi.md).
+
+In **TON → Dati tecnici → Composizioni** si creano ricette per strato con quote
+in massa e revisioni precise delle polveri. Matrice e bilancio nominale degli
+ossidi distinguono i valori calcolabili dai dati mancanti. Approvazione, copia,
+ritiro, confronto dei modelli e utilizzi negli articoli sono operativi sullo
+schema V6. [Uso delle composizioni](docs/ton-composizioni.md).
 
 In **TON → Dati tecnici → Modelli disco** si gestiscono parametri di pressatura,
 strati con anteprima, sovramateriali per fasce di altezza e versioni tecniche.

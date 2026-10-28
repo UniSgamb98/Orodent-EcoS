@@ -1,34 +1,34 @@
-package com.orodent.ecos.ton.features.diskmodels.view;
+package com.orodent.ecos.ton.features.technical.view;
 
-import com.orodent.ecos.ton.features.diskmodels.model.DiskModels.Page;
+import com.orodent.ecos.ton.features.technical.model.PageData;
 
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
 /** Bounded pages for versions and incoming article references. */
-public final class ModelTablePage<T> extends VBox {
+public final class TechnicalTablePage<T> extends VBox {
     private final TableView<T> table = new TableView<>();
     private final Button previous, next, refresh, open;
     private final Label result = new Label();
 
-    ModelTablePage(String id, String openText) {
+    public TechnicalTablePage(String id, String openText) {
         super(12);
         setMinWidth(0);
         table.setId(id + "-table");
         table.setPrefHeight(310);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         VBox.setVgrow(table, Priority.ALWAYS);
-        previous = DiskUi.button("←", id + "-previous", false);
-        next = DiskUi.button("→", id + "-next", false);
-        refresh = DiskUi.button("Aggiorna", id + "-refresh", false);
-        open = DiskUi.button(openText, id + "-open", false);
+        previous = TechnicalUi.button("←", id + "-previous", false);
+        next = TechnicalUi.button("→", id + "-next", false);
+        refresh = TechnicalUi.button("Aggiorna", id + "-refresh", false);
+        open = TechnicalUi.button(openText, id + "-open", false);
         previous.setAccessibleText("Pagina precedente");
         next.setAccessibleText("Pagina successiva");
         getChildren().addAll(table, new FlowPane(10, 8, previous, next, result, refresh, open));
         reset(false);
     }
 
-    public void show(Page<T> page) {
+    public void show(PageData<T> page) {
         table.setDisable(false);
         table.getItems().setAll(page.rows());
         table.setPlaceholder(new Label("Nessun risultato."));
@@ -44,7 +44,7 @@ public final class ModelTablePage<T> extends VBox {
         table.getItems().clear();
         table.setPlaceholder(
                 new Label(
-                        saved ? "Apri la scheda per caricare i dati." : "Salva prima il modello."));
+                        saved ? "Apri la scheda per caricare i dati." : "Salva prima la scheda."));
         result.setText("");
         for (Button b : new Button[] {previous, next, open}) b.setDisable(true);
         refresh.setDisable(!saved);

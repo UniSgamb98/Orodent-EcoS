@@ -1,0 +1,19 @@
+.ton-compositions .ton-comp-page { -fx-padding: 18px 24px; }
+.ton-compositions .ton-technical-panel { -fx-background-color: white; -fx-border-color: #dce5ee; -fx-border-radius: 10px; -fx-background-radius: 10px; -fx-padding: 20px; }
+.ton-compositions .ton-technical-panel-title { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #173f5f; }
+.ton-compositions .ton-comp-layer-selected { -fx-background-color: #e8f2f6; -fx-border-color: #77a9b8; -fx-border-radius: 7px; -fx-background-radius: 7px; -fx-padding: 12px; -fx-alignment: center-left; }
+.ton-compositions .ton-comp-layer-choice { -fx-background-color: white; -fx-border-color: #dce5ee; -fx-border-radius: 7px; -fx-background-radius: 7px; -fx-padding: 12px; -fx-alignment: center-left; }
+.ton-compositions .ton-comp-layer-amount { -fx-text-fill: #173f5f; -fx-font-weight: bold; -fx-font-size: 16px; }
+.ton-compositions .ton-comp-layer-choice .muted-label, .ton-compositions .ton-comp-layer-selected .muted-label { -fx-font-size: 11px; }
+.ton-compositions .ton-comp-chemical-value { -fx-text-fill: #173f5f; -fx-font-weight: bold; -fx-font-size: 22px; }
+.ton-compositions .ton-comp-total { -fx-padding: 12px; -fx-background-color: #eaf5f0; -fx-background-radius: 6px; -fx-text-fill: #2e7257; -fx-font-weight: bold; }
+.ton-compositions .ton-comp-total.ton-comp-invalid { -fx-background-color: #fff1ed; -fx-text-fill: #9e4334; }
+.ton-compositions .ton-comp-warning { -fx-text-fill: #9e4334; -fx-font-size: 11px; }
+.ton-compositions .ton-comp-readonly { -fx-padding: 12px 15px; -fx-background-color: #e7f3ed; -fx-background-radius: 7px; -fx-text-fill: #386f59; }
+.ton-compositions .ton-comp-danger { -fx-text-fill: #9d4137; -fx-background-color: #fff0ef; }
+.ton-compositions .ton-comp-actions { -fx-padding: 12px 0 0 0; -fx-border-color: #dce5ee transparent transparent transparent; }
+.ton-compositions .tab-pane > .tab-header-area > .tab-header-background { -fx-background-color: #eaf0f5; }
+.ton-compositions .tab-pane > .tab-header-area > .headers-region > .tab { -fx-padding: 7px 10px; }
+.ton-compositions .tab-pane > .tab-header-area > .headers-region > .tab:selected { -fx-background-color: white; -fx-border-color: transparent transparent #176d86 transparent; -fx-border-width: 0 0 3px 0; }
+.ton-compositions .scroll-pane, .ton-compositions .scroll-pane > .viewport { -fx-background-color: #f4f7fb; -fx-background: #f4f7fb; }
+.ton-compositions .tab-content-area { -fx-padding: 16px 0; }

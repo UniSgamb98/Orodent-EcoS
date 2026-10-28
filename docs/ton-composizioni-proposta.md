@@ -1,8 +1,10 @@
 # Proposta: Composizioni
 
-Stato: **proposta grafica navigabile**, con dati illustrativi e senza accesso al DB.
-Aprire [l'anteprima HTML](mockups/ton-composizioni.html) in un browser.
-I dati si azzerano ricaricando la pagina. L'applicazione EcoS rimane invariata.
+Stato: **catalogo implementato in EcoS sullo schema V6**. Consultare la
+[guida della versione effettiva](ton-composizioni.md) per comandi e regole correnti.
+Le sezioni seguenti conservano il disegno concordato. L'[anteprima HTML originale](mockups/ton-composizioni.html)
+resta un riferimento navigabile con dati illustrativi, senza accesso al DB.
+I dati del prototipo si azzerano ricaricando la pagina.
 
 ![Editor della ricetta per strato](mockups/ton-composizioni-ricetta.png)
 

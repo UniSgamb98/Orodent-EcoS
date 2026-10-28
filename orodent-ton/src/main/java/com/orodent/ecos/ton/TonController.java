@@ -7,6 +7,9 @@ import com.orodent.ecos.ton.features.catalog.model.CatalogModels.Navigation;
 import com.orodent.ecos.ton.features.catalog.service.CatalogService;
 import com.orodent.ecos.ton.features.catalog.service.SpecificationService;
 import com.orodent.ecos.ton.features.catalog.view.CatalogView;
+import com.orodent.ecos.ton.features.compositions.controller.CompositionsController;
+import com.orodent.ecos.ton.features.compositions.service.CompositionService;
+import com.orodent.ecos.ton.features.compositions.view.CompositionsView;
 import com.orodent.ecos.ton.features.diskmodels.controller.DiskModelsController;
 import com.orodent.ecos.ton.features.diskmodels.service.DiskModelService;
 import com.orodent.ecos.ton.features.diskmodels.view.DiskModelsView;
@@ -26,6 +29,7 @@ final class TonController {
     private final SpecificationService specifications;
     private final PowderService powders;
     private final DiskModelService models;
+    private final CompositionService compositions;
     private FeatureController active;
     private TonFeature activeFeature;
     private TonSection section = TonSection.OVERVIEW;
@@ -35,6 +39,7 @@ final class TonController {
         specifications = new SpecificationService(context.connections(), context.workers());
         powders = new PowderService(context.connections(), context.workers());
         models = new DiskModelService(context.connections(), context.workers());
+        compositions = new CompositionService(context.connections(), context.workers());
         view.homeButton()
                 .setOnAction(
                         event -> {
@@ -73,13 +78,15 @@ final class TonController {
                 var controller = new PowdersController(page, powders);
                 install(feature, page, controller, controller::loadInitialData);
             }
-            case MODELS -> {
-                var page = new DiskModelsView();
+            case MODELS -> installModels(null);
+            case COMPOSITIONS -> {
+                var page = new CompositionsView();
                 var controller =
-                        new DiskModelsController(
+                        new CompositionsController(
                                 page,
-                                models,
-                                id -> openCatalogue(Navigation.open(CatalogKind.ARTICLES, id)));
+                                compositions,
+                                id -> openCatalogue(Navigation.open(CatalogKind.ARTICLES, id)),
+                                this::openModel);
                 install(feature, page, controller, controller::start);
             }
             default ->
@@ -100,6 +107,29 @@ final class TonController {
                 new CatalogController(
                         route.kind(), page, catalogues, specifications, this::openCatalogue);
         install(route.kind().feature(), page, controller, () -> controller.start(route));
+    }
+
+    private void openModel(long id) {
+        if (!canLeave()) return;
+        closePage();
+        installModels(id);
+    }
+
+    private void installModels(Long id) {
+        var page = new DiskModelsView();
+        var controller =
+                new DiskModelsController(
+                        page,
+                        models,
+                        article -> openCatalogue(Navigation.open(CatalogKind.ARTICLES, article)));
+        install(
+                TonFeature.MODELS,
+                page,
+                controller,
+                () -> {
+                    if (id == null) controller.start();
+                    else controller.open(id);
+                });
     }
 
     private void install(

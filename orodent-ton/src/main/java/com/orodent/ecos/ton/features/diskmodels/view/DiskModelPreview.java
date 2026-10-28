@@ -1,5 +1,7 @@
 package com.orodent.ecos.ton.features.diskmodels.view;
 
+import com.orodent.ecos.ton.features.technical.view.TechnicalUi;
+
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
@@ -18,7 +20,7 @@ final class DiskModelPreview extends VBox {
         super(8);
         setMinWidth(0);
         setMaxWidth(310);
-        getStyleClass().add("ton-model-panel");
+        getStyleClass().add("ton-technical-panel");
         setId("ton-model-preview");
         top.getStyleClass().add("ton-model-overmaterial");
         bottom.getStyleClass().add("ton-model-overmaterial");
@@ -30,16 +32,16 @@ final class DiskModelPreview extends VBox {
         stack.setMinWidth(0);
         getChildren()
                 .addAll(
-                        DiskUi.label("Anteprima del modello", "ton-model-panel-title"),
+                        TechnicalUi.label("Anteprima del modello", "ton-technical-panel-title"),
                         new Label("SUPERIORE"),
                         top,
                         stack,
                         bottom,
                         new Label("INFERIORE"),
                         diameter,
-                        DiskUi.label(
+                        TechnicalUi.label(
                                 "Colori e sovramateriali schematici. Nessun calcolo di pesi o quote"
-                                    + " produttive.",
+                                        + " produttive.",
                                 "ton-model-caption"));
     }
 
@@ -48,11 +50,11 @@ final class DiskModelPreview extends VBox {
         bottom.setText("Sovramateriale inferiore · " + value(bottomText) + " mm");
         diameter.setText("Diametro pressatura · " + value(diameterText) + " mm");
         stack.getChildren().clear();
-        List<BigDecimal> parsed = values.stream().map(DiskUi::preview).toList();
+        List<BigDecimal> parsed = values.stream().map(TechnicalUi::preview).toList();
         if (parsed.isEmpty() || parsed.stream().anyMatch(v -> v == null || v.signum() <= 0)) {
             stack.getChildren()
                     .add(
-                            DiskUi.label(
+                            TechnicalUi.label(
                                     "Completa le percentuali per vedere la sezione.",
                                     "muted-label"));
             return;
@@ -61,20 +63,20 @@ final class DiskModelPreview extends VBox {
         if (total.compareTo(BigDecimal.valueOf(100)) > 0) {
             stack.getChildren()
                     .add(
-                            DiskUi.label(
+                            TechnicalUi.label(
                                     "Il totale supera 100%: correggi le percentuali.",
                                     "ton-error-feedback"));
             return;
         }
         for (int i = 0; i < parsed.size(); i++)
             segment(
-                    "Strato " + (i + 1) + " · " + DiskUi.number(parsed.get(i)) + "%",
+                    "Strato " + (i + 1) + " · " + TechnicalUi.number(parsed.get(i)) + "%",
                     parsed.get(i),
                     COLORS[i % COLORS.length]);
         if (total.compareTo(BigDecimal.valueOf(100)) < 0)
             segment(
                     "Da assegnare · "
-                            + DiskUi.number(BigDecimal.valueOf(100).subtract(total))
+                            + TechnicalUi.number(BigDecimal.valueOf(100).subtract(total))
                             + "%",
                     BigDecimal.valueOf(100).subtract(total),
                     "#f0f4f7");
@@ -95,7 +97,7 @@ final class DiskModelPreview extends VBox {
     }
 
     private static String value(String text) {
-        BigDecimal n = DiskUi.preview(text);
-        return n == null ? "—" : DiskUi.number(n);
+        BigDecimal n = TechnicalUi.preview(text);
+        return n == null ? "—" : TechnicalUi.number(n);
     }
 }

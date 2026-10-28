@@ -2,6 +2,9 @@ package com.orodent.ecos.ton.features.diskmodels.view;
 
 import static com.orodent.ecos.ton.features.diskmodels.model.DiskModels.*;
 
+import com.orodent.ecos.ton.features.technical.view.TechnicalTablePage;
+import com.orodent.ecos.ton.features.technical.view.TechnicalUi;
+
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -29,17 +32,17 @@ public final class DiskModelEditorView extends VBox {
         }
     }
 
-    private final TextField code = DiskUi.input("ton-model-code", "Codice modello"),
-            diameter = DiskUi.input("ton-model-diameter", "Diametro di pressatura"),
-            pressure = DiskUi.input("ton-model-pressure", "Pressione"),
-            grams = DiskUi.input("ton-model-grams", "Peso per millimetro"),
-            top = DiskUi.input("ton-model-top", "Sovramateriale superiore"),
-            bottom = DiskUi.input("ton-model-bottom", "Sovramateriale inferiore");
+    private final TextField code = TechnicalUi.input("ton-model-code", "Codice modello"),
+            diameter = TechnicalUi.input("ton-model-diameter", "Diametro di pressatura"),
+            pressure = TechnicalUi.input("ton-model-pressure", "Pressione"),
+            grams = TechnicalUi.input("ton-model-grams", "Peso per millimetro"),
+            top = TechnicalUi.input("ton-model-top", "Sovramateriale superiore"),
+            bottom = TechnicalUi.input("ton-model-bottom", "Sovramateriale inferiore");
     private final TextArea notes = new TextArea();
-    private final Label heading = DiskUi.label("", "ton-page-heading"),
-            status = DiskUi.label("", "muted-label"),
-            feedback = DiskUi.label("", "muted-label"),
-            readonly = DiskUi.label("", "ton-model-readonly");
+    private final Label heading = TechnicalUi.label("", "ton-page-heading"),
+            status = TechnicalUi.label("", "muted-label"),
+            feedback = TechnicalUi.label("", "muted-label"),
+            readonly = TechnicalUi.label("", "ton-model-readonly");
     private final ComboBox<Version> versions = new ComboBox<>();
     private final TabPane tabs = new TabPane();
     private final Map<Tab, Sheet> sheets = new HashMap<>();
@@ -47,18 +50,18 @@ public final class DiskModelEditorView extends VBox {
     private final DiskModelPreview preview = new DiskModelPreview();
     private final LayersEditor layers = new LayersEditor(this::refreshPreview);
     private final RangesEditor ranges = new RangesEditor(this::refreshPreview);
-    private final ModelTablePage<Usage> usages =
-            new ModelTablePage<>("ton-model-usages", "Apri articolo");
-    private final ModelTablePage<Version> history =
-            new ModelTablePage<>("ton-model-versions", "Apri versione");
-    private final Button back = DiskUi.button("← Elenco modelli", "ton-model-back", false),
-            reload = DiskUi.button("Ricarica scheda", "ton-model-reload", false),
-            cancel = DiskUi.button("Annulla modifiche", "ton-model-cancel", false),
-            save = DiskUi.button("Salva bozza", "ton-model-save", false),
-            approve = DiskUi.button("Salva e approva", "ton-model-approve", true),
-            copy = DiskUi.button("Crea nuova versione", "ton-model-copy", true),
-            retire = DiskUi.button("Ritira versione", "ton-model-retire", false),
-            delete = DiskUi.button("Elimina bozza", "ton-model-delete", false);
+    private final TechnicalTablePage<Usage> usages =
+            new TechnicalTablePage<>("ton-model-usages", "Apri articolo");
+    private final TechnicalTablePage<Version> history =
+            new TechnicalTablePage<>("ton-model-versions", "Apri versione");
+    private final Button back = TechnicalUi.button("← Elenco modelli", "ton-model-back", false),
+            reload = TechnicalUi.button("Ricarica scheda", "ton-model-reload", false),
+            cancel = TechnicalUi.button("Annulla modifiche", "ton-model-cancel", false),
+            save = TechnicalUi.button("Salva bozza", "ton-model-save", false),
+            approve = TechnicalUi.button("Salva e approva", "ton-model-approve", true),
+            copy = TechnicalUi.button("Crea nuova versione", "ton-model-copy", true),
+            retire = TechnicalUi.button("Ritira versione", "ton-model-retire", false),
+            delete = TechnicalUi.button("Elimina bozza", "ton-model-delete", false);
     private final List<Node> editable = new ArrayList<>();
     private boolean updating;
 
@@ -84,41 +87,41 @@ public final class DiskModelEditorView extends VBox {
         notes.setWrapText(true);
         notes.setPrefRowCount(3);
         var parameters =
-                DiskUi.panel(
+                TechnicalUi.panel(
                         "Identità e pressatura",
                         "Il modello può essere riutilizzato per più prodotti e altezze.",
-                        DiskUi.fields(
-                                DiskUi.field("Codice modello *", code),
-                                DiskUi.field("Diametro di pressatura · mm *", diameter),
-                                DiskUi.field("Pressione · kg/cm² *", pressure),
-                                DiskUi.field("Peso per millimetro · g/mm *", grams)),
-                        DiskUi.field("Note tecniche", notes),
-                        DiskUi.label(
+                        TechnicalUi.fields(
+                                TechnicalUi.field("Codice modello *", code),
+                                TechnicalUi.field("Diametro di pressatura · mm *", diameter),
+                                TechnicalUi.field("Pressione · kg/cm² *", pressure),
+                                TechnicalUi.field("Peso per millimetro · g/mm *", grams)),
+                        TechnicalUi.field("Note tecniche", notes),
+                        TechnicalUi.label(
                                 "Il diametro di pressatura è distinto dal diametro nominale"
                                     + " dell'articolo. L'altezza nominale appartiene all'articolo;"
                                     + " le polveri appartengono alla composizione.",
                                 "muted-label"));
         var layerPanel =
-                DiskUi.panel(
+                TechnicalUi.panel(
                         "Struttura degli strati",
                         "Posizione dall'alto al basso · quote percentuali dell'altezza.",
                         layers,
-                        DiskUi.label(
+                        TechnicalUi.label(
                                 "I colori della sezione sono illustrativi. Le polveri verranno"
                                         + " definite nella composizione.",
                                 "muted-label"));
         var defaults =
-                DiskUi.panel(
+                TechnicalUi.panel(
                         "Sovramateriali predefiniti",
                         "Usati quando l'altezza dell'articolo non rientra in una fascia specifica.",
-                        DiskUi.fields(
-                                DiskUi.field("Superiore · mm *", top),
-                                DiskUi.field("Inferiore · mm *", bottom)));
+                        TechnicalUi.fields(
+                                TechnicalUi.field("Superiore · mm *", top),
+                                TechnicalUi.field("Inferiore · mm *", bottom)));
         var rangePanel =
                 new VBox(
                         18,
                         defaults,
-                        DiskUi.panel(
+                        TechnicalUi.panel(
                                 "Eccezioni per altezza",
                                 "Facoltative · limiti iniziali inclusi, limiti finali esclusi."
                                         + " Nessuna sovrapposizione.",
@@ -127,19 +130,23 @@ public final class DiskModelEditorView extends VBox {
         tabWithPreview(Sheet.LAYERS, layerPanel);
         tabWithPreview(Sheet.RANGES, rangePanel);
         var usagePanel =
-                DiskUi.panel(
+                TechnicalUi.panel(
                         "Specifiche che utilizzano questa versione",
                         "Ogni collegamento conserva il modello preciso. Approvare una nuova"
                                 + " versione non aggiorna automaticamente le specifiche esistenti.",
                         usages);
-        DiskUi.column(usages.table(), "Articolo", 170, Usage::articleCode);
-        DiskUi.column(usages.table(), "Prodotto", 120, Usage::productCode);
-        DiskUi.column(
+        TechnicalUi.column(usages.table(), "Articolo", 170, Usage::articleCode);
+        TechnicalUi.column(usages.table(), "Prodotto", 120, Usage::productCode);
+        TechnicalUi.column(
                 usages.table(),
                 "Formato",
                 120,
-                u -> DiskUi.number(u.diameter()) + " × " + DiskUi.number(u.height()) + " mm");
-        DiskUi.column(
+                u ->
+                        TechnicalUi.number(u.diameter())
+                                + " × "
+                                + TechnicalUi.number(u.height())
+                                + " mm");
+        TechnicalUi.column(
                 usages.table(),
                 "Specifica",
                 170,
@@ -151,14 +158,14 @@ public final class DiskModelEditorView extends VBox {
                                 + (u.preferred() ? " · predefinita" : ""));
         tab(Sheet.USAGES, usagePanel);
         var historyPanel =
-                DiskUi.panel(
+                TechnicalUi.panel(
                         "Versioni del modello",
                         "Le versioni approvate e ritirate conservano parametri, strati e"
                                 + " sovramateriali in sola lettura.",
                         history);
-        DiskUi.column(history.table(), "Versione", 100, v -> "v" + v.number());
-        DiskUi.column(history.table(), "Stato", 130, v -> v.state().toString());
-        DiskUi.column(
+        TechnicalUi.column(history.table(), "Versione", 100, v -> "v" + v.number());
+        TechnicalUi.column(history.table(), "Stato", 130, v -> v.state().toString());
+        TechnicalUi.column(
                 history.table(),
                 "Ultimo aggiornamento",
                 170,
@@ -226,7 +233,7 @@ public final class DiskModelEditorView extends VBox {
     }
 
     private void tab(Sheet sheet, Node content) {
-        var tab = new Tab(sheet.title(), DiskUi.scroll(content));
+        var tab = new Tab(sheet.title(), TechnicalUi.scroll(content));
         sheets.put(tab, sheet);
         tabs.getTabs().add(tab);
     }
@@ -249,11 +256,11 @@ public final class DiskModelEditorView extends VBox {
             boolean frozen = revision != null && revision.frozen();
             code.setText(data == null ? "" : data.code());
             code.setDisable(revision != null);
-            diameter.setText(data == null ? "" : DiskUi.number(data.diameter()));
-            pressure.setText(data == null ? "" : DiskUi.number(data.pressure()));
-            grams.setText(data == null ? "" : DiskUi.number(data.grams()));
-            top.setText(data == null ? "0" : DiskUi.number(data.top()));
-            bottom.setText(data == null ? "0" : DiskUi.number(data.bottom()));
+            diameter.setText(data == null ? "" : TechnicalUi.number(data.diameter()));
+            pressure.setText(data == null ? "" : TechnicalUi.number(data.pressure()));
+            grams.setText(data == null ? "" : TechnicalUi.number(data.grams()));
+            top.setText(data == null ? "0" : TechnicalUi.number(data.top()));
+            bottom.setText(data == null ? "0" : TechnicalUi.number(data.bottom()));
             notes.setText(data == null ? "" : data.notes());
             for (Node n : editable) n.setDisable(frozen);
             layers.show(data == null ? List.of(BigDecimal.valueOf(100)) : data.layers(), frozen);
@@ -267,7 +274,7 @@ public final class DiskModelEditorView extends VBox {
                                     + " · "
                                     + revision.state()
                                     + " · Diametro pressatura "
-                                    + DiskUi.number(data.diameter())
+                                    + TechnicalUi.number(data.diameter())
                                     + " mm · "
                                     + data.layers().size()
                                     + " strati");
@@ -298,12 +305,12 @@ public final class DiskModelEditorView extends VBox {
                                     + ": contenuto in sola lettura. Crea una nuova versione per"
                                     + " modificarlo."
                             : "");
-            DiskUi.visible(readonly, frozen);
-            DiskUi.visible(save, !frozen);
-            DiskUi.visible(approve, !frozen);
-            DiskUi.visible(copy, frozen);
-            DiskUi.visible(retire, revision != null && revision.state() == State.APPROVATA);
-            DiskUi.visible(delete, revision != null && revision.state() == State.BOZZA);
+            TechnicalUi.visible(readonly, frozen);
+            TechnicalUi.visible(save, !frozen);
+            TechnicalUi.visible(approve, !frozen);
+            TechnicalUi.visible(copy, frozen);
+            TechnicalUi.visible(retire, revision != null && revision.state() == State.APPROVATA);
+            TechnicalUi.visible(delete, revision != null && revision.state() == State.BOZZA);
             delete.setDisable(detail == null || !detail.deletable());
             reload.setDisable(detail == null);
             usages.reset(detail != null);
@@ -318,11 +325,11 @@ public final class DiskModelEditorView extends VBox {
     public Draft draft() {
         return new Draft(
                 code.getText(),
-                DiskUi.decimal(diameter.getText(), "Diametro di pressatura"),
-                DiskUi.decimal(pressure.getText(), "Pressione"),
-                DiskUi.decimal(grams.getText(), "Peso per millimetro"),
-                DiskUi.decimal(top.getText(), "Sovramateriale superiore"),
-                DiskUi.decimal(bottom.getText(), "Sovramateriale inferiore"),
+                TechnicalUi.decimal(diameter.getText(), "Diametro di pressatura"),
+                TechnicalUi.decimal(pressure.getText(), "Pressione"),
+                TechnicalUi.decimal(grams.getText(), "Peso per millimetro"),
+                TechnicalUi.decimal(top.getText(), "Sovramateriale superiore"),
+                TechnicalUi.decimal(bottom.getText(), "Sovramateriale inferiore"),
                 notes.getText(),
                 layers.data(),
                 ranges.data());
@@ -394,11 +401,11 @@ public final class DiskModelEditorView extends VBox {
         return layers;
     }
 
-    public ModelTablePage<Usage> usages() {
+    public TechnicalTablePage<Usage> usages() {
         return usages;
     }
 
-    public ModelTablePage<Version> history() {
+    public TechnicalTablePage<Version> history() {
         return history;
     }
 

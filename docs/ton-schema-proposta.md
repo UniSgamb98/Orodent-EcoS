@@ -2,8 +2,9 @@
 
 Stato: **struttura SQL V4, colore polveri V5 e cataloghi con storico V6**. `TON.PRODOTTI` esiste
 dalla V3; `V4__ton_domain.sql` aggiunge le altre 24 tabelle, senza importare dati
-da TON-V2. I cataloghi linee, prodotti, articoli e polveri sono operativi; per le polveri sono
-implementati anche versioni, ossidi e approvazione. Questo documento descrive
+da TON-V2. I sei cataloghi tecnici sono operativi, comprese versioni, ossidi,
+composizioni per strato e modelli disco. Vedere anche la [guida delle composizioni](ton-composizioni.md).
+Questo documento descrive
 anche regole applicative previste per i flussi ancora da costruire. Il cubaggio
 rimane fuori da questo passaggio. Vedere [uso delle polveri](ton-polveri.md).
 

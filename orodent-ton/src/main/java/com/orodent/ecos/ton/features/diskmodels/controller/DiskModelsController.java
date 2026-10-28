@@ -173,6 +173,10 @@ public final class DiskModelsController implements FeatureController {
         loadList(0);
     }
 
+    public void open(long id) {
+        load(id, Sheet.PARAMETERS);
+    }
+
     @Override
     public ReadOnlyBooleanProperty savingProperty() {
         return saving;

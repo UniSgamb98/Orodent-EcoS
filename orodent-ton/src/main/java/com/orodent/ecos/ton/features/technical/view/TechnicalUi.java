@@ -1,4 +1,4 @@
-package com.orodent.ecos.ton.features.diskmodels.view;
+package com.orodent.ecos.ton.features.technical.view;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.Node;
@@ -8,17 +8,17 @@ import javafx.scene.layout.*;
 import java.math.BigDecimal;
 import java.util.function.Function;
 
-final class DiskUi {
-    private DiskUi() {}
+public final class TechnicalUi {
+    private TechnicalUi() {}
 
-    static Button button(String text, String id, boolean primary) {
+    public static Button button(String text, String id, boolean primary) {
         var b = new Button(text);
         b.setId(id);
         b.getStyleClass().add(primary ? "primary-button" : "secondary-button");
         return b;
     }
 
-    static Label label(String text, String style) {
+    public static Label label(String text, String style) {
         var l = new Label(text);
         l.setWrapText(true);
         l.setMinWidth(0);
@@ -27,7 +27,7 @@ final class DiskUi {
         return l;
     }
 
-    static TextField input(String id, String prompt) {
+    public static TextField input(String id, String prompt) {
         var t = new TextField();
         t.setId(id);
         t.setPromptText(prompt);
@@ -36,7 +36,7 @@ final class DiskUi {
         return t;
     }
 
-    static VBox field(String name, Node input) {
+    public static VBox field(String name, Node input) {
         var l = new Label(name);
         l.setWrapText(true);
         l.setMinWidth(0);
@@ -44,32 +44,34 @@ final class DiskUi {
         return new VBox(7, l, input);
     }
 
-    static VBox panel(String title, String description, Node... nodes) {
+    public static VBox panel(String title, String description, Node... nodes) {
         var box = new VBox(15);
         box.setMinWidth(0);
-        box.getStyleClass().add("ton-model-panel");
+        box.getStyleClass().add("ton-technical-panel");
         box.getChildren()
-                .addAll(label(title, "ton-model-panel-title"), label(description, "muted-label"));
+                .addAll(
+                        label(title, "ton-technical-panel-title"),
+                        label(description, "muted-label"));
         box.getChildren().addAll(nodes);
         return box;
     }
 
-    static ScrollPane scroll(Node content) {
+    public static ScrollPane scroll(Node content) {
         var s = new ScrollPane(content);
         s.setFitToWidth(true);
         return s;
     }
 
-    static void visible(Node n, boolean show) {
+    public static void visible(Node n, boolean show) {
         n.setVisible(show);
         n.setManaged(show);
     }
 
-    static String number(BigDecimal n) {
+    public static String number(BigDecimal n) {
         return n == null ? "" : n.stripTrailingZeros().toPlainString().replace('.', ',');
     }
 
-    static BigDecimal decimal(String text, String label) {
+    public static BigDecimal decimal(String text, String label) {
         String s = text.strip();
         if (s.isEmpty()) throw new IllegalArgumentException(label + ": inserisci un valore.");
         if (!s.matches("[0-9]+([.,][0-9]+)?"))
@@ -78,7 +80,7 @@ final class DiskUi {
         return new BigDecimal(s.replace(',', '.'));
     }
 
-    static BigDecimal preview(String text) {
+    public static BigDecimal preview(String text) {
         try {
             return decimal(text, "");
         } catch (IllegalArgumentException invalid) {
@@ -86,7 +88,7 @@ final class DiskUi {
         }
     }
 
-    static <T> void column(
+    public static <T> void column(
             TableView<T> table, String title, double width, Function<T, String> format) {
         var c = new TableColumn<T, String>(title);
         c.setCellValueFactory(v -> new SimpleStringProperty(format.apply(v.getValue())));
@@ -95,7 +97,7 @@ final class DiskUi {
         table.getColumns().add(c);
     }
 
-    static GridPane fields(Node... nodes) {
+    public static GridPane fields(Node... nodes) {
         var g = new GridPane();
         g.setHgap(20);
         g.setVgap(18);

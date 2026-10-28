@@ -1,5 +1,7 @@
 package com.orodent.ecos.ton.features.diskmodels.view;
 
+import com.orodent.ecos.ton.features.technical.view.TechnicalUi;
+
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
@@ -10,10 +12,12 @@ import java.util.*;
 public final class LayersEditor extends VBox {
     private final List<TextField> rows = new ArrayList<>();
     private final VBox content = new VBox(8);
-    private final Label total = DiskUi.label("", "ton-model-total");
-    private final Button add = DiskUi.button("+ Aggiungi strato", "ton-model-layer-add", false),
+    private final Label total = TechnicalUi.label("", "ton-model-total");
+    private final Button
+            add = TechnicalUi.button("+ Aggiungi strato", "ton-model-layer-add", false),
             distribute =
-                    DiskUi.button("Distribuisci equamente", "ton-model-layer-distribute", false);
+                    TechnicalUi.button(
+                            "Distribuisci equamente", "ton-model-layer-distribute", false);
     private final Runnable changed;
     private boolean frozen;
 
@@ -33,14 +37,14 @@ public final class LayersEditor extends VBox {
     void show(List<BigDecimal> values, boolean frozen) {
         this.frozen = frozen;
         rows.clear();
-        for (BigDecimal value : values) append(DiskUi.number(value));
+        for (BigDecimal value : values) append(TechnicalUi.number(value));
         layoutRows();
         add.setDisable(frozen);
         distribute.setDisable(frozen || rows.isEmpty());
     }
 
     private void append(String value) {
-        TextField field = DiskUi.input("", "Percentuale dello strato");
+        TextField field = TechnicalUi.input("", "Percentuale dello strato");
         field.setText(value);
         field.setPrefWidth(130);
         field.setMaxWidth(150);
@@ -59,15 +63,15 @@ public final class LayersEditor extends VBox {
             TextField field = rows.get(i);
             field.setId("ton-model-layer-" + (i + 1));
             field.setDisable(frozen);
-            var up = DiskUi.button("↑", "ton-model-layer-up-" + (i + 1), false);
+            var up = TechnicalUi.button("↑", "ton-model-layer-up-" + (i + 1), false);
             up.setAccessibleText("Sposta strato verso l'alto");
             up.setDisable(frozen || i == 0);
             up.setOnAction(e -> move(field, -1));
-            var down = DiskUi.button("↓", "ton-model-layer-down-" + (i + 1), false);
+            var down = TechnicalUi.button("↓", "ton-model-layer-down-" + (i + 1), false);
             down.setAccessibleText("Sposta strato verso il basso");
             down.setDisable(frozen || i == rows.size() - 1);
             down.setOnAction(e -> move(field, 1));
-            var remove = DiskUi.button("×", "ton-model-layer-remove-" + (i + 1), false);
+            var remove = TechnicalUi.button("×", "ton-model-layer-remove-" + (i + 1), false);
             remove.setAccessibleText("Rimuovi strato");
             for (Button button : List.of(up, down, remove))
                 button.getStyleClass().add("ton-model-row-action");
@@ -112,7 +116,7 @@ public final class LayersEditor extends VBox {
         for (int i = 0; i < rows.size(); i++)
             rows.get(i)
                     .setText(
-                            DiskUi.number(
+                            TechnicalUi.number(
                                     i == rows.size() - 1
                                             ? BigDecimal.valueOf(100)
                                                     .subtract(share.multiply(BigDecimal.valueOf(i)))
@@ -124,14 +128,14 @@ public final class LayersEditor extends VBox {
         BigDecimal sum = BigDecimal.ZERO;
         boolean valid = !rows.isEmpty();
         for (TextField f : rows) {
-            BigDecimal n = DiskUi.preview(f.getText());
+            BigDecimal n = TechnicalUi.preview(f.getText());
             if (n == null || n.signum() <= 0 || n.scale() > 4) valid = false;
             if (n != null) sum = sum.add(n);
         }
         valid &= sum.compareTo(BigDecimal.valueOf(100)) == 0;
         total.setText(
                 (valid ? "✓ Totale degli strati: " : "Totale da completare: ")
-                        + DiskUi.number(sum)
+                        + TechnicalUi.number(sum)
                         + "%");
         total.getStyleClass().remove("ton-model-invalid");
         if (!valid) total.getStyleClass().add("ton-model-invalid");
@@ -140,7 +144,7 @@ public final class LayersEditor extends VBox {
     public List<BigDecimal> data() {
         var result = new ArrayList<BigDecimal>();
         for (int i = 0; i < rows.size(); i++)
-            result.add(DiskUi.decimal(rows.get(i).getText(), "Percentuale strato " + (i + 1)));
+            result.add(TechnicalUi.decimal(rows.get(i).getText(), "Percentuale strato " + (i + 1)));
         return result;
     }
 

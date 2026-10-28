@@ -34,7 +34,7 @@ public enum TonFeature {
     public TonSection section() { return section; }
     public String title() { return title; }
     public String description() { return description; }
-    public boolean available() { return this == PRODUCTS || this == POWDERS || this == LINES || this == ARTICLES || this == MODELS; }
+    public boolean available() { return this == PRODUCTS || this == POWDERS || this == LINES || this == ARTICLES || this == MODELS || this == COMPOSITIONS; }
     public static List<TonFeature> in(TonSection section) {
         return Arrays.stream(values()).filter(feature -> feature.section == section).toList();
     }

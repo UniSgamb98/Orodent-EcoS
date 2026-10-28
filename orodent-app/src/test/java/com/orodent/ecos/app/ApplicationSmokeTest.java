@@ -113,9 +113,11 @@ class ApplicationSmokeTest {
 
             navigatesTonAreasAndProtectsAnUnsavedProduct(stage);
             managesPowderOxidesAndImmutableTechnicalVersions(stage);
+            createsASecondVersionedPowderForRecipes(stage);
             managesDiskModelsAndImmutableVersions(stage);
-            managesTonCataloguesAndVersionedSpecifications(stage, databasePort);
+            managesTonCataloguesAndVersionedSpecifications(stage);
             followsDiskModelUsagesBackToArticles(stage);
+            followsCompositionModelsAndUsages(stage);
 
             // Import the same CSV formats used by the application, away from the FX thread.
             importRepresentativeData(databasePort);
@@ -174,8 +176,13 @@ class ApplicationSmokeTest {
                 Node page = view(stage, "ton-" + area + "-page");
                 assertTrue(buttonUnchecked(stage, "ton-nav-" + area).getPseudoClassStates().contains(
                         javafx.css.PseudoClass.getPseudoClass("selected")), "Il menu deve evidenziare la pagina reale");
-                assertTrue(page.lookupAll(".label").stream().filter(Label.class::isInstance)
-                        .map(Label.class::cast).anyMatch(label -> "In preparazione".equals(label.getText())));
+                if (area.equals("technical")) {
+                    for (String feature : List.of("articles", "compositions", "products", "models", "lines", "powders"))
+                        assertNotNull(stage.getScene().lookup("#ton-tech-" + feature + "-button"));
+                } else {
+                    assertTrue(page.lookupAll(".label").stream().filter(Label.class::isInstance)
+                            .map(Label.class::cast).anyMatch(label -> "In preparazione".equals(label.getText())));
+                }
             }
             button(stage, "ton-nav-technical").fire();
             button(stage, "ton-tech-products-button").fire();
@@ -347,6 +354,222 @@ class ApplicationSmokeTest {
         return javafx.stage.Window.getWindows().stream().filter(javafx.stage.Window::isShowing).filter(window -> window.getScene()!=null)
                 .map(window -> window.getScene().getRoot().lookup(".dialog-pane")).filter(javafx.scene.control.DialogPane.class::isInstance)
                 .map(javafx.scene.control.DialogPane.class::cast).findFirst().orElseThrow();
+    }
+
+    private void createsASecondVersionedPowderForRecipes(Stage stage) throws Exception {
+        runFx(() -> {
+            button(stage, "open-ton-button").fire();
+            button(stage, "ton-powders-button").fire();
+        });
+        awaitFx(() -> catalogLoaded(stage, "powders"), "Le polveri devono riaprirsi");
+        runFx(() -> {
+            button(stage, "ton-powder-new").fire();
+            text(stage, "ton-powder-code").setText("P002");
+            text(stage, "ton-powder-name").setText("Polvere colorata 5Y");
+            ((javafx.scene.control.ComboBox<?>) stage.getScene().lookup("#ton-powder-color")).getSelectionModel().select(2);
+            powderTab(stage, "Dati tecnici");
+            ((javafx.scene.control.ComboBox<?>) stage.getScene().lookup("#ton-powder-class")).getEditor().setText("5Y");
+            powderTab(stage, "Ossidi");
+            button(stage, "ton-oxide-add").fire();
+        });
+        awaitFx(() -> stage.getScene().lookup("#ton-oxide-code-0") instanceof javafx.scene.control.TextField,
+                "La riga ossidi della seconda polvere deve essere pronta");
+        runFx(() -> {
+            text(stage, "ton-oxide-code-0").setText("Y2O3");
+            text(stage, "ton-oxide-percent-0").setText("9,350");
+            button(stage, "ton-powder-save").fire();
+        });
+        awaitFx(() -> powderFeedback(stage, "Bozza salvata"), "La polvere colorata deve essere salvata");
+        runFx(() -> {
+            Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.YES));
+            button(stage, "ton-powder-approve").fire();
+        });
+        awaitFx(() -> powderFeedback(stage, "Scheda approvata"), "La prima scheda deve essere approvata anche con ossidi parziali");
+        runFx(() -> button(stage, "ton-powder-new-version").fire());
+        awaitFx(() -> powderFeedback(stage, "Nuova bozza creata"), "La nuova scheda non deve sostituire quella precedente");
+        runFx(() -> {
+            oxidePercent(stage, "Y2O3").setText("9,400");
+            Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.YES));
+            button(stage, "ton-powder-approve").fire();
+        });
+        awaitFx(() -> powderFeedback(stage, "Scheda approvata"), "Anche la seconda scheda deve essere selezionabile esplicitamente");
+        runFx(() -> button(stage, "ton-home-button").fire());
+    }
+
+    private void createsCompositionsAndReturnsToTheArticle(Stage stage) throws Exception {
+        runFx(() -> {
+            button(stage, "ton-home-button").fire();
+            button(stage, "open-ton-button").fire();
+            button(stage, "ton-nav-technical").fire();
+            button(stage, "ton-tech-compositions-button").fire();
+        });
+        awaitFx(() -> catalogLoaded(stage, "compositions"), "Il catalogo delle composizioni deve essere disponibile");
+        runFx(() -> button(stage, "ton-composition-new").fire());
+        awaitFx(() -> stage.getScene().lookup("#ton-composition-product") instanceof javafx.scene.control.ComboBox<?> box
+                && !box.getItems().isEmpty(), "I prodotti devono essere caricati in una ricerca limitata");
+        runFx(() -> {
+            ((javafx.scene.control.ComboBox<?>) stage.getScene().lookup("#ton-composition-product")).getSelectionModel().selectFirst();
+            assertTrue(((Label) stage.getScene().lookup("#ton-composition-inherited")).getText().contains("ZR-MS"));
+            catalogTab(stage, "composition", "Ricetta per strato");
+            button(stage, "ton-composition-ingredient-add").fire();
+            button(stage, "ton-composition-ingredient-add").fire();
+        });
+        awaitFx(() -> stage.getScene().lookup("#ton-composition-ingredient-1-powder") instanceof javafx.scene.control.ComboBox<?> box
+                && box.getItems().size() >= 3, "Devono essere disponibili tutte le schede approvate, con versione esplicita");
+        runFx(() -> {
+            selectRecipePowder(stage, 1, "P001", 1);
+            selectRecipePowder(stage, 2, "P002", 1);
+            text(stage, "ton-composition-ingredient-1-mass").setText("75");
+            text(stage, "ton-composition-ingredient-2-mass").setText("25");
+            assertEquals("6,200 wt%", ((Label) stage.getScene().lookup("#ton-composition-yttria")).getText());
+            selectRecipePowder(stage, 2, "P002", 2);
+            assertEquals("6,2125 wt%", ((Label) stage.getScene().lookup("#ton-composition-yttria")).getText());
+            selectRecipePowder(stage, 2, "P002", 1);
+            text(stage, "ton-composition-ingredient-2-mass").setText("20");
+            button(stage, "ton-composition-approve").fire();
+            assertTrue(catalogFeedback(stage, "composition", "esattamente 100"));
+            text(stage, "ton-composition-ingredient-2-mass").setText("25");
+            button(stage, "ton-composition-layer-add").fire();
+            button(stage, "ton-composition-ingredient-add").fire();
+            selectRecipePowder(stage, 1, "P001", 1);
+            text(stage, "ton-composition-ingredient-1-mass").setText("100");
+            button(stage, "ton-composition-layer-select-1").fire();
+            assertEquals("75", text(stage, "ton-composition-ingredient-1-mass").getText());
+            catalogTab(stage, "composition", "Riepilogo");
+            TableView<?> oxides = (TableView<?>) stage.getScene().lookup("#ton-composition-oxides");
+            assertEquals("Y2O3", oxides.getColumns().get(0).getCellData(0));
+            assertEquals("6,200 wt%", oxides.getColumns().get(1).getCellData(0));
+            assertTrue(oxides.getColumns().get(1).getCellData(1).toString().contains("Dati parziali"));
+            catalogTab(stage, "composition", "Modelli");
+        });
+        awaitFx(() -> stage.getScene().lookup("#ton-composition-models-table") instanceof TableView<?> table
+                && !table.isDisabled() && table.getItems().isEmpty(), "Un modello monostrato non deve essere proposto per due strati");
+        runFx(() -> ((javafx.scene.control.CheckBox) stage.getScene().lookup("#ton-composition-model-matching")).fire());
+        awaitFx(() -> stage.getScene().lookup("#ton-composition-models-table") instanceof TableView<?> table
+                && !table.isDisabled() && table.getItems().size() == 1, "Il filtro deve mostrare anche la struttura diversa");
+        runFx(() -> {
+            catalogTab(stage, "composition", "Ricetta per strato");
+            button(stage, "ton-composition-save").fire();
+            assertTrue(buttonUnchecked(stage, "ton-home-button").isDisabled());
+        });
+        awaitFx(() -> catalogFeedback(stage, "composition", "Bozza salvata"), "La ricetta deve essere salvata insieme a tutti gli strati");
+        runFx(() -> approveComposition(stage));
+        awaitFx(() -> catalogFeedback(stage, "composition", "Composizione approvata"), "La prima versione deve essere bloccata");
+        runFx(() -> {
+            assertTrue(text(stage, "ton-composition-ingredient-1-mass").isDisabled());
+            button(stage, "ton-composition-copy").fire();
+        });
+        awaitFx(() -> catalogFeedback(stage, "composition", "Nuova bozza creata"), "La copia deve mantenere le revisioni della polvere scelte");
+        runFx(() -> {
+            button(stage, "ton-composition-layer-select-2").fire();
+            Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.YES));
+            button(stage, "ton-composition-layer-remove").fire();
+            assertEquals("75", text(stage, "ton-composition-ingredient-1-mass").getText());
+            assertTrue(((javafx.scene.control.ComboBox<?>) stage.getScene().lookup("#ton-composition-ingredient-2-powder")).getValue().toString().contains("P002 · v1"));
+            approveComposition(stage);
+        });
+        awaitFx(() -> catalogFeedback(stage, "composition", "Composizione approvata"), "La seconda versione monostrato deve essere approvata");
+        runFx(() -> selectCompositionVersion(stage, 1));
+        awaitFx(() -> compositionVersionReady(stage, 1), "La prima versione deve conservare entrambi gli strati");
+        runFx(() -> {
+            assertNotNull(stage.getScene().lookup("#ton-composition-layer-select-2"));
+            assertTrue(text(stage, "ton-composition-ingredient-1-mass").isDisabled());
+            Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.YES));
+            button(stage, "ton-composition-retire").fire();
+        });
+        awaitFx(() -> catalogFeedback(stage, "composition", "Versione ritirata"), "La prima versione deve rimanere nello storico");
+        runFx(() -> selectCompositionVersion(stage, 2));
+        awaitFx(() -> compositionVersionReady(stage, 2), "La versione approvata v2 deve riaprirsi");
+        runFx(() -> button(stage, "ton-composition-copy").fire());
+        awaitFx(() -> catalogFeedback(stage, "composition", "Nuova bozza creata"), "La terza versione deve essere una bozza separata");
+        runFx(() -> {
+            text(stage, "ton-composition-ingredient-1-mass").setText("80");
+            Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.NO));
+            button(stage, "ton-home-button").fire();
+            assertEquals("80", text(stage, "ton-composition-ingredient-1-mass").getText());
+            Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.YES));
+            button(stage, "ton-composition-cancel").fire();
+            assertEquals("75", text(stage, "ton-composition-ingredient-1-mass").getText());
+            button(stage, "ton-home-button").fire();
+            button(stage, "open-ton-button").fire();
+            button(stage, "ton-articles-button").fire();
+        });
+        awaitFx(() -> catalogLoaded(stage, "articles"), "Gli articoli devono riaprirsi");
+        runFx(() -> {
+            ((TableView<?>) stage.getScene().lookup("#ton-articles-table")).getSelectionModel().selectFirst();
+            button(stage, "ton-article-edit").fire();
+        });
+        awaitFx(() -> stage.getScene().lookup("#ton-article-heading") instanceof Label l && l.getText().contains(PRODUCT_CODE), "L'articolo deve riaprirsi senza perdere l'anagrafica");
+        runFx(() -> catalogTab(stage, "article", "Specifiche di produzione"));
+    }
+
+    private static void selectRecipePowder(Stage stage, int row, String code, int version) {
+        stage.getScene().getRoot().applyCss();
+        var box = (javafx.scene.control.ComboBox<?>) stage.getScene().lookup("#ton-composition-ingredient-" + row + "-powder");
+        for (int i = 0; i < box.getItems().size(); i++) {
+            if (box.getItems().get(i).toString().startsWith(code + " · v" + version + " ·")) {
+                box.getSelectionModel().select(i);
+                return;
+            }
+        }
+        throw new AssertionError("Revisione polvere non trovata: " + code + " v" + version);
+    }
+
+    private static void approveComposition(Stage stage) {
+        Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.YES));
+        button(stage, "ton-composition-approve").fire();
+    }
+
+    private static void selectCompositionVersion(Stage stage, int number) {
+        var box = (javafx.scene.control.ComboBox<?>) stage.getScene().lookup("#ton-composition-version");
+        for (int i = 0; i < box.getItems().size(); i++) {
+            if (box.getItems().get(i).toString().startsWith("v" + number + " ·")) {
+                box.getSelectionModel().select(i);
+                return;
+            }
+        }
+        throw new AssertionError("Versione composizione non trovata: " + number);
+    }
+
+    private static boolean compositionVersionReady(Stage stage, int number) {
+        return stage.getScene().lookup("#ton-composition-status") instanceof Label l && l.getText().startsWith("v" + number + " ·");
+    }
+
+    private void followsCompositionModelsAndUsages(Stage stage) throws Exception {
+        runFx(() -> {
+            button(stage, "open-ton-button").fire();
+            button(stage, "ton-compositions-button").fire();
+        });
+        awaitFx(() -> catalogLoaded(stage, "compositions"), "Le composizioni devono essere conservate dopo la riapertura");
+        runFx(() -> {
+            ((TableView<?>) stage.getScene().lookup("#ton-compositions-table")).getSelectionModel().selectFirst();
+            button(stage, "ton-compositions-open").fire();
+        });
+        awaitFx(() -> compositionVersionReady(stage, 3), "La bozza corrente deve riaprirsi");
+        runFx(() -> catalogTab(stage, "composition", "Modelli"));
+        awaitFx(() -> stage.getScene().lookup("#ton-composition-models-table") instanceof TableView<?> table
+                && !table.isDisabled() && table.getItems().size() == 1, "Il modello con strati corrispondenti deve essere raggiungibile");
+        runFx(() -> button(stage, "ton-composition-models-open").fire());
+        awaitFx(() -> modelVersionReady(stage, 2), "Apri modello deve raggiungere la versione precisa");
+        runFx(() -> {
+            button(stage, "ton-home-button").fire();
+            button(stage, "open-ton-button").fire();
+            button(stage, "ton-compositions-button").fire();
+        });
+        awaitFx(() -> catalogLoaded(stage, "compositions"), "Le composizioni devono riaprirsi");
+        runFx(() -> {
+            ((TableView<?>) stage.getScene().lookup("#ton-compositions-table")).getSelectionModel().selectFirst();
+            button(stage, "ton-compositions-open").fire();
+        });
+        awaitFx(() -> compositionVersionReady(stage, 3), "La bozza deve ricaricarsi");
+        runFx(() -> selectCompositionVersion(stage, 2));
+        awaitFx(() -> compositionVersionReady(stage, 2), "La versione usata nelle specifiche deve essere v2");
+        runFx(() -> catalogTab(stage, "composition", "Utilizzi"));
+        awaitFx(() -> stage.getScene().lookup("#ton-composition-usages-table") instanceof TableView<?> table
+                && !table.isDisabled() && table.getItems().size() == 2, "Gli utilizzi devono leggere i collegamenti reali alle specifiche");
+        runFx(() -> button(stage, "ton-composition-usages-open").fire());
+        awaitFx(() -> stage.getScene().lookup("#ton-article-heading") instanceof Label l && l.getText().contains(PRODUCT_CODE), "Apri articolo deve seguire il collegamento conservato");
+        runFx(() -> button(stage, "ton-home-button").fire());
     }
 
     private void managesDiskModelsAndImmutableVersions(Stage stage) throws Exception {
@@ -525,7 +748,7 @@ class ApplicationSmokeTest {
         });
     }
 
-    private void managesTonCataloguesAndVersionedSpecifications(Stage stage, int databasePort)
+    private void managesTonCataloguesAndVersionedSpecifications(Stage stage)
             throws Exception {
         runFx(
                 () -> {
@@ -645,7 +868,7 @@ class ApplicationSmokeTest {
                     button(stage, "ton-article-spec-save").fire();
                     assertTrue(catalogFeedback(stage, "article", "Seleziona composizione"));
                 });
-        seedTonTechnicalSpecifications(databasePort);
+        createsCompositionsAndReturnsToTheArticle(stage);
         runFx(() -> button(stage, "ton-article-spec-refresh").fire());
         awaitFx(
                 () ->
@@ -754,62 +977,6 @@ class ApplicationSmokeTest {
                     button(stage, "ton-home-button").fire();
                     assertHome(stage);
                 });
-    }
-
-    private void seedTonTechnicalSpecifications(int port) throws Exception {
-        try (var c =
-                DriverManager.getConnection(
-                        "jdbc:derby://127.0.0.1:"
-                                + port
-                                + "/"
-                                + DatabaseConfiguration.DATABASE_NAME,
-                        DatabaseConfiguration.USER,
-                        DatabaseConfiguration.PASSWORD)) {
-            c.setAutoCommit(false);
-            try (var q = c.createStatement()) {
-                long product;
-                try (var r =
-                        q.executeQuery(
-                                "SELECT prodotto_id FROM TON.PRODOTTI WHERE codice='ZR-MSA2'")) {
-                    assertTrue(r.next());
-                    product = r.getLong(1);
-                }
-                long powder;
-                try (var r =
-                        q.executeQuery(
-                                "SELECT r.polvere_revisione_id FROM TON.POLVERI_REVISIONI r JOIN"
-                                    + " TON.POLVERI p ON p.polvere_id=r.polvere_id WHERE"
-                                    + " p.codice='P001' AND r.stato='APPROVATA'")) {
-                    assertTrue(r.next());
-                    powder = r.getLong(1);
-                }
-                q.executeUpdate(
-                        "INSERT INTO"
-                            + " TON.COMPOSIZIONI(prodotto_id,numero_versione,stato,approvato_il)"
-                            + " VALUES ("
-                                + product
-                                + ",1,'APPROVATA',CURRENT_TIMESTAMP)");
-                long composition;
-                try (var r =
-                        q.executeQuery(
-                                "SELECT composizione_id FROM TON.COMPOSIZIONI WHERE prodotto_id="
-                                        + product)) {
-                    assertTrue(r.next());
-                    composition = r.getLong(1);
-                }
-                q.executeUpdate(
-                        "INSERT INTO TON.COMPOSIZIONE_STRATI VALUES ("
-                                + composition
-                                + ",1,'Strato unico')");
-                q.executeUpdate(
-                        "INSERT INTO TON.COMPOSIZIONE_INGREDIENTI VALUES ("
-                                + composition
-                                + ",1,"
-                                + powder
-                                + ",100)");
-            }
-            c.commit();
-        }
     }
 
     private static boolean catalogLoaded(Stage stage, String plural) {
