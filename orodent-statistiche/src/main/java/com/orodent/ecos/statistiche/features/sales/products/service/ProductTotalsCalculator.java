@@ -12,12 +12,12 @@ public final class ProductTotalsCalculator {
         BigDecimal revenue = BigDecimal.ZERO, quantity = BigDecimal.ZERO;
         BigDecimal returnedRevenue = BigDecimal.ZERO, returnedQuantity = BigDecimal.ZERO;
         Set<String> customers = new HashSet<>();
-        Set<DocumentKey> documents = new HashSet<>();
+        Set<ProductDocumentKey> documents = new HashSet<>();
         for (ProductSale sale : sales) {
             revenue = revenue.add(sale.revenue()); quantity = quantity.add(sale.quantity());
             if (sale.sale()) {
                 customers.add(sale.customerCode());
-                documents.add(new DocumentKey(sale.customerCode(), sale.document()));
+                documents.add(ProductDocumentKey.of(sale));
             } else {
                 returnedRevenue = returnedRevenue.add(sale.revenue().abs());
                 returnedQuantity = returnedQuantity.add(sale.quantity().abs());
@@ -39,5 +39,4 @@ public final class ProductTotalsCalculator {
         return totals.quantity().signum() <= 0 ? null : totals.revenue().divide(totals.quantity(), 2, RoundingMode.HALF_UP);
     }
 
-    private record DocumentKey(String customer, String document) { }
 }

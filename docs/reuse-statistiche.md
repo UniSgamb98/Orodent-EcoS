@@ -12,6 +12,8 @@ al catalogo delle applicazioni; **Dashboard** torna al riepilogo vendite.
 - Dashboard vendite e previsioni mensili.
 - Analisi clienti: riepilogo, andamento, frequenza, follow-up, storico e proiezioni.
 - Analisi prodotti, varianti e dettaglio dei clienti.
+- Ritmo settimanale, confronto recente e quantità media/mediana per documento,
+  anche per variante: [definizioni e limiti](statistiche-ritmo-vendite.md).
 - Analisi sconti, resi e note di credito.
 - Archivio vendite, con il limite di 500 righe del progetto originale.
 - Importazione CSV vendite e anagrafica clienti, con avanzamento asincrono.

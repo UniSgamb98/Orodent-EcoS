@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 public final class ProductAnalysisCalculator {
     private final ProductCodeParser parser = new ProductCodeParser();
     private final ProductTotalsCalculator totals = new ProductTotalsCalculator();
+    private final ProductSalesPaceCalculator pace = new ProductSalesPaceCalculator();
 
     public ProductOverview overview(ProductSalesSnapshot snapshot, ProductGrouping grouping) {
         Map<String, Optional<ProductAttributes>> attributes = attributes(snapshot);
@@ -58,10 +59,11 @@ public final class ProductAnalysisCalculator {
         for (ProductVariantDimension dimension : ProductVariantDimension.values()) {
             if (!dimension.availableFor(summary.key())) continue;
             variants.put(dimension, group(current, sale -> dimension.value(attributes.get(sale.code()).orElseThrow())).entrySet().stream()
-                    .map(entry -> new ProductVariantValue(entry.getKey(), totals.total(entry.getValue()))).toList());
+                    .map(entry -> new ProductVariantValue(entry.getKey(), totals.total(entry.getValue()),
+                            pace.calculate(snapshot, entry.getValue()))).toList());
         }
         return new ProductDetailData(summary, snapshot, monthly, customers, variants,
-                new ProductProjectionService().calculate(snapshot, summary, history));
+                new ProductProjectionService().calculate(snapshot, summary, history), pace.calculate(snapshot, current));
     }
 
     private ProductGroupSummary summary(ProductSalesSnapshot snapshot, ProductGroupKey key,

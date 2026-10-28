@@ -37,6 +37,12 @@ class ProductAnalysisRepositoryTest {
             assertEquals(new BigDecimal("-50.00"),sales.get(1).revenue());
             assertEquals(new BigDecimal("-2.000"),sales.get(2).quantity());
             assertFalse(sales.get(2).sale());
+            var snapshot = new com.orodent.ecos.statistiche.features.sales.products.model.ProductSalesSnapshot(
+                    List.of(2025),2025,LocalDate.of(2025,1,3),LocalDate.of(2025,1,1),sales);
+            var pace = new com.orodent.ecos.statistiche.features.sales.products.service.ProductSalesPaceCalculator().calculate(snapshot,sales);
+            assertEquals(1,pace.documents(), "Le due righe vendute appartengono allo stesso documento");
+            assertEquals(0,new BigDecimal("30").compareTo(pace.meanDocumentQuantity()));
+            assertEquals(0,new BigDecimal("30").compareTo(pace.medianDocumentQuantity()));
             assertEquals("C2",repository.loadSales(LocalDate.of(2026,1,1),LocalDate.of(2026,1,1)).getFirst().customerName());
         } finally {
             try {DriverManager.getConnection(url+";drop=true");}

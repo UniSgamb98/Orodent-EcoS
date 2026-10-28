@@ -123,6 +123,7 @@ class ApplicationSmokeTest {
             visitAnalysis(stage, "stats-customers", "stats-customers-view", CUSTOMER_NAME, 1);
             visitCustomerDetail(stage);
             visitAnalysis(stage, "stats-products", "stats-products-view", null, 1);
+            verifiesProductSalesPace(stage);
             visitAnalysis(stage, "stats-discounts", "stats-discounts-view", CUSTOMER_NAME, 1);
             visitAnalysis(stage, "stats-returns", "stats-returns-view", CUSTOMER_NAME, 1);
             visitAnalysis(stage, "stats-archive", "stats-archive-view", CUSTOMER_NAME, 3);
@@ -275,6 +276,48 @@ class ApplicationSmokeTest {
                     && tables(page).anyMatch(table -> table.getItems().size() == expectedRows)
                     && (expectedValue == null || tableContains(page, expectedValue));
         }, "La pagina " + viewId + " non mostra i dati importati");
+    }
+
+    private static void verifiesProductSalesPace(Stage stage) throws Exception {
+        awaitFx(() -> stage.getScene().lookup("#stats-product-sales-pace-toggle") instanceof javafx.scene.control.TitledPane pane
+                && pane.getText().startsWith("Ritmo di vendita ·"), "Il dettaglio prodotti deve mostrare il ritmo settimanale");
+        runFx(() -> ((javafx.scene.control.TitledPane) stage.getScene().lookup("#stats-product-sales-pace-toggle")).setExpanded(true));
+        awaitFx(() -> {
+            Node value = stage.getScene().lookup("#stats-product-median-document");
+            return value instanceof Label label && "1,5".equals(label.getText());
+        }, "L'acquisto tipico deve usare i due documenti positivi da 1 e 2 dischi, escludendo il reso");
+        runFx(() -> {
+            assertEquals("1,5", ((Label) stage.getScene().lookup("#stats-product-mean-document")).getText());
+            String scope = ((Label) stage.getScene().lookup("#stats-product-sales-pace-scope")).getText();
+            assertTrue(scope.contains("3 dischi · 2 documenti"), scope);
+            assertTrue(scope.contains("Campione ridotto"), scope);
+            ((javafx.scene.control.TitledPane) stage.getScene().lookup("#stats-product-sales-pace-toggle")).setExpanded(false);
+            TabPane tabs = stage.getScene().getRoot().lookupAll(".tab-pane").stream()
+                    .filter(TabPane.class::isInstance).map(TabPane.class::cast)
+                    .filter(pane -> pane.getTabs().stream().anyMatch(tab -> "Varianti".equals(tab.getText())))
+                    .findFirst().orElseThrow();
+            tabs.getSelectionModel().select(tabs.getTabs().stream().filter(tab -> "Varianti".equals(tab.getText())).findFirst().orElseThrow());
+        });
+        awaitFx(() -> stage.getScene().lookup("#stats-product-variants-table") instanceof TableView<?> table
+                && table.getItems().size() == 1, "Le varianti devono mostrare il ritmo di vendita");
+        runFx(() -> {
+            TableView<?> table = (TableView<?>) stage.getScene().lookup("#stats-product-variants-table");
+            assertEquals(7, table.getColumns().size());
+            assertEquals("Dischi/sett.", table.getColumns().get(1).getText());
+            assertTrue(((BigDecimal) table.getColumns().get(1).getCellData(0)).signum() > 0);
+            assertEquals(0, new BigDecimal("1.5").compareTo((BigDecimal) table.getColumns().get(2).getCellData(0)));
+            assertEquals(0, new BigDecimal("1.5").compareTo((BigDecimal) table.getColumns().get(3).getCellData(0)));
+            assertEquals(0, new BigDecimal("2").compareTo((BigDecimal) table.getColumns().get(4).getCellData(0)));
+            javafx.scene.control.ComboBox<?> dimension = (javafx.scene.control.ComboBox<?>) stage.getScene().lookup("#stats-product-variant-dimension");
+            for (int index = 0; index < dimension.getItems().size(); index++) {
+                if ("Altezza".equals(dimension.getItems().get(index).toString())) {
+                    dimension.getSelectionModel().select(index);
+                    break;
+                }
+            }
+            assertEquals("16", table.getColumns().getFirst().getCellData(0));
+            assertEquals(0, new BigDecimal("1.5").compareTo((BigDecimal) table.getColumns().get(2).getCellData(0)));
+        });
     }
 
     private static void visitImport(Stage stage, String menuId, String viewId,

@@ -19,6 +19,8 @@
 .product-section-title { -fx-font-size: 16px; -fx-font-weight: 700; -fx-text-fill: #173f5f; }
 .product-detail-title { -fx-font-size: 20px; -fx-font-weight: 700; -fx-text-fill: #173f5f; }
 .product-scope-note { -fx-text-fill: #64748b; -fx-font-size: 12px; }
+.product-sales-pace-details > .title { -fx-background-color: #f1f7fa; }
+.product-sales-pace-details > .content { -fx-background-color: white; -fx-padding: 10px; }
 .product-metric {
     -fx-padding: 12px;
     -fx-min-width: 150px;

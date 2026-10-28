@@ -14,6 +14,8 @@ final class ProductDetailPane extends VBox {
     private final Label subtitle = label("Clicca una riga della classifica per aprire l'analisi.", "muted-label");
     private final FlowPane metrics = new FlowPane(10, 10);
     private final Label corrections = label("", "muted-label");
+    private final ProductSalesPacePane salesPace = new ProductSalesPacePane();
+    private final TitledPane salesPaceDetails = new TitledPane("Ritmo di vendita e acquisto tipico", salesPace);
     private final Label period = label("", "product-comparison-period");
     private final Label quantityChange = label("", "product-change");
     private final Label revenueChange = label("", "product-change");
@@ -25,11 +27,14 @@ final class ProductDetailPane extends VBox {
 
     ProductDetailPane() {
         setSpacing(12); getStyleClass().add("product-detail"); setMinWidth(400);
+        salesPaceDetails.setId("stats-product-sales-pace-toggle");
+        salesPaceDetails.setExpanded(false);
+        salesPaceDetails.getStyleClass().add("product-sales-pace-details");
         tabs.getTabs().setAll(new Tab("Andamento", monthly), new Tab("Clienti", customers), new Tab("Varianti", variants));
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE); tabs.getStyleClass().add("product-detail-tabs");
         FlowPane changes = new FlowPane(16, 8, quantityChange, revenueChange);
         VBox comparison = new VBox(8, period, changes); comparison.getStyleClass().add("product-comparison");
-        body = new VBox(12, metrics, corrections, comparison, tabs); body.setVisible(false); body.setManaged(false);
+        body = new VBox(12, metrics, corrections, salesPaceDetails, comparison, tabs); body.setVisible(false); body.setManaged(false);
         getChildren().addAll(title, subtitle, body);
     }
     void onCustomer(Consumer<String> action) { customers.onCustomer(action); }
@@ -49,13 +54,15 @@ final class ProductDetailPane extends VBox {
         metrics.getChildren().setAll(metric("Quantità netta", formats.number(group.current().quantity())),
                 metric("Fatturato netto", formats.money(group.current().revenue())),
                 metric("Clienti acquirenti", Integer.toString(group.current().customers())));
-        corrections.setText("Ordini di vendita: " + group.current().orders() + " · Rettifiche: "
+        corrections.setText("Documenti di vendita: " + group.current().orders() + " · Rettifiche: "
                 + formats.number(group.current().returnedQuantity()) + " unità · " + formats.money(group.current().returnedRevenue()));
         var date = data.snapshot().reference(); var format = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         period.setText("Confronto a pari data: 01/01/" + data.snapshot().year() + " – " + date.format(format)
                 + "\nRispetto a 01/01/" + (data.snapshot().year() - 1) + " – " + date.minusYears(1).format(format));
         change(quantityChange, "Quantità", group.quantityChange(), formats.number(group.current().quantity()), formats.number(group.previous().quantity()));
         change(revenueChange, "Fatturato", group.revenueChange(), formats.money(group.current().revenue()), formats.money(group.previous().revenue()));
+        salesPace.show(data.pace());
+        salesPaceDetails.setText("Ritmo di vendita · " + formats.pace(data.pace().weeklyQuantity()) + " dischi/sett.");
         monthly.show(data); customers.show(data); variants.show(data);
         body.setVisible(true); body.setManaged(true);
     }

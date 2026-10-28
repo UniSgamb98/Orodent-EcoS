@@ -5,11 +5,7 @@ import com.orodent.ecos.statistiche.features.sales.projection.model.MonthlyProje
 import java.util.Map;
 public record ProductDetailData(ProductGroupSummary group, ProductSalesSnapshot snapshot,
                                 List<ProductMonthlyValue> monthly, List<ProductCustomerValue> customers,
-                                Map<ProductVariantDimension, List<ProductVariantValue>> variants, MonthlyProjections monthlyProjections) {
+                                Map<ProductVariantDimension, List<ProductVariantValue>> variants,
+                                MonthlyProjections monthlyProjections, ProductSalesPace pace) {
     public ProductDetailData { monthly = List.copyOf(monthly); customers = List.copyOf(customers); variants = Map.copyOf(variants); }
-    public ProductDetailData(ProductGroupSummary group, ProductSalesSnapshot snapshot,
-                             List<ProductMonthlyValue> monthly, List<ProductCustomerValue> customers,
-                             Map<ProductVariantDimension, List<ProductVariantValue>> variants) {
-        this(group, snapshot, monthly, customers, variants, MonthlyProjections.empty());
-    }
 }
