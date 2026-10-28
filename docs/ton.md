@@ -12,6 +12,14 @@ Le altre aree presentano le funzioni previste con lo stato **In
 preparazione**, senza contatori fittizi o comandi di lavorazione non implementati.
 Il cubaggio rimane rinviato e non compare come funzione operativa.
 
+In Dati tecnici l'ordine per righe è **Articoli / Composizioni**, **Prodotti
+tecnici / Modelli disco**, **Linee / Polveri**, con un massimo di due colonne
+anche nelle finestre larghe. Il nome Articoli comprende anche
+le future specifiche di produzione, senza una scheda principale separata per
+le configurazioni. Vedere la [proposta per i tre cataloghi](ton-cataloghi-proposta.md),
+con anteprima HTML navigabile. La nuova gerarchia Linea → Prodotto → Articolo e
+il relativo storico restano da implementare.
+
 Il pulsante **Menu TON / Chiudi menu** permette di richiudere la barra. Sotto
 1020 pixel si richiude automaticamente, e dopo la selezione di un'area lascia
 spazio al contenuto. **Esc** la richiude nella modalità compatta. Gli elenchi e

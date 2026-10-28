@@ -42,7 +42,7 @@ final class TonPages {
                 ? "I cataloghi prodotti e polveri sono operativi. Le altre funzioni saranno attivate progressivamente."
                 : "Area in preparazione. Qui trovi le funzioni previste; le operazioni non sono ancora disponibili.", "ton-area-status"));
         List<Node> cards = TonFeature.in(section).stream().map(feature -> (Node) featureCard(feature, openFeature)).toList();
-        page.getChildren().add(grid(cards));
+        page.getChildren().add(grid(cards, section == TonSection.TECHNICAL ? 2 : 3));
         return page;
     }
 
@@ -95,13 +95,17 @@ final class TonPages {
     }
 
     private static GridPane grid(List<Node> cards) {
-        GridPane grid = new GridPane(); grid.setHgap(16); grid.setVgap(16); grid.setMinWidth(0);
-        grid.widthProperty().addListener((observable, before, width) -> arrange(grid, cards, width.doubleValue()));
-        arrange(grid, cards, 0); return grid;
+        return grid(cards, 3);
     }
 
-    private static void arrange(GridPane grid, List<Node> cards, double width) {
-        int columns = width >= 960 ? 3 : width >= 620 ? 2 : 1;
+    private static GridPane grid(List<Node> cards, int maximumColumns) {
+        GridPane grid = new GridPane(); grid.setHgap(16); grid.setVgap(16); grid.setMinWidth(0);
+        grid.widthProperty().addListener((observable, before, width) -> arrange(grid, cards, width.doubleValue(), maximumColumns));
+        arrange(grid, cards, 0, maximumColumns); return grid;
+    }
+
+    private static void arrange(GridPane grid, List<Node> cards, double width, int maximumColumns) {
+        int columns = Math.min(maximumColumns, width >= 960 ? 3 : width >= 620 ? 2 : 1);
         if (grid.getColumnConstraints().size() == columns) return;
         grid.getChildren().clear(); grid.getColumnConstraints().clear();
         for (int index = 0; index < columns; index++) {
