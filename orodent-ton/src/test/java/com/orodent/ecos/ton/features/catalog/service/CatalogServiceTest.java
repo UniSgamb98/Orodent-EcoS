@@ -66,6 +66,163 @@ class CatalogServiceTest {
     }
 
     @Test
+    void generatesProductIdentityFromTheCurrentLineAndCanonicalColor() {
+        Line line =
+                (Line)
+                        service.create(new LineDraft("MST", "Thor", "", "", "", true))
+                                .join()
+                                .entry();
+        ProductDraft pending = ProductDraft.configured(line.id(), " a0 ", "Nota", true);
+        Product product = (Product) service.create(pending).join().entry();
+        assertEquals("MSTA0", product.code());
+        assertEquals("Thor A0", product.name());
+        assertEquals("Nota", product.meta().notes());
+        assertEquals(product, service.load(CatalogKind.PRODUCTS, product.id()).join().entry());
+
+        ProductDraft beforeRename = ProductDraft.configured(line.id(), " a3.5 ", "", true);
+        service.save(line, new LineDraft("MS", "Thor aggiornata", "", "", "", true)).join();
+        Product shade = (Product) service.create(beforeRename).join().entry();
+        assertEquals("MSA3.5", shade.code());
+        assertEquals("Thor aggiornata A3.5", shade.name());
+        Product uncolored =
+                (Product)
+                        service.create(ProductDraft.configured(line.id(), "Senza colore", "", true))
+                                .join()
+                                .entry();
+        assertEquals("MS", uncolored.code());
+        assertEquals("Thor aggiornata Senza colore", uncolored.name());
+    }
+
+    @Test
+    void regeneratesUnusedProductsAndKeepsHistoryWhenSelectionsChange() {
+        Line line = line();
+        Product product =
+                (Product)
+                        service.create(ProductDraft.configured(line.id(), "A0", "", true))
+                                .join()
+                                .entry();
+        Product changed =
+                (Product)
+                        service.save(
+                                        product,
+                                        ProductDraft.configured(
+                                                line.id(), "A1", "Nuova nota", true))
+                                .join()
+                                .entry();
+        assertEquals(product.id(), changed.id());
+        assertEquals("ZR-MSTA1", changed.code());
+        assertEquals("Linea A1", changed.name());
+        var history = service.history(CatalogKind.PRODUCTS, product.id(), 0).join();
+        assertEquals(2, history.total());
+        assertEquals("ZR-MSTA0", history.rows().get(1).snapshot().code());
+        assertEquals("Linea A0", history.rows().get(1).snapshot().name());
+
+        Line other =
+                (Line) service.create(new LineDraft("HT", "High", "", "", "", true)).join().entry();
+        Product moved =
+                (Product)
+                        service.save(changed, ProductDraft.configured(other.id(), "A1", "", true))
+                                .join()
+                                .entry();
+        assertEquals("HTA1", moved.code());
+        assertEquals("High A1", moved.name());
+        article(moved, "ARTICLE");
+        Product used = (Product) service.load(CatalogKind.PRODUCTS, moved.id()).join().entry();
+        assertThrows(
+                CompletionException.class,
+                () ->
+                        service.save(used, ProductDraft.configured(other.id(), "A2", "", true))
+                                .join());
+        assertEquals(3, service.history(CatalogKind.PRODUCTS, product.id(), 0).join().total());
+    }
+
+    @Test
+    void automaticProductDuplicatesRollbackWithoutChangingIdentityOrHistory() {
+        Line line = line();
+        Product first =
+                (Product)
+                        service.create(ProductDraft.configured(line.id(), "A0", "", true))
+                                .join()
+                                .entry();
+        Product second =
+                (Product)
+                        service.create(ProductDraft.configured(line.id(), "A1", "", true))
+                                .join()
+                                .entry();
+        assertThrows(
+                CompletionException.class,
+                () -> service.create(ProductDraft.configured(line.id(), " a0 ", "", true)).join());
+        assertThrows(
+                CompletionException.class,
+                () ->
+                        service.save(second, ProductDraft.configured(line.id(), "A0", "", true))
+                                .join());
+        assertEquals(first, service.load(CatalogKind.PRODUCTS, first.id()).join().entry());
+        assertEquals(second, service.load(CatalogKind.PRODUCTS, second.id()).join().entry());
+        assertEquals(2, service.page(CatalogKind.PRODUCTS, Filter.empty(), 0).join().total());
+        assertEquals(1, service.history(CatalogKind.PRODUCTS, second.id(), 0).join().total());
+    }
+
+    @Test
+    void changingNotesPreservesExistingIdentityEvenAfterLineCorrections() {
+        Line line = line();
+        Product legacy = product(line, "A0");
+        article(legacy, "ARTICLE");
+        Line currentLine = (Line) service.load(CatalogKind.LINES, line.id()).join().entry();
+        service.save(
+                        currentLine,
+                        new LineDraft(
+                                "MS",
+                                "Nome corretto",
+                                currentLine.technology(),
+                                currentLine.material(),
+                                "",
+                                true))
+                .join();
+        Product used = (Product) service.load(CatalogKind.PRODUCTS, legacy.id()).join().entry();
+        Product changed =
+                (Product)
+                        service.save(
+                                        used,
+                                        ProductDraft.configured(
+                                                line.id(), "A0", "Nota aggiornata", true))
+                                .join()
+                                .entry();
+        assertEquals(legacy.code(), changed.code());
+        assertEquals(legacy.name(), changed.name());
+        assertEquals("Nota aggiornata", changed.meta().notes());
+        Product unchanged =
+                (Product)
+                        service.save(
+                                        changed,
+                                        ProductDraft.configured(
+                                                line.id(), "A0", "Nota aggiornata", true))
+                                .join()
+                                .entry();
+        assertEquals(changed.revision(), unchanged.revision());
+        assertEquals(2, service.history(CatalogKind.PRODUCTS, legacy.id(), 0).join().total());
+    }
+
+    @Test
+    void rejectsOversizedGeneratedCodesWithoutTruncatingOrInsertingRows() {
+        Line line =
+                (Line)
+                        service.create(new LineDraft("X".repeat(50), "Linea", "", "", "", true))
+                                .join()
+                                .entry();
+        CompletionException failure =
+                assertThrows(
+                        CompletionException.class,
+                        () ->
+                                service.create(ProductDraft.configured(line.id(), "A0", "", true))
+                                        .join());
+        assertInstanceOf(IllegalArgumentException.class, failure.getCause());
+        assertTrue(failure.getCause().getMessage().contains("50 caratteri"));
+        assertEquals(0, service.page(CatalogKind.PRODUCTS, Filter.empty(), 0).join().total());
+        assertEquals(1, service.history(CatalogKind.LINES, line.id(), 0).join().total());
+    }
+
+    @Test
     void hierarchyInheritsLineAndColorAndAllIoRunsOnBorrowedWorkers() {
         Line line = line();
         Product product = product(line, "A2");

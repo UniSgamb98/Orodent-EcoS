@@ -18,6 +18,9 @@ public final class CatalogForm extends VBox {
     private final CheckBox active = new CheckBox("Anagrafica attiva");
     private final CatalogLookup parent;
     private final Label structural = CatalogUi.hint(""), legacy = CatalogUi.hint("");
+    private final Label generatedDescription = CatalogUi.hint("");
+    private Product originalProduct;
+    private boolean showing;
 
     public CatalogForm(CatalogKind kind) {
         super(16);
@@ -69,16 +72,23 @@ public final class CatalogForm extends VBox {
             parent.choices()
                     .valueProperty()
                     .addListener(
-                            (o, a, b) ->
-                                    derived.setText(
-                                            b == null
-                                                    ? ""
-                                                    : text(b.lineCode())
-                                                            + " · "
-                                                            + colorLabelOf(b.color())));
+                            (o, a, b) -> {
+                                derived.setText(
+                                        b == null
+                                                ? ""
+                                                : text(b.lineCode())
+                                                        + " · "
+                                                        + colorLabelOf(b.color()));
+                                productPreview();
+                            });
+        color.getEditor().textProperty().addListener((o, a, b) -> productPreview());
+        generatedDescription.setId("ton-product-generated-description");
+        code.setEditable(kind != CatalogKind.PRODUCTS);
         var fields = new ArrayList<javafx.scene.Node>();
-        fields.add(CatalogUi.field("Codice *", code));
-        fields.add(CatalogUi.field(kind == CatalogKind.LINES ? "Nome *" : "Descrizione", name));
+        if (kind != CatalogKind.PRODUCTS) {
+            fields.add(CatalogUi.field("Codice *", code));
+            fields.add(CatalogUi.field(kind == CatalogKind.LINES ? "Nome *" : "Descrizione", name));
+        }
         switch (kind) {
             case LINES -> {
                 fields.add(CatalogUi.field("Tecnologia", technology));
@@ -87,6 +97,8 @@ public final class CatalogForm extends VBox {
             case PRODUCTS -> {
                 fields.add(CatalogUi.field("Linea *", parent));
                 fields.add(CatalogUi.field("Colore commerciale *", color));
+                fields.add(CatalogUi.field("Codice prodotto · automatico", code));
+                fields.add(CatalogUi.field("Descrizione · automatica", generatedDescription));
             }
             case ARTICLES -> {
                 fields.add(CatalogUi.field("Prodotto *", parent));
@@ -111,7 +123,9 @@ public final class CatalogForm extends VBox {
     }
 
     public void show(Detail detail, Choice context) {
+        showing = true;
         Entry entry = detail == null ? null : detail.entry();
+        originalProduct = entry instanceof Product p ? p : null;
         boolean used = entry != null && entry.used();
         code.setText(entry == null ? "" : entry.code());
         name.setText(entry == null ? "" : entry.name());
@@ -153,12 +167,12 @@ public final class CatalogForm extends VBox {
                                         + " note.";
                             case PRODUCTS ->
                                     "Il prodotto è già utilizzato: linea e colore già definiti ne"
-                                        + " identificano il gruppo. Puoi completare i valori"
-                                        + " mancanti o correggere la descrizione.";
+                                            + " identificano il gruppo. Puoi completare i valori"
+                                            + " mancanti e modificare le note.";
                             case ARTICLES ->
                                     "L'articolo è già configurato. Per cambiare prodotto o formato"
-                                        + " crea un nuovo articolo. Codice, descrizione e note"
-                                        + " restano modificabili con storico.";
+                                            + " crea un nuovo articolo. Codice, descrizione e note"
+                                            + " restano modificabili con storico.";
                         }
                         : "");
         CatalogUi.visible(structural, used);
@@ -172,6 +186,40 @@ public final class CatalogForm extends VBox {
                                 + " restano conservati."
                         : "");
         CatalogUi.visible(legacy, !legacy.getText().isEmpty());
+        showing = false;
+        productPreview();
+    }
+
+    private void productPreview() {
+        if (kind != CatalogKind.PRODUCTS || showing) return;
+        Choice line = parent.value();
+        generatedDescription.getStyleClass().remove("ton-error-feedback");
+        try {
+            String selectedColor = commercialColor(color.getEditor().getText());
+            if (line == null || selectedColor == null) {
+                code.clear();
+                name.clear();
+                generatedDescription.setText("Seleziona linea e colore.");
+                return;
+            }
+            if (originalProduct != null
+                    && originalProduct.line() != null
+                    && originalProduct.line().id() == line.id()
+                    && Objects.equals(originalProduct.color(), selectedColor)) {
+                code.setText(originalProduct.code());
+                name.setText(originalProduct.name());
+                generatedDescription.setText(originalProduct.name());
+                return;
+            }
+            code.setText(productCode(line.code(), selectedColor));
+            name.setText(productDescription(line.name(), selectedColor));
+            generatedDescription.setText(name.getText());
+        } catch (IllegalArgumentException invalid) {
+            code.clear();
+            name.clear();
+            generatedDescription.setText(invalid.getMessage());
+            generatedDescription.getStyleClass().add("ton-error-feedback");
+        }
     }
 
     public Draft draft() {
@@ -185,9 +233,7 @@ public final class CatalogForm extends VBox {
                             notes.getText(),
                             active.isSelected());
             case PRODUCTS ->
-                    new ProductDraft(
-                            code.getText(),
-                            name.getText(),
+                    ProductDraft.configured(
                             parent.id(),
                             color.getEditor().getText(),
                             notes.getText(),
@@ -205,6 +251,12 @@ public final class CatalogForm extends VBox {
     }
 
     public List<String> fingerprint() {
+        if (kind == CatalogKind.PRODUCTS)
+            return List.of(
+                    notes.getText(),
+                    Boolean.toString(active.isSelected()),
+                    color.getEditor().getText(),
+                    parent.id() == null ? "" : parent.id().toString());
         return List.of(
                 code.getText(),
                 name.getText(),

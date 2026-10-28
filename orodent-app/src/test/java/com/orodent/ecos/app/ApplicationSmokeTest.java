@@ -183,11 +183,12 @@ class ApplicationSmokeTest {
         runFx(() -> {
             assertEquals("TON › Dati tecnici › Prodotti tecnici", ((Label) stage.getScene().lookup("#ton-breadcrumb")).getText());
             button(stage,"ton-product-new").fire();
-            text(stage,"ton-product-code").setText("NON SALVATO");
+            text(stage,"ton-product-code");
+            ((javafx.scene.control.TextArea) stage.getScene().lookup("#ton-product-notes")).setText("NON SALVATO");
             Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.NO));
             button(stage, "ton-nav-documents").fire();
             assertNotNull(stage.getScene().lookup("#ton-products-view"));
-            assertEquals("NON SALVATO", ((javafx.scene.control.TextField) stage.getScene().lookup("#ton-product-code")).getText());
+            assertEquals("NON SALVATO", ((javafx.scene.control.TextArea) stage.getScene().lookup("#ton-product-notes")).getText());
             assertTrue(buttonUnchecked(stage, "ton-nav-technical").getPseudoClassStates().contains(
                     javafx.css.PseudoClass.getPseudoClass("selected")));
             Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.YES));
@@ -403,12 +404,25 @@ class ApplicationSmokeTest {
                 "La nuova scheda deve ereditare la linea");
         runFx(
                 () -> {
-                    text(stage, "ton-product-code").setText(" zr-ms-a2 ");
-                    text(stage, "ton-product-description").setText("Prodotto MS A2");
+                    assertFalse(text(stage, "ton-product-code").isEditable());
+                    assertNull(stage.getScene().lookup("#ton-product-description"));
+                    ((javafx.scene.control.ComboBox<?>)
+                                    stage.getScene().lookup("#ton-product-color"))
+                            .getEditor()
+                            .setText("A0");
+                    assertEquals("ZR-MSA0", text(stage, "ton-product-code").getText());
+                    ((javafx.scene.control.ComboBox<?>)
+                                    stage.getScene().lookup("#ton-product-color"))
+                            .getEditor()
+                            .setText("X".repeat(31));
+                    assertEquals("", text(stage, "ton-product-code").getText());
                     ((javafx.scene.control.ComboBox<?>)
                                     stage.getScene().lookup("#ton-product-color"))
                             .getEditor()
                             .setText("a2");
+                    assertEquals("ZR-MSA2", text(stage, "ton-product-code").getText());
+                    assertEquals("Linea MS corretta A2", ((Label) stage.getScene()
+                            .lookup("#ton-product-generated-description")).getText());
                     button(stage, "ton-product-save").fire();
                 });
         awaitFx(
@@ -427,7 +441,7 @@ class ApplicationSmokeTest {
                         stage.getScene().lookup("#ton-article-parent")
                                         instanceof javafx.scene.control.ComboBox<?> box
                                 && box.getValue() != null
-                                && box.getValue().toString().startsWith("ZR-MS-A2"),
+                                && box.getValue().toString().startsWith("ZR-MSA2"),
                 "Il nuovo articolo deve ereditare il prodotto");
         runFx(
                 () -> {
@@ -578,7 +592,7 @@ class ApplicationSmokeTest {
                 long product;
                 try (var r =
                         q.executeQuery(
-                                "SELECT prodotto_id FROM TON.PRODOTTI WHERE codice='ZR-MS-A2'")) {
+                                "SELECT prodotto_id FROM TON.PRODOTTI WHERE codice='ZR-MSA2'")) {
                     assertTrue(r.next());
                     product = r.getLong(1);
                 }

@@ -187,7 +187,8 @@ public final class CatalogModels {
             String code, String name, Long lineId, String color, String notes, boolean active)
             implements Draft {
         public ProductDraft {
-            code = CatalogModels.code(code, 50);
+            // An empty code requests composition from the selected line and colour.
+            code = text(code).isEmpty() ? "" : CatalogModels.code(code, 50);
             name = limited(name, 200, "Descrizione");
             notes = limited(notes, 1000, "Note");
             color = commercialColor(color);
@@ -203,6 +204,30 @@ public final class CatalogModels {
             if (lineId == null || color == null)
                 throw invalid("Seleziona la linea e il colore commerciale del prodotto.");
         }
+
+        public static ProductDraft configured(
+                Long lineId, String color, String notes, boolean active) {
+            return new ProductDraft("", "", lineId, color, notes, active);
+        }
+    }
+
+    public static String productCode(String lineCode, String color) {
+        String canonical = commercialColor(color);
+        if (text(lineCode).isEmpty() || canonical == null)
+            throw invalid("Seleziona linea e colore per generare il codice.");
+        String result =
+                text(lineCode).toUpperCase(Locale.ROOT)
+                        + ("SENZA_COLORE".equals(canonical) ? "" : canonical);
+        if (result.length() > 50)
+            throw invalid(
+                    "Il codice generato supera 50 caratteri. Riduci il codice della linea o il"
+                        + " colore commerciale.");
+        return result;
+    }
+
+    public static String productDescription(String lineName, String color) {
+        String canonical = commercialColor(color);
+        return text(lineName) + (canonical == null ? "" : " " + colorLabelOf(canonical));
     }
 
     public record ArticleDraft(
@@ -452,7 +477,7 @@ public final class CatalogModels {
         public Conflict() {
             super(
                     "L'anagrafica è stata modificata da un altro operatore. Ricarica la scheda"
-                        + " prima di riprovare; le tue modifiche restano nell'editor.");
+                            + " prima di riprovare; le tue modifiche restano nell'editor.");
         }
     }
 }

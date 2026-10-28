@@ -68,8 +68,9 @@ public final class CatalogService {
                                     var repo = new CatalogRepository(c);
                                     lockParents(repo, null, draft);
                                     validateParents(repo, null, draft);
-                                    verifyCode(repo, draft.kind(), 0, draft.code());
-                                    long id = repo.insert(draft);
+                                    Draft resolved = resolveProduct(repo, null, draft);
+                                    verifyCode(repo, resolved.kind(), 0, resolved.code());
+                                    long id = repo.insert(resolved);
                                     Entry result = repo.load(draft.kind(), id);
                                     new CatalogHistoryRepository(c).record(result, "CREAZIONE");
                                     return detail(c, result);
@@ -90,10 +91,12 @@ public final class CatalogService {
                                     verifyExpected(current, expected);
                                     new CatalogHistoryRepository(c).verifyCurrent(current);
                                     validateParents(repo, current, draft);
-                                    validateStructure(current, draft);
-                                    verifyCode(repo, draft.kind(), expected.id(), draft.code());
-                                    if (draft(current).equals(draft)) return detail(c, current);
-                                    repo.update(current, draft);
+                                    Draft resolved = resolveProduct(repo, current, draft);
+                                    validateStructure(current, resolved);
+                                    verifyCode(
+                                            repo, resolved.kind(), expected.id(), resolved.code());
+                                    if (draft(current).equals(resolved)) return detail(c, current);
+                                    repo.update(current, resolved);
                                     Entry result = repo.load(current.kind(), current.id());
                                     new CatalogHistoryRepository(c).record(result, "MODIFICA");
                                     return detail(c, result);
@@ -136,7 +139,7 @@ public final class CatalogService {
                                     if (!deletable(c, current))
                                         throw invalid(
                                                 "L'anagrafica è utilizzata o ha uno storico da"
-                                                    + " conservare. Puoi archiviarla.");
+                                                        + " conservare. Puoi archiviarla.");
                                     repo.delete(current);
                                     return null;
                                 }));
@@ -192,6 +195,33 @@ public final class CatalogService {
         }
     }
 
+    private static Draft resolveProduct(CatalogRepository repo, Entry current, Draft submitted)
+            throws SQLException {
+        if (!(submitted instanceof ProductDraft requested) || !requested.code().isEmpty())
+            return submitted;
+        // Unchanged selections preserve existing product identifiers and descriptions.
+        // A new selection is resolved from authoritative, locked DB data, never UI previews.
+        if (current instanceof Product existing
+                && existing.line() != null
+                && Objects.equals(existing.line().id(), requested.lineId())
+                && Objects.equals(existing.color(), requested.color()))
+            return new ProductDraft(
+                    existing.code(),
+                    existing.name(),
+                    requested.lineId(),
+                    requested.color(),
+                    requested.notes(),
+                    requested.active());
+        Line line = (Line) repo.load(CatalogKind.LINES, requested.lineId());
+        return new ProductDraft(
+                productCode(line.code(), requested.color()),
+                productDescription(line.name(), requested.color()),
+                requested.lineId(),
+                requested.color(),
+                requested.notes(),
+                requested.active());
+    }
+
     private static void requireComplete(Draft draft) {
         Objects.requireNonNull(draft);
         if (draft instanceof ProductDraft p) p.requireComplete();
@@ -215,7 +245,7 @@ public final class CatalogService {
             if (!product.available() && !same)
                 throw invalid(
                         "Il prodotto o la sua linea sono archiviati, oppure il prodotto è da"
-                            + " completare.");
+                                + " completare.");
         }
     }
 
@@ -227,13 +257,13 @@ public final class CatalogService {
                         || !l.material().isBlank() && !l.material().equals(d.material())))
             throw invalid(
                     "La linea è già utilizzata. Per cambiare tecnologia o materia prima crea una"
-                        + " nuova linea.");
+                            + " nuova linea.");
         if (current instanceof Product p && draft instanceof ProductDraft d) {
             if (p.line() != null && !Objects.equals(p.line().id(), d.lineId())
                     || p.color() != null && !Objects.equals(p.color(), d.color()))
                 throw invalid(
                         "Il prodotto è già utilizzato. Per cambiare linea o colore crea un nuovo"
-                            + " prodotto.");
+                                + " prodotto.");
         }
         if (current instanceof Article a
                 && draft instanceof ArticleDraft d
@@ -242,7 +272,7 @@ public final class CatalogService {
                         || a.height().compareTo(d.height()) != 0))
             throw invalid(
                     "L'articolo è già configurato. Per cambiare prodotto o formato crea un nuovo"
-                        + " articolo.");
+                            + " articolo.");
     }
 
     private static void verifyCode(CatalogRepository repo, CatalogKind kind, long id, String code)
@@ -257,7 +287,7 @@ public final class CatalogService {
                 > 0)
             throw invalid(
                     "Questo codice è già stato utilizzato da un'altra anagrafica. Scegli un codice"
-                        + " diverso per conservare i riferimenti storici.");
+                            + " diverso per conservare i riferimenti storici.");
     }
 
     private <T> CompletableFuture<T> read(Supplier<T> query) {
@@ -275,12 +305,12 @@ public final class CatalogService {
                                 if ("23505".equals(sql.getSQLState()))
                                     throw new IllegalArgumentException(
                                             "Esiste già un codice o una combinazione con questi"
-                                                + " dati. Nessuna modifica è stata salvata.",
+                                                    + " dati. Nessuna modifica è stata salvata.",
                                             failure);
                                 if ("23503".equals(sql.getSQLState()))
                                     throw new IllegalArgumentException(
                                             "Esistono collegamenti da conservare. Nessuna modifica"
-                                                + " è stata salvata; ricarica la scheda.",
+                                                    + " è stata salvata; ricarica la scheda.",
                                             failure);
                             }
                         }

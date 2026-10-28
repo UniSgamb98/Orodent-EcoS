@@ -18,6 +18,22 @@ L'ID interno resta stabile; lo storico conserva anche i codici precedenti,
 che non possono essere assegnati a un'altra anagrafica attraverso i servizi.
 L'apertura delle vendite dalla scheda TON sarà un passaggio successivo.
 
+## Creazione dei prodotti
+
+Si scelgono **linea** e **colore commerciale**: codice e descrizione appaiono
+in anteprima e non richiedono compilazione manuale. Con la linea di codice
+**MST**, nome **Thor** e colore **A0** si ottengono **MSTA0** e **Thor A0**.
+Il codice concatena codice linea e colore senza separatori aggiuntivi;
+**Senza colore** usa il solo codice linea, con descrizione **Thor Senza colore**.
+Le note restano libere.
+
+Il servizio genera i valori dai dati correnti della linea nel DB. Cambiando
+linea o colore di un prodotto non ancora utilizzato li ricalcola e conserva
+la revisione precedente. Se linea e colore non cambiano, un prodotto esistente
+conserva codice e descrizione già salvati, anche se diversi dal nuovo formato:
+una modifica alle note o una correzione del nome della linea non lo rinomina.
+Questa modifica non richiede una nuova migrazione del DB.
+
 ## Elenchi e collegamenti
 
 Gli elenchi cercano codice o descrizione e sono paginati in gruppi di 50.
@@ -64,7 +80,9 @@ Identità strutturali già utilizzate non cambiano significato:
   completare dopo aver verificato le associazioni precedenti.
 - Un articolo già configurato mantiene prodotto e formato.
 
-Codice, descrizioni e note restano correggibili con storico. Per rappresentare
+Codice e nome della linea, codice e descrizione dell'articolo e le note restano
+correggibili con storico. Nel prodotto codice e descrizione seguono le regole
+di generazione descritte sopra. Per rappresentare
 una tecnologia, combinazione o formato diverso si crea una nuova anagrafica.
 Un codice non può duplicare quello di un elemento archiviato né riutilizzare
 quello conservato nello storico di un'altra identità.
