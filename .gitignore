@@ -42,3 +42,6 @@ build/
 
 # Private release signing material: never commit
 .release-keys/
+
+# Local dependencies used only to rebuild the bundled document editor
+node_modules/

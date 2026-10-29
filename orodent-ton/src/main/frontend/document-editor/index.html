@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="it" data-editor-ready="false">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-__EDITOR_SCRIPT_SHA256__'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Editor documenti Orodent-EcoS</title>
+  <!-- LOCAL_STYLE -->
+</head>
+<body>
+  <nav class="toolbar" aria-label="Strumenti del documento">
+    <button type="button" data-command="bold" aria-label="Grassetto" aria-pressed="false"><b>Grassetto</b></button>
+    <button type="button" data-command="italic" aria-label="Corsivo" aria-pressed="false"><i>Corsivo</i></button>
+    <button type="button" data-command="underline" aria-label="Sottolineato" aria-pressed="false"><u>Sottolineato</u></button>
+    <span class="separator" aria-hidden="true"></span>
+    <button type="button" data-command="table">Inserisci tabella</button>
+    <button type="button" data-command="addRowAfter">Aggiungi riga</button>
+    <button type="button" data-command="addColumnAfter">Aggiungi colonna</button>
+    <span class="separator" aria-hidden="true"></span>
+    <button type="button" data-command="undo">Annulla</button>
+    <button type="button" data-command="redo">Ripeti</button>
+  </nav>
+  <p id="error" role="alert" hidden>Impossibile caricare l’editor del documento.</p>
+  <main><div id="editor"></div></main>
+  <!-- LOCAL_SCRIPT -->
+</body>
+</html>

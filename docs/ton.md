@@ -21,6 +21,7 @@ contatori fittizi o comandi non implementati. Il cubaggio resta rinviato.
 - [Modelli disco, strati, sovramateriali e versioni](ton-modelli-disco.md).
 - [Composizioni, ricette per strato, ossidi e utilizzi](ton-composizioni.md).
 - [Proposta dell'editor visuale dei documenti](ton-documenti-proposta.md), non ancora integrato.
+- [Base Tiptap offline e ricostruzione delle risorse](ton-editor-offline.md).
 - [Struttura e collegamenti del dominio TON](ton-schema-proposta.md).
 - [Proposta grafica di riferimento](ton-cataloghi-proposta.md).
 

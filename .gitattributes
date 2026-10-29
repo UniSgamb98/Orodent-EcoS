@@ -1,0 +1,5 @@
+# Keep committed editor bundles reproducible on Windows and Linux.
+orodent-ton/src/main/frontend/document-editor/** text eol=lf
+orodent-ton/src/main/resources/ton/document-editor/** text eol=lf
+# Preserve significant spaces in upstream JavaScript template literals.
+orodent-ton/src/main/resources/ton/document-editor/index.html -whitespace

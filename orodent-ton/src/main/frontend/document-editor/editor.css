@@ -1,0 +1,32 @@
+:root { font: 14px/1.5 "Segoe UI", Arial, sans-serif; color: #173f5f; background: #edf2f6; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+.toolbar { position: sticky; top: 0; display: flex; flex-wrap: wrap; gap: 7px; padding: 12px 18px; background: white; border-bottom: 1px solid #dce5ed; z-index: 2; }
+button { font: inherit; padding: 7px 11px; color: #173f5f; background: #edf3f7; border: 1px solid transparent; border-radius: 5px; cursor: pointer; }
+button:hover:not(:disabled) { background: #dcebf2; }
+button[aria-pressed="true"] { border-color: #176d86; background: #deeff5; }
+button:disabled { opacity: .4; cursor: default; }
+button:focus-visible { outline: 2px solid #176d86; outline-offset: 2px; }
+.separator { align-self: center; width: 1px; height: 24px; background: #dce5ed; margin: 0 5px; }
+main { max-width: 900px; margin: 24px auto; padding: 0 18px; }
+#editor { background: white; box-shadow: 0 2px 14px #173f5f14; }
+.tiptap { min-height: 650px; padding: 45px; color: #243c4c; overflow-wrap: break-word; }
+.tiptap:focus { outline: none; }
+.tiptap h1 { font-size: 27px; color: #173f5f; margin: 0 0 20px; }
+.tiptap h2 { font-size: 21px; }
+.tiptap p { margin: 0 0 12px; }
+.tiptap blockquote { border-left: 3px solid #bad5e1; margin: 15px 0; padding-left: 15px; }
+.tiptap ul, .tiptap ol { padding-left: 24px; }
+.tiptap table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 18px 0; }
+.tiptap th, .tiptap td { position: relative; border: 1px solid #c9dbe5; padding: 9px 12px; min-width: 45px; vertical-align: top; }
+.tiptap th { background: #edf4f8; font-weight: 600; }
+.tiptap td p, .tiptap th p { margin: 0; }
+.tiptap .tableWrapper { overflow-x: auto; }
+.tiptap .selectedCell::after { content: ""; position: absolute; inset: 0; background: #176d8626; pointer-events: none; }
+.tiptap .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: -2px; width: 4px; background: #268ca8; pointer-events: none; }
+.tiptap.resize-cursor { cursor: col-resize; }
+.tiptap .ProseMirror-gapcursor { display: none; pointer-events: none; position: absolute; }
+.tiptap .ProseMirror-gapcursor::after { content: ""; display: block; position: absolute; top: -2px; width: 20px; border-top: 1px solid #173f5f; }
+.tiptap.ProseMirror-focused .ProseMirror-gapcursor { display: block; }
+#error { margin: 20px; color: #9d4139; }
+@media (max-width: 600px) { .tiptap { padding: 22px; } main { padding: 0 10px; } }
