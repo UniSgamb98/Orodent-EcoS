@@ -51,7 +51,11 @@ emessi e i modelli di cottura verranno collegati ai rispettivi flussi produttivi
 - **Blocchi TON:** produzione, parametri pressa, pesature per formato, miscele,
   totali e firme. Inserirli con un clic o trascinarli dalla palette. Selezionare
   il bordo per modificare titolo, carattere, dimensione del testo e spaziatura;
-  trascinare la maniglia per riordinarli.
+  trascinare la maniglia per riordinarli. Il gesto è gestito con eventi puntatore
+  nell’editor, evitando la conversione dei blocchi in etichette testuali da parte
+  del drag and drop nativo di WebView. Esc annulla il trascinamento.
+  Le etichette già inserite come testo con la vecchia versione non si convertono
+  automaticamente: eliminarle e reinserire i blocchi dalla palette.
   I dati operativi sono in sola lettura. Nei blocchi pesature, g/mm e ppm sono
   facoltativi. Pesi, conteggi, spessori e pressione restano visibili.
 - **Campi nel testo:** inserire numero produzione, data, linea, prodotto e numero
@@ -86,7 +90,8 @@ In `orodent-ton/src/main/frontend/document-editor/`:
 | File | Responsabilità |
 | --- | --- |
 | `editor.js` | Creazione Tiptap, sessione, stato delle modifiche e ponte per l’host JavaFX |
-| `editor-ui.js` | Toolbar, pannelli, dialoghi, trascinamento, import/export e rilascio dei listener |
+| `editor-ui.js` | Toolbar, pannelli, dialoghi, import/export e rilascio dei listener |
+| `editor-drag.js` | Trascinamento della palette, riordino dei blocchi, indicatore di inserimento e scorrimento |
 | `extensions.js` | Nodi per blocchi TON, campi, colonne, immagini locali e proprietà delle tabelle |
 | `document-model.js` | Schema JSON, validazione, migrazione del contenuto testuale v1 e impostazioni della pagina |
 | `laboratory-blocks.js` | Presentazione dei blocchi e controllo della struttura operativa |

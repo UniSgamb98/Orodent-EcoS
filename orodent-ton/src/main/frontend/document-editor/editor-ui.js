@@ -1,3 +1,4 @@
+import { mountEditorDrag } from './editor-drag.js';
 import { NodeSelection } from '@tiptap/pm/state';
 import { blockTypes, fields, escape, checkOperationalContent } from './laboratory-blocks.js';
 
@@ -58,7 +59,7 @@ export function mountEditorUI(editor, model) {
   }
 
   function palette(kind, title, symbol, automatic = false) {
-    return `<button class="palette-button ${automatic ? 'automatic' : ''}" data-insert="${kind}" draggable="${!['table', 'image'].includes(kind)}"><span class="symbol" aria-hidden="true">${symbol}</span><span>${title}${automatic ? '<small>Compilato dalla produzione</small>' : ''}</span></button>`;
+    return `<button class="palette-button ${automatic ? 'automatic' : ''}" data-insert="${kind}" draggable="false"><span class="symbol" aria-hidden="true">${symbol}</span><span>${title}${automatic ? '<small>Compilato dalla produzione</small>' : ''}</span></button>`;
   }
   $('basic-palette').innerHTML = [
     ['heading', 'Titolo', 'H'], ['text', 'Testo libero', 'T'], ['table', 'Tabella libera', '▦'],
@@ -68,25 +69,8 @@ export function mountEditorUI(editor, model) {
   $('field-palette').innerHTML = Object.entries(fields).map(([key, value]) => palette('field:' + key, value[0], '［］')).join('');
   for (const button of document.querySelectorAll('[data-insert]')) {
     on(button, 'click', () => insert(button.dataset.insert));
-    on(button, 'dragstart', event => {
-      if (!editor.isEditable || button.draggable === false) return event.preventDefault();
-      event.dataTransfer.setData('application/x-orodent-block', button.dataset.insert);
-      event.dataTransfer.setData('text/plain', button.textContent.trim());
-      event.dataTransfer.effectAllowed = 'copy';
-    });
   }
-  on($('editor'), 'dragover', event => {
-    if (editor.isEditable && [...event.dataTransfer.types].includes('application/x-orodent-block')) event.preventDefault();
-  });
-  // Capture the palette payload before ProseMirror handles native internal moves.
-  const drop = event => {
-    const kind = event.dataTransfer?.getData('application/x-orodent-block');
-    if (!kind || !editor.isEditable) return;
-    event.preventDefault(); event.stopPropagation();
-    const pos = editor.view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos;
-    insert(kind, pos ?? editor.state.doc.content.size);
-  };
-  $('editor').addEventListener('drop', drop, true); cleanup.push(() => $('editor').removeEventListener('drop', drop, true));
+  cleanup.push(mountEditorDrag(editor, insert));
 
   function run(command) {
     if (!commandAllowed(command)) return false;

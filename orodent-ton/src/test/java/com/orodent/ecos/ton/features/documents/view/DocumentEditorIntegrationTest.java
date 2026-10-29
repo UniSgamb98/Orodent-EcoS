@@ -9,8 +9,11 @@ import com.orodent.ecos.module.*;
 import com.orodent.ecos.ton.TonModule;
 
 import javafx.application.Platform;
+import javafx.geometry.Point2D;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseButton;
+import javafx.scene.robot.Robot;
 import javafx.scene.web.WebView;
 import javafx.stage.*;
 
@@ -89,6 +92,7 @@ class DocumentEditorIntegrationTest {
                                                     .executeScript(
                                                             "document.documentElement.dataset.editorReady==='true'"))
                                     && !button("ton-document-save").isDisabled());
+            verifiesNativePointerDrag();
             fx(
                     () -> {
                         assertTrue(
@@ -121,7 +125,7 @@ class DocumentEditorIntegrationTest {
                         web().getEngine()
                                 .executeScript(
                                         "document.getElementById('template-title').value='Foglio"
-                                            + " laboratorio offline'");
+                                                + " laboratorio offline'");
                         ((TextField) stage.getScene().lookup("#ton-document-code"))
                                 .setText("LAB-TEST");
                         click("ton-document-save");
@@ -169,7 +173,7 @@ class DocumentEditorIntegrationTest {
                         web().getEngine()
                                 .executeScript(
                                         "document.getElementById('template-title').value='Modifiche"
-                                            + " non salvate'");
+                                                + " non salvate'");
                         Platform.runLater(() -> answerDialog(ButtonType.CANCEL));
                         click("ton-document-back");
                         assertNotNull(web(), "The dirty guard must keep the editor open");
@@ -238,7 +242,7 @@ class DocumentEditorIntegrationTest {
                         try (var q =
                                 c.prepareStatement(
                                         "SELECT stato,nome FROM TON.MODELLI_DOCUMENTO WHERE"
-                                            + " modello_documento_id=?")) {
+                                                + " modello_documento_id=?")) {
                             q.setLong(1, firstId);
                             try (var r = q.executeQuery()) {
                                 r.next();
@@ -267,6 +271,90 @@ class DocumentEditorIntegrationTest {
             if (oldLog == null) System.clearProperty("derby.stream.error.file");
             else System.setProperty("derby.stream.error.file", oldLog);
         }
+    }
+
+    private void verifiesNativePointerDrag() throws Exception {
+        String before = fx(() -> api().call("serialize").toString());
+        fx(
+                () -> {
+                    stage.setWidth(1200);
+                    stage.setHeight(760);
+                    web().getEngine()
+                            .executeScript(
+                                    "document.querySelector('[data-insert=press]').scrollIntoView({block:'center'})");
+                    return null;
+                });
+        Thread.sleep(200);
+        Point2D source = fx(() -> point("[data-insert=press]", .5, .5));
+        Point2D target = fx(() -> point(".tiptap > h1", .1, .3));
+        fx(
+                () -> {
+                    var robot = new Robot();
+                    robot.mouseMove(source);
+                    robot.mousePress(MouseButton.PRIMARY);
+                    return null;
+                });
+        try {
+            for (int i = 1; i <= 12; i++) {
+                final int step = i;
+                fx(
+                        () -> {
+                            new Robot()
+                                    .mouseMove(
+                                            source.getX()
+                                                    + (target.getX() - source.getX()) * step / 12.0,
+                                            source.getY()
+                                                    + (target.getY() - source.getY())
+                                                            * step
+                                                            / 12.0);
+                            return null;
+                        });
+                Thread.sleep(25);
+            }
+        } finally {
+            fx(
+                    () -> {
+                        new Robot().mouseRelease(MouseButton.PRIMARY);
+                        return null;
+                    });
+        }
+        await(
+                () ->
+                        ((Number)
+                                                web().getEngine()
+                                                        .executeScript(
+                                                                "document.querySelectorAll('.tiptap"
+                                                                    + " [data-ton-block=press]').length"))
+                                        .intValue()
+                                == 2);
+        fx(
+                () -> {
+                    String after = api().call("serialize").toString();
+                    assertTrue(after.contains("tonBlock"));
+                    assertFalse(
+                            after.contains("Parametri della pressaCompilato dalla produzione"),
+                            "A drag must insert a block, not the palette label");
+                    api().call("restore", before);
+                    stage.setWidth(1440);
+                    stage.setHeight(900);
+                    return null;
+                });
+    }
+
+    private Point2D point(String selector, double x, double y) {
+        String quoted = new com.google.gson.Gson().toJson(selector);
+        JSObject rect =
+                (JSObject)
+                        web().getEngine()
+                                .executeScript(
+                                        "document.querySelector("
+                                                + quoted
+                                                + ").getBoundingClientRect()");
+        return web().localToScreen(
+                        ((Number) rect.getMember("left")).doubleValue()
+                                + ((Number) rect.getMember("width")).doubleValue() * x,
+                        ((Number) rect.getMember("top")).doubleValue()
+                                + ((Number) rect.getMember("height")).doubleValue() * y);
     }
 
     private WebView web() {
