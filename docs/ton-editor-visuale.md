@@ -1,11 +1,37 @@
 # Editor visuale offline: prima versione
 
-La pagina inclusa nelle risorse di TON è ora un editor Tiptap utilizzabile, con
-pannelli Inserisci/Proprietà e un documento di laboratorio dimostrativo.
-Non è ancora collegata al menu Documenti dell'applicazione o al DB produttivo.
-Per provarla dopo il Pull, aprire nel browser
-`orodent-ton/src/main/resources/ton/document-editor/index.html`: è un file
-autosufficiente e non richiede server o connessione Internet.
+Aprire **TON → Documenti → Modelli documento → Nuovo modello**.
+L’editor Tiptap è incluso nell’applicazione e non richiede Internet. I pannelli
+Inserisci/Proprietà permettono di progettare il foglio operativo con un esempio
+completo di laboratorio. I modelli si salvano nel database condiviso di EcoS.
+
+La stessa pagina può ancora essere provata nel browser aprendo
+`orodent-ton/src/main/resources/ton/document-editor/index.html`: in questa modalità
+separata i modelli si conservano solo tramite esportazione JSON.
+
+## Bozze e versioni nel progetto
+
+1. Scegliere **Nuovo modello**, inserire un codice stabile (es. `PRESSATURA`) e
+   modificare il nome direttamente nell’editor. Il codice identifica la famiglia
+   delle versioni; dopo il primo salvataggio non cambia.
+2. **Salva bozza** conserva nome, layout, testi e immagini nel DB condiviso.
+   L’elenco mostra l’ultima versione per codice; la ricerca usa codice e nome.
+3. **Salva e approva** verifica la presenza dei blocchi operativi essenziali e
+   rende la versione di sola lettura. La verifica non certifica calcoli produttivi.
+4. **Nuova versione** copia la versione selezionata in una nuova bozza. Per ogni
+   codice può esistere una sola bozza, anche con richieste concorrenti.
+5. Il selettore **Versione** riapre lo storico senza modificare i contenuti approvati.
+   **Elimina bozza** elimina soltanto la bozza selezionata; le versioni approvate
+   rimangono conservate.
+
+Le modifiche non salvate richiedono conferma prima di cambiare pagina, versione o
+chiudere la finestra. Durante un salvataggio non si può lasciare la scheda.
+I conflitti fra postazioni vengono rifiutati e il contenuto locale resta
+nell’editor; **Esporta JSON** permette di conservarlo prima di ricaricare.
+Le scritture interrotte non vengono ripetute automaticamente.
+
+Questa prima integrazione riguarda i **modelli di produzione**. I documenti
+emessi e i modelli di cottura verranno collegati ai rispettivi flussi produttivi.
 
 ## Comandi disponibili
 
@@ -34,17 +60,19 @@ autosufficiente e non richiede server o connessione Internet.
   e tabelle. Nome del file, formato pagina e margini sono impostazioni del modello
   conservate separatamente dalla cronologia del contenuto.
 
-## Modelli locali e anteprima
+## File e anteprima
 
-**Esporta modello** scarica un file JSON contenente testo, struttura, immagini e
-impostazioni della pagina. **Apri modello** lo ricarica; gli import non validi
-mantengono il contenuto corrente. Le modifiche sono in memoria fino all'esportazione;
-non vengono salvate nel database di EcoS. La pagina non è un archivio di versioni.
+Nell’applicazione **Esporta JSON** e **Importa JSON** usano i dialoghi nativi di
+Windows. L’import sostituisce il contenuto della bozza corrente, dopo la conferma
+per eventuali modifiche locali, e deve essere salvato nel DB. Un import non valido
+mantiene il contenuto corrente. I modelli hanno un limite di 8 MB; le immagini
+singole di 2 MB. Nel browser separato gli stessi comandi sono Apri/Esporta modello.
 
 **Verifica** segnala eventuali blocchi mancanti per una scheda operativa TON.
-Il comando non approva un modello e non certifica calcoli o dati produttivi.
-**Anteprima** mostra il contenuto compilato con gli esempi e offre la stampa
-del browser. Questo non produce ancora il PDF archiviato collegato alla produzione.
+**Anteprima** mostra il contenuto compilato con esempi. Nell’app non è ancora
+abilitata la stampa definitiva: prima devono essere collegati calcoli, produzione
+e conservazione del PDF emesso. La pagina aperta separatamente nel browser offre
+la stampa del browser, che non costituisce un’emissione archiviata.
 
 Il campione riprende 64 dischi, quattro strati, P300 a 83,3 bar, maggiorazione
 × 1,005 e pesatura a 0,1 g. I valori sono precompilati in `sample-data.json`,
@@ -57,7 +85,7 @@ In `orodent-ton/src/main/frontend/document-editor/`:
 
 | File | Responsabilità |
 | --- | --- |
-| `editor.js` | Creazione Tiptap, sessione, stato delle modifiche e ponte per il futuro host JavaFX |
+| `editor.js` | Creazione Tiptap, sessione, stato delle modifiche e ponte per l’host JavaFX |
 | `editor-ui.js` | Toolbar, pannelli, dialoghi, trascinamento, import/export e rilascio dei listener |
 | `extensions.js` | Nodi per blocchi TON, campi, colonne, immagini locali e proprietà delle tabelle |
 | `document-model.js` | Schema JSON, validazione, migrazione del contenuto testuale v1 e impostazioni della pagina |
@@ -68,8 +96,10 @@ In `orodent-ton/src/main/frontend/document-editor/`:
 Il JSON conserva le scelte del modello e i tipi di blocco, non una copia dei dati
 produttivi di esempio. I blocchi automatici sono nodi atomici: il loro contenuto
 non può essere alterato digitando nella tabella. Un'immagine è invece incorporata
-nel modello per essere disponibile offline. L'host JavaFX gestirà in seguito
-repository, revisioni e salvataggio delle emissioni.
+nel modello per essere disponibile offline. L’host JavaFX gestisce repository e revisioni in
+`features/documents/`, separando modello, SQL, servizio asincrono, controller e viste.
+Le tabelle già presenti `TON.MODELLI_DOCUMENTO` conservano il JSON e la versione;
+`TON.DOCUMENTI` non viene ancora scritta. Non è necessaria una migrazione DB.
 
 Sorgenti, lockfile, compilazione riproducibile, licenze e controlli offline sono
 descritti nella [guida Tiptap locale](ton-editor-offline.md).

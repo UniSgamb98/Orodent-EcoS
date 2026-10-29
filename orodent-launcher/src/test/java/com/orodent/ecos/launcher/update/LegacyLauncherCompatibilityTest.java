@@ -19,12 +19,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Exercises the real publisher, the unchanged installed updater, and the downloaded DB code. */
 class LegacyLauncherCompatibilityTest {
-    private static final String RUNTIME = "windows-x64-java21-v1";
+    private static final String RUNTIME = "windows-x64-java21-v2";
     private static final String PACKAGE = "com.orodent.ecos.launcher.update.";
     @TempDir Path temporary;
 
     @Test
-    void installedLauncherUpdatesComponentsAndTheHostMigratesItsExistingDatabase() throws Exception {
+    void compatibleRuntimeUpdatesComponentsAndTheHostMigratesItsExistingDatabase() throws Exception {
         Path publisher = Files.createDirectory(temporary.resolve("publisher"));
         Path tool = Path.of("../scripts/ReleaseTool.java").toAbsolutePath().normalize();
         run(publisher, temporary.resolve("keygen.log"), List.of(tool.toString(), "keygen"));
@@ -45,6 +45,12 @@ class LegacyLauncherCompatibilityTest {
         assertEquals(ReleaseVersion.parse("0.1.4"), UpdateCatalog.verify(
                 Files.readAllBytes(output.resolve("update.properties")),
                 Files.readAllBytes(output.resolve("update.properties.sig")), key, RUNTIME).version());
+
+        assertEquals(RUNTIME, catalog.getProperty("runtime"));
+        assertThrows(java.io.IOException.class, () -> UpdateCatalog.verify(
+                Files.readAllBytes(output.resolve("update.properties")),
+                Files.readAllBytes(output.resolve("update.properties.sig")), key, "windows-x64-java21-v1"),
+                "The old runtime lacks jdk.jsobject: it must keep its existing components");
 
         Path probe = copyResource("/upgrade-probe/UpgradeDatabaseProbe.java", temporary.resolve("UpgradeDatabaseProbe.java"));
         Path data = temporary.resolve("existing-database");

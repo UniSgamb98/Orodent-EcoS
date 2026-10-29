@@ -83,7 +83,20 @@ try {
   window.OrodentDocumentEditor = Object.freeze({
     schemaVersion: documentSchemaVersion,
     tiptapVersion: '3.32.1',
-    serialize: model.serialize,
+    serialize() {
+      // Native Save can run before an HTML input loses focus.
+      model.changeTitle(document.getElementById('template-title').value);
+      const payload = model.serialize(); readModel(payload, activeEditor().schema); return payload;
+    },
+    newModel() {
+      restore(JSON.stringify({ schemaVersion: documentSchemaVersion,
+        title: 'Foglio operativo di pressatura', page: defaultPage, content: initialContent() }));
+    },
+    setEmbedded() {
+      document.body.classList.add('embedded');
+      document.querySelector('.example-label').textContent = 'Dati di esempio';
+      window.dispatchEvent(new Event('resize'));
+    },
     restore,
     isDirty() { activeEditor(); return dirty; },
     markSaved() { activeEditor(); dirty = false; ui.refresh(); },

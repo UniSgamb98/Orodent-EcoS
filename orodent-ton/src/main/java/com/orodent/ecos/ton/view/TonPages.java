@@ -44,6 +44,7 @@ final class TonPages {
         VBox page = page("ton-" + section.id() + "-page", section.title(), section.description());
         page.getChildren().add(label(section == TonSection.TECHNICAL
                 ? "I sei cataloghi tecnici sono operativi. Le funzioni di produzione saranno attivate progressivamente."
+                : section == TonSection.DOCUMENTS ? "L’editor dei modelli è disponibile. L’archivio dei documenti emessi sarà collegato alle produzioni."
                 : "Area in preparazione. Qui trovi le funzioni previste; le operazioni non sono ancora disponibili.", "ton-area-status"));
         List<Node> cards = TonFeature.in(section).stream().map(feature -> (Node) featureCard(feature, openFeature)).toList();
         page.getChildren().add(grid(cards, section == TonSection.TECHNICAL ? 2 : 3));
@@ -52,7 +53,7 @@ final class TonPages {
 
     private static VBox areaCard(TonSection section, Consumer<TonSection> navigate) {
         VBox card = card();
-        card.getChildren().addAll(badge(section == TonSection.TECHNICAL ? "Catalogo disponibile" : "In preparazione", section == TonSection.TECHNICAL),
+        card.getChildren().addAll(badge(section == TonSection.TECHNICAL ? "Catalogo disponibile" : section == TonSection.DOCUMENTS ? "Editor disponibile" : "In preparazione", section == TonSection.TECHNICAL || section == TonSection.DOCUMENTS),
                 label(section.title(), "ton-card-title"), label(section.description(), "ton-description"));
         Region space = new Region(); VBox.setVgrow(space, Priority.ALWAYS);
         card.getChildren().addAll(space, action("Esplora area →", "ton-explore-" + section.id(), () -> navigate.accept(section), false));
@@ -70,6 +71,7 @@ final class TonPages {
                 case POWDERS -> "Apri polveri";
                 case MODELS -> "Apri modelli disco";
                 case COMPOSITIONS -> "Apri composizioni";
+                case DOCUMENT_TEMPLATES -> "Apri modelli documento";
                 default -> "Apri catalogo prodotti";
             };
             card.getChildren().add(action(title, "ton-tech-" + feature.name().toLowerCase(java.util.Locale.ROOT) + "-button",

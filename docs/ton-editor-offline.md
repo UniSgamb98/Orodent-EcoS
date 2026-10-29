@@ -23,17 +23,21 @@ Gli operatori non devono installare Node.js o scaricare dipendenze JavaScript.
 
 ## Stato dell'integrazione
 
-È pronto l'**editor visuale offline con dati di esempio**, non ancora la schermata
-Documenti completa di TON. Vedere la [guida ai comandi](ton-editor-visuale.md).
-La risorsa non viene aperta automaticamente e non modifica i cataloghi, il DB,
-le migrazioni o i modelli della proposta grafica. Sono presenti blocchi operativi
-con valori dimostrativi; il collegamento alle produzioni reali, il salvataggio
-versionato nel DB, il motore PDF e l'archivio delle emissioni restano da integrare.
+L’editor è integrato in **TON → Documenti → Modelli documento** tramite un
+`WebView` creato soltanto quando si apre una scheda e rilasciato tornando all’elenco.
+La [guida ai comandi](ton-editor-visuale.md) descrive bozze, approvazione e versioni.
+I modelli sono salvati nel DB condiviso; i blocchi usano ancora dati di esempio.
+Il collegamento alle produzioni reali, il motore PDF e l’archivio delle emissioni
+restano da integrare.
 
-Il prossimo passaggio collegherà questa risorsa a una vista JavaFX `WebView`,
-aggiungendo `javafx-web` e i suoi binari alla distribuzione. Il controllo della
-risorsa è stato svolto anche con JavaFX WebView 21.0.6, caricandola dal JAR.
-Il modulo web non è ancora una dipendenza runtime dell'applicazione corrente.
+`javafx-web` e `javafx-media` sono ora dipendenze runtime. Tutti i moduli JavaFX
+sono fissati a **21.0.6**, compresi base e graphics, evitando versioni transitive
+non allineate. Il pacchetto Java incorporato include anche `jdk.jsobject`.
+Questo richiede un primo **ZIP completo con runtime v2** sulle postazioni che
+usano il vecchio runtime v1: il catalogo firmato rifiuta correttamente quel runtime,
+che non contiene il modulo necessario. Dopo questo passaggio i componenti
+continueranno ad aggiornarsi normalmente all’interno del contratto runtime v2.
+Non cambia la versione dello schema DB e non si devono spostare i dati.
 
 Il ponte JavaScript `window.OrodentDocumentEditor` espone operazioni delimitate:
 serializzazione/ripristino JSON con versione dello schema, comandi ammessi,
@@ -84,5 +88,7 @@ quindi distribuire le nuove risorse con la normale release EcoS.
 - Caricamento diretto dal JAR nel WebView JavaFX previsto dal progetto.
 - Presenza e hash delle risorse nel JAR TON contenuto nello ZIP di distribuzione.
 
-La verifica WebView effettuata in cloud è su Linux. La prima integrazione completa
-dovrà includere anche la prova nell'EXE Windows e la gestione del suo ciclo di vita.
+La verifica automatizzata WebView in cloud è su Linux e percorre la navigazione
+reale TON, il salvataggio DB, l’approvazione, la copia in nuova bozza, lo storico,
+il blocco delle modifiche non salvate e il rilascio del WebView.
+Resta da eseguire la prova manuale del pacchetto EXE su Windows.

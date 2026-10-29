@@ -1072,3 +1072,11 @@ select:focus-visible {
 .readonly .tiptap .document-column {
   border-color: transparent;
 }
+
+/* EcoS owns model files, persistence and version controls in the native toolbar. */
+.embedded .appbar,
+.embedded [data-action="open-model"],
+.embedded [data-action="export-model"],
+.embedded [data-action="print"] {
+  display: none;
+}

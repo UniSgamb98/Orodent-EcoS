@@ -16,7 +16,7 @@ con il nuovo launcher e la chiave va installata manualmente, una volta.
 La linea attuale supporta Windows x64, Java 21 e protocollo updater 1. Aggiorna i JAR
 come un insieme; EXE, launcher e Java rimangono quelli installati. Il contratto di
 compatibilità resta `database.schema=1`, come richiesto dai launcher già distribuiti.
-Il contatore interno delle migrazioni DB è distinto: attualmente vale 4.
+Il contatore interno delle migrazioni DB è distinto: attualmente vale 6.
 
 `ReleaseTool` legge `database/version.properties` dal JAR database che sta firmando
 e dichiara nel catalogo `database.migration.minimum` e `database.migration.target`.
@@ -30,6 +30,13 @@ Cambiare il runtime, il launcher o un contratto non supportato dalle installazio
 esistenti richiede ancora una distribuzione completa. Aumentare soltanto il contatore
 delle migrazioni non implica un cambio di contratto; occorre verificare che i nuovi
 componenti gestiscano realmente la migrazione e rifiutino database incompatibili.
+
+L’editor documenti introduce **runtime `windows-x64-java21-v2`**: il Java incluso
+contiene anche `jdk.jsobject`, necessario a JavaFX Web. Al primo rilascio con
+l’editor, installare lo ZIP completo sulle postazioni con runtime v1 mantenendo
+config e cartella DB. Il catalogo v2 viene rifiutato dai vecchi runtime e non ne
+sostituisce i componenti. Le successive release nello stesso runtime v2 tornano
+ad aggiornarsi automaticamente. Lo schema DB rimane 6.
 
 ## 1. Creare la chiave una sola volta, sul proprio PC
 

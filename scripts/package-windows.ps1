@@ -95,7 +95,7 @@ try {
         '--main-jar', 'orodent-launcher.jar',
         '--main-class', 'com.orodent.ecos.launcher.EcosLauncher',
         '--dest', $destination,
-        '--add-modules', 'java.se,jdk.unsupported,jdk.crypto.ec,jdk.charsets,jdk.localedata,jdk.zipfs',
+        '--add-modules', 'java.se,jdk.unsupported,jdk.crypto.ec,jdk.charsets,jdk.localedata,jdk.zipfs,jdk.jsobject',
         '--jlink-options', '--strip-debug --no-header-files --no-man-pages',
         '--java-options', '-Dorodent.ecos.packaged=true',
         '--java-options', '-Dorodent.ecos.config=$APPDIR/../config/application.properties'

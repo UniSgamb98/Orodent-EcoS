@@ -13,16 +13,17 @@ Dati tecnici mantiene al massimo due colonne, disposte per righe:
 | Linee | Polveri |
 
 Tutti e sei i cataloghi tecnici sono operativi e si aprono anche dalla
-Panoramica. Le altre funzioni sono indicate come **In preparazione**, senza
-contatori fittizi o comandi non implementati. Il cubaggio resta rinviato.
+Panoramica. In **Documenti → Modelli documento** è disponibile l’editor visuale
+con bozze e versioni nel DB. Le funzioni restanti sono indicate come
+**In preparazione**, senza contatori fittizi o comandi non implementati. Il cubaggio resta rinviato.
 
 - [Linee, prodotti, articoli, storico e specifiche produttive](ton-cataloghi.md).
 - [Polveri, ossidi e schede tecniche approvate](ton-polveri.md).
 - [Modelli disco, strati, sovramateriali e versioni](ton-modelli-disco.md).
 - [Composizioni, ricette per strato, ossidi e utilizzi](ton-composizioni.md).
-- [Proposta dell'editor visuale dei documenti](ton-documenti-proposta.md), non ancora integrato.
+- [Proposta iniziale dell'editor visuale dei documenti](ton-documenti-proposta.md).
 - [Base Tiptap offline e ricostruzione delle risorse](ton-editor-offline.md).
-- [Comandi dell'editor visuale locale e blocchi dimostrativi](ton-editor-visuale.md).
+- [Editor integrato, bozze, versioni e blocchi dimostrativi](ton-editor-visuale.md).
 - [Struttura e collegamenti del dominio TON](ton-schema-proposta.md).
 - [Proposta grafica di riferimento](ton-cataloghi-proposta.md).
 
@@ -59,6 +60,12 @@ transazione, prima di pubblicare il servizio. Il CLIENT verifica lo schema
 corrente in sola lettura; il failover non applica DDL. Clienti, vendite, ID e UUID
 restano conservati. Vedere [schema condiviso e migrazioni](database-schema.md).
 
-L'aggiornamento arriva con la normale release firmata dei componenti: non occorre
-sostituire Java o launcher. Per migrare un archivio esistente chiudere le istanze
+Le sole migrazioni DB arrivano con la normale release firmata dei componenti e
+non richiedono la sostituzione di Java o launcher. Per migrare un archivio esistente chiudere le istanze
 e riavviare prima l'HOST aggiornato, poi i CLIENT.
+
+L’editor in Documenti aggiunge JavaFX Web e `jdk.jsobject`: il suo primo rilascio
+richiede lo ZIP completo con runtime v2. I runtime v1 rifiutano il catalogo firmato
+incompatibile e mantengono l’applicazione precedente. Dopo l’installazione di v2,
+gli aggiornamenti dei soli componenti riprendono normalmente. Non cambia lo schema
+DB; dettagli nella [guida Tiptap](ton-editor-offline.md).

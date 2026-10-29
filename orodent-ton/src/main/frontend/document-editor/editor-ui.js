@@ -279,7 +279,7 @@ export function mountEditorUI(editor, model) {
     document.body.classList.toggle('editing', editable);
     document.body.classList.toggle('readonly', !editable);
     $('template-title').readOnly = !editable;
-    $('dirty-state').textContent = model.isDirty() ? 'Modifiche locali' : 'Bozza locale';
+    $('dirty-state').textContent = model.isDirty() ? 'Modifiche non salvate' : document.body.classList.contains('embedded') ? (editable ? 'Bozza' : 'Sola lettura') : 'Bozza locale';
     const widget = selectedNode()?.type.name === 'tonBlock' ? selectedNode() : null;
     const image = selectedNode()?.type.name === 'image';
     const marks = widget?.attrs || editor.getAttributes('textStyle');

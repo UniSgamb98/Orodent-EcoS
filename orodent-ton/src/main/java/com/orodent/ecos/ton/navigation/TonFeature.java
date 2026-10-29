@@ -21,7 +21,7 @@ public enum TonFeature {
     HISTORY(TonSection.TRACEABILITY, "Storia delle lavorazioni", "Collega produzioni, carichi e cotture alle specifiche effettivamente utilizzate."),
     LINKED_DOCUMENTS(TonSection.TRACEABILITY, "Documenti collegati", "Raggiungi i documenti emessi a partire dalla produzione o dal lotto che stai consultando."),
     ISSUED_DOCUMENTS(TonSection.DOCUMENTS, "Documenti emessi", "Consulta e riapri le schede di produzione e di cottura conservate nell'archivio."),
-    DOCUMENT_TEMPLATES(TonSection.DOCUMENTS, "Modelli di stampa", "Crea e modifica i modelli, controlla l'anteprima e conserva le versioni precedenti.");
+    DOCUMENT_TEMPLATES(TonSection.DOCUMENTS, "Modelli documento", "Crea e modifica i modelli, controlla l'anteprima e conserva le versioni precedenti.");
 
     private final TonSection section;
     private final String title;
@@ -34,7 +34,7 @@ public enum TonFeature {
     public TonSection section() { return section; }
     public String title() { return title; }
     public String description() { return description; }
-    public boolean available() { return this == PRODUCTS || this == POWDERS || this == LINES || this == ARTICLES || this == MODELS || this == COMPOSITIONS; }
+    public boolean available() { return this == PRODUCTS || this == POWDERS || this == LINES || this == ARTICLES || this == MODELS || this == COMPOSITIONS || this == DOCUMENT_TEMPLATES; }
     public static List<TonFeature> in(TonSection section) {
         return Arrays.stream(values()).filter(feature -> feature.section == section).toList();
     }

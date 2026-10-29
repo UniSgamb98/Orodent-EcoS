@@ -13,6 +13,9 @@ import com.orodent.ecos.ton.features.compositions.view.CompositionsView;
 import com.orodent.ecos.ton.features.diskmodels.controller.DiskModelsController;
 import com.orodent.ecos.ton.features.diskmodels.service.DiskModelService;
 import com.orodent.ecos.ton.features.diskmodels.view.DiskModelsView;
+import com.orodent.ecos.ton.features.documents.controller.DocumentTemplatesController;
+import com.orodent.ecos.ton.features.documents.service.DocumentTemplateService;
+import com.orodent.ecos.ton.features.documents.view.DocumentTemplatesView;
 import com.orodent.ecos.ton.features.powders.controller.PowdersController;
 import com.orodent.ecos.ton.features.powders.service.PowderService;
 import com.orodent.ecos.ton.features.powders.view.PowdersView;
@@ -30,11 +33,15 @@ final class TonController {
     private final PowderService powders;
     private final DiskModelService models;
     private final CompositionService compositions;
+    private final DocumentTemplateService documents;
+    private final java.util.concurrent.Executor workers;
     private FeatureController active;
     private TonFeature activeFeature;
     private TonSection section = TonSection.OVERVIEW;
 
     TonController(ModuleContext context) {
+        workers = context.workers();
+        documents = new DocumentTemplateService(context.connections(), workers);
         catalogues = new CatalogService(context.connections(), context.workers());
         specifications = new SpecificationService(context.connections(), context.workers());
         powders = new PowderService(context.connections(), context.workers());
@@ -79,6 +86,11 @@ final class TonController {
                 install(feature, page, controller, controller::loadInitialData);
             }
             case MODELS -> installModels(null);
+            case DOCUMENT_TEMPLATES -> {
+                var page = new DocumentTemplatesView();
+                var controller = new DocumentTemplatesController(page, documents, workers);
+                install(feature, page, controller, controller::start);
+            }
             case COMPOSITIONS -> {
                 var page = new CompositionsView();
                 var controller =

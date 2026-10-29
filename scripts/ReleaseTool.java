@@ -45,7 +45,7 @@ public class ReleaseTool {
         Properties database = databaseVersion(jars);
         manifest.setProperty("database.migration.minimum", database.getProperty("minimum"));
         manifest.setProperty("database.migration.target", database.getProperty("current"));
-        manifest.setProperty("runtime", "windows-x64-java21-v1"); manifest.setProperty("version", version);
+        manifest.setProperty("runtime", "windows-x64-java21-v2"); manifest.setProperty("version", version);
         List<String> names = new ArrayList<>();
         Path archive = output.resolve("Orodent-EcoS-components.zip");
         try (var zip = new ZipOutputStream(Files.newOutputStream(archive, StandardOpenOption.CREATE_NEW))) {
