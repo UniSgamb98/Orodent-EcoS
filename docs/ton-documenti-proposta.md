@@ -5,6 +5,13 @@ Aprire [ton-documenti.html](mockups/ton-documenti.html) in un browser. Il file √
 autonomo e non richiede Internet. Tutti i dati produttivi e le dosi sono esempi:
 non vengono letti dal DB n√© calcolati dal prototipo.
 
+**Aggiornamento sui requisiti del laboratorio:** la prima scheda era generica.
+La [proposta operativa](mockups/ton-documenti-laboratorio.html) rappresenta ora
+le pesate per formato e le quattro miscele distinte descritte dall'utente.
+Vedere [requisiti e dati del foglio operativo](ton-documenti-laboratorio.md),
+[immagine](mockups/ton-documenti-laboratorio-anteprima.png) e
+[PDF dimostrativo](mockups/ton-documenti-laboratorio.pdf).
+
 ![Editor visuale con tabella dosi selezionata](mockups/ton-documenti-editor.png)
 
 Altre viste: [anteprima compilata](mockups/ton-documenti-anteprima.png),
