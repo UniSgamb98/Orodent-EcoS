@@ -94,6 +94,7 @@ class DocumentEditorIntegrationTest {
                                     && !button("ton-document-save").isDisabled());
             verifiesNativePointerDrag();
             verifiesEditableColumnsAndZoom();
+            verifiesAutomaticBlockProperties();
             fx(
                     () -> {
                         assertTrue(
@@ -342,6 +343,62 @@ class DocumentEditorIntegrationTest {
                 });
     }
 
+    private void verifiesAutomaticBlockProperties() throws Exception {
+        String original = fx(() -> api().call("serialize").toString());
+        fx(
+                () -> {
+                    api().call("insert", "mixtures");
+                    web().getEngine()
+                            .executeScript(
+                                    """
+window.propertyTestId = document.querySelector('.ton-block.ProseMirror-selectednode').dataset.blockId;
+document.getElementById('block-tab-content').click();
+for (const id of ['block-hide-zero-powders','block-percent']) {
+  const input = document.getElementById(id); input.checked = id.includes('hide');
+  input.dispatchEvent(new Event('change'));
+}
+document.getElementById('block-tab-appearance').click();
+for (const [id,value] of [['block-font-size','3pt'],['block-header-color','#aabbcc'],['block-width-0','60']]) {
+  const input = document.getElementById(id); input.value = value; input.dispatchEvent(new Event('change'));
+}
+document.getElementById('block-tab-print').click();
+const page = document.getElementById('block-page-break'); page.checked=true; page.dispatchEvent(new Event('change'));
+""");
+                    String payload = api().call("serialize").toString();
+                    assertTrue(payload.contains("\"fontSize\":\"3pt\""));
+                    assertTrue(payload.contains("\"tableWidths\":[60,40]"));
+                    assertTrue(payload.contains("\"pageBreakBefore\":true"));
+                    api().call("restore", payload);
+                    assertEquals(payload, api().call("serialize"));
+                    assertEquals(
+                            2,
+                            ((Number)
+                                            web().getEngine()
+                                                    .executeScript(
+                                                            "document.querySelector('[data-block-id=\"'+propertyTestId+'\"]"
+                                                                + " .lab-table thead"
+                                                                + " tr').children.length"))
+                                    .intValue());
+                    assertEquals(
+                            5,
+                            ((Number)
+                                            web().getEngine()
+                                                    .executeScript(
+                                                            "document.querySelector('[data-block-id=\"'+propertyTestId+'\"]"
+                                                                + " .mixture-card"
+                                                                + " tbody').children.length"))
+                                    .intValue());
+                    assertEquals(
+                            "4px",
+                            web().getEngine()
+                                    .executeScript(
+                                            "getComputedStyle(document.querySelector('[data-block-id=\"'+propertyTestId+'\"]"
+                                                + " .lab-table')).fontSize"));
+                    api().call("restore", original);
+                    return null;
+                });
+    }
+
     private void verifiesEditableColumnsAndZoom() throws Exception {
         fx(
                 () -> {
@@ -360,7 +417,7 @@ class DocumentEditorIntegrationTest {
                                 .equals(true));
         fx(
                 () -> {
-                    assertEquals(3, ((Number) api().getMember("schemaVersion")).intValue());
+                    assertEquals(4, ((Number) api().getMember("schemaVersion")).intValue());
                     web().getEngine()
                             .executeScript(
                                     "document.getElementById('layout-preset').value='60,40';document.getElementById('layout-preset').dispatchEvent(new"
@@ -373,7 +430,7 @@ class DocumentEditorIntegrationTest {
                         () ->
                                 point(
                                         ".tiptap > .column-section > .layout-handles"
-                                            + " .layout-divider",
+                                                + " .layout-divider",
                                         .5,
                                         .03));
         fx(
@@ -426,8 +483,8 @@ class DocumentEditorIntegrationTest {
                     web().getEngine()
                             .executeScript(
                                     "document.querySelector('.tiptap > .column-section >"
-                                        + " .layout-tools"
-                                        + " .layout-column-select:last-child').click()");
+                                            + " .layout-tools"
+                                            + " .layout-column-select:last-child').click()");
                     api().call("insert", "columns");
                     assertEquals(
                             2,
@@ -435,7 +492,7 @@ class DocumentEditorIntegrationTest {
                                             web().getEngine()
                                                     .executeScript(
                                                             "document.querySelectorAll('.tiptap"
-                                                                + " .column-section').length"))
+                                                                    + " .column-section').length"))
                                     .intValue());
                     web().getEngine()
                             .executeScript(

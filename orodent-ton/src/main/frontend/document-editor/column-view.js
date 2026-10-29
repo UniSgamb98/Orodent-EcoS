@@ -32,7 +32,7 @@ export function columnSectionView({ node, editor, getPos }) {
       for (const col of contentDOM.children) {
         // Nested warnings stay attached to the section actually causing them.
         const bad = [...col.querySelectorAll('.lab-table')].some(table => table.closest('.document-columns') === contentDOM
-          && table.getBoundingClientRect().width > table.parentElement.getBoundingClientRect().width + 2);
+          && (table.getBoundingClientRect().width > table.parentElement.getBoundingClientRect().width + 2 || table.scrollWidth > table.clientWidth + 2));
         // Keep warnings on our wrapper: mutating ProseMirror-owned column
         // attributes can interfere with native text selection.
         tooWide ||= bad;

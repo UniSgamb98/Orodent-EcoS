@@ -632,7 +632,7 @@ select:focus-visible {
 }
 .ton-block h3 {
   margin: 0 0 9px;
-  font-size: 12px;
+  font-size: calc(var(--block-font) * 1);
   color: var(--ink);
 }
 .block-handle {
@@ -668,11 +668,11 @@ select:focus-visible {
 }
 .production-fields small {
   display: block;
-  font-size: 8px;
+  font-size: calc(var(--block-font) * .667);
   color: #7f94a3;
 }
 .production-fields b {
-  font-size: 10px;
+  font-size: calc(var(--block-font) * .833);
 }
 .press-setting {
   display: flex;
@@ -685,20 +685,20 @@ select:focus-visible {
   gap: 14px;
 }
 .press-setting small {
-  font-size: 8px;
+  font-size: calc(var(--block-font) * .667);
   display: block;
   color: #628499;
 }
 .press-setting strong {
-  font-size: 25px;
+  font-size: calc(var(--block-font) * 2.083);
   color: var(--ink);
   display: block;
 }
 .press-setting strong span {
-  font-size: 14px;
+  font-size: calc(var(--block-font) * 1.167);
 }
 .press-setting p {
-  font-size: 9px;
+  font-size: calc(var(--block-font) * .75);
   color: #6c8596;
   margin: 0;
 }
@@ -714,18 +714,18 @@ select:focus-visible {
   justify-content: space-between;
   gap: 9px;
   padding: 6px 8px;
-  background: #edf5f9;
-  font-size: 10px;
+  background: var(--header-bg, #edf5f9);
+  font-size: calc(var(--block-font) * .833);
 }
 .dimensions {
   padding: 4px 8px;
   margin: 0 !important;
-  font-size: 8px;
+  font-size: calc(var(--block-font) * .667);
   color: #7c90a0;
 }
 .dimensions strong {
   color: var(--ink);
-  font-size: 10px;
+  font-size: calc(var(--block-font) * .833);
 }
 .lab-table {
   width: 100%;
@@ -755,7 +755,7 @@ select:focus-visible {
 }
 .lab-table small {
   display: block;
-  font-size: 8px;
+  font-size: calc(var(--block-font) * .667);
   color: #8095a5;
 }
 .lab-table tfoot td {
@@ -775,13 +775,13 @@ select:focus-visible {
 }
 .mixture-card .format-heading,
 .mixture-card tfoot td {
-  background: #fff0af;
+  background: var(--header-bg, #fff0af);
 }
 .mixture-card .lab-table td {
   border-color: #eee6c5;
 }
 .block-note {
-  font-size: 8px;
+  font-size: calc(var(--block-font) * .667);
   color: #8d835f;
   margin: 5px 0 0 !important;
 }
@@ -795,12 +795,12 @@ select:focus-visible {
   gap: 9px;
 }
 .production-totals small {
-  font-size: 8px;
+  font-size: calc(var(--block-font) * .667);
   letter-spacing: 0.5px;
   display: block;
 }
 .production-totals strong {
-  font-size: 16px;
+  font-size: calc(var(--block-font) * 1.333);
   display: block;
 }
 .signature-lines {
@@ -812,12 +812,12 @@ select:focus-visible {
   border-top: 1px solid #a4b9c5;
   padding-top: 6px;
   flex: 1;
-  font-size: 9px;
+  font-size: calc(var(--block-font) * .75);
 }
 .signature-lines span {
   display: block;
   color: #8fa2af;
-  font-size: 8px;
+  font-size: calc(var(--block-font) * .667);
 }
 .ton-field {
   display: inline-block;
@@ -1181,3 +1181,21 @@ select:focus-visible {
 .layout-tools .layout-select { min-width: 48px; overflow: hidden; text-overflow: ellipsis; }
 .layout-tools .layout-column-select { flex-shrink: 0; }
 .layout-overflow > .layout-tools .layout-select::after { content: " ⚠"; color: #984a12; }
+
+/* Automatic block controls and print instructions never alter calculated data. */
+.block-property-tabs { display: flex; gap: 3px; margin: 12px 0; border-bottom: 1px solid var(--line); }
+.block-property-tabs button { flex: 1; padding: 8px 3px; border-radius: 3px 3px 0 0; font-size: 11px; }
+.block-property-tabs button[aria-selected="true"] { color: #fff; background: var(--teal); }
+.ton-block.weights-emphasis .powder-weight { font-weight: 700; }
+.ton-block:not(.highlight-totals) .lab-table tfoot td { background: transparent; font-weight: 400; }
+.ton-block:not(.highlight-totals) .production-totals { color: var(--block-ink); background: #f1f6f9; }
+.ton-block .lab-table[style] td:first-child { white-space: normal; overflow-wrap: anywhere; }
+.editing .page-break-before { border-top: 1px dashed #7f94a3; }
+@media print {
+  .ton-block.page-break-before { break-before: page; page-break-before: always; }
+  .ton-block.keep-cards .format-card, .ton-block.keep-cards .mixture-card { break-inside: avoid; page-break-inside: avoid; }
+  .ton-block:not(.keep-cards) .format-card, .ton-block:not(.keep-cards) .mixture-card { break-inside: auto; page-break-inside: auto; }
+  .ton-block:not(.repeat-headers) .lab-table thead { display: table-row-group; }
+  .lab-table tr { break-inside: avoid; }
+  .lab-table tfoot { display: table-row-group; }
+}

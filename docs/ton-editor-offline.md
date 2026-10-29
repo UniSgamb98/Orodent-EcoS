@@ -42,9 +42,9 @@ Non cambia la versione dello schema DB e non si devono spostare i dati.
 Il ponte JavaScript `window.OrodentDocumentEditor` espone operazioni delimitate:
 serializzazione/ripristino JSON con versione dello schema, comandi ammessi,
 inserimento dei blocchi, stato delle modifiche, sola lettura e rilascio.
-Lo schema editoriale è ora **3**; i modelli degli schemi 1 e 2 sono ancora
-caricabili. Lo schema 3 conserva larghezze, spazio fra colonne e le due opzioni
-indipendenti per ppm e g/mm. La riapertura dei vecchi modelli li aggiorna in memoria
+Lo schema editoriale è ora **4**; i modelli degli schemi 1, 2 e 3 sono ancora
+caricabili. Lo schema 4 conserva anche le opzioni dei blocchi automatici per
+contenuto, aspetto e stampa, oltre a larghezze, spazio fra colonne e opzioni ppm/g/mm. La riapertura dei vecchi modelli li aggiorna in memoria
 senza riscriverne le versioni approvate. Aprendo un modello la cronologia viene azzerata: annulla non deve
 recuperare contenuti di un documento precedentemente aperto.
 Il ponte non espone accesso al database o richieste HTTP.
@@ -87,6 +87,8 @@ quindi distribuire le nuove risorse con la normale release EcoS.
 - Righe/colonne, unione/divisione celle, stile delle tabelle e immagini locali.
 - Trascinamento dalla palette e riordino nativo dei blocchi Tiptap.
 - Proprietà dei blocchi TON, formato/margini, esportazione del modello e anteprima.
+- Filtri che conservano i totali, larghezze delle tabelle, opzioni di stampa e
+  dimensioni 3/5/7 pt; persistenza dello schema 4 senza riscrivere le versioni approvate.
 - Sezioni annidate, proporzioni delle colonne, trascinamento dei divisori, annulla/Esc,
   aggiunta/rimozione senza perdita dei blocchi e ripristino dello schema precedente.
 - Zoom 25–200% e Ctrl + rotellina, con dimensioni A4 e JSON invariati.

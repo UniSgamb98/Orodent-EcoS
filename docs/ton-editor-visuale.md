@@ -37,7 +37,8 @@ emessi e i modelli di cottura verranno collegati ai rispettivi flussi produttivi
 
 - **Testo:** paragrafi, titoli, caratteri, dimensioni, grassetto, corsivo,
   sottolineato, colore, evidenziatore, allineamenti, elenchi e interlinea.
-  Selezionare il testo prima di applicare la formattazione.
+  Selezionare il testo prima di applicare la formattazione. Sono disponibili anche
+  le dimensioni **7, 5 e 3 pt**, sia per il testo libero sia per i blocchi automatici.
 - **Tabella libera:** scegliere righe, colonne e intestazione nel dialogo.
   Con il cursore nella tabella, il pannello Proprietà permette di aggiungere o
   eliminare righe/colonne, unire/dividere celle, alternare le righe, cambiare
@@ -66,13 +67,43 @@ emessi e i modelli di cottura verranno collegati ai rispettivi flussi produttivi
   e tabelle. Nome del file, formato pagina e margini sono impostazioni del modello
   conservate separatamente dalla cronologia del contenuto.
 
+## Proprietà dei blocchi automatici
+
+Selezionare un blocco e usare le tre schede nel pannello destro:
+
+- **Contenuto:** titolo visibile o nascosto; per Pesature, ordinamento dei formati
+  per altezza, codice o sequenza della produzione, gestione dei formati a zero e
+  visibilità di diametro, nominale, g/mm e ppm. Lo spessore totale rimane presente.
+  Per Miscele, codice/nome/codice e nome della polvere, percentuali facoltative e
+  possibilità di nascondere le polveri il cui peso da pesare è zero. Se manca il
+  nome si usa il codice. Grammi, conteggi e totali rimangono presenti.
+- **Aspetto:** carattere e dimensione (inclusi 3, 5 e 7 pt), spaziatura; per le tabelle
+  anche sfondo delle intestazioni, totali evidenziati e larghezze percentuali.
+  Modificare un valore attiva le larghezze fisse, con somma 100% e minimo 8% per
+  colonna. **Larghezze automatiche** ripristina la distribuzione adattata al contenuto.
+  Mostrare o nascondere ppm/percentuali ripristina le larghezze automatiche perché
+  cambia il numero delle colonne. Le Miscele hanno anche i grammi in grassetto.
+- **Stampa:** inizio su una nuova pagina; per Pesature e Miscele, mantenimento della
+  singola scheda di formato/strato insieme e ripetizione delle intestazioni delle
+  tabelle che proseguono su un'altra pagina. Queste istruzioni sono salvate nel
+  modello e applicate dai CSS di stampa; l'editor resta un documento in flusso.
+  La frammentazione nelle colonne annidate dipende dal motore di stampa; una scheda
+  più alta di una pagina deve comunque potersi dividere. Il PDF definitivo e
+  l'anteprima con una produzione reale rimangono da collegare al flusso produttivo.
+
+Filtri e ordinamento non ricalcolano quantità o totali. Le proprietà si conservano
+in salvataggio, duplicazione, nuova revisione, esportazione e ripristino JSON;
+le versioni già approvate rimangono immutate.
+
 ## Sezioni a colonne e annidamento
 
 **Inserisci → Sezione a colonne** crea una sezione di impaginazione. Fare clic
 sulla barretta **Sezione** sopra il suo bordo per aprire le proprietà a destra,
 oppure scegliere una colonna dai pulsanti **Col. 1**, **Col. 2**, ecc.
 Il percorso nel pannello permette di risalire dalla selezione alla colonna o a una
-sezione esterna: l’annidamento rimane supportato.
+sezione esterna: l’annidamento rimane supportato. Ogni colonna conserva un
+paragrafo finale modificabile: permette di scrivere dopo i blocchi automatici e
+mantiene stabile la selezione anche dopo la riapertura di un modello.
 
 - Da **1 a 4 colonne** per sezione, con proporzioni uguali o personalizzate.
 - Preset 60/40, 40/60, 70/30, 30/70 per due colonne; campi percentuali per rifinire
@@ -133,6 +164,7 @@ In `orodent-ton/src/main/frontend/document-editor/`:
 | `editor-ui.js` | Toolbar, pannelli, dialoghi, import/export e rilascio dei listener |
 | `editor-drag.js` | Trascinamento della palette, riordino dei blocchi, indicatore di inserimento e scorrimento |
 | `extensions.js` | Nodi per blocchi TON, campi, colonne, immagini locali e proprietà delle tabelle |
+| `block-options.js`, `block-properties.js` | Opzioni di presentazione, validazione e pannelli dei blocchi automatici |
 | `layout-model.js` | Geometria in percentuale, limiti e aggiornamento dei modelli precedenti |
 | `column-view.js`, `column-controls.js` | Divisori, selezione delle sezioni, proprietà e operazioni che conservano i contenuti |
 | `editor-zoom.js`, `paper-layout.js` | Zoom e coordinate coerenti fra browser e JavaFX WebView |
@@ -148,7 +180,7 @@ nel modello per essere disponibile offline. L’host JavaFX gestisce repository 
 `features/documents/`, separando modello, SQL, servizio asincrono, controller e viste.
 Le tabelle già presenti `TON.MODELLI_DOCUMENTO` conservano il JSON e la versione;
 `TON.DOCUMENTI` non viene ancora scritta. Non è necessaria una migrazione DB. Il contenuto editoriale usa ora lo schema
-**3**; gli schemi 1 e 2 sono letti e aggiornati in memoria. Le vecchie percentuali
+**4**; gli schemi 1, 2 e 3 sono letti e aggiornati in memoria. Le vecchie percentuali
 50/50 e la spunta unica g/mm+ppm sono conservate come impostazioni equivalenti.
 La riapertura non riscrive il CLOB di una versione già approvata; una nuova bozza
 si salva con lo schema corrente.

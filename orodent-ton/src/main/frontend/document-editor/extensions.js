@@ -1,3 +1,4 @@
+import { optionDefaults, blockFontSizes, validateBlockOptions } from './block-options.js';
 import { Extension, Node, mergeAttributes } from '@tiptap/core';
 import Image from '@tiptap/extension-image';
 import { columnSectionView } from './column-view.js';
@@ -8,17 +9,24 @@ export const TonBlock = Node.create({
   name: 'tonBlock', group: 'block', atom: true, draggable: true,
   addAttributes() {
     return {
+      ...Object.fromEntries(Object.entries(optionDefaults).map(([key, value]) => [key, { default: value }])),
       id: { default: '' }, kind: { default: 'identity' }, title: { default: '' },
       compact: { default: false }, showPpm: { default: false }, showCoefficient: { default: false },
       fontFamily: { default: 'Arial' }, fontSize: { default: '9pt' }, color: { default: '#243e50' },
     };
   },
   parseHTML() {
-    return [{ tag: 'section[data-ton-block]', getAttrs: element => Object.prototype.hasOwnProperty.call(blockTypes, element.dataset.tonBlock) ? ({
-      id: element.dataset.blockId, kind: element.dataset.tonBlock, title: element.dataset.title,
-      compact: element.dataset.compact === 'true', showPpm: (element.dataset.showPpm ?? element.dataset.engineering) === 'true', showCoefficient: (element.dataset.showCoefficient ?? element.dataset.engineering) === 'true',
-      fontFamily: element.dataset.fontFamily || 'Arial', fontSize: element.dataset.fontSize || '9pt', color: element.dataset.color || '#243e50',
-    }) : false }];
+    return [{ tag: 'section[data-ton-block]', getAttrs: element => {
+      if (!Object.prototype.hasOwnProperty.call(blockTypes, element.dataset.tonBlock)) return false;
+      try {
+        const options = element.dataset.options ? JSON.parse(element.dataset.options) : {};
+        const attrs = { ...optionDefaults, ...Object.fromEntries(Object.keys(optionDefaults).filter(key => Object.prototype.hasOwnProperty.call(options, key)).map(key => [key, options[key]])),
+          id: element.dataset.blockId, kind: element.dataset.tonBlock, title: element.dataset.title,
+          compact: element.dataset.compact === 'true', showPpm: (element.dataset.showPpm ?? element.dataset.engineering) === 'true', showCoefficient: (element.dataset.showCoefficient ?? element.dataset.engineering) === 'true',
+          fontFamily: element.dataset.fontFamily || 'Arial', fontSize: element.dataset.fontSize || '9pt', color: element.dataset.color || '#243e50' };
+        validateBlockOptions(attrs); return attrs;
+      } catch { return false; }
+    } }];
   },
   renderHTML({ node }) { return blockElement(node.attrs); },
   addNodeView() {
@@ -82,7 +90,7 @@ export const TonColumns = Node.create({
   addNodeView() { return columnSectionView; },
 });
 export const TonColumn = Node.create({
-  name: 'tonColumn', content: 'block+', isolating: true,
+  name: 'tonColumn', content: 'block* paragraph', isolating: true,
   parseHTML() { return [{ tag: 'div[data-ton-column]' }]; },
   renderHTML() { return ['div', { class: 'document-column', 'data-ton-column': '' }, 0]; },
 });
@@ -113,12 +121,13 @@ export function validateDocument(node) {
   node.check();
   node.descendants(child => {
     if (child.type.name === 'tonColumns') validateLayout(child);
+    if (child.type.name === 'tonBlock') validateBlockOptions(child.attrs);
     if (child.type.name === 'tonBlock' && !Object.prototype.hasOwnProperty.call(blockTypes, child.attrs.kind)) throw new Error('Blocco non supportato.');
     if (child.type.name === 'tonBlock' && (typeof child.attrs.title !== 'string' || child.attrs.title.length > 100
         || typeof child.attrs.id !== 'string' || child.attrs.id.length > 100
         || typeof child.attrs.compact !== 'boolean' || typeof child.attrs.showPpm !== 'boolean' || typeof child.attrs.showCoefficient !== 'boolean')) throw new Error('Proprietà del blocco non valide.');
     if (child.type.name === 'tonBlock' && (!['Arial', 'Georgia', 'Verdana', 'Times New Roman'].includes(child.attrs.fontFamily)
-        || !['9pt', '10pt', '11pt', '12pt', '14pt', '18pt', '24pt'].includes(child.attrs.fontSize)
+        || !blockFontSizes.includes(child.attrs.fontSize)
         || !/^#[a-f\d]{6}$/i.test(child.attrs.color))) throw new Error('Stile del blocco non supportato.');
     if (child.type.name === 'tonField' && !Object.prototype.hasOwnProperty.call(fields, child.attrs.key)) throw new Error('Campo non supportato.');
     if (child.type.name === 'image' && !['25%', '50%', '75%', '100%'].includes(child.attrs.width)) throw new Error('Larghezza immagine non supportata.');

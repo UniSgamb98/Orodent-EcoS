@@ -201,9 +201,43 @@ class DocumentTemplateServiceTest {
                         payload.replace("[60,40]", "[5,95]"),
                         payload.replace("[60,40]", "[100]"),
                         payload.replace("\"gap\":4", "\"gap\":13"),
-                        payload.replace("\"schemaVersion\":3", "\"schemaVersion\":4")))
+                        payload.replace("\"schemaVersion\":3", "\"schemaVersion\":5")))
             assertThrows(IllegalArgumentException.class, () -> new Draft("BAD", invalid));
         assertEquals(payload, service.load(saved.template().id()).join().content());
+    }
+
+    @Test
+    void retainsVersionFourBlockPropertiesWithoutChangingApprovedRevisions() {
+        var legacy = service.create(new Draft("PROPERTIES", model("Originale", true)), true).join();
+        var copy = service.newVersion(legacy.template()).join();
+        var json = com.google.gson.JsonParser.parseString(copy.content()).getAsJsonObject();
+        json.addProperty("schemaVersion", 4);
+        var attrs =
+                json.getAsJsonObject("content")
+                        .getAsJsonArray("content")
+                        .get(2)
+                        .getAsJsonObject()
+                        .getAsJsonObject("attrs");
+        attrs.addProperty("fontSize", "3pt");
+        attrs.addProperty("showPpm", true);
+        attrs.addProperty("showTitle", false);
+        attrs.addProperty("formatOrder", "heightDesc");
+        attrs.addProperty("pageBreakBefore", true);
+        attrs.addProperty("headerColor", "#abcdef");
+        attrs.add("tableWidths", com.google.gson.JsonParser.parseString("[12,16,25,12,35]"));
+        String payload = json.toString();
+        var saved = service.save(copy.template(), new Draft("PROPERTIES", payload), true).join();
+        assertEquals(payload, service.load(saved.template().id()).join().content());
+        assertEquals(legacy.content(), service.load(legacy.template().id()).join().content());
+        for (String invalid :
+                List.of(
+                        payload.replace("[12,16,25,12,35]", "[20,20]"),
+                        payload.replace("[12,16,25,12,35]", "[12,16,25,12,45]"),
+                        payload.replace("3pt", "2pt"),
+                        payload.replace("heightDesc", "random"),
+                        payload.replace("#abcdef", "red"),
+                        payload.replace("\"showTitle\":false", "\"showTitle\":\"false\"")))
+            assertThrows(IllegalArgumentException.class, () -> new Draft("INVALID", invalid));
     }
 
     @Test

@@ -84,7 +84,7 @@ public final class DocumentTemplates {
             JsonObject envelope = parse(content);
             if (!envelope.get("schemaVersion").isJsonPrimitive()
                     || !envelope.getAsJsonPrimitive("schemaVersion").isNumber()
-                    || !Set.of("2", "3").contains(envelope.get("schemaVersion").getAsString()))
+                    || !Set.of("2", "3", "4").contains(envelope.get("schemaVersion").getAsString()))
                 throw new IllegalArgumentException();
             JsonPrimitive title = envelope.getAsJsonPrimitive("title");
             if (!title.isString()
@@ -150,14 +150,84 @@ public final class DocumentTemplates {
                         || gap.getAsDouble() > 12)
                     throw new IllegalArgumentException(
                             "Le larghezze devono totalizzare il 100% e lo spazio deve essere da 0 a"
-                                + " 12 mm.");
+                                    + " 12 mm.");
             }
         }
-        if (type.equals("tonBlock"))
-            present.add(node.getAsJsonObject("attrs").get("kind").getAsString());
+        if (type.equals("tonBlock")) {
+            JsonObject attrs = node.getAsJsonObject("attrs");
+            present.add(attrs.get("kind").getAsString());
+            if (schema >= 4) validateBlockOptions(attrs);
+        }
         if (node.has("content"))
             for (JsonElement child : node.getAsJsonArray("content"))
                 inspect(child.getAsJsonObject(), present, depth + 1, count, schema);
+    }
+
+    private static void validateBlockOptions(JsonObject attrs) {
+        for (String name :
+                List.of(
+                        "showTitle",
+                        "highlightTotals",
+                        "pageBreakBefore",
+                        "keepCardsTogether",
+                        "repeatHeaders",
+                        "hideZeroFormats",
+                        "showDiameter",
+                        "showNominal",
+                        "hideZeroPowders",
+                        "showPercent",
+                        "emphasizeWeights",
+                        "showPpm",
+                        "showCoefficient",
+                        "compact")) {
+            if (attrs.has(name)
+                    && (!attrs.get(name).isJsonPrimitive()
+                            || !attrs.getAsJsonPrimitive(name).isBoolean()))
+                throw new IllegalArgumentException("Opzioni del blocco non valide.");
+        }
+        if (attrs.has("headerColor")
+                && !attrs.get("headerColor").getAsString().matches("|#[a-fA-F0-9]{6}"))
+            throw new IllegalArgumentException("Colore delle intestazioni non valido.");
+        if (attrs.has("formatOrder")
+                && !Set.of("production", "heightAsc", "heightDesc", "code")
+                        .contains(attrs.get("formatOrder").getAsString()))
+            throw new IllegalArgumentException("Ordine dei formati non valido.");
+        if (attrs.has("powderLabel")
+                && !Set.of("code", "name", "codeName")
+                        .contains(attrs.get("powderLabel").getAsString()))
+            throw new IllegalArgumentException("Identificazione della polvere non valida.");
+        if (attrs.has("fontSize")
+                && !Set.of(
+                                "3pt", "5pt", "7pt", "9pt", "10pt", "11pt", "12pt", "14pt", "18pt",
+                                "24pt")
+                        .contains(attrs.get("fontSize").getAsString()))
+            throw new IllegalArgumentException("Dimensione del testo non valida.");
+        if (attrs.has("tableWidths") && !attrs.get("tableWidths").isJsonNull()) {
+            int expected =
+                    switch (attrs.get("kind").getAsString()) {
+                        case "weighing" ->
+                                attrs.has("showPpm") && attrs.get("showPpm").getAsBoolean() ? 5 : 4;
+                        case "mixtures" ->
+                                !attrs.has("showPercent") || attrs.get("showPercent").getAsBoolean()
+                                        ? 3
+                                        : 2;
+                        default -> 0;
+                    };
+            JsonArray widths = attrs.getAsJsonArray("tableWidths");
+            if (expected == 0 || widths.size() != expected)
+                throw new IllegalArgumentException("Larghezze della tabella non valide.");
+            double total = 0;
+            for (JsonElement value : widths) {
+                if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber())
+                    throw new IllegalArgumentException("Larghezze della tabella non valide.");
+                double width = value.getAsDouble();
+                if (!Double.isFinite(width) || width < 8 || width > 100)
+                    throw new IllegalArgumentException("Larghezze della tabella non valide.");
+                total += width;
+            }
+            if (Math.abs(total - 100) >= 0.01)
+                throw new IllegalArgumentException("Le larghezze devono totalizzare il 100%.");
+        }
     }
 
     public static String stateLabel(State state) {

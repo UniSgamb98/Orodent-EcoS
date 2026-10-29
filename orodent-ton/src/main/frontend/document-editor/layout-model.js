@@ -60,6 +60,11 @@ export function normalizeLayoutJSON(content) {
       if (!Array.isArray(node.content)) throw new Error('Contenuto della sezione non valido.');
       result.content = node.content.map(child => visit(child, depth + 1));
     }
+    // A column made only of non-editable blocks gives Chromium no stable DOM
+    // selection boundary. Keep a real editable paragraph after its last block.
+    if (node.type === 'tonColumn' && result.content?.at(-1)?.type !== 'paragraph') {
+      result.content = [...(result.content || []), { type: 'paragraph' }];
+    }
     return result;
   }
   return visit(content, 0);

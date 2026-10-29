@@ -1,3 +1,4 @@
+import { blockProperties, bindBlockProperties } from './block-properties.js';
 import { mountEditorZoom } from './editor-zoom.js';
 import { sectionPath, sectionBreadcrumb, columnProperties, bindColumnControls } from './column-controls.js';
 import { mountEditorDrag } from './editor-drag.js';
@@ -9,7 +10,7 @@ const $ = id => document.getElementById(id);
 export function mountEditorUI(editor, model) {
   const cleanup = [];
   const urls = new Set();
-  let disposed = false, toastTimer, nextId = 1, propertyKey = '', preview = false, printPreview = false;
+  let disposed = false, toastTimer, nextId = 1, propertyKey = '', preview = false, printPreview = false, blockTab = 'content';
   const notify = message => {
     clearTimeout(toastTimer); $('toast').textContent = message; $('toast').hidden = false;
     toastTimer = setTimeout(() => { $('toast').hidden = true; }, 4500);
@@ -38,11 +39,23 @@ export function mountEditorUI(editor, model) {
     else if (kind === 'columns') content = { type: 'tonColumns', attrs: { widths: [50, 50], gap: 4 }, content: [0, 1].map(() => ({ type: 'tonColumn', content: [{ type: 'paragraph' }] })) };
     else if (kind === 'heading') content = { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Nuovo titolo' }] };
     else content = { type: 'paragraph', content: [{ type: 'text', text: 'Scrivi il tuo testo…' }] };
+    const existingSections = new Set();
+    if (content.type === 'tonColumns') editor.state.doc.descendants(node => { if (node.type.name === 'tonColumns') existingSections.add(node); });
     const chain = editor.chain().focus();
     if (position === undefined && kind === 'columns' && editor.state.selection instanceof NodeSelection) chain.insertContentAt(editor.state.selection.node.type.name === 'tonColumn' ? editor.state.selection.to - 1 : editor.state.selection.to, content).run();
     else if (position === undefined) chain.insertContent(content).run(); else chain.insertContentAt(position, content).run();
     if (content.type === 'tonBlock') {
       let pos; editor.state.doc.descendants((node, offset) => { if (node.attrs.id === content.attrs.id) pos = offset; });
+      if (pos !== undefined) editor.commands.setNodeSelection(pos);
+    }
+    if (content.type === 'tonColumns') {
+      // Schema fitting keeps a caret paragraph after each section. Select the new
+      // section itself rather than leaving its properties on an outer container.
+      let pos;
+      editor.state.doc.descendants((node, offset) => {
+        if (node.type.name === 'tonColumns' && !existingSections.has(node)
+            && [...Array(node.childCount)].every((_, i) => node.child(i).childCount === 1 && node.child(i).firstChild.type.name === 'paragraph' && node.child(i).firstChild.content.size === 0)) pos = offset;
+      });
       if (pos !== undefined) editor.commands.setNodeSelection(pos);
     }
     $('insert-panel').classList.remove('open');
@@ -117,7 +130,7 @@ export function mountEditorUI(editor, model) {
     if (type === 'columns') {
       html += columnProperties(section);
     } else if (type === 'block') {
-      html += `<h2>${escape(blockTypes[node.attrs.kind])}</h2><p>Blocco automatico · Dati di esempio</p><div class="section"><label for="block-title">Titolo della sezione</label><input id="block-title" type="text" maxlength="100" value="${escape(node.attrs.title)}"><label class="check"><input type="checkbox" id="block-compact" ${node.attrs.compact ? 'checked' : ''}>Spaziatura compatta</label><label for="block-font-family">Carattere del blocco</label><select id="block-font-family">${['Arial','Georgia','Verdana','Times New Roman'].map(f=>`<option ${node.attrs.fontFamily===f?'selected':''}>${f}</option>`).join('')}</select><label for="block-font-size">Dimensione del testo</label><select id="block-font-size">${['9pt','10pt','11pt','12pt','14pt','18pt','24pt'].map(f=>`<option ${node.attrs.fontSize===f?'selected':''}>${f}</option>`).join('')}</select>${node.attrs.kind === 'weighing' ? `<label class="check"><input type="checkbox" id="block-ppm" ${node.attrs.showPpm ? 'checked' : ''}>Mostra ppm</label><label class="check"><input type="checkbox" id="block-coefficient" ${node.attrs.showCoefficient ? 'checked' : ''}>Mostra g/mm</label>` : ''}</div><div class="section"><span class="eyebrow">Dati sempre presenti</span><ul class="required-list">${({ identity: ['Produzione e data', 'Prodotto'], press: ['Macchina e pressione in bar'], weighing: ['Grammi per singolo strato', 'Numero di pesate', 'Peso complessivo', 'Spessore totale in mm'], mixtures: ['Numero degli strati', 'Polveri e percentuali', 'Grammi e totale miscela'], totals: ['Numero dei dischi', 'Fabbisogno da dosare', 'Quantità da preparare'], signatures: ['Spazi per data e firma'] }[node.attrs.kind]).map(t => `<li>${t}</li>`).join('')}</ul></div><div class="row"><button data-property="duplicate" class="line">Duplica blocco</button><button data-property="delete" class="line danger">Elimina</button></div><div class="note">Trascina la maniglia del blocco per spostarlo. I numeri si modificano nei dati della produzione.</div>`;
+      html += `<h2>${escape(blockTypes[node.attrs.kind])}</h2><p>Blocco automatico · Dati di esempio</p>${blockProperties(node.attrs, blockTab)}<div class="section"><span class="eyebrow">Dati operativi protetti</span><p>Grammi, conteggi, spessori e pressione provengono dalla produzione. Le proprietà modificano soltanto la presentazione.</p></div><div class="row"><button data-property="duplicate" class="line">Duplica blocco</button><button data-property="delete" class="line danger">Elimina</button></div><div class="note">Trascina la maniglia del blocco per spostarlo.</div>`;
     } else if (type === 'table') {
       html += '<h2>Tabella libera</h2><p>Seleziona celle e usa questi comandi per modificarne la struttura.</p><div class="section"><div class="row"><button data-command="addRowAfter" class="line">＋ Riga</button><button data-command="addColumnAfter" class="line">＋ Colonna</button></div><div class="row"><button data-command="deleteRow" class="line">Elimina riga</button><button data-command="deleteColumn" class="line">Elimina colonna</button></div><div class="row"><button data-command="mergeCells" class="line">Unisci celle</button><button data-command="splitCell" class="line">Dividi cella</button></div><div class="row"><button data-command="toggleHeaderRow" class="line">Intestazione</button></div></div><label class="check"><input id="table-striped" type="checkbox" ' + (attrs.striped ? 'checked' : '') + '>Righe alternate</label><label class="check"><input id="table-compact" type="checkbox" ' + (attrs.compact ? 'checked' : '') + '>Spaziatura compatta</label><div class="row"><button data-command="deleteTable" class="line danger">Elimina tabella</button></div><div class="note">Per ridimensionare una colonna trascina il bordo fra due celle.</div>';
     } else if (type === 'image') {
@@ -134,12 +147,7 @@ export function mountEditorUI(editor, model) {
       input.disabled = !editor.isEditable;
       input.onchange = () => { action(input); updateProperties(true); };
     };
-    change('block-title', input => editor.commands.updateAttributes('tonBlock', { title: input.value.trim() || blockTypes[node.attrs.kind] }));
-    change('block-font-family', input => editor.commands.updateAttributes('tonBlock', { fontFamily: input.value }));
-    change('block-font-size', input => editor.commands.updateAttributes('tonBlock', { fontSize: input.value }));
-    change('block-compact', input => editor.commands.updateAttributes('tonBlock', { compact: input.checked }));
-    change('block-ppm', input => editor.commands.updateAttributes('tonBlock', { showPpm: input.checked }));
-    change('block-coefficient', input => editor.commands.updateAttributes('tonBlock', { showCoefficient: input.checked }));
+    if (type === 'block') bindBlockProperties(root, editor, node.attrs, tab => { blockTab = tab; }, updateProperties, notify);
     change('table-striped', input => editor.commands.updateAttributes('table', { striped: input.checked }));
     change('table-compact', input => editor.commands.updateAttributes('table', { compact: input.checked }));
     change('image-width', input => editor.commands.updateAttributes('image', { width: input.value }));

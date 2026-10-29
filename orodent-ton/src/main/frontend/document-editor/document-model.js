@@ -2,7 +2,7 @@ import { sizePaper } from './paper-layout.js';
 import { validateDocument } from './extensions.js';
 import { normalizeLayoutJSON } from './layout-model.js';
 
-export const documentSchemaVersion = 3;
+export const documentSchemaVersion = 4;
 export const defaultPage = Object.freeze({ orientation: 'portrait', margin: 15 });
 
 export function readModel(payload, schema) {
@@ -10,7 +10,7 @@ export function readModel(payload, schema) {
   let envelope;
   try { envelope = JSON.parse(payload); } catch { throw new Error('Il file non contiene un modello valido. Usa un file esportato dall’editor.'); }
   if (!envelope || typeof envelope !== 'object' || Array.isArray(envelope)) throw new Error('Il file non contiene un modello valido.');
-  if (![1, 2, documentSchemaVersion].includes(envelope.schemaVersion) || envelope.content?.type !== 'doc') {
+  if (![1, 2, 3, documentSchemaVersion].includes(envelope.schemaVersion) || envelope.content?.type !== 'doc') {
     throw new Error('Formato del documento non supportato.');
   }
   if (envelope.page !== undefined && (!envelope.page || typeof envelope.page !== 'object' || Array.isArray(envelope.page))) throw new Error('Impostazioni della pagina non valide.');

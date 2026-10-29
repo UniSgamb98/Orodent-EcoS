@@ -35,3 +35,11 @@ test('old nested layouts and engineering flags upgrade without changing the sour
   assert.deepEqual(next.content[0].content[1].content[0].attrs.widths, [50, 50]);
   assert.deepEqual(normalizeLayoutJSON(next), next);
 });
+
+test('block-only columns gain a stable editable selection boundary once', () => {
+  const old = { type: 'tonColumn', content: [{ type: 'tonBlock', attrs: { kind: 'mixtures' } }] };
+  const normalized = normalizeLayoutJSON(old);
+  assert.deepEqual(normalized.content.at(-1), { type: 'paragraph' });
+  assert.equal(old.content.length, 1);
+  assert.deepEqual(normalizeLayoutJSON(normalized), normalized);
+});
