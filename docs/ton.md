@@ -20,6 +20,7 @@ contatori fittizi o comandi non implementati. Il cubaggio resta rinviato.
 - [Polveri, ossidi e schede tecniche approvate](ton-polveri.md).
 - [Modelli disco, strati, sovramateriali e versioni](ton-modelli-disco.md).
 - [Composizioni, ricette per strato, ossidi e utilizzi](ton-composizioni.md).
+- [Proposta dell'editor visuale dei documenti](ton-documenti-proposta.md), non ancora integrato.
 - [Struttura e collegamenti del dominio TON](ton-schema-proposta.md).
 - [Proposta grafica di riferimento](ton-cataloghi-proposta.md).
 
