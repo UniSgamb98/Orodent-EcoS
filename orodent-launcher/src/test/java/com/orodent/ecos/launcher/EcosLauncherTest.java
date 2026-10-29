@@ -1,9 +1,10 @@
 package com.orodent.ecos.launcher;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import javax.tools.ToolProvider;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import javax.tools.ToolProvider;
 
 class EcosLauncherTest {
     @TempDir Path temporary;
@@ -19,14 +20,16 @@ class EcosLauncherTest {
 
     @Test
     void reportsAnIncompleteInstallation() {
-        IOException missing = assertThrows(IOException.class, () -> EcosLauncher.command(temporary, javaHome));
+        IOException missing =
+                assertThrows(IOException.class, () -> EcosLauncher.command(temporary, javaHome));
         assertTrue(missing.getMessage().contains("app/lib"));
     }
 
     @Test
     void reportsAMissingApplication() throws Exception {
         Files.createDirectories(temporary.resolve("app/lib"));
-        IOException missing = assertThrows(IOException.class, () -> EcosLauncher.command(temporary, javaHome));
+        IOException missing =
+                assertThrows(IOException.class, () -> EcosLauncher.command(temporary, javaHome));
         assertTrue(missing.getMessage().contains("orodent-app"));
     }
 
@@ -34,7 +37,24 @@ class EcosLauncherTest {
     void reportsAMissingJavaRuntime() throws Exception {
         Path libraries = Files.createDirectories(temporary.resolve("app/lib"));
         Files.createFile(libraries.resolve("orodent-app-1.jar"));
-        assertThrows(IOException.class, () -> EcosLauncher.command(temporary, temporary.resolve("missing-java")));
+        assertThrows(
+                IOException.class,
+                () -> EcosLauncher.command(temporary, temporary.resolve("missing-java")));
+    }
+
+    @Test
+    void usesSelectedRuntimeAndApplicationAsOnePair() throws Exception {
+        Path libraries = Files.createDirectories(temporary.resolve("cached version/lib"));
+        Files.createFile(libraries.resolve("orodent-app-2.jar"));
+        Path java = temporary.resolve("downloaded Java/bin/java.exe");
+        Files.createDirectories(java.getParent());
+        Files.createFile(java);
+        List<String> command =
+                EcosLauncher.command(temporary, java, libraries, "0.2.0", "literal argument");
+        assertEquals(java.toString(), command.getFirst());
+        assertTrue(command.contains(libraries.toString()));
+        assertTrue(command.contains("-Dorodent.ecos.version=0.2.0"));
+        assertEquals("literal argument", command.getLast());
     }
 
     @Test
@@ -46,7 +66,9 @@ class EcosLauncherTest {
         Path descriptor = sources.resolve("module-info.java");
         Files.writeString(descriptor, "module com.orodent.ecos.app { }");
         Path main = sources.resolve("MainApp.java");
-        Files.writeString(main, """
+        Files.writeString(
+                main,
+                """
                 package com.orodent.ecos.app;
                 public final class MainApp {
                     public static void main(String[] args) throws Exception {
@@ -56,20 +78,32 @@ class EcosLauncherTest {
                     }
                 }
                 """);
-        int compiled = ToolProvider.getSystemJavaCompiler().run(null, null, null,
-                "-d", classes.toString(), descriptor.toString(), main.toString());
+        int compiled =
+                ToolProvider.getSystemJavaCompiler()
+                        .run(
+                                null,
+                                null,
+                                null,
+                                "-d",
+                                classes.toString(),
+                                descriptor.toString(),
+                                main.toString());
         assertEquals(0, compiled);
-        try (var jar = new JarOutputStream(Files.newOutputStream(libraries.resolve("orodent-app-1.jar")));
-             var files = Files.walk(classes)) {
+        try (var jar =
+                        new JarOutputStream(
+                                Files.newOutputStream(libraries.resolve("orodent-app-1.jar")));
+                var files = Files.walk(classes)) {
             for (Path file : files.filter(Files::isRegularFile).toList()) {
-                jar.putNextEntry(new JarEntry(classes.relativize(file).toString().replace('\\', '/')));
+                jar.putNextEntry(
+                        new JarEntry(classes.relativize(file).toString().replace('\\', '/')));
                 Files.copy(file, jar);
                 jar.closeEntry();
             }
         }
         Path result = temporary.resolve("result with spaces.txt");
         String literal = "value with spaces; $(literal)";
-        List<String> command = EcosLauncher.command(installation, javaHome, result.toString(), literal);
+        List<String> command =
+                EcosLauncher.command(installation, javaHome, result.toString(), literal);
         assertEquals(literal, command.getLast());
         assertEquals(7, EcosLauncher.launch(installation, result.toString(), literal));
         assertEquals(literal + "|" + installation.toAbsolutePath(), Files.readString(result));

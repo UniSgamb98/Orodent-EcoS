@@ -97,6 +97,102 @@ class LegacyLauncherCompatibilityTest {
         }
     }
 
+    @Test
+    void publisherSignsRuntimeInventoryAndNewLauncherInstallsThePair() throws Exception {
+        Path publisher = Files.createDirectory(temporary.resolve("managed-publisher"));
+        Path tool = Path.of("../scripts/ReleaseTool.java").toAbsolutePath().normalize();
+        run(publisher, temporary.resolve("managed-keygen.log"), List.of(tool.toString(), "keygen"));
+        Path runtime = Files.createDirectories(temporary.resolve("runtime-fixture"));
+        for (String file :
+                List.of("bin/java.exe", "bin/server/jvm.dll", "lib/modules", "release")) {
+            Path target = runtime.resolve(file);
+            Files.createDirectories(target.getParent());
+            Files.writeString(
+                    target,
+                    file.equals("release") ? "JAVA_VERSION=\"25.0.1\"\n" : "fixture " + file);
+        }
+        Path libraries = Path.of("target/distribution/app/lib").toAbsolutePath();
+        Path output = publisher.resolve("release");
+        ProcessBuilder signer =
+                process(
+                        publisher,
+                        temporary.resolve("managed-signer.log"),
+                        List.of(
+                                tool.toString(),
+                                "release",
+                                "0.2.0",
+                                libraries.toString(),
+                                output.toString(),
+                                runtime.toString()));
+        signer.environment()
+                .put(
+                        "UPDATE_SIGNING_PRIVATE_KEY",
+                        Files.readString(
+                                publisher.resolve(".release-keys/update-private-key.pem")));
+        finish(signer, temporary.resolve("managed-signer.log"));
+        PublicKey key =
+                UpdateCatalog.publicKey(
+                        Files.readString(publisher.resolve("config/update-public-key.pem")));
+        byte[] catalog = Files.readAllBytes(output.resolve("update.properties")),
+                signature = Files.readAllBytes(output.resolve("update.properties.sig"));
+        var verified = UpdateCatalog.verify(catalog, signature, key, RUNTIME);
+        assertEquals(25, verified.runtimeBundle().feature());
+        assertEquals(4, verified.runtimeBundle().files().size());
+        Path installed = Files.createDirectories(temporary.resolve("managed-installed/app/lib"));
+        var updater =
+                new UpdateManager(
+                        temporary.resolve("managed-updates"),
+                        key,
+                        RUNTIME,
+                        Path.of(System.getProperty("java.home"), "bin", "java"),
+                        (url, destination, limit) -> {
+                            String file =
+                                    url.endsWith(".sig")
+                                            ? "update.properties.sig"
+                                            : url.endsWith("runtime.zip")
+                                                    ? "Orodent-EcoS-runtime.zip"
+                                                    : url.endsWith(".zip")
+                                                            ? "Orodent-EcoS-components.zip"
+                                                            : "update.properties";
+                            assertTrue(Files.size(output.resolve(file)) <= limit);
+                            Files.copy(output.resolve(file), destination);
+                        },
+                        (lib, java) -> {
+                            assertEquals("fixture bin/java.exe", Files.readString(java));
+                            try (var jars = Files.list(lib)) {
+                                assertTrue(
+                                        jars.anyMatch(
+                                                p ->
+                                                        p.getFileName()
+                                                                .toString()
+                                                                .startsWith("orodent-app-")));
+                            }
+                        });
+        var selection = updater.select(installed, ReleaseVersion.parse("0.1.0"));
+        assertEquals(ReleaseVersion.parse("0.2.0"), selection.version(), updater.lastFailure());
+        assertTrue(
+                selection
+                        .javaExecutable()
+                        .startsWith(temporary.resolve("managed-updates/runtimes")));
+        try (var legacy = compileInstalledUpdater()) {
+            var verify =
+                    legacy.loadClass(PACKAGE + "UpdateCatalog")
+                            .getMethod(
+                                    "verify",
+                                    byte[].class,
+                                    byte[].class,
+                                    PublicKey.class,
+                                    String.class);
+            var rejected =
+                    assertThrows(
+                            java.lang.reflect.InvocationTargetException.class,
+                            () -> verify.invoke(null, catalog, signature, key, RUNTIME));
+            assertTrue(
+                    rejected.getCause() instanceof java.io.IOException,
+                    "The installed protocol-1 launcher needs the one-time bootstrap update");
+        }
+    }
+
     private URLClassLoader compileInstalledUpdater() throws Exception {
         Path sources = Files.createDirectory(temporary.resolve("legacy-sources"));
         Path classes = Files.createDirectory(temporary.resolve("legacy-classes"));

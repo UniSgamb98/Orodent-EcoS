@@ -50,7 +50,7 @@ jobs:
         env:
           UPDATE_SIGNING_PRIVATE_KEY: ${{ secrets.UPDATE_SIGNING_PRIVATE_KEY }}
         run: |
-          java scripts/ReleaseTool.java release $env:RELEASE_VERSION orodent-launcher/target/distribution/app/lib target/release
+          java scripts/ReleaseTool.java release $env:RELEASE_VERSION orodent-launcher/target/distribution/app/lib target/release target/windows-portable/Orodent-EcoS/runtime
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Create draft release
         shell: pwsh
@@ -58,5 +58,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          gh release create $env:RELEASE_TAG --verify-tag --draft --title "Orodent-EcoS $env:RELEASE_VERSION" --generate-notes target/Orodent-EcoS-windows-portable.zip target/release/Orodent-EcoS-components.zip target/release/update.properties target/release/update.properties.sig
+          gh release create $env:RELEASE_TAG --verify-tag --draft --title "Orodent-EcoS $env:RELEASE_VERSION" --generate-notes target/Orodent-EcoS-windows-portable.zip target/release/Orodent-EcoS-components.zip target/release/Orodent-EcoS-runtime.zip target/release/update.properties target/release/update.properties.sig
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

@@ -64,8 +64,7 @@ Le sole migrazioni DB arrivano con la normale release firmata dei componenti e
 non richiedono la sostituzione di Java o launcher. Per migrare un archivio esistente chiudere le istanze
 e riavviare prima l'HOST aggiornato, poi i CLIENT.
 
-L’editor in Documenti aggiunge JavaFX Web e `jdk.jsobject`: il suo primo rilascio
-richiede lo ZIP completo con runtime v2. I runtime v1 rifiutano il catalogo firmato
-incompatibile e mantengono l’applicazione precedente. Dopo l’installazione di v2,
-gli aggiornamenti dei soli componenti riprendono normalmente. Non cambia lo schema
-DB; dettagli nella [guida Tiptap](ton-editor-offline.md).
+L’editor in Documenti aggiunge JavaFX Web e `jdk.jsobject`. Il primo ZIP completo
+installa il launcher con updater di protocollo 2; in seguito componenti e Java
+applicativo possono aggiornarsi automaticamente insieme. Non cambia lo schema DB;
+dettagli nella [guida alle release](releases.md).

@@ -33,10 +33,10 @@ restano da integrare.
 `javafx-web` e `javafx-media` sono ora dipendenze runtime. Tutti i moduli JavaFX
 sono fissati a **21.0.6**, compresi base e graphics, evitando versioni transitive
 non allineate. Il pacchetto Java incorporato include anche `jdk.jsobject`.
-Questo richiede un primo **ZIP completo con runtime v2** sulle postazioni che
-usano il vecchio runtime v1: il catalogo firmato rifiuta correttamente quel runtime,
-che non contiene il modulo necessario. Dopo questo passaggio i componenti
-continueranno ad aggiornarsi normalmente all’interno del contratto runtime v2.
+Il primo ZIP completo installa anche l’**updater di protocollo 2** sulle postazioni
+con il vecchio launcher. Da quel momento le release possono aggiornare sia i JAR
+sia il Java applicativo: un futuro nuovo modulo Java non richiede di ridistribuire
+manualmente lo ZIP. Vedere [runtime e release firmate](releases.md).
 Non cambia la versione dello schema DB e non si devono spostare i dati.
 
 Il ponte JavaScript `window.OrodentDocumentEditor` espone operazioni delimitate:

@@ -11,6 +11,8 @@ Il database non si trova in app/lib e non viene incluso nello ZIP.
 ORODENT_ECOS_DATABASE_HOME consente di scegliere la directory dati.
 
 Questo pacchetto contiene librerie JavaFX per il sistema operativo su cui viene
-compilato. Non contiene ancora un runtime Java, un installer Windows o un updater.
+compilato. Questa distribuzione JAR non include il runtime iniziale o l'EXE Windows.
+Per la distribuzione Windows con Java incorporato usare scripts/package-windows.ps1.
+L'updater incluso supporta componenti e runtime Windows firmati (protocollo 2).
 Il controllo aggiornamenti richiede una release firmata e updates.enabled=true nel config.
 I pacchetti manuali lo lasciano disabilitato.

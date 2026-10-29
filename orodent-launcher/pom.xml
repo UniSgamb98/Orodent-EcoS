@@ -6,6 +6,8 @@
     <groupId>com.orodent</groupId><artifactId>orodent-ecos</artifactId><version>0.1.0-SNAPSHOT</version>
   </parent>
   <artifactId>orodent-launcher</artifactId>
+  <!-- The installed bootstrap keeps running on Java 21 even when app runtimes advance. -->
+  <properties><maven.compiler.release>21</maven.compiler.release></properties>
   <dependencies>
     <!-- Packaging dependency only: the launcher starts the app in a separate JVM. -->
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-app</artifactId><version>${project.version}</version><scope>runtime</scope></dependency>

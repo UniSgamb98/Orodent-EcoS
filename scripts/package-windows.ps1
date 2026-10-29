@@ -25,16 +25,22 @@ if ([string]::IsNullOrWhiteSpace($JdkHome)) {
 $JdkHome = (Resolve-Path $JdkHome).Path
 foreach ($tool in @('java.exe', 'javac.exe', 'jlink.exe', 'jpackage.exe')) {
     if (-not (Test-Path -LiteralPath (Join-Path $JdkHome "bin\$tool") -PathType Leaf)) {
-        throw "Il JDK selezionato non contiene bin\$tool. Serve un JDK 21 completo, non solo un JRE."
+        throw "Il JDK selezionato non contiene bin\$tool. Serve un JDK 21 o successivo completo, non solo un JRE."
     }
 }
 if (-not (Test-Path -LiteralPath (Join-Path $JdkHome 'jmods') -PathType Container)) {
-    throw 'Il JDK selezionato non contiene jmods. Installare un JDK 21 completo.'
+    throw 'Il JDK selezionato non contiene jmods. Installare un JDK 21 o successivo completo.'
 }
 $javaExecutable = Join-Path $JdkHome 'bin\java.exe'
 $javaVersion = (& $javaExecutable --version | Out-String)
-if ($LASTEXITCODE -ne 0 -or $javaVersion -notmatch '(?m)^(openjdk|java) 21([.\s]|$)') {
-    throw "Serve Java 21. Il JDK selezionato riporta: $javaVersion"
+if ($LASTEXITCODE -ne 0 -or $javaVersion -notmatch '(?m)^(openjdk|java) (\d+)([.\s]|$)' -or [int]$Matches[2] -lt 21) {
+    throw "Serve Java 21 o successivo. Il JDK selezionato riporta: $javaVersion"
+}
+
+$jdkReleaseFile = Join-Path $JdkHome 'release'
+if (-not (Test-Path -LiteralPath $jdkReleaseFile -PathType Leaf) -or
+    (Get-Content -LiteralPath $jdkReleaseFile -Raw) -notmatch '(?m)^OS_ARCH="(amd64|x86_64)"\r?$') {
+    throw 'Il pacchetto e il catalogo aggiornamenti richiedono un JDK Windows x64.'
 }
 
 # Full JDK distributions may bundle a different JavaFX build and record its hashes
