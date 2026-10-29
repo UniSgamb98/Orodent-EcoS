@@ -4,24 +4,36 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-__EDITOR_SCRIPT_SHA256__'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
-  <title>Editor documenti Orodent-EcoS</title>
+  <title>Editor documenti · Orodent-EcoS</title>
   <!-- LOCAL_STYLE -->
 </head>
 <body>
-  <nav class="toolbar" aria-label="Strumenti del documento">
-    <button type="button" data-command="bold" aria-label="Grassetto" aria-pressed="false"><b>Grassetto</b></button>
-    <button type="button" data-command="italic" aria-label="Corsivo" aria-pressed="false"><i>Corsivo</i></button>
-    <button type="button" data-command="underline" aria-label="Sottolineato" aria-pressed="false"><u>Sottolineato</u></button>
-    <span class="separator" aria-hidden="true"></span>
-    <button type="button" data-command="table">Inserisci tabella</button>
-    <button type="button" data-command="addRowAfter">Aggiungi riga</button>
-    <button type="button" data-command="addColumnAfter">Aggiungi colonna</button>
-    <span class="separator" aria-hidden="true"></span>
-    <button type="button" data-command="undo">Annulla</button>
-    <button type="button" data-command="redo">Ripeti</button>
+  <header class="appbar"><strong>ORODENT <span>EcoS</span></strong><span class="app-location">TON · Documenti</span><span class="grow"></span><span class="example-label">Modello locale · Dati di esempio</span></header>
+  <div class="titlebar"><div class="document-symbol" aria-hidden="true">▤</div><div class="title-field"><label for="template-title">Modelli di stampa / Editor visuale</label><input id="template-title" maxlength="150" value="Foglio operativo di pressatura" aria-label="Nome del modello"></div><span id="dirty-state" class="badge">Bozza locale</span><span class="grow"></span><button data-action="open-model" class="line">Apri modello</button><button data-action="export-model" class="line">Esporta modello</button><button data-action="check-model" class="line">Verifica</button><button data-action="preview" class="primary">Anteprima</button></div>
+  <nav class="toolbar" aria-label="Formattazione del documento">
+    <button data-action="toggle-insert" class="active">＋ Inserisci</button><span class="separator"></span>
+    <button data-command="undo" title="Annulla" aria-label="Annulla">↶</button><button data-command="redo" title="Ripeti" aria-label="Ripeti">↷</button><span class="separator"></span>
+    <select id="text-type" aria-label="Stile del testo"><option value="paragraph">Testo normale</option><option value="1">Titolo 1</option><option value="2">Titolo 2</option><option value="3">Titolo 3</option></select>
+    <select id="font-family" aria-label="Carattere"><option>Arial</option><option>Georgia</option><option>Verdana</option><option>Times New Roman</option></select>
+    <select id="font-size" aria-label="Dimensione carattere"><option value="9pt">9</option><option value="10pt">10</option><option value="11pt" selected>11</option><option value="12pt">12</option><option value="14pt">14</option><option value="18pt">18</option><option value="24pt">24</option></select>
+    <button data-command="bold" title="Grassetto" aria-label="Grassetto" aria-pressed="false"><b>G</b></button><button data-command="italic" title="Corsivo" aria-label="Corsivo" aria-pressed="false"><i>C</i></button><button data-command="underline" title="Sottolineato" aria-label="Sottolineato" aria-pressed="false"><u>S</u></button>
+    <label class="color-control" title="Colore testo">A<input id="text-color" type="color" value="#173f5f" aria-label="Colore testo"></label>
+    <label class="color-control highlight" title="Evidenziatore">A<input id="text-highlight" type="color" value="#fff0a5" aria-label="Evidenziatore"></label><span class="separator"></span>
+    <button data-command="align-left" title="Allinea a sinistra" aria-label="Allinea a sinistra">☰</button><button data-command="align-center" title="Centra" aria-label="Centra">≡</button><button data-command="align-right" title="Allinea a destra" aria-label="Allinea a destra">☷</button>
+    <button data-command="bulletList" title="Elenco puntato" aria-label="Elenco puntato">• ≡</button><button data-command="orderedList" title="Elenco numerato" aria-label="Elenco numerato">1. ≡</button>
+    <select id="line-height" aria-label="Interlinea"><option value="1.2">Interlinea 1,2</option><option value="1.5" selected>Interlinea 1,5</option><option value="2">Interlinea 2</option></select><span class="grow"></span><button data-action="toggle-properties" class="properties-toggle line">Proprietà</button>
   </nav>
+  <div class="workspace">
+    <aside class="insert-panel" id="insert-panel"><div class="panel-tabs"><button data-tab="insert" class="active">Inserisci</button><button data-tab="page">Pagina</button></div><div id="insert-tools" class="panel-content"><p class="panel-help">Trascina un elemento sulla pagina oppure fai clic per inserirlo nel documento.</p><span class="eyebrow">Contenuto</span><div id="basic-palette"></div><span class="eyebrow">Blocchi del laboratorio</span><div id="laboratory-palette"></div><span class="eyebrow">Campi nel testo</span><div id="field-palette"></div></div><div id="page-tools" class="panel-content" hidden><p class="panel-help">Formato e margini vengono conservati nel modello.</p><label for="orientation">Formato A4</label><select id="orientation"><option value="portrait">Verticale</option><option value="landscape">Orizzontale</option></select><label for="margins">Margini</label><select id="margins"><option value="10">Stretti · 10 mm</option><option value="15" selected>Normali · 15 mm</option><option value="20">Ampi · 20 mm</option></select><div class="note">I pesi, le quantità e le pressioni dei blocchi automatici provengono dai dati della produzione. In questa pagina sono esempi.</div></div></aside>
+    <main class="canvas" id="canvas"><div class="canvas-top"><span id="canvas-message">Scrivi sulla pagina e trascina i blocchi per organizzarli.</span><button data-action="deselect" class="ghost">Deseleziona</button></div><div class="paper-space" id="paper-space"><article class="paper" id="paper"><div class="paper-brand"><strong>ORODENT</strong><span>LABORATORIO · PRODUZIONE</span></div><div id="editor"></div><div class="paper-footer">Dati di esempio · Nessun documento emesso</div></article></div></main>
+    <aside class="properties" id="properties" aria-label="Proprietà della selezione"></aside>
+  </div>
+  <footer class="statusbar"><span id="selection-status">Documento in flusso · A4</span><span class="grow"></span><span>Dati di esempio</span><label for="zoom">Zoom</label><select id="zoom"><option value=".5">50%</option><option value=".65">65%</option><option value=".8" selected>80%</option><option value="1">100%</option><option value="1.2">120%</option></select></footer>
   <p id="error" role="alert" hidden>Impossibile caricare l’editor del documento.</p>
-  <main><div id="editor"></div></main>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <input id="model-file" type="file" accept="application/json,.json" hidden><input id="image-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+  <section class="overlay" id="table-dialog" role="dialog" aria-modal="true" aria-labelledby="table-dialog-title" hidden><div class="dialog small-dialog"><h2 id="table-dialog-title">Inserisci tabella</h2><p>Scegli la dimensione iniziale. Potrai aggiungere o rimuovere righe e colonne.</p><div class="two-inputs"><label>Righe di contenuto<input id="table-rows" type="number" min="1" max="20" value="3"></label><label>Colonne<input id="table-cols" type="number" min="1" max="8" value="3"></label></div><label class="check"><input id="table-header" type="checkbox" checked>Riga di intestazione</label><div class="dialog-actions"><button data-action="close-table" class="line">Annulla</button><button data-action="insert-table" class="primary">Inserisci tabella</button></div></div></section>
+  <section class="overlay" id="preview-dialog" role="dialog" aria-modal="true" aria-labelledby="preview-title" hidden><div class="preview-dialog"><header><div><h2 id="preview-title">Anteprima del documento</h2><small>Dati di esempio · Nessuna emissione</small></div><span class="grow"></span><button data-action="print" class="line">Stampa browser</button><button data-action="close-preview" class="primary">Torna all’editor</button></header><div class="preview-scroll"><article id="preview-content" class="paper preview-content"></article></div></div></section>
   <!-- LOCAL_SCRIPT -->
 </body>
 </html>

@@ -1,8 +1,9 @@
 # Proposta: editor visuale dei documenti TON
 
 Stato: **prototipo grafico interattivo**, non ancora integrato nell'applicazione.
-La [base Tiptap offline](ton-editor-offline.md) è ora inclusa nelle risorse di TON;
-l'editor completo e i suoi blocchi operativi restano da integrare.
+L'[editor Tiptap offline](ton-editor-visuale.md), con pannelli e blocchi dimostrativi,
+è incluso nelle risorse di TON. Il collegamento al menu dell'applicazione, ai dati
+produttivi reali e alle emissioni resta da integrare.
 Aprire [ton-documenti.html](mockups/ton-documenti.html) in un browser. Il file è
 autonomo e non richiede Internet. Tutti i dati produttivi e le dosi sono esempi:
 non vengono letti dal DB né calcolati dal prototipo.

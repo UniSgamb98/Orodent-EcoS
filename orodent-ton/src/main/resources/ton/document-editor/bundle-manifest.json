@@ -48,6 +48,11 @@
       "license": "MIT"
     },
     {
+      "name": "@tiptap/extension-image",
+      "version": "3.32.1",
+      "license": "MIT"
+    },
+    {
       "name": "@tiptap/extension-italic",
       "version": "3.32.1",
       "license": "MIT"
@@ -79,6 +84,16 @@
     },
     {
       "name": "@tiptap/extension-text",
+      "version": "3.32.1",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-text-align",
+      "version": "3.32.1",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-text-style",
       "version": "3.32.1",
       "license": "MIT"
     },
@@ -180,12 +195,12 @@
   ],
   "files": {
     "index.html": {
-      "bytes": 442850,
-      "sha256": "231627541155c47b8ac97242b5357be87af33dcfd13d56c0b45606eef57f0571"
+      "bytes": 512297,
+      "sha256": "fdcc06e50c464377d5a65654f248fac73ebf330c20dabb3e6c782d25daa9c2de"
     },
     "THIRD_PARTY_NOTICES.txt": {
-      "bytes": 39667,
-      "sha256": "bc047addb5fd7cd618969e6a30e584307988d62d5cc3d5f8e540b17c12ecc78d"
+      "bytes": 43034,
+      "sha256": "d9e4313524493c146d774630a686961dce7d40c2c54ba40df7c557349bf5a6dd"
     }
   }
 }

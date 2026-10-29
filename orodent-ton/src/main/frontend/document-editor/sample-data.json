@@ -1,0 +1,276 @@
+{
+  "production": "PR-2026-00125",
+  "date": "29/10/2026",
+  "line": "MST · Thor",
+  "product": "MSTA4 · Thor A4",
+  "recipe": "MSTA4 v2",
+  "model": "THOR-98 v1",
+  "machine": "P300",
+  "pressure": "83,3",
+  "quantity": 64,
+  "needed": "31.360,0",
+  "prepared": "31.516,8",
+  "extra": "156,8",
+  "coefficient": "25",
+  "formats": [
+    {
+      "code": "MSTA4-98-14",
+      "nominal": "14",
+      "thickness": "16,10",
+      "diameter": "98",
+      "count": 16,
+      "weight": "402,5",
+      "batchWeight": "6.440,0",
+      "layers": [
+        {
+          "number": 1,
+          "weight": "143,3",
+          "total": "2.292,0",
+          "ppm": 1400
+        },
+        {
+          "number": 2,
+          "weight": "70,5",
+          "total": "1.128,0",
+          "ppm": 1500
+        },
+        {
+          "number": 3,
+          "weight": "70,5",
+          "total": "1.128,0",
+          "ppm": 1700
+        },
+        {
+          "number": 4,
+          "weight": "118,3",
+          "total": "1.892,0",
+          "ppm": 1900
+        }
+      ]
+    },
+    {
+      "code": "MSTA4-98-18",
+      "nominal": "18",
+      "thickness": "20,10",
+      "diameter": "98",
+      "count": 32,
+      "weight": "502,5",
+      "batchWeight": "16.080,0",
+      "layers": [
+        {
+          "number": 1,
+          "weight": "173,3",
+          "total": "5.544,0",
+          "ppm": 1400
+        },
+        {
+          "number": 2,
+          "weight": "90,5",
+          "total": "2.896,0",
+          "ppm": 1500
+        },
+        {
+          "number": 3,
+          "weight": "90,5",
+          "total": "2.896,0",
+          "ppm": 1700
+        },
+        {
+          "number": 4,
+          "weight": "148,3",
+          "total": "4.744,0",
+          "ppm": 1900
+        }
+      ]
+    },
+    {
+      "code": "MSTA4-98-20",
+      "nominal": "20",
+      "thickness": "22,10",
+      "diameter": "98",
+      "count": 16,
+      "weight": "552,5",
+      "batchWeight": "8.840,0",
+      "layers": [
+        {
+          "number": 1,
+          "weight": "188,3",
+          "total": "3.012,0",
+          "ppm": 1400
+        },
+        {
+          "number": 2,
+          "weight": "100,5",
+          "total": "1.608,0",
+          "ppm": 1500
+        },
+        {
+          "number": 3,
+          "weight": "100,5",
+          "total": "1.608,0",
+          "ppm": 1700
+        },
+        {
+          "number": 4,
+          "weight": "163,3",
+          "total": "2.612,0",
+          "ppm": 1900
+        }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "number": 1,
+      "count": 64,
+      "needed": "10.848,0",
+      "total": "10.902,2",
+      "powders": [
+        {
+          "code": "Z-PEX4M",
+          "percentage": "0%",
+          "weight": "0,0"
+        },
+        {
+          "code": "SMILE4M",
+          "percentage": "30%",
+          "weight": "3.270,7"
+        },
+        {
+          "code": "Z-PEX4 yellow",
+          "percentage": "30%",
+          "weight": "3.270,7"
+        },
+        {
+          "code": "ZRZPEX4MYELLOW",
+          "percentage": "27%",
+          "weight": "2.943,6"
+        },
+        {
+          "code": "PINK4M",
+          "percentage": "6%",
+          "weight": "654,1"
+        },
+        {
+          "code": "Z-PEX GRAY",
+          "percentage": "7%",
+          "weight": "763,1"
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "count": 64,
+      "needed": "5.632,0",
+      "total": "5.660,2",
+      "powders": [
+        {
+          "code": "Z-PEX4M",
+          "percentage": "10%",
+          "weight": "566,0"
+        },
+        {
+          "code": "SMILE4M",
+          "percentage": "15%",
+          "weight": "849,0"
+        },
+        {
+          "code": "Z-PEX4 yellow",
+          "percentage": "32%",
+          "weight": "1.811,3"
+        },
+        {
+          "code": "ZRZPEX4MYELLOW",
+          "percentage": "30%",
+          "weight": "1.698,1"
+        },
+        {
+          "code": "PINK4M",
+          "percentage": "7%",
+          "weight": "396,2"
+        },
+        {
+          "code": "Z-PEX GRAY",
+          "percentage": "6%",
+          "weight": "339,6"
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "count": 64,
+      "needed": "5.632,0",
+      "total": "5.660,2",
+      "powders": [
+        {
+          "code": "Z-PEX4M",
+          "percentage": "8%",
+          "weight": "452,8"
+        },
+        {
+          "code": "SMILE4M",
+          "percentage": "8%",
+          "weight": "452,8"
+        },
+        {
+          "code": "Z-PEX4 yellow",
+          "percentage": "37%",
+          "weight": "2.094,3"
+        },
+        {
+          "code": "ZRZPEX4MYELLOW",
+          "percentage": "34%",
+          "weight": "1.924,5"
+        },
+        {
+          "code": "PINK4M",
+          "percentage": "7%",
+          "weight": "396,2"
+        },
+        {
+          "code": "Z-PEX GRAY",
+          "percentage": "6%",
+          "weight": "339,6"
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "count": 64,
+      "needed": "9.248,0",
+      "total": "9.294,2",
+      "powders": [
+        {
+          "code": "Z-PEX4M",
+          "percentage": "5%",
+          "weight": "464,7"
+        },
+        {
+          "code": "SMILE4M",
+          "percentage": "0%",
+          "weight": "0,0"
+        },
+        {
+          "code": "Z-PEX4 yellow",
+          "percentage": "42%",
+          "weight": "3.903,6"
+        },
+        {
+          "code": "ZRZPEX4MYELLOW",
+          "percentage": "38%",
+          "weight": "3.531,8"
+        },
+        {
+          "code": "PINK4M",
+          "percentage": "9%",
+          "weight": "836,5"
+        },
+        {
+          "code": "Z-PEX GRAY",
+          "percentage": "6%",
+          "weight": "557,6"
+        }
+      ]
+    }
+  ]
+}

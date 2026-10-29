@@ -1,111 +1,101 @@
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { TableKit } from '@tiptap/extension-table';
+import { TextStyleKit } from '@tiptap/extension-text-style';
+import TextAlign from '@tiptap/extension-text-align';
+import { EditorState } from '@tiptap/pm/state';
+import { TonBlock, TonField, TonColumns, TonColumn, TableAppearance, LocalImage } from './extensions.js';
+import { initialContent } from './laboratory-blocks.js';
+import { defaultPage, documentSchemaVersion, readModel, writeModel, applyPage } from './document-model.js';
+import { mountEditorUI } from './editor-ui.js';
 
-// This is the offline editor foundation, not the TON template or PDF engine.
-// Its JSON content will be wrapped by the application's versioned model service.
-const host = document.getElementById('editor');
-const controls = [...document.querySelectorAll('[data-command]')];
-let editor;
-let disposed = false;
-
-function activeEditor() {
+// Offline visual editor. Business calculations, DB versioning and PDF emission
+// are application responsibilities; the visible laboratory values are fixtures.
+let editor, ui, disposed = false, restoring = false, dirty = false;
+let title = 'Foglio operativo di pressatura';
+let page = { ...defaultPage }, zoom = .8;
+const activeEditor = () => {
   if (!editor || disposed) throw new Error('Editor non disponibile.');
   return editor;
+};
+function applyLayout() {
+  applyPage(page, zoom);
+  document.getElementById('orientation').value = page.orientation;
+  document.getElementById('margins').value = String(page.margin);
+  document.getElementById('template-title').value = title;
 }
-
-function refreshControls() {
-  if (!editor || disposed) return;
-  for (const button of controls) {
-    const command = button.dataset.command;
-    const formatting = ['bold', 'italic', 'underline'].includes(command);
-    button.disabled = !editor.isEditable
-      || (command === 'undo' && !editor.can().undo())
-      || (command === 'redo' && !editor.can().redo())
-      || (command === 'addRowAfter' && !editor.can().addRowAfter())
-      || (command === 'addColumnAfter' && !editor.can().addColumnAfter());
-    if (formatting) button.setAttribute('aria-pressed', String(editor.isActive(command)));
-  }
-}
-
-function run(command) {
+function restore(payload) {
   const instance = activeEditor();
-  if (!instance.isEditable) return false;
-  const chain = instance.chain().focus();
-  switch (command) {
-    case 'bold': return chain.toggleBold().run();
-    case 'italic': return chain.toggleItalic().run();
-    case 'underline': return chain.toggleUnderline().run();
-    case 'undo': return chain.undo().run();
-    case 'redo': return chain.redo().run();
-    case 'table': return chain.insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
-    case 'addRowAfter': return chain.addRowAfter().run();
-    case 'addColumnAfter': return chain.addColumnAfter().run();
-    default: throw new Error('Comando non riconosciuto.');
-  }
+  const parsed = readModel(payload, instance.schema);
+  restoring = true;
+  try {
+    // Opening a model starts a new editing session; undo must not resurrect a
+    // document from the previous session.
+    instance.view.updateState(EditorState.create({
+      schema: instance.schema, doc: parsed.content, plugins: instance.state.plugins,
+    }));
+    title = parsed.title; page = parsed.page; dirty = false;
+    applyLayout(); ui.refresh(true);
+  } finally { restoring = false; }
 }
-
 try {
   editor = new Editor({
-    element: host,
+    element: document.getElementById('editor'),
     injectCSS: false,
-    extensions: [
-      StarterKit.configure({ link: false }),
-      TableKit.configure({ table: { resizable: true } }),
-    ],
+    extensions: [StarterKit.configure({ link: false }), TableKit.configure({ table: { resizable: true } }),
+      TextStyleKit, TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      LocalImage, TonBlock, TonField, TonColumns, TonColumn, TableAppearance],
     editorProps: { attributes: { 'aria-label': 'Contenuto del documento', spellcheck: 'false' } },
-    content: {
-      type: 'doc',
-      content: [
-        { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Scheda di produzione' }] },
-        { type: 'paragraph', content: [{ type: 'text', text: 'Scrivi le istruzioni e inserisci una tabella dalla barra degli strumenti.' }] },
-      ],
+    content: initialContent(),
+    onTransaction({ transaction }) {
+      if (disposed) return;
+      if (transaction.docChanged && !restoring) dirty = true;
+      ui?.refresh();
     },
-    onTransaction: refreshControls,
-    onSelectionUpdate: refreshControls,
+    onSelectionUpdate() { if (!disposed) ui?.refresh(); },
   });
-
-  for (const button of controls) {
-    button.onmousedown = event => event.preventDefault();
-    button.onclick = () => run(button.dataset.command);
-  }
-
-  // Small, string-based bridge for a future JavaFX host. No network/DB bridge.
+  const model = {
+    title: () => title,
+    serialize: () => writeModel(activeEditor(), title, page),
+    restore,
+    isDirty: () => dirty,
+    changeTitle(value) {
+      if (!editor.isEditable) return;
+      const next = String(value).trim().slice(0, 150) || 'Modello di documento';
+      if (next !== title) { title = next; dirty = true; }
+      applyLayout(); ui.refresh();
+    },
+    changePage(value) {
+      if (!editor.isEditable) return;
+      if (!['portrait', 'landscape'].includes(value.orientation) || ![10, 15, 20].includes(value.margin)) throw new Error('Formato non supportato.');
+      if (value.orientation !== page.orientation || value.margin !== page.margin) dirty = true;
+      page = { ...value }; applyLayout(); ui.refresh();
+    },
+    zoom(value) { if ([.5, .65, .8, 1, 1.2].includes(value)) { zoom = value; applyLayout(); } },
+    preparePrint() {
+      let style = document.getElementById('print-page');
+      if (!style) { style = document.createElement('style'); style.id = 'print-page'; document.head.append(style); }
+      style.textContent = `@page { size: A4 ${page.orientation}; margin: ${page.margin}mm; }`;
+    },
+  };
+  applyLayout();
+  ui = mountEditorUI(editor, model);
   window.OrodentDocumentEditor = Object.freeze({
-    schemaVersion: 1,
+    schemaVersion: documentSchemaVersion,
     tiptapVersion: '3.32.1',
-    serialize() {
-      return JSON.stringify({ schemaVersion: 1, content: activeEditor().getJSON() });
-    },
-    restore(payload) {
-      const envelope = JSON.parse(payload);
-      if (envelope.schemaVersion !== 1 || envelope.content?.type !== 'doc') {
-        throw new Error('Formato del documento non supportato.');
-      }
-      const instance = activeEditor();
-      const content = instance.schema.nodeFromJSON(envelope.content);
-      content.check();
-      instance.commands.setContent(content.toJSON(), { emitUpdate: false, errorOnInvalidContent: true });
-      refreshControls();
-    },
-    setEditable(editable) {
-      activeEditor().setEditable(Boolean(editable));
-      refreshControls();
-    },
-    run,
+    serialize: model.serialize,
+    restore,
+    isDirty() { activeEditor(); return dirty; },
+    markSaved() { activeEditor(); dirty = false; ui.refresh(); },
+    setEditable(editable) { activeEditor().setEditable(Boolean(editable)); ui.refresh(true); },
+    run(command) { activeEditor(); return ui.run(command); },
+    insert(kind) { activeEditor(); return ui.insert(kind); },
     destroy() {
       if (disposed) return;
-      disposed = true;
-      for (const button of controls) {
-        button.onmousedown = null;
-        button.onclick = null;
-        button.disabled = true;
-      }
-      editor.destroy();
+      disposed = true; ui.dispose(); editor.destroy();
       document.documentElement.dataset.editorReady = 'false';
     },
   });
-  refreshControls();
   document.documentElement.dataset.editorReady = 'true';
 } catch (error) {
   document.documentElement.dataset.editorReady = 'error';
