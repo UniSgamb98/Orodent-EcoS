@@ -30,7 +30,8 @@ export function blockElement(attrs, editing = false) {
   root.dataset.blockId = attrs.id;
   root.dataset.title = attrs.title || blockTypes[attrs.kind];
   root.dataset.compact = String(Boolean(attrs.compact));
-  root.dataset.engineering = String(Boolean(attrs.engineering));
+  root.dataset.showPpm = String(Boolean(attrs.showPpm));
+  root.dataset.showCoefficient = String(Boolean(attrs.showCoefficient));
   root.dataset.fontFamily = attrs.fontFamily;
   root.dataset.fontSize = attrs.fontSize;
   root.dataset.color = attrs.color;
@@ -48,7 +49,12 @@ export function blockElement(attrs, editing = false) {
       body = `<div class="press-setting"><div><small>PRESSIONE DA IMPOSTARE · ${sample.machine}</small><strong>${sample.pressure} <span>bar</span></strong></div><p>Ricetta ${sample.recipe}<br>Modello ${sample.model}</p></div>`;
       break;
     case 'weighing':
-      body = sample.formats.map(f => `<div class="format-card"><div class="format-heading"><b>${f.code}</b><b>${f.count} dischi</b></div><p class="dimensions">Ø ${f.diameter} mm · nominale ${f.nominal} mm<br><strong>Spessore totale: ${f.thickness} mm</strong></p>${table(['Strato', 'g / strato', 'N°', 'Totale g'], f.layers.map(l => `<tr><td>${l.number}${attrs.engineering ? `<small>${l.ppm} ppm</small>` : ''}</td><td>${l.weight}</td><td>${f.count}</td><td>${l.total}</td></tr>`).join(''), `<tr><td>Totale disco</td><td>${f.weight} g</td><td colspan="2">${f.batchWeight} g</td></tr>`)}${attrs.engineering ? `<small>Coefficiente del modello: ${sample.coefficient} g/mm</small>` : ''}</div>`).join('');
+      body = sample.formats.map(f => {
+        const headers = ['Strato', ...(attrs.showPpm ? ['ppm'] : []), 'g / strato', 'N°', 'Totale g'];
+        const rows = f.layers.map(l => `<tr><td>${l.number}</td>${attrs.showPpm ? `<td>${l.ppm}</td>` : ''}<td>${l.weight}</td><td>${f.count}</td><td>${l.total}</td></tr>`).join('');
+        const footer = `<tr><td colspan="${attrs.showPpm ? 2 : 1}">Totale disco</td><td>${f.weight} g</td><td colspan="2">${f.batchWeight} g</td></tr>`;
+        return `<div class="format-card"><div class="format-heading"><b>${f.code}</b><b>${f.count} dischi</b></div><p class="dimensions"><span>Ø ${f.diameter} mm</span><span>nominale ${f.nominal} mm</span>${attrs.showCoefficient ? `<span>${sample.coefficient} g/mm</span>` : ''}<strong>Spessore totale: ${f.thickness} mm</strong></p>${table(headers, rows, footer)}</div>`;
+      }).join('');
       break;
     case 'mixtures':
       body = sample.layers.map(l => `<div class="mixture-card"><div class="format-heading"><b>Strato ${l.number}</b><span>${l.count} strati</span></div>${table(['Polvere', '% massa', 'Da pesare (g)'], l.powders.map(p => `<tr><td>${escape(p.code)}</td><td>${p.percentage}</td><td><b>${p.weight}</b></td></tr>`).join(''), `<tr><td>Da preparare</td><td>100%</td><td>${l.total}</td></tr>`)}</div>`).join('') + '<p class="block-note">Maggiorazione × 1,005 · Pesi a 0,1 g.</p>';
@@ -77,7 +83,7 @@ export function initialContent() {
   return { type: 'doc', content: [
     { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Foglio operativo di pressatura' }] },
     block('identity'), block('press'),
-    { type: 'tonColumns', content: [
+    { type: 'tonColumns', attrs: { widths: [60, 40], gap: 4 }, content: [
       { type: 'tonColumn', content: [block('weighing'), block('totals')] },
       { type: 'tonColumn', content: [block('mixtures')] },
     ] },

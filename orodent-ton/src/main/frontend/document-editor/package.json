@@ -5,7 +5,8 @@
   "description": "Locally bundled document editor resources for Orodent-EcoS",
   "scripts": {
     "build": "node build.mjs",
-    "check": "node build.mjs --check"
+    "check": "node build.mjs --check",
+    "test": "node --test *.test.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -20,5 +21,6 @@
   },
   "devDependencies": {
     "esbuild": "0.28.2"
-  }
+  },
+  "type": "module"
 }

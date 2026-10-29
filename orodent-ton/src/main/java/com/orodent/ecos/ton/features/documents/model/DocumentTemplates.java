@@ -84,7 +84,7 @@ public final class DocumentTemplates {
             JsonObject envelope = parse(content);
             if (!envelope.get("schemaVersion").isJsonPrimitive()
                     || !envelope.getAsJsonPrimitive("schemaVersion").isNumber()
-                    || !envelope.get("schemaVersion").getAsString().equals("2"))
+                    || !Set.of("2", "3").contains(envelope.get("schemaVersion").getAsString()))
                 throw new IllegalArgumentException();
             JsonPrimitive title = envelope.getAsJsonPrimitive("title");
             if (!title.isString()
@@ -97,7 +97,7 @@ public final class DocumentTemplates {
             JsonObject doc = envelope.getAsJsonObject("content");
             if (!doc.get("type").getAsString().equals("doc")) throw new IllegalArgumentException();
             var present = new HashSet<String>();
-            inspect(doc, present, 0, new int[] {0});
+            inspect(doc, present, 0, new int[] {0}, envelope.get("schemaVersion").getAsInt());
             if (approve
                     && !present.containsAll(
                             Set.of("identity", "press", "weighing", "mixtures", "totals")))
@@ -114,15 +114,50 @@ public final class DocumentTemplates {
         }
     }
 
-    private static void inspect(JsonObject node, Set<String> present, int depth, int[] count) {
+    private static void inspect(
+            JsonObject node, Set<String> present, int depth, int[] count, int schema) {
         if (depth > 64 || ++count[0] > 100_000)
             throw new IllegalArgumentException("Il modello contiene troppi elementi annidati.");
         String type = node.get("type").getAsString();
+        if (type.equals("tonColumns")) {
+            JsonArray columns = node.getAsJsonArray("content");
+            if (columns == null || columns.size() < 1 || columns.size() > 4)
+                throw new IllegalArgumentException("La sezione deve avere da 1 a 4 colonne.");
+            for (JsonElement column : columns)
+                if (!column.getAsJsonObject().get("type").getAsString().equals("tonColumn"))
+                    throw new IllegalArgumentException("Contenuto della sezione non valido.");
+            if (schema >= 3) {
+                JsonObject attrs = node.getAsJsonObject("attrs");
+                JsonArray widths = attrs.getAsJsonArray("widths");
+                if (widths.size() != columns.size())
+                    throw new IllegalArgumentException("Larghezze delle colonne non valide.");
+                double total = 0;
+                for (JsonElement value : widths) {
+                    if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber())
+                        throw new IllegalArgumentException("Larghezze delle colonne non valide.");
+                    double width = value.getAsDouble();
+                    if (!Double.isFinite(width)
+                            || width < (columns.size() == 1 ? 100 : 8)
+                            || width > 100)
+                        throw new IllegalArgumentException("Larghezze delle colonne non valide.");
+                    total += width;
+                }
+                JsonPrimitive gap = attrs.getAsJsonPrimitive("gap");
+                if (Math.abs(total - 100) >= 0.01
+                        || !gap.isNumber()
+                        || !Double.isFinite(gap.getAsDouble())
+                        || gap.getAsDouble() < 0
+                        || gap.getAsDouble() > 12)
+                    throw new IllegalArgumentException(
+                            "Le larghezze devono totalizzare il 100% e lo spazio deve essere da 0 a"
+                                + " 12 mm.");
+            }
+        }
         if (type.equals("tonBlock"))
             present.add(node.getAsJsonObject("attrs").get("kind").getAsString());
         if (node.has("content"))
             for (JsonElement child : node.getAsJsonArray("content"))
-                inspect(child.getAsJsonObject(), present, depth + 1, count);
+                inspect(child.getAsJsonObject(), present, depth + 1, count, schema);
     }
 
     public static String stateLabel(State state) {

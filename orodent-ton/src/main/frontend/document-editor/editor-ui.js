@@ -1,3 +1,5 @@
+import { mountEditorZoom } from './editor-zoom.js';
+import { sectionPath, sectionBreadcrumb, columnProperties, bindColumnControls } from './column-controls.js';
 import { mountEditorDrag } from './editor-drag.js';
 import { NodeSelection } from '@tiptap/pm/state';
 import { blockTypes, fields, escape, checkOperationalContent } from './laboratory-blocks.js';
@@ -20,7 +22,7 @@ export function mountEditorUI(editor, model) {
     do { id = `block-${nextId++}`; found = false; editor.state.doc.descendants(n => { if (n.attrs.id === id) found = true; }); } while (found);
     return id;
   }
-  const makeBlock = kind => ({ type: 'tonBlock', attrs: { id: uniqueId(), kind, title: blockTypes[kind], compact: true, engineering: false } });
+  const makeBlock = kind => ({ type: 'tonBlock', attrs: { id: uniqueId(), kind, title: blockTypes[kind], compact: true, showPpm: false, showCoefficient: false } });
   function insert(kind, position) {
     if (!editor.isEditable) return;
     if (typeof kind !== 'string' || (!Object.prototype.hasOwnProperty.call(blockTypes, kind)
@@ -33,11 +35,12 @@ export function mountEditorUI(editor, model) {
     let content;
     if (Object.prototype.hasOwnProperty.call(blockTypes, kind)) content = makeBlock(kind);
     else if (kind.startsWith('field:')) content = { type: 'tonField', attrs: { key: kind.slice(6) } };
-    else if (kind === 'columns') content = { type: 'tonColumns', content: [0, 1].map(() => ({ type: 'tonColumn', content: [{ type: 'paragraph' }] })) };
+    else if (kind === 'columns') content = { type: 'tonColumns', attrs: { widths: [50, 50], gap: 4 }, content: [0, 1].map(() => ({ type: 'tonColumn', content: [{ type: 'paragraph' }] })) };
     else if (kind === 'heading') content = { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Nuovo titolo' }] };
     else content = { type: 'paragraph', content: [{ type: 'text', text: 'Scrivi il tuo testo…' }] };
     const chain = editor.chain().focus();
-    if (position === undefined) chain.insertContent(content).run(); else chain.insertContentAt(position, content).run();
+    if (position === undefined && kind === 'columns' && editor.state.selection instanceof NodeSelection) chain.insertContentAt(editor.state.selection.node.type.name === 'tonColumn' ? editor.state.selection.to - 1 : editor.state.selection.to, content).run();
+    else if (position === undefined) chain.insertContent(content).run(); else chain.insertContentAt(position, content).run();
     if (content.type === 'tonBlock') {
       let pos; editor.state.doc.descendants((node, offset) => { if (node.attrs.id === content.attrs.id) pos = offset; });
       if (pos !== undefined) editor.commands.setNodeSelection(pos);
@@ -63,7 +66,7 @@ export function mountEditorUI(editor, model) {
   }
   $('basic-palette').innerHTML = [
     ['heading', 'Titolo', 'H'], ['text', 'Testo libero', 'T'], ['table', 'Tabella libera', '▦'],
-    ['image', 'Immagine dal PC', '▧'], ['columns', 'Due colonne', '▥'],
+    ['image', 'Immagine dal PC', '▧'], ['columns', 'Sezione a colonne', '▥'],
   ].map(v => palette(...v)).join('');
   $('laboratory-palette').innerHTML = Object.entries(blockTypes).map(([kind, title]) => palette(kind, title, '▤', true)).join('');
   $('field-palette').innerHTML = Object.entries(fields).map(([key, value]) => palette('field:' + key, value[0], '［］')).join('');
@@ -102,15 +105,19 @@ export function mountEditorUI(editor, model) {
   function selectedNode() { return editor.state.selection instanceof NodeSelection ? editor.state.selection.node : null; }
   function updateProperties(force = false) {
     const node = selectedNode();
-    const type = node?.type.name === 'tonBlock' ? 'block' : node?.type.name === 'image' ? 'image' : editor.isActive('table') ? 'table' : 'text';
+    const path = sectionPath(editor.state), section = path.at(-1);
+    const type = ['tonColumns', 'tonColumn'].includes(node?.type.name) || (section && !node && !editor.isActive('table')) ? 'columns' : node?.type.name === 'tonBlock' ? 'block' : node?.type.name === 'image' ? 'image' : editor.isActive('table') ? 'table' : 'text';
     const attrs = type === 'table' ? editor.getAttributes('table') : node?.attrs;
-    const key = type + JSON.stringify(attrs) + editor.isEditable;
+    const key = type + JSON.stringify(attrs) + editor.isEditable + path.map(s => s.pos + ':' + s.column + ':' + JSON.stringify(s.node.attrs)).join('|');
     if (!force && (key === propertyKey || $('properties').contains(document.activeElement))) return;
     propertyKey = key;
     const root = $('properties');
     let html = '<span class="eyebrow">Proprietà della selezione</span>';
-    if (type === 'block') {
-      html += `<h2>${escape(blockTypes[node.attrs.kind])}</h2><p>Blocco automatico · Dati di esempio</p><div class="section"><label for="block-title">Titolo della sezione</label><input id="block-title" type="text" maxlength="100" value="${escape(node.attrs.title)}"><label class="check"><input type="checkbox" id="block-compact" ${node.attrs.compact ? 'checked' : ''}>Spaziatura compatta</label><label for="block-font-family">Carattere del blocco</label><select id="block-font-family">${['Arial','Georgia','Verdana','Times New Roman'].map(f=>`<option ${node.attrs.fontFamily===f?'selected':''}>${f}</option>`).join('')}</select><label for="block-font-size">Dimensione del testo</label><select id="block-font-size">${['9pt','10pt','11pt','12pt','14pt','18pt','24pt'].map(f=>`<option ${node.attrs.fontSize===f?'selected':''}>${f}</option>`).join('')}</select>${node.attrs.kind === 'weighing' ? `<label class="check"><input type="checkbox" id="block-engineering" ${node.attrs.engineering ? 'checked' : ''}>Mostra g/mm e ppm</label>` : ''}</div><div class="section"><span class="eyebrow">Dati sempre presenti</span><ul class="required-list">${({ identity: ['Produzione e data', 'Prodotto'], press: ['Macchina e pressione in bar'], weighing: ['Grammi per singolo strato', 'Numero di pesate', 'Peso complessivo', 'Spessore totale in mm'], mixtures: ['Numero degli strati', 'Polveri e percentuali', 'Grammi e totale miscela'], totals: ['Numero dei dischi', 'Fabbisogno da dosare', 'Quantità da preparare'], signatures: ['Spazi per data e firma'] }[node.attrs.kind]).map(t => `<li>${t}</li>`).join('')}</ul></div><div class="row"><button data-property="duplicate" class="line">Duplica blocco</button><button data-property="delete" class="line danger">Elimina</button></div><div class="note">Trascina la maniglia del blocco per spostarlo. I numeri si modificano nei dati della produzione.</div>`;
+    if (path.length) html += `<nav class="layout-breadcrumb" aria-label="Contenitori della selezione">${sectionBreadcrumb(editor.state)}</nav>`;
+    if (type === 'columns') {
+      html += columnProperties(section);
+    } else if (type === 'block') {
+      html += `<h2>${escape(blockTypes[node.attrs.kind])}</h2><p>Blocco automatico · Dati di esempio</p><div class="section"><label for="block-title">Titolo della sezione</label><input id="block-title" type="text" maxlength="100" value="${escape(node.attrs.title)}"><label class="check"><input type="checkbox" id="block-compact" ${node.attrs.compact ? 'checked' : ''}>Spaziatura compatta</label><label for="block-font-family">Carattere del blocco</label><select id="block-font-family">${['Arial','Georgia','Verdana','Times New Roman'].map(f=>`<option ${node.attrs.fontFamily===f?'selected':''}>${f}</option>`).join('')}</select><label for="block-font-size">Dimensione del testo</label><select id="block-font-size">${['9pt','10pt','11pt','12pt','14pt','18pt','24pt'].map(f=>`<option ${node.attrs.fontSize===f?'selected':''}>${f}</option>`).join('')}</select>${node.attrs.kind === 'weighing' ? `<label class="check"><input type="checkbox" id="block-ppm" ${node.attrs.showPpm ? 'checked' : ''}>Mostra ppm</label><label class="check"><input type="checkbox" id="block-coefficient" ${node.attrs.showCoefficient ? 'checked' : ''}>Mostra g/mm</label>` : ''}</div><div class="section"><span class="eyebrow">Dati sempre presenti</span><ul class="required-list">${({ identity: ['Produzione e data', 'Prodotto'], press: ['Macchina e pressione in bar'], weighing: ['Grammi per singolo strato', 'Numero di pesate', 'Peso complessivo', 'Spessore totale in mm'], mixtures: ['Numero degli strati', 'Polveri e percentuali', 'Grammi e totale miscela'], totals: ['Numero dei dischi', 'Fabbisogno da dosare', 'Quantità da preparare'], signatures: ['Spazi per data e firma'] }[node.attrs.kind]).map(t => `<li>${t}</li>`).join('')}</ul></div><div class="row"><button data-property="duplicate" class="line">Duplica blocco</button><button data-property="delete" class="line danger">Elimina</button></div><div class="note">Trascina la maniglia del blocco per spostarlo. I numeri si modificano nei dati della produzione.</div>`;
     } else if (type === 'table') {
       html += '<h2>Tabella libera</h2><p>Seleziona celle e usa questi comandi per modificarne la struttura.</p><div class="section"><div class="row"><button data-command="addRowAfter" class="line">＋ Riga</button><button data-command="addColumnAfter" class="line">＋ Colonna</button></div><div class="row"><button data-command="deleteRow" class="line">Elimina riga</button><button data-command="deleteColumn" class="line">Elimina colonna</button></div><div class="row"><button data-command="mergeCells" class="line">Unisci celle</button><button data-command="splitCell" class="line">Dividi cella</button></div><div class="row"><button data-command="toggleHeaderRow" class="line">Intestazione</button></div></div><label class="check"><input id="table-striped" type="checkbox" ' + (attrs.striped ? 'checked' : '') + '>Righe alternate</label><label class="check"><input id="table-compact" type="checkbox" ' + (attrs.compact ? 'checked' : '') + '>Spaziatura compatta</label><div class="row"><button data-command="deleteTable" class="line danger">Elimina tabella</button></div><div class="note">Per ridimensionare una colonna trascina il bordo fra due celle.</div>';
     } else if (type === 'image') {
@@ -119,6 +126,8 @@ export function mountEditorUI(editor, model) {
       html += '<h2>Testo e impaginazione</h2><p>Scrivi direttamente sulla pagina. Seleziona una porzione di testo per cambiarne carattere, dimensione e colore.</p><div class="section"><span class="eyebrow">Tabelle e immagini</span><p>Fai clic in una tabella o su un’immagine per visualizzare le proprietà.</p></div><div class="section"><span class="eyebrow">Blocchi del laboratorio</span><p>Seleziona il bordo di un blocco automatico per cambiarne titolo e spaziatura.</p></div><div class="note">I blocchi usano dati di esempio. L’esportazione conserva la struttura del modello, non una produzione emessa.</div>';
     }
     root.innerHTML = html;
+    root.querySelectorAll('[data-layout-select]').forEach(button => { button.onclick = () => { editor.commands.setNodeSelection(Number(button.dataset.layoutSelect)); updateProperties(true); }; });
+    if (type === 'columns') bindColumnControls(root, editor, section, notify, updateProperties);
     root.querySelectorAll('[data-command]').forEach(bindCommand);
     const change = (id, action) => {
       const input = $(id); if (!input) return;
@@ -129,7 +138,8 @@ export function mountEditorUI(editor, model) {
     change('block-font-family', input => editor.commands.updateAttributes('tonBlock', { fontFamily: input.value }));
     change('block-font-size', input => editor.commands.updateAttributes('tonBlock', { fontSize: input.value }));
     change('block-compact', input => editor.commands.updateAttributes('tonBlock', { compact: input.checked }));
-    change('block-engineering', input => editor.commands.updateAttributes('tonBlock', { engineering: input.checked }));
+    change('block-ppm', input => editor.commands.updateAttributes('tonBlock', { showPpm: input.checked }));
+    change('block-coefficient', input => editor.commands.updateAttributes('tonBlock', { showCoefficient: input.checked }));
     change('table-striped', input => editor.commands.updateAttributes('table', { striped: input.checked }));
     change('table-compact', input => editor.commands.updateAttributes('table', { compact: input.checked }));
     change('image-width', input => editor.commands.updateAttributes('image', { width: input.value }));
@@ -144,9 +154,17 @@ export function mountEditorUI(editor, model) {
     });
   }
 
+  on($('editor'), 'orodent-layout-preview', event => {
+    const section = sectionPath(editor.state).at(-1);
+    if (section?.pos === event.detail.pos) event.detail.widths.forEach((width, i) => { const input = $(`layout-width-${i}`); if (input) input.value = width; });
+  });
+  on($('editor'), 'pointerdown', event => {
+    if (event.target.closest('.layout-divider,.layout-select,.layout-column-select')) $('properties').classList.add('open');
+  });
+
   function commandAllowed(command) {
     const node = selectedNode();
-    if (['tonBlock', 'image'].includes(node?.type.name) && ['bold', 'italic', 'underline', 'bulletList', 'orderedList', 'align-left', 'align-center', 'align-right'].includes(command)) return false;
+    if (['tonBlock', 'image', 'tonColumns', 'tonColumn'].includes(node?.type.name) && ['bold', 'italic', 'underline', 'bulletList', 'orderedList', 'align-left', 'align-center', 'align-right'].includes(command)) return false;
     const native = ['undo', 'redo', 'addRowAfter', 'addColumnAfter', 'deleteRow', 'deleteColumn', 'deleteTable', 'mergeCells', 'splitCell', 'toggleHeaderRow'];
     return editor.isEditable && (!native.includes(command) || editor.can()[command]());
   }
@@ -229,7 +247,7 @@ export function mountEditorUI(editor, model) {
   }));
   on($('template-title'), 'change', () => model.changeTitle($('template-title').value));
   for (const id of ['orientation', 'margins']) on($(id), 'change', () => { if (editor.isEditable) model.changePage({ orientation: $('orientation').value, margin: Number($('margins').value) }); });
-  on($('zoom'), 'change', () => model.zoom(Number($('zoom').value)));
+  cleanup.push(mountEditorZoom(model));
   const resize = () => {
     const top = document.querySelector('.toolbar').getBoundingClientRect().bottom;
     document.querySelector('.workspace').style.height = Math.max(280, innerHeight - top - 32) + 'px';
@@ -265,7 +283,7 @@ export function mountEditorUI(editor, model) {
     $('template-title').readOnly = !editable;
     $('dirty-state').textContent = model.isDirty() ? 'Modifiche non salvate' : document.body.classList.contains('embedded') ? (editable ? 'Bozza' : 'Sola lettura') : 'Bozza locale';
     const widget = selectedNode()?.type.name === 'tonBlock' ? selectedNode() : null;
-    const image = selectedNode()?.type.name === 'image';
+    const image = ['image', 'tonColumns', 'tonColumn'].includes(selectedNode()?.type.name);
     const marks = widget?.attrs || editor.getAttributes('textStyle');
     for (const [id, value] of [['font-family', marks.fontFamily || 'Arial'], ['font-size', marks.fontSize || '11pt'], ['line-height', marks.lineHeight || '1.5']]) {
       if (document.activeElement !== $(id)) $(id).value = value;

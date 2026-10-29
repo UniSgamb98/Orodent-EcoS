@@ -93,6 +93,7 @@ class DocumentEditorIntegrationTest {
                                                             "document.documentElement.dataset.editorReady==='true'"))
                                     && !button("ton-document-save").isDisabled());
             verifiesNativePointerDrag();
+            verifiesEditableColumnsAndZoom();
             fx(
                     () -> {
                         assertTrue(
@@ -335,6 +336,157 @@ class DocumentEditorIntegrationTest {
                             after.contains("Parametri della pressaCompilato dalla produzione"),
                             "A drag must insert a block, not the palette label");
                     api().call("restore", before);
+                    stage.setWidth(1440);
+                    stage.setHeight(900);
+                    return null;
+                });
+    }
+
+    private void verifiesEditableColumnsAndZoom() throws Exception {
+        fx(
+                () -> {
+                    stage.setWidth(1200);
+                    stage.setHeight(760);
+                    web().getEngine()
+                            .executeScript(
+                                    "document.getElementById('zoom').value='0.65';document.getElementById('zoom').dispatchEvent(new"
+                                        + " Event('change'));document.getElementById('canvas').scrollTop=0;document.querySelector('.layout-select').click()");
+                    return null;
+                });
+        await(
+                () ->
+                        web().getEngine()
+                                .executeScript("document.getElementById('layout-count')!==null")
+                                .equals(true));
+        fx(
+                () -> {
+                    assertEquals(3, ((Number) api().getMember("schemaVersion")).intValue());
+                    web().getEngine()
+                            .executeScript(
+                                    "document.getElementById('layout-preset').value='60,40';document.getElementById('layout-preset').dispatchEvent(new"
+                                        + " Event('change'))");
+                    return null;
+                });
+        Thread.sleep(150);
+        Point2D start =
+                fx(
+                        () ->
+                                point(
+                                        ".tiptap > .column-section > .layout-handles"
+                                            + " .layout-divider",
+                                        .5,
+                                        .03));
+        fx(
+                () -> {
+                    var robot = new Robot();
+                    robot.mouseMove(start);
+                    robot.mousePress(MouseButton.PRIMARY);
+                    return null;
+                });
+        try {
+            for (int i = 1; i <= 10; i++) {
+                final int step = i;
+                fx(
+                        () -> {
+                            new Robot().mouseMove(start.getX() + step * 3, start.getY());
+                            return null;
+                        });
+                Thread.sleep(25);
+            }
+        } finally {
+            fx(
+                    () -> {
+                        new Robot().mouseRelease(MouseButton.PRIMARY);
+                        return null;
+                    });
+        }
+        fx(
+                () -> {
+                    var json =
+                            com.google.gson.JsonParser.parseString(
+                                            api().call("serialize").toString())
+                                    .getAsJsonObject();
+                    var section =
+                            json
+                                    .getAsJsonObject("content")
+                                    .getAsJsonArray("content")
+                                    .asList()
+                                    .stream()
+                                    .map(com.google.gson.JsonElement::getAsJsonObject)
+                                    .filter(n -> n.get("type").getAsString().equals("tonColumns"))
+                                    .findFirst()
+                                    .orElseThrow();
+                    assertTrue(
+                            section.getAsJsonObject("attrs")
+                                            .getAsJsonArray("widths")
+                                            .get(0)
+                                            .getAsDouble()
+                                    > 60,
+                            "Native pointer resizing must change the saved width");
+                    web().getEngine()
+                            .executeScript(
+                                    "document.querySelector('.tiptap > .column-section >"
+                                        + " .layout-tools"
+                                        + " .layout-column-select:last-child').click()");
+                    api().call("insert", "columns");
+                    assertEquals(
+                            2,
+                            ((Number)
+                                            web().getEngine()
+                                                    .executeScript(
+                                                            "document.querySelectorAll('.tiptap"
+                                                                + " .column-section').length"))
+                                    .intValue());
+                    web().getEngine()
+                            .executeScript(
+                                    "document.getElementById('layout-preset').value='30,70';document.getElementById('layout-preset').dispatchEvent(new"
+                                        + " Event('change'))");
+                    String snapshot = api().call("serialize").toString();
+                    api().call("restore", snapshot);
+                    assertEquals(snapshot, api().call("serialize"));
+                    web().getEngine()
+                            .executeScript(
+                                    "document.getElementById('zoom').value='1.5';document.getElementById('zoom').dispatchEvent(new"
+                                        + " Event('change'));document.getElementById('canvas').dispatchEvent(new"
+                                        + " WheelEvent('wheel',{bubbles:true,cancelable:true,ctrlKey:true,deltaY:-120}))");
+                    assertEquals(
+                            "1.55",
+                            web().getEngine()
+                                    .executeScript("document.getElementById('zoom').value"));
+                    assertEquals(snapshot, api().call("serialize"));
+                    web().getEngine()
+                            .executeScript(
+                                    "document.getElementById('zoom').value='0.8';document.getElementById('zoom').dispatchEvent(new"
+                                        + " Event('change'))");
+                    return null;
+                });
+        fx(
+                () -> {
+                    web().getEngine()
+                            .executeScript(
+                                    "document.getElementById('zoom').value='1.5';document.getElementById('zoom').dispatchEvent(new"
+                                        + " Event('change'))");
+                    var robot = new Robot();
+                    robot.mouseMove(point("#canvas", .3, .3));
+                    robot.keyPress(javafx.scene.input.KeyCode.CONTROL);
+                    robot.mouseWheel(-1);
+                    robot.keyRelease(javafx.scene.input.KeyCode.CONTROL);
+                    return null;
+                });
+        await(
+                () ->
+                        Double.parseDouble(
+                                        web().getEngine()
+                                                .executeScript(
+                                                        "document.getElementById('zoom').value")
+                                                .toString())
+                                > 1.5);
+        fx(
+                () -> {
+                    web().getEngine()
+                            .executeScript(
+                                    "document.getElementById('zoom').value='0.8';document.getElementById('zoom').dispatchEvent(new"
+                                        + " Event('change'))");
                     stage.setWidth(1440);
                     stage.setHeight(900);
                     return null;

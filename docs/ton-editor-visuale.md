@@ -1,4 +1,4 @@
-# Editor visuale offline: prima versione
+# Editor visuale dei modelli documento
 
 Aprire **TON → Documenti → Modelli documento → Nuovo modello**.
 L’editor Tiptap è incluso nell’applicazione e non richiede Internet. I pannelli
@@ -46,7 +46,7 @@ emessi e i modelli di cottura verranno collegati ai rispettivi flussi produttivi
   sono incorporate nel modello; le dimensioni si modificano dal pannello Proprietà.
   Non vengono caricate immagini remote.
 - **Impaginazione:** formato A4 verticale/orizzontale, margini, zoom e sezioni a
-  due colonne. Il contenuto editoriale scorre continuamente; la paginazione PDF
+  colonne. Il contenuto editoriale scorre continuamente; la paginazione PDF
   definitiva è un passaggio ancora da implementare.
 - **Blocchi TON:** produzione, parametri pressa, pesature per formato, miscele,
   totali e firme. Inserirli con un clic o trascinarli dalla palette. Selezionare
@@ -57,12 +57,52 @@ emessi e i modelli di cottura verranno collegati ai rispettivi flussi produttivi
   Le etichette già inserite come testo con la vecchia versione non si convertono
   automaticamente: eliminarle e reinserire i blocchi dalla palette.
   I dati operativi sono in sola lettura. Nei blocchi pesature, g/mm e ppm sono
-  facoltativi. Pesi, conteggi, spessori e pressione restano visibili.
+  facoltativi e hanno due spunte separate. I ppm occupano una colonna dedicata;
+  g/mm compare nell’intestazione del formato, senza aumentare l’altezza delle righe
+  delle pesate. Pesi, conteggi, spessori e pressione restano visibili.
 - **Campi nel testo:** inserire numero produzione, data, linea, prodotto e numero
   dei dischi come campi riconoscibili, senza scrivere segnaposto o formule.
 - **Annulla/ripeti:** cronologia delle modifiche al contenuto, compresi blocchi
   e tabelle. Nome del file, formato pagina e margini sono impostazioni del modello
   conservate separatamente dalla cronologia del contenuto.
+
+## Sezioni a colonne e annidamento
+
+**Inserisci → Sezione a colonne** crea una sezione di impaginazione. Fare clic
+sulla barretta **Sezione** sopra il suo bordo per aprire le proprietà a destra,
+oppure scegliere una colonna dai pulsanti **Col. 1**, **Col. 2**, ecc.
+Il percorso nel pannello permette di risalire dalla selezione alla colonna o a una
+sezione esterna: l’annidamento rimane supportato.
+
+- Da **1 a 4 colonne** per sezione, con proporzioni uguali o personalizzate.
+- Preset 60/40, 40/60, 70/30, 30/70 per due colonne; campi percentuali per rifinire
+  ciascuna larghezza. La somma resta 100%, con minimo 8% per colonne affiancate.
+- Divisori trascinabili con anteprima dal vivo; le frecce spostano il divisore di
+  1 punto percentuale, Shift + freccia di 5. Esc annulla il gesto. Un trascinamento
+  concluso è una sola operazione nella cronologia di annulla/ripeti.
+- Spazio fra colonne regolabile da **0 a 12 mm**. Le percentuali si riferiscono
+  allo spazio della sezione; in una sezione annidata dipendono dalla colonna madre.
+- **＋ Riga sotto** aggiunge una nuova sezione con le stesse proporzioni e spaziatura,
+  modificabile indipendentemente dalla precedente.
+- Rimuovendo una colonna, i suoi blocchi passano alla vicina; riducendo il numero
+  di colonne, i contenuti delle ultime vengono accodati nell’ultima rimasta.
+  Il cambiamento del numero delle colonne ridistribuisce le larghezze in parti uguali.
+- **Sciogli sezione** dispone i blocchi delle colonne in sequenza senza eliminarli.
+
+Per inserire una sezione annidata, selezionare la colonna contenitore e scegliere
+**Sezione a colonne**, oppure inserirla dal cursore al suo interno. I blocchi
+rimangono alla larghezza della propria colonna. Un bordo e un avviso segnalano
+le tabelle troppo larghe, senza tagliare i numeri o ridurre automaticamente i font.
+Barrette, divisori e avvisi non vengono inseriti nell’anteprima stampabile.
+
+## Zoom della pagina
+
+Sono disponibili livelli dal **25% al 200%**, con più valori intermedi.
+**Ctrl + rotellina** aumenta o diminuisce lo zoom di 5 punti percentuali per passo,
+con ancoraggio al cursore quando lo spazio di scorrimento lo consente.
+Lo zoom funziona anche in sola lettura e non modifica il modello, i millimetri
+stampati o lo stato delle modifiche. I controlli e il pannello restano leggibili
+alla dimensione dell’interfaccia: viene ingrandita soltanto la pagina.
 
 ## File e anteprima
 
@@ -93,6 +133,9 @@ In `orodent-ton/src/main/frontend/document-editor/`:
 | `editor-ui.js` | Toolbar, pannelli, dialoghi, import/export e rilascio dei listener |
 | `editor-drag.js` | Trascinamento della palette, riordino dei blocchi, indicatore di inserimento e scorrimento |
 | `extensions.js` | Nodi per blocchi TON, campi, colonne, immagini locali e proprietà delle tabelle |
+| `layout-model.js` | Geometria in percentuale, limiti e aggiornamento dei modelli precedenti |
+| `column-view.js`, `column-controls.js` | Divisori, selezione delle sezioni, proprietà e operazioni che conservano i contenuti |
+| `editor-zoom.js`, `paper-layout.js` | Zoom e coordinate coerenti fra browser e JavaFX WebView |
 | `document-model.js` | Schema JSON, validazione, migrazione del contenuto testuale v1 e impostazioni della pagina |
 | `laboratory-blocks.js` | Presentazione dei blocchi e controllo della struttura operativa |
 | `sample-data.json` | Dati dimostrativi, separati dal layout e dai calcoli produttivi |
@@ -104,7 +147,11 @@ non può essere alterato digitando nella tabella. Un'immagine è invece incorpor
 nel modello per essere disponibile offline. L’host JavaFX gestisce repository e revisioni in
 `features/documents/`, separando modello, SQL, servizio asincrono, controller e viste.
 Le tabelle già presenti `TON.MODELLI_DOCUMENTO` conservano il JSON e la versione;
-`TON.DOCUMENTI` non viene ancora scritta. Non è necessaria una migrazione DB.
+`TON.DOCUMENTI` non viene ancora scritta. Non è necessaria una migrazione DB. Il contenuto editoriale usa ora lo schema
+**3**; gli schemi 1 e 2 sono letti e aggiornati in memoria. Le vecchie percentuali
+50/50 e la spunta unica g/mm+ppm sono conservate come impostazioni equivalenti.
+La riapertura non riscrive il CLOB di una versione già approvata; una nuova bozza
+si salva con lo schema corrente.
 
 Sorgenti, lockfile, compilazione riproducibile, licenze e controlli offline sono
 descritti nella [guida Tiptap locale](ton-editor-offline.md).

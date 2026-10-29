@@ -42,8 +42,10 @@ Non cambia la versione dello schema DB e non si devono spostare i dati.
 Il ponte JavaScript `window.OrodentDocumentEditor` espone operazioni delimitate:
 serializzazione/ripristino JSON con versione dello schema, comandi ammessi,
 inserimento dei blocchi, stato delle modifiche, sola lettura e rilascio.
-Lo schema editoriale è ora **2**; i modelli testuali dello schema 1 sono ancora
-caricabili. Aprendo un modello la cronologia viene azzerata: annulla non deve
+Lo schema editoriale è ora **3**; i modelli degli schemi 1 e 2 sono ancora
+caricabili. Lo schema 3 conserva larghezze, spazio fra colonne e le due opzioni
+indipendenti per ppm e g/mm. La riapertura dei vecchi modelli li aggiorna in memoria
+senza riscriverne le versioni approvate. Aprendo un modello la cronologia viene azzerata: annulla non deve
 recuperare contenuti di un documento precedentemente aperto.
 Il ponte non espone accesso al database o richieste HTTP.
 Lo schema del contenuto editoriale è distinto dalle versioni dei modelli TON.
@@ -62,6 +64,7 @@ Sorgenti, versioni fissate e lockfile sono in
 ```sh
 cd orodent-ton/src/main/frontend/document-editor
 npm ci --ignore-scripts
+npm test
 npm run build
 npm run check
 ```
@@ -84,6 +87,10 @@ quindi distribuire le nuove risorse con la normale release EcoS.
 - Righe/colonne, unione/divisione celle, stile delle tabelle e immagini locali.
 - Trascinamento dalla palette e riordino nativo dei blocchi Tiptap.
 - Proprietà dei blocchi TON, formato/margini, esportazione del modello e anteprima.
+- Sezioni annidate, proporzioni delle colonne, trascinamento dei divisori, annulla/Esc,
+  aggiunta/rimozione senza perdita dei blocchi e ripristino dello schema precedente.
+- Zoom 25–200% e Ctrl + rotellina, con dimensioni A4 e JSON invariati.
+- Puntatore reale sui divisori e Ctrl + rotellina reali dentro JavaFX WebView.
 - Ripristino JSON, rifiuto di versioni non supportate, sola lettura e rilascio.
 - Caricamento diretto dal JAR nel WebView JavaFX previsto dal progetto.
 - Presenza e hash delle risorse nel JAR TON contenuto nello ZIP di distribuzione.

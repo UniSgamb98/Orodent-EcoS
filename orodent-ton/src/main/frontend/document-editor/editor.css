@@ -306,6 +306,7 @@ select:focus-visible {
   margin: 12px 0 5px;
 }
 .properties input[type="text"],
+.properties input[type="number"],
 .properties select,
 .panel-content > select {
   width: 100%;
@@ -378,10 +379,8 @@ select:focus-visible {
   padding: 4px 8px;
 }
 .paper-space {
+  position: relative;
   padding: 8px 25px 35px;
-  display: flex;
-  justify-content: center;
-  min-width: calc(var(--paper-width) * var(--zoom) + 50px);
 }
 .paper {
   background: white;
@@ -396,7 +395,11 @@ select:focus-visible {
   flex: none;
 }
 .canvas .paper {
-  zoom: var(--zoom);
+  position: absolute;
+  top: 8px;
+  left: 25px;
+  transform: scale(var(--zoom));
+  transform-origin: top left;
 }
 .paper-brand {
   display: flex;
@@ -545,16 +548,71 @@ select:focus-visible {
 .preview-content table[data-compact="true"] td {
   padding: 4px 7px;
 }
+.column-section {
+  position: relative;
+  margin: 22px 0;
+  min-width: 0;
+}
 .document-columns {
-  display: flex;
-  gap: 17px;
-  align-items: flex-start;
-  margin: 15px 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 4.5mm;
+  align-items: start;
+  min-width: 0;
 }
 .document-column {
   min-width: 0;
-  flex: 1;
 }
+.layout-tools {
+  position: absolute;
+  top: -21px;
+  left: 0;
+  display: flex;
+  gap: 2px;
+  z-index: 3;
+  white-space: nowrap;
+}
+.layout-tools button {
+  border-radius: 3px;
+  padding: 2px 5px;
+  font: 9px/1.5 Arial, sans-serif;
+  background: #e1eef5;
+  color: #176d86;
+}
+.layout-column-select { display: none; }
+.column-section:hover > .layout-tools .layout-column-select,
+.column-section.ProseMirror-selectednode > .layout-tools .layout-column-select,
+.column-section:focus-within > .layout-tools .layout-column-select { display: inline-flex; }
+.layout-handles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.layout-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  margin-left: -5px;
+  cursor: col-resize;
+  pointer-events: auto;
+  touch-action: none;
+  z-index: 4;
+  border-left: 1px dashed #b4d0dd;
+}
+.layout-divider:hover,
+.layout-divider:focus { background: #268ca830; outline: 1px solid #268ca8; }
+.layout-resizing,
+.layout-resizing * { cursor: col-resize !important; user-select: none !important; }
+.layout-breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; margin: 10px 0; }
+.layout-breadcrumb button { padding: 3px 5px; font-size: 10px; white-space: normal; }
+.layout-overflow::after {
+  content: "Contenuto troppo largo: amplia la colonna o modifica la disposizione.";
+  display: block; color: #984a12; font: 10px/1.4 Arial, sans-serif; padding: 4px 0; }
+.editing .layout-overflow > .document-columns { outline: 1px dashed #c87a35; }
+.readonly .layout-tools,
+.readonly .layout-handles,
+.readonly .layout-overflow::after { display: none; }
 .document-column > .ton-block:first-child {
   margin-top: 0;
 }
@@ -649,7 +707,7 @@ select:focus-visible {
   border: 1px solid #ccdfe8;
   border-radius: 3px;
   margin: 0 0 10px;
-  overflow: hidden;
+  overflow: visible;
 }
 .format-heading {
   display: flex;
@@ -693,7 +751,7 @@ select:focus-visible {
   white-space: nowrap;
 }
 .lab-table td:first-child {
-  overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 .lab-table small {
   display: block;
@@ -1109,3 +1167,17 @@ select:focus-visible {
   width: 100px;
   background: #1b8cb0;
 }
+
+.dimensions { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 9px; row-gap: 0; }
+.dimensions > span { white-space: nowrap; }
+.dimensions > strong { flex-basis: 100%; }
+.lab-table th { white-space: nowrap; }
+@media print {
+  .layout-tools, .layout-handles, .layout-overflow::after { display: none !important; }
+}
+
+.layout-tools { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.layout-tools::-webkit-scrollbar { display: none; }
+.layout-tools .layout-select { min-width: 48px; overflow: hidden; text-overflow: ellipsis; }
+.layout-tools .layout-column-select { flex-shrink: 0; }
+.layout-overflow > .layout-tools .layout-select::after { content: " ⚠"; color: #984a12; }

@@ -71,7 +71,20 @@ try {
       if (value.orientation !== page.orientation || value.margin !== page.margin) dirty = true;
       page = { ...value }; applyLayout(); ui.refresh();
     },
-    zoom(value) { if ([.5, .65, .8, 1, 1.2].includes(value)) { zoom = value; applyLayout(); } },
+    zoomValue: () => zoom,
+    zoom(value, point) {
+      if (!Number.isFinite(value) || value < .25 || value > 2) return;
+      window.dispatchEvent(new Event('orodent-zoom-change'));
+      const canvas = document.getElementById('canvas'), paper = document.getElementById('paper');
+      const rect = canvas.getBoundingClientRect(), before = paper.getBoundingClientRect();
+      const x = point && point.x >= rect.left && point.x <= rect.right ? point.x : rect.left + rect.width / 2;
+      const y = point && point.y >= rect.top && point.y <= rect.bottom ? point.y : rect.top + rect.height / 2;
+      const localX = (x - before.left) / zoom, localY = (y - before.top) / zoom;
+      zoom = value; applyLayout();
+      const after = paper.getBoundingClientRect();
+      canvas.scrollLeft += after.left + localX * zoom - x;
+      canvas.scrollTop += after.top + localY * zoom - y;
+    },
     preparePrint() {
       let style = document.getElementById('print-page');
       if (!style) { style = document.createElement('style'); style.id = 'print-page'; document.head.append(style); }

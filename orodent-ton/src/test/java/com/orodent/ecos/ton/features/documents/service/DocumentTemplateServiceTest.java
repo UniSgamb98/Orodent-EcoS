@@ -175,6 +175,38 @@ class DocumentTemplateServiceTest {
     }
 
     @Test
+    void storesVersionThreeNestedLayoutsAndRejectsInvalidColumnGeometry() {
+        String nested =
+                """
+{"type":"tonColumns","attrs":{"widths":[60,40],"gap":4},"content":[
+  {"type":"tonColumn","content":[{"type":"paragraph"}]},
+  {"type":"tonColumn","content":[{"type":"tonColumns","attrs":{"widths":[30,70],"gap":2},"content":[
+    {"type":"tonColumn","content":[{"type":"paragraph"}]},
+    {"type":"tonColumn","content":[{"type":"paragraph"}]}]}]}]}
+""";
+        String original = model("Colonne annidate", true);
+        var json = com.google.gson.JsonParser.parseString(original).getAsJsonObject();
+        json.addProperty("schemaVersion", 3);
+        json.getAsJsonObject("content")
+                .getAsJsonArray("content")
+                .add(com.google.gson.JsonParser.parseString(nested));
+        String payload = json.toString();
+        var saved = service.create(new Draft("LAYOUT", payload), true).join();
+        assertEquals(payload, service.load(saved.template().id()).join().content());
+        var copy = service.newVersion(saved.template()).join();
+        assertEquals(payload, copy.content());
+        for (String invalid :
+                java.util.List.of(
+                        payload.replace("[60,40]", "[60,60]"),
+                        payload.replace("[60,40]", "[5,95]"),
+                        payload.replace("[60,40]", "[100]"),
+                        payload.replace("\"gap\":4", "\"gap\":13"),
+                        payload.replace("\"schemaVersion\":3", "\"schemaVersion\":4")))
+            assertThrows(IllegalArgumentException.class, () -> new Draft("BAD", invalid));
+        assertEquals(payload, service.load(saved.template().id()).join().content());
+    }
+
+    @Test
     void duplicateCodeRollsBackAndSearchIsLiteralAndPaginated() {
         var draft = new Draft("PRESSATURA", model("Nome % prova", true));
         var saved = service.create(draft, false).join();

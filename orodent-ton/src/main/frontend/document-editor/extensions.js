@@ -1,5 +1,7 @@
 import { Extension, Node, mergeAttributes } from '@tiptap/core';
 import Image from '@tiptap/extension-image';
+import { columnSectionView } from './column-view.js';
+import { layoutStyle, widthsOf, validateLayout, validWidths, equalWidths } from './layout-model.js';
 import { blockTypes, fields, blockElement } from './laboratory-blocks.js';
 
 export const TonBlock = Node.create({
@@ -7,23 +9,30 @@ export const TonBlock = Node.create({
   addAttributes() {
     return {
       id: { default: '' }, kind: { default: 'identity' }, title: { default: '' },
-      compact: { default: false }, engineering: { default: false },
+      compact: { default: false }, showPpm: { default: false }, showCoefficient: { default: false },
       fontFamily: { default: 'Arial' }, fontSize: { default: '9pt' }, color: { default: '#243e50' },
     };
   },
   parseHTML() {
     return [{ tag: 'section[data-ton-block]', getAttrs: element => Object.prototype.hasOwnProperty.call(blockTypes, element.dataset.tonBlock) ? ({
       id: element.dataset.blockId, kind: element.dataset.tonBlock, title: element.dataset.title,
-      compact: element.dataset.compact === 'true', engineering: element.dataset.engineering === 'true',
+      compact: element.dataset.compact === 'true', showPpm: (element.dataset.showPpm ?? element.dataset.engineering) === 'true', showCoefficient: (element.dataset.showCoefficient ?? element.dataset.engineering) === 'true',
       fontFamily: element.dataset.fontFamily || 'Arial', fontSize: element.dataset.fontSize || '9pt', color: element.dataset.color || '#243e50',
     }) : false }];
   },
   renderHTML({ node }) { return blockElement(node.attrs); },
   addNodeView() {
-    return ({ node }) => {
+    return ({ node, editor, getPos }) => {
       const dom = blockElement(node.attrs, true);
+      const select = event => {
+        if (event.button !== 0 || event.target.closest('.block-handle')) return;
+        event.preventDefault(); event.stopPropagation();
+        editor.commands.setNodeSelection(getPos());
+      };
+      dom.addEventListener('pointerdown', select);
       return {
         dom,
+        destroy() { dom.removeEventListener('pointerdown', select); },
         update(next) {
           if (next.type !== node.type) return false;
           node = next;
@@ -56,9 +65,21 @@ export const TonField = Node.create({
 });
 
 export const TonColumns = Node.create({
-  name: 'tonColumns', group: 'block', content: 'tonColumn tonColumn', isolating: true,
-  parseHTML() { return [{ tag: 'div[data-ton-columns]' }]; },
-  renderHTML() { return ['div', { class: 'document-columns', 'data-ton-columns': '2' }, 0]; },
+  name: 'tonColumns', group: 'block', content: 'tonColumn{1,4}', isolating: true,
+  addAttributes() { return { widths: { default: null }, gap: { default: 4.5 } }; },
+  parseHTML() { return [{ tag: 'div[data-ton-columns]', contentElement: element => element.querySelector(':scope > .document-columns') || element,
+    getAttrs: element => {
+      try {
+        const body = element.querySelector(':scope > .document-columns') || element;
+        const count = [...body.children].filter(child => child.matches('[data-ton-column]')).length;
+        const widths = element.dataset.widths ? JSON.parse(element.dataset.widths) : equalWidths(count);
+        const gap = Number(element.dataset.gap ?? 4.5);
+        return validWidths(widths, count) && Number.isFinite(gap) && gap >= 0 && gap <= 12 ? { widths, gap } : false;
+      } catch { return false; }
+    } }]; },
+  renderHTML({ node }) { return ['div', { class: 'column-section', 'data-ton-columns': String(node.childCount), 'data-widths': JSON.stringify(widthsOf(node)), 'data-gap': String(node.attrs.gap) },
+    ['div', { class: 'document-columns', style: layoutStyle(widthsOf(node), node.attrs.gap) }, 0]]; },
+  addNodeView() { return columnSectionView; },
 });
 export const TonColumn = Node.create({
   name: 'tonColumn', content: 'block+', isolating: true,
@@ -91,10 +112,11 @@ export const LocalImage = Image.extend({
 export function validateDocument(node) {
   node.check();
   node.descendants(child => {
+    if (child.type.name === 'tonColumns') validateLayout(child);
     if (child.type.name === 'tonBlock' && !Object.prototype.hasOwnProperty.call(blockTypes, child.attrs.kind)) throw new Error('Blocco non supportato.');
     if (child.type.name === 'tonBlock' && (typeof child.attrs.title !== 'string' || child.attrs.title.length > 100
         || typeof child.attrs.id !== 'string' || child.attrs.id.length > 100
-        || typeof child.attrs.compact !== 'boolean' || typeof child.attrs.engineering !== 'boolean')) throw new Error('Proprietà del blocco non valide.');
+        || typeof child.attrs.compact !== 'boolean' || typeof child.attrs.showPpm !== 'boolean' || typeof child.attrs.showCoefficient !== 'boolean')) throw new Error('Proprietà del blocco non valide.');
     if (child.type.name === 'tonBlock' && (!['Arial', 'Georgia', 'Verdana', 'Times New Roman'].includes(child.attrs.fontFamily)
         || !['9pt', '10pt', '11pt', '12pt', '14pt', '18pt', '24pt'].includes(child.attrs.fontSize)
         || !/^#[a-f\d]{6}$/i.test(child.attrs.color))) throw new Error('Stile del blocco non supportato.');
