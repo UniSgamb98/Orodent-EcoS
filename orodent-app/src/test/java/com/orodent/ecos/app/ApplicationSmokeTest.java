@@ -385,6 +385,26 @@ class ApplicationSmokeTest {
             button(stage, "ton-powder-approve").fire();
         });
         awaitFx(() -> powderFeedback(stage, "Scheda approvata"), "La prima scheda deve essere approvata anche con ossidi parziali");
+        runFx(() -> button(stage, "ton-home-button").fire());
+    }
+
+    private void approvesANewerPowderAfterTheRecipe(Stage stage) throws Exception {
+        runFx(() -> {
+            button(stage, "ton-home-button").fire();
+            button(stage, "open-ton-button").fire();
+            button(stage, "ton-powders-button").fire();
+        });
+        awaitFx(() -> catalogLoaded(stage, "powders"), "Le polveri devono riaprirsi");
+        runFx(() -> {
+            TableView<?> table = (TableView<?>) stage.getScene().lookup("#ton-powders-table");
+            int selected = -1;
+            for (int i = 0; i < table.getItems().size(); i++)
+                if ("P002".equals(table.getColumns().getFirst().getCellData(i))) selected = i;
+            assertTrue(selected >= 0);
+            table.getSelectionModel().select(selected);
+            button(stage, "ton-powder-open").fire();
+        });
+        awaitFx(() -> powderFeedback(stage, ""), "La scheda della polvere deve aprirsi");
         runFx(() -> button(stage, "ton-powder-new-version").fire());
         awaitFx(() -> powderFeedback(stage, "Nuova bozza creata"), "La nuova scheda non deve sostituire quella precedente");
         runFx(() -> {
@@ -393,7 +413,18 @@ class ApplicationSmokeTest {
             button(stage, "ton-powder-approve").fire();
         });
         awaitFx(() -> powderFeedback(stage, "Scheda approvata"), "Anche la seconda scheda deve essere selezionabile esplicitamente");
-        runFx(() -> button(stage, "ton-home-button").fire());
+        runFx(() -> {
+            button(stage, "ton-home-button").fire();
+            button(stage, "open-ton-button").fire();
+            button(stage, "ton-compositions-button").fire();
+        });
+        awaitFx(() -> catalogLoaded(stage, "compositions"), "La ricetta esistente deve riaprirsi");
+        runFx(() -> {
+            ((TableView<?>) stage.getScene().lookup("#ton-compositions-table")).getSelectionModel().selectFirst();
+            button(stage, "ton-compositions-open").fire();
+        });
+        awaitFx(() -> compositionVersionReady(stage, 1), "La ricetta deve conservare la versione originale della polvere");
+        runFx(() -> catalogTab(stage, "composition", "Ricetta per strato"));
     }
 
     private void createsCompositionsAndReturnsToTheArticle(Stage stage) throws Exception {
@@ -415,16 +446,13 @@ class ApplicationSmokeTest {
             button(stage, "ton-composition-ingredient-add").fire();
         });
         awaitFx(() -> stage.getScene().lookup("#ton-composition-ingredient-1-powder") instanceof javafx.scene.control.ComboBox<?> box
-                && box.getItems().size() >= 3, "Devono essere disponibili tutte le schede approvate, con versione esplicita");
+                && box.getItems().size() == 2, "Deve comparire una sola scheda approvata per polvere");
         runFx(() -> {
             selectRecipePowder(stage, 1, "P001", 1);
             selectRecipePowder(stage, 2, "P002", 1);
             text(stage, "ton-composition-ingredient-1-mass").setText("75");
             text(stage, "ton-composition-ingredient-2-mass").setText("25");
             assertEquals("6,200 wt%", ((Label) stage.getScene().lookup("#ton-composition-yttria")).getText());
-            selectRecipePowder(stage, 2, "P002", 2);
-            assertEquals("6,2125 wt%", ((Label) stage.getScene().lookup("#ton-composition-yttria")).getText());
-            selectRecipePowder(stage, 2, "P002", 1);
             text(stage, "ton-composition-ingredient-2-mass").setText("20");
             button(stage, "ton-composition-approve").fire();
             assertTrue(catalogFeedback(stage, "composition", "esattamente 100"));
@@ -455,11 +483,21 @@ class ApplicationSmokeTest {
         awaitFx(() -> catalogFeedback(stage, "composition", "Bozza salvata"), "La ricetta deve essere salvata insieme a tutti gli strati");
         runFx(() -> approveComposition(stage));
         awaitFx(() -> catalogFeedback(stage, "composition", "Composizione approvata"), "La prima versione deve essere bloccata");
+        approvesANewerPowderAfterTheRecipe(stage);
         runFx(() -> {
             assertTrue(text(stage, "ton-composition-ingredient-1-mass").isDisabled());
             button(stage, "ton-composition-copy").fire();
         });
         awaitFx(() -> catalogFeedback(stage, "composition", "Nuova bozza creata"), "La copia deve mantenere le revisioni della polvere scelte");
+        awaitFx(() -> stage.getScene().lookup("#ton-composition-ingredient-1-powder") instanceof javafx.scene.control.ComboBox<?> box
+                && box.getItems().stream().anyMatch(p -> p.toString().contains("P002 · v2")),
+                "Le nuove selezioni devono proporre solo l'ultima scheda approvata");
+        runFx(() -> {
+            var first = (javafx.scene.control.ComboBox<?>) stage.getScene().lookup("#ton-composition-ingredient-1-powder");
+            assertFalse(first.getItems().stream().anyMatch(p -> p.toString().contains("P002 · v1")));
+            assertTrue(((javafx.scene.control.ComboBox<?>) stage.getScene().lookup("#ton-composition-ingredient-2-powder")).getValue().toString().contains("P002 · v1"));
+            assertEquals("6,200 wt%", ((Label) stage.getScene().lookup("#ton-composition-yttria")).getText());
+        });
         runFx(() -> {
             button(stage, "ton-composition-layer-select-2").fire();
             Platform.runLater(() -> respondToProductDiscard(javafx.scene.control.ButtonType.YES));

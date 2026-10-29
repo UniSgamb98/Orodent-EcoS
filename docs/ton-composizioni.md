@@ -19,9 +19,11 @@ salvataggio il prodotto resta fisso; le note appartengono alla singola versione.
 
 Ogni strato contiene polveri, revisioni precise e quote percentuali in massa.
 Il selettore indica insieme codice, versione, nome e classe Y della polvere.
-La ricerca delle schede approvate è paginata; le frecce permettono di raggiungere
-anche le revisioni più vecchie. Una revisione già inserita rimane visibile anche
-se fuori dalla pagina corrente o se è stata successivamente ritirata.
+La ricerca è paginata e propone solo l'ultima revisione approvata di ogni polvere
+attiva. Una bozza più recente non sostituisce la scheda approvata. Una revisione
+già inserita rimane visibile nella propria riga anche se precedente all'ultima,
+fuori dalla pagina corrente o successivamente ritirata: i riferimenti salvati
+non vengono aggiornati automaticamente.
 
 - Si possono aggiungere, rimuovere, spostare e nominare gli strati. La numerazione
   viene mantenuta consecutiva. La sequenza è distinta dalle quote di altezza

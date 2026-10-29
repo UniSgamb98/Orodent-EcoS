@@ -251,8 +251,11 @@ public final class CompositionRepository {
         String from =
                 " FROM TON.POLVERI_REVISIONI r JOIN TON.POLVERI p ON p.polvere_id=r.polvere_id";
         String where =
-                " WHERE p.attivo=TRUE AND r.stato='APPROVATA' AND (UPPER(p.codice) LIKE ? ESCAPE"
-                    + " '\\' OR UPPER(p.nome) LIKE ? ESCAPE '\\')";
+                " WHERE p.attivo=TRUE AND r.stato='APPROVATA' AND r.numero_versione=(SELECT"
+                        + " MAX(latest.numero_versione) FROM TON.POLVERI_REVISIONI latest WHERE"
+                        + " latest.polvere_id=r.polvere_id AND latest.stato='APPROVATA')"
+                        + " AND (UPPER(p.codice) LIKE ? ESCAPE"
+                        + " '\\' OR UPPER(p.nome) LIKE ? ESCAPE '\\')";
         long total;
         try (var q = connection.prepareStatement("SELECT COUNT(*)" + from + where)) {
             q.setString(1, pattern(search));

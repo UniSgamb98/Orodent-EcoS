@@ -343,6 +343,23 @@ class CompositionServiceTest {
     }
 
     @Test
+    void powderChoicesShowOnlyLatestApprovedRevisionOfEachActivePowder() {
+        var choices = service.powderPage("", 0).join();
+        assertEquals(3, choices.total());
+        assertEquals(List.of(2L, 3L, 4L), choices.rows().stream().map(PowderRef::id).toList());
+        assertEquals(2, service.powders("BI-3").join().getFirst().number());
+        execute(
+                "INSERT INTO TON.POLVERI_REVISIONI(polvere_id,numero_versione,stato,approvato_il)"
+                        + " VALUES (1,4,'RITIRATA',CURRENT_TIMESTAMP)",
+                "UPDATE TON.POLVERI SET attivo=FALSE WHERE polvere_id=2",
+                "UPDATE TON.POLVERI_REVISIONI SET stato='BOZZA',approvato_il=NULL WHERE"
+                    + " polvere_id=3");
+        var available = service.powderPage("", 0).join();
+        assertEquals(1, available.total());
+        assertEquals(2, available.rows().getFirst().number());
+    }
+
+    @Test
     void powderLookupsAreBoundedWhileSelectedHistoricalRevisionsRemainReadable() {
         Revision first = service.create(recipe(1), true).join().revision();
         db.withTransaction(
@@ -372,12 +389,40 @@ class CompositionServiceTest {
                     return null;
                 });
         var choices = service.powders("BI-3").join();
-        assertEquals(50, choices.size());
-        assertTrue(choices.stream().noneMatch(p -> p.id() == 1));
-        var older = service.powderPage("BI-3", 50).join();
-        assertEquals(57, older.total());
-        assertEquals(7, older.rows().size());
-        assertTrue(older.rows().stream().anyMatch(p -> p.id() == 1));
+        assertEquals(1, choices.size());
+        assertEquals(58, choices.getFirst().number());
+        db.withTransaction(
+                c -> {
+                    try (var q =
+                            c.prepareStatement(
+                                    "INSERT INTO TON.POLVERI(codice,nome,colore) VALUES (?,"
+                                            + " 'Bianca', 'BIANCA')")) {
+                        for (int i = 1; i <= 55; i++) {
+                            q.setString(1, "PAGE-" + i);
+                            q.addBatch();
+                        }
+                        q.executeBatch();
+                    }
+                    try (var q = c.createStatement()) {
+                        for (int version = 1; version <= 2; version++)
+                            q.executeUpdate(
+                                    "INSERT INTO"
+                                        + " TON.POLVERI_REVISIONI(polvere_id,numero_versione,stato,approvato_il)"
+                                        + " SELECT polvere_id,"
+                                            + version
+                                            + ",'APPROVATA',CURRENT_TIMESTAMP FROM TON.POLVERI"
+                                            + " WHERE codice LIKE 'PAGE-%'");
+                    }
+                    return null;
+                });
+        var recent = service.powderPage("", 0).join();
+        var next = service.powderPage("", 50).join();
+        assertEquals(58, recent.total());
+        assertEquals(50, recent.rows().size());
+        assertEquals(8, next.rows().size());
+        var all = new HashSet<Long>();
+        for (var page : List.of(recent, next))
+            for (var powder : page.rows()) assertTrue(all.add(powder.powderId()));
         Detail historical = service.load(first.id()).join();
         assertTrue(historical.powders().containsKey(1L));
         assertEquals(first.data(), historical.revision().data());
