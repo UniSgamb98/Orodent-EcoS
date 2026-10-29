@@ -56,8 +56,10 @@ a verificare la presenza e la leggibilità dei campi, non a validare il processo
 - La miscela si raggruppa soltanto quando coincidono prodotto, versione della
   composizione e strato. Lo stesso numero di strato in ricette diverse non basta.
 - I totali si ricavano dai valori di calcolo completi; non dai pesi unitari già
-  arrotondati per la visualizzazione. Precisione delle bilance, arrotondamenti
-  e gestione dei residui devono essere regole esplicite e versionate.
+  arrotondati per la visualizzazione. La precisione delle bilance confermata è
+  **0,1 g**. La regola di arrotondamento e la gestione dei residui vanno conservate
+  esplicitamente. I servizi produttivi dovranno usare decimali esatti; il codice
+  JavaScript del prototipo resta limitato ai dati dimostrativi.
 - **Maggiorazione confermata dall'utente:** la miscela da preparare è il fabbisogno
   da dosare moltiplicato per **1,005**, quindi **+0,5%**, per compensare le perdite
   durante la lavorazione. Le percentuali della ricetta si applicano alla quantità
@@ -70,9 +72,21 @@ a verificare la presenza e la leggibilità dei campi, non a validare il processo
 - Il fattore confermato viene applicato uniformemente nell'esempio nuovo. Il quarto
   riquadro del foglio originale riporta 9.275,7 g, che non corrisponde a 9.248 × 1,005:
   il prototipo non deduce da quel valore un'eccezione al fattore indicato dall'utente.
-- Le quote delle polveri sono mostrate fino a quattro decimali per non inventare
-  una regola di arrotondamento operativo. Precisione delle bilance e gestione del
-  residuo restano da confermare; il campione conserva le quantità analitiche.
+- **Precisione confermata dall'utente: 0,1 g.** Tutti i pesi operativi vengono
+  stampati con un decimale; i valori analitici restano disponibili senza perdita
+  di precisione. I fabbisogni aggregati non derivano dalle dosi unitarie già
+  arrotondate per la stampa.
+- Nel prototipo il totale da preparare per ogni strato viene arrotondato al decimo
+  più vicino (metà verso l'alto). Le quote delle polveri sono ripartite in decimi
+  interi: si parte dal valore inferiore e si assegnano i decimi residui alle quote
+  con la maggiore parte frazionaria, con ordine stabile per i pareggi. Questo
+  minimizza lo scostamento mantenendo la somma uguale al totale da preparare;
+  una quota allo 0% non riceve residui. È una regola proposta per l'implementazione,
+  da validare con gli esempi reali prima dell'uso produttivo.
+- Il totale operativo complessivo è la somma dei totali di preparazione dei singoli
+  strati. Il documento distingue queste quantità dai fabbisogni analitici. Il
+  campione visualizza 10.902,2 g, 5.660,2 g, 5.660,2 g e 9.294,2 g: in tutto
+  **31.516,8 g** da preparare. Percentuali e precisione degli spessori non cambiano.
 - La pressione macchina in bar va determinata dalla regola della pressa e dai
   suoi parametri, non da una semplice conversione della pressione sul materiale
   in kg/cm². Prima di calcolarla occorre confermare come si ottiene il valore
