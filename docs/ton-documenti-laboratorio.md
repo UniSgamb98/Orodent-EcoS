@@ -58,11 +58,21 @@ a verificare la presenza e la leggibilità dei campi, non a validare il processo
 - I totali si ricavano dai valori di calcolo completi; non dai pesi unitari già
   arrotondati per la visualizzazione. Precisione delle bilance, arrotondamenti
   e gestione dei residui devono essere regole esplicite e versionate.
-- Nel foglio originale il fabbisogno del primo strato è 10.848 g, mentre il suo
-  riquadro miscela riporta 10.902,2 g. È stato chiesto se questa differenza deriva
-  da una maggiorazione di preparazione. La regola non è stata dedotta: nell'esempio
-  nuovo non è applicata alcuna maggiorazione. Se confermata, dose necessaria,
-  maggiorazione e quantità da preparare vanno conservate separatamente.
+- **Maggiorazione confermata dall'utente:** la miscela da preparare è il fabbisogno
+  da dosare moltiplicato per **1,005**, quindi **+0,5%**, per compensare le perdite
+  durante la lavorazione. Le percentuali della ricetta si applicano alla quantità
+  da preparare. Non si aumentano anche le dosi del singolo disco e non si applica
+  il fattore una seconda volta alle quote delle polveri.
+- Dose necessaria, fattore utilizzato e quantità da preparare devono essere campi
+  distinti, congelati nell'emissione insieme alla versione della regola. Nel campione:
+  10.848 → 10.902,24 g; 5.632 → 5.660,16 g; 5.632 → 5.660,16 g;
+  9.248 → 9.294,24 g. Il totale passa da 31.360 a **31.516,80 g**.
+- Il fattore confermato viene applicato uniformemente nell'esempio nuovo. Il quarto
+  riquadro del foglio originale riporta 9.275,7 g, che non corrisponde a 9.248 × 1,005:
+  il prototipo non deduce da quel valore un'eccezione al fattore indicato dall'utente.
+- Le quote delle polveri sono mostrate fino a quattro decimali per non inventare
+  una regola di arrotondamento operativo. Precisione delle bilance e gestione del
+  residuo restano da confermare; il campione conserva le quantità analitiche.
 - La pressione macchina in bar va determinata dalla regola della pressa e dai
   suoi parametri, non da una semplice conversione della pressione sul materiale
   in kg/cm². Prima di calcolarla occorre confermare come si ottiene il valore
