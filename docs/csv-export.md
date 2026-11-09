@@ -87,7 +87,9 @@ chiamante. Solo `exportFile` offre la sostituzione tramite file temporaneo.
 
 ## Stato dell'integrazione
 
-Il motore condiviso è implementato e verificato. La schermata **Costi prodotti**,
-i suoi calcoli e il relativo pulsante di esportazione sono ancora da implementare.
-Il contratto grafico e i due prospetti previsti sono descritti in
-[Costi e consumi](costi-e-consumi.md#design--costi-prodotti-ed-esportazione).
+Il motore condiviso è implementato e verificato. **Costi prodotti** usa i mapper
+`ProductCostCsv` per riepilogo e dettaglio e il pannello riutilizzabile
+`com.orodent.ecos.module.csv.CsvExportDialog` in `orodent-module-api`. Il pannello
+mostra anteprima e conteggio, sceglie il file e scrive sui worker condivisi,
+senza arrestarli alla chiusura.
+[Uso e ambiti di esportazione](costi-e-consumi.md#esportazione-csv).

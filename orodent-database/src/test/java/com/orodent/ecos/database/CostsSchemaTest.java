@@ -96,7 +96,7 @@ class CostsSchemaTest {
                             return null;
                         });
         assertEquals(1, backups.get());
-        assertEquals(7, scalar("SELECT MAX(version) FROM ECOS.ECOS_SCHEMA_HISTORY"));
+        assertEquals(DatabaseSchema.CURRENT_VERSION, scalar("SELECT MAX(version) FROM ECOS.ECOS_SCHEMA_HISTORY"));
         assertEquals(5, scalar("SELECT versione_modifica FROM TON.POLVERI WHERE polvere_id=1"));
         db.withConnection(
                 c -> {

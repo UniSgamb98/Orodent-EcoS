@@ -49,7 +49,11 @@ In **Costi e consumi → Polveri e prezzi** si compilano prezzi e quantità dich
 per le polveri TON: prezzo semplice con kg facoltativi oppure righe per lotto con
 media ponderata. Il salvataggio conserva fotografie economiche indipendenti dalle
 revisioni tecniche. La V7 aggiunge lo schema `COSTI`, senza carichi o scarichi
-automatici. [Uso e promemoria CSV](docs/costi-e-consumi.md).
+automatici. **Costi prodotti** calcola i costi per articolo dalle configurazioni
+TON, aggiunge la trasformazione comune o specifica ed esporta riepiloghi e dettagli
+CSV. **Esporta tutti i prezzi** include l’intero catalogo, anche fuori dai filtri.
+La V8 conserva le revisioni dei parametri di trasformazione.
+[Uso e promemoria CSV](docs/costi-e-consumi.md).
 
 L'esportazione CSV condivisa in `orodent-core` offre mapper per modulo e un profilo
 Excel italiano. [Contratto e utilizzo](docs/csv-export.md).
@@ -64,7 +68,7 @@ Excel italiano. [Contratto e utilizzo](docs/csv-export.md).
 | `orodent-database` | Derby HOST/CLIENT, discovery, schema, modelli, repository e servizi di importazione |
 | `orodent-module-api` | Contratto dei moduli, metadati, servizi condivisi e ciclo di vita della UI |
 | `orodent-ton` | Laboratorio TON: linee, prodotti, articoli e polveri, storico e specifiche versionate |
-| `orodent-costi` | Prezzi polveri, lotti manuali e fotografie economiche per Costi e consumi |
+| `orodent-costi` | Prezzi polveri, lotti manuali, costi per articolo, trasformazione versionata ed esportazioni CSV |
 | `orodent-statistiche` | Dashboard vendite, analisi clienti/prodotti/sconti/resi, archivio e importazioni CSV |
 | `orodent-performance` | Solo con profilo `performance`: misure su dati sintetici, fuori dai pacchetti distribuiti |
 
@@ -83,7 +87,7 @@ Anagrafiche e vendite risiedono in `orodent-database`, nello stesso database
 `OrodentEcoS`. La versione dello schema è registrata dall'HOST; i CLIENT eseguono
 solo una verifica di compatibilità. Vedere [integrazione Statistiche](docs/reuse-statistiche.md).
 
-Lo schema DB 7 organizza le tabelle in `ECOS`, `ANAGRAFICHE`, `VENDITE`, `TON` e `COSTI`.
+Lo schema DB 8 organizza le tabelle in `ECOS`, `ANAGRAFICHE`, `VENDITE`, `TON` e `COSTI`.
 I dati delle precedenti tabelle `APP` vengono migrati dall'HOST in transazione.
 Il passaggio può arrivare tramite una normale release dei componenti, mantenendo
 il launcher installato: il contatore delle migrazioni è distinto dal contratto

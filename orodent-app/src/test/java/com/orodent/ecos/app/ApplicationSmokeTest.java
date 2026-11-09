@@ -126,6 +126,14 @@ class ApplicationSmokeTest {
             }, "Costi e consumi deve leggere le polveri TON esistenti");
             runFx(() -> {
                 assertNotNull(stage.getScene().lookup("#costi-module"));
+                button(stage, "costi-nav-products").fire();
+            });
+            awaitFx(() -> {
+                var node = stage.getScene().lookup("#costs-products-articles");
+                return node instanceof TableView<?> costs && !costs.isDisabled() && !costs.getItems().isEmpty();
+            }, "Costi prodotti deve leggere gli articoli e le configurazioni TON");
+            runFx(() -> {
+                assertNotNull(stage.getScene().lookup("#costs-products-export-all"));
                 button(stage, "costi-home").fire();
                 assertHome(stage);
             });
@@ -960,6 +968,10 @@ class ApplicationSmokeTest {
                                         instanceof javafx.scene.control.TextField f
                                 && f.isDisabled(),
                 "I dati approvati devono essere in sola lettura");
+        // Approval feedback precedes the asynchronous refresh of the specification actions.
+        awaitFx(
+                () -> !buttonUnchecked(stage, "ton-article-spec-copy").isDisabled(),
+                "La versione approvata deve aver terminato il ricaricamento");
         runFx(() -> button(stage, "ton-article-spec-copy").fire());
         awaitFx(
                 () -> catalogFeedback(stage, "article", "Nuova bozza"),

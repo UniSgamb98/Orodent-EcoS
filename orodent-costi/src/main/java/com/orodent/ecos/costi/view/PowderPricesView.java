@@ -8,7 +8,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.shape.SVGPath;
 import javafx.util.StringConverter;
 
 import java.time.LocalDate;
@@ -17,9 +16,8 @@ import java.time.format.ResolverStyle;
 import java.util.List;
 
 /** One screen and one editor: mode switching swaps only the editable detail body. */
-public final class PowderPricesView extends BorderPane {
-    public final Button home = new Button("Home Orodent-EcoS"),
-            refresh = new Button("Ricarica"),
+public final class PowderPricesView extends CostsShell {
+    public final Button refresh = new Button("Ricarica"),
             previous = new Button("←"),
             next = new Button("→");
     public final Button save = new Button("Salva"), cancel = new Button("Annulla");
@@ -27,10 +25,7 @@ public final class PowderPricesView extends BorderPane {
     public final ComboBox<Filter> filter = new ComboBox<>();
     public final CheckBox inactive = new CheckBox("Includi archiviate");
     public final TableView<Row> table = new TableView<>();
-    private final VBox form = new VBox(14),
-            simple = new VBox(14),
-            advanced = new VBox(14),
-            sidebar = new VBox(7);
+    private final VBox form = new VBox(14), simple = new VBox(14), advanced = new VBox(14);
     private final Label code = new Label("Seleziona una polvere"),
             name = new Label("Le anagrafiche arrivano dal catalogo TON."),
             status = new Label(),
@@ -58,48 +53,8 @@ public final class PowderPricesView extends BorderPane {
             List<LotsEditor.Input> lots) {}
 
     public PowderPricesView() {
+        super("Polveri e prezzi");
         setId("costi-module");
-        getStyleClass().addAll("page", "costs-module");
-        getStylesheets()
-                .add(PowderPricesView.class.getResource("/costi/costi.css").toExternalForm());
-        SVGPath homeIcon = new SVGPath();
-        homeIcon.setContent("M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z");
-        homeIcon.getStyleClass().add("costs-home-icon");
-        home.setGraphic(homeIcon);
-        home.setId("costi-home");
-        home.getStyleClass().add("primary-button");
-        Label heading = new Label("Costi e consumi");
-        heading.getStyleClass().add("page-title");
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        Button menu = new Button("☰ Menu");
-        menu.getStyleClass().add("secondary-button");
-        menu.setOnAction(e -> sidebarVisible(!sidebar.isVisible()));
-        HBox header = new HBox(18, home, heading, spacer, menu);
-        header.setAlignment(Pos.CENTER_LEFT);
-        header.getStyleClass().add("app-header");
-        setTop(header);
-        sidebar.getStyleClass().add("costs-sidebar");
-        sidebar.getChildren().add(label("COSTI E CONSUMI", "costs-eyebrow"));
-        for (String section :
-                List.of(
-                        "Panoramica",
-                        "Costi prodotti",
-                        "Scenari",
-                        "Consumi e fabbisogni",
-                        "Polveri e prezzi")) {
-            Button item = new Button(section);
-            item.setMaxWidth(Double.MAX_VALUE);
-            item.getStyleClass().add("costs-nav");
-            boolean ready = section.equals("Polveri e prezzi");
-            item.setDisable(!ready);
-            if (ready) item.getStyleClass().add("costs-nav-selected");
-            sidebar.getChildren().add(item);
-        }
-        Label planned = label("Le altre sezioni sono in preparazione.", "costs-muted");
-        planned.setWrapText(true);
-        sidebar.getChildren().add(planned);
-        setLeft(sidebar);
         Label title = label("Polveri e prezzi", "costs-title");
         Label subtitle =
                 label("Prezzi e quantità di riferimento per i tuoi calcoli", "costs-muted");
@@ -270,15 +225,6 @@ public final class PowderPricesView extends BorderPane {
                             changed();
                         });
         lots.onChanged(this::changed);
-        widthProperty()
-                .addListener(
-                        (o, b, a) -> {
-                            if (a.doubleValue() > 0
-                                    && (b.doubleValue() == 0
-                                            || (b.doubleValue() >= 1200)
-                                                    != (a.doubleValue() >= 1200)))
-                                sidebarVisible(a.doubleValue() >= 1200);
-                        });
         clear();
     }
 
@@ -370,11 +316,6 @@ public final class PowderPricesView extends BorderPane {
         label.getStyleClass().add(style);
         label.setWrapText(true);
         return label;
-    }
-
-    private void sidebarVisible(boolean value) {
-        sidebar.setVisible(value);
-        sidebar.setManaged(value);
     }
 
     public void onChanged(Runnable action) {

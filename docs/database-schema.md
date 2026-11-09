@@ -204,3 +204,23 @@ righe di lotto. L'unicità di polvere/versione protegge dalle scritture concorre
 le revisioni precedenti restano conservate per i futuri scenari. La data di
 riferimento è quella dichiarata per la singola polvere, distinta dalla data tecnica
 di salvataggio. [Uso e promemoria CSV](costi-e-consumi.md).
+
+## Migrazione dalla versione 7 alla 8
+
+`V8__costs_product_parameters.sql` aggiunge soltanto due tabelle in `COSTI`:
+
+| Tabella | Contenuto |
+| --- | --- |
+| `PRODOTTI_PARAMETRI` | Prodotto TON, numero revisione univoco per prodotto, trasformazione comune EUR/articolo facoltativa, timestamp |
+| `ARTICOLI_TRASFORMAZIONE` | Eccezioni di trasformazione per articolo della singola revisione economica |
+
+Ogni salvataggio aggiunge una revisione e le sue eccezioni nella stessa transazione.
+Una coppia prodotto/revisione univoca impedisce sovrascritture concorrenti. Le
+revisioni precedenti rimangono conservate. I prezzi delle polveri e i dati tecnici
+TON non sono modificati. I risultati del calcolo sono derivati dalla fotografia
+caricata e dai parametri; non sono movimenti di magazzino né produzioni emesse.
+
+L'HOST esegue il backup prima del passaggio; i CLIENT verificano tabelle, tipi e
+precisioni in sola lettura. Il passaggio è incluso nella normale release firmata
+dei componenti, senza sostituire il launcher o il runtime.
+[Calcolo e uso di Costi prodotti](costi-e-consumi.md#costi-prodotti).

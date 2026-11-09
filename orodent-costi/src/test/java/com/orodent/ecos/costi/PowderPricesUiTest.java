@@ -61,15 +61,13 @@ class PowderPricesUiTest {
                 });
         var workers = Executors.newFixedThreadPool(2);
         var homes = new AtomicInteger();
-        var ready = new CompletableFuture<Void>();
-        Platform.startup(
+        FxTestSupport.start();
+        fx(
                 () -> {
-                    Platform.setImplicitExit(false);
                     Thread.currentThread()
                             .setUncaughtExceptionHandler((t, e) -> asyncErrors.add(e));
-                    ready.complete(null);
+                    return null;
                 });
-        ready.get(10, TimeUnit.SECONDS);
         try {
             fx(
                     () -> {
@@ -224,7 +222,6 @@ class PowderPricesUiTest {
                         if (stage != null) stage.hide();
                         return null;
                     });
-            Platform.exit();
             workers.shutdown();
             assertTrue(workers.awaitTermination(15, TimeUnit.SECONDS));
             try {

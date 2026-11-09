@@ -38,8 +38,10 @@ modello. Il numero della versione viene assegnato dal servizio.
 L'anteprima usa colori illustrativi e sovramateriali schematici. Non calcola pesi
 o altezze produttive. Il totale non valido viene segnalato; un totale inferiore
 a 100% lascia una parte non assegnata, senza normalizzare le quote inserite.
-La numerazione visuale procede dall'alto al basso: prima del futuro calcolo dosi
-andranno confermate le convenzioni sugli strati estremi e sul monostrato.
+La numerazione visuale procede dall'alto al basso. Per il calcolo economico
+`COSTI-NOMINALE-1` è stata confermata la regola: percentuali sull’altezza nominale,
+poi sovramateriale superiore al primo strato e inferiore all’ultimo; entrambi nel
+monostrato. [Regola e calcolo costi](costi-e-consumi.md#regola-di-calcolo-costi-nominale-1).
 
 ## Salvataggio e versioni
 

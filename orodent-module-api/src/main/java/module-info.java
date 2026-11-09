@@ -4,4 +4,5 @@ module com.orodent.ecos.module.api {
     requires transitive com.orodent.ecos.database;
     requires transitive javafx.controls;
     exports com.orodent.ecos.module;
+    exports com.orodent.ecos.module.csv;
 }

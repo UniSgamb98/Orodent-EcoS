@@ -1,8 +1,11 @@
-# Costi e consumi — Polveri e prezzi
+# Costi e consumi
 
 La Home EcoS scopre il modulo `orodent-costi` tramite lo stesso contratto dei moduli
-TON e Statistiche. La prima sezione operativa è **Polveri e prezzi**; Panoramica,
-Costi prodotti, Scenari e Consumi e fabbisogni sono ancora in preparazione.
+TON e Statistiche. Sono operative **Polveri e prezzi** e **Costi prodotti**.
+Panoramica, Scenari e Consumi e fabbisogni sono ancora in preparazione.
+La navigazione conserva i servizi condivisi e protegge le modifiche non salvate.
+
+## Polveri e prezzi
 
 La schermata usa un solo pannello di dettaglio. Ogni polvere TON compare una volta,
 indipendentemente dal numero di revisioni della sua scheda tecnica. Le anagrafiche
@@ -43,55 +46,115 @@ servizi condivisi. Migrazione e backup sono gestiti dal normale avvio HOST EcoS;
 i CLIENT controllano la compatibilità senza modificare lo schema.
 
 È una **fotografia manuale**: nessun carico da ordini, scarico da produzione o
-aggiornamento automatico del magazzino. Scenari, calcolo costi articoli, arrivi
-futuri e consumi saranno implementati separatamente.
+aggiornamento automatico del magazzino. Scenari, arrivi futuri e consumi saranno
+implementati separatamente.
 
-## Design — Costi prodotti ed esportazione
+## Costi prodotti
 
-La prossima sezione prevista è **Costi prodotti**: elenco prodotti per linea e
-colore, tabella degli articoli/formati del prodotto selezionato e dettaglio delle
-polveri. Un prodotto può avere costi diversi per diametro, altezza e configurazione
-di composizione/modello. Devono essere visibili le revisioni utilizzate.
+Aprire **Home → Costi e consumi → Costi prodotti**. A sinistra si cercano i
+prodotti per codice, linea o colore, con filtro di linea, pagine da 40 e opzione
+per includere le anagrafiche archiviate. A destra ogni articolo/configurazione
+mostra formato, grammi di miscela comprensivi delle perdite, costo polveri,
+trasformazione, totale e stato di completezza.
 
-Il calcolo deve distinguere costo polveri, maggiorazione perdite (fattore 1,005,
-applicato una sola volta), trasformazione in EUR/articolo e totale. Si prevede un
-valore di trasformazione del prodotto con eventuale eccezione per articolo.
-Prezzi o configurazioni mancanti producono uno stato **Incompleto**, senza un
-totale che faccia sembrare completo un calcolo parziale.
+Il catalogo usa normalmente le **configurazioni predefinite approvate**: non
+sostituisce implicitamente una predefinita assente o ritirata con la versione più
+recente. **Mostra tutte le configurazioni approvate** permette di confrontare le
+alternative, mantenendole su righe distinte, senza sommarne i costi. Le revisioni
+di composizione, modello e polvere rimangono quelle collegate alla configurazione.
+Le misure provengono dalla revisione articolo congelata dalla configurazione;
+per configurazioni precedenti allo storico si usano le misure correnti, con
+indicazione esplicita nella scheda.
 
-### Esporta CSV
+La tab **Dettaglio polveri** mostra strato, polvere e revisione tecnica, percentuale,
+grammi da pesare, prezzo applicato e costo della riga. Indica modalità del prezzo,
+revisione economica e data di riferimento. Non richiede che le polveri abbiano la
+stessa data. Prezzi semplici e medie ponderate vengono dalla modalità attualmente
+salvata per ciascuna polvere in **Polveri e prezzi**.
 
-Un pulsante **Esporta CSV** apre un pannello con:
+### Regola di calcolo COSTI-NOMINALE-1
 
-1. **Prospetto:** Articoli e costi / Dettaglio polveri.
-2. **Ambito:** Prodotto selezionato / Tutti i prodotti filtrati.
-3. Anteprima delle prime righe, colonne e numero totale di righe da esportare.
-4. **Salva CSV**, scelta del percorso e conferma se il file esiste già.
+Regola confermata dall'utente per questa implementazione:
 
-Il riepilogo contiene una riga per articolo e configurazione valutata: codice
-articolo, linea, prodotto, colore, diametro, altezza, composizione e revisione,
-modello e revisione, peso miscela, fattore perdite, costo polveri, trasformazione,
-costo totale e stato di completezza. Le unità appartengono alle intestazioni.
+1. Applicare le percentuali di altezza del modello all'altezza nominale articolo.
+2. Aggiungere il sovramateriale superiore allo strato 1, quello inferiore all'ultimo.
+   Nel monostrato aggiungerli entrambi. Le fasce `[da, fino a)` dell'altezza nominale
+   sostituiscono i default del modello; fuori dalle fasce si usano i default.
+3. Moltiplicare l'altezza risultante di ciascuno strato per il coefficiente g/mm.
+4. Applicare il fattore **1,005 una sola volta** e distribuire la massa sulle
+   polveri secondo le percentuali della ricetta dello strato.
+5. Calcolare il costo di ogni polvere come `grammi / 1000 × prezzo EUR/kg`, poi
+   aggiungere la trasformazione per articolo.
 
-Il dettaglio contiene una riga per articolo/configurazione, strato e polvere:
-identificativi dell'articolo e delle revisioni, numero strato, codice polvere,
-revisione tecnica utilizzata, percentuale, grammi necessari inclusa maggiorazione,
-prezzo EUR/kg applicato, modalità e revisione economica, data del prezzo e costo
-della riga. Il riepilogo non somma costi di configurazioni alternative fra loro.
+Si usano `BigDecimal` senza arrotondamenti intermedi. Il prezzo medio ponderato
+mantiene gli 8 decimali del modulo Polveri e prezzi. L'arrotondamento alla bilancia
+(0,1 g) appartiene al futuro foglio operativo di produzione, non viene introdotto
+nel calcolo economico. Il riferimento al calcolo produttivo TON rimane distinto
+da `COSTI-NOMINALE-1` ed è riportato nel CSV: questa sezione non emette produzioni.
 
-L'esportazione usa una fotografia degli stessi risultati e parametri mostrati al
-momento della richiesta, senza ricalcolarli con prezzi cambiati nel frattempo.
-L'ambito filtrato comprende tutte le pagine. Il dettaglio resta riconducibile
-alle singole revisioni dei prezzi delle polveri, che possono avere date diverse.
-Valori mancanti: celle vuote e stato esplicito; valori zero: numero zero.
-I numeri esportati mantengono la precisione di calcolo, anche se la UI mostra
-importi arrotondati. Nessun simbolo monetario nelle celle numeriche.
+Prezzi, configurazioni, strati o trasformazione mancanti producono **Incompleto**
+e un totale vuoto. Non si normalizzano ricette errate e non si presenta una somma
+parziale delle polveri come costo completo. Il costo polveri può essere noto anche
+quando manca la trasformazione. I prodotti senza articoli rimangono riconoscibili
+nell'esportazione generale, con riga incompleta e importi vuoti.
 
-Il [motore CSV condiviso](csv-export.md) è già implementato in `orodent-core`, con
-la stessa separazione reader/writer, mapper e orchestrazione dell'importazione di
-Statistiche. Pannello, mapper specifici e calcolo Costi prodotti saranno collegati
-quando implementeremo questa schermata. L'esportazione non salva né modifica
-ricette, prezzi o scenari.
+### Parametri di trasformazione
+
+Compilare **Trasformazione comune** in EUR/articolo. Se serve, selezionare un
+articolo e attivare **Trasformazione specifica per questo articolo**. L'eccezione
+vale per le sue configurazioni; rimuoverla ripristina l'eredità dal prodotto.
+Zero è ammesso e distinto da un valore sconosciuto. Sono accettati fino a 4
+decimali, senza arrotondare gli input.
+
+Le modifiche aggiornano l'anteprima. **Salva parametri** conserva una nuova
+revisione economica di prodotto con tutte le eccezioni; **Annulla** ripristina
+l'ultima revisione caricata. Navigazione e chiusura proteggono le modifiche non
+salvate. Le scritture concorrenti producono un conflitto senza sovrascrivere le
+modifiche di un altro operatore o ritentare il salvataggio automaticamente.
+
+La V8 aggiunge `COSTI.PRODOTTI_PARAMETRI` e `COSTI.ARTICOLI_TRASFORMAZIONE`.
+Non riscrive dati TON, prezzi polveri o magazzino. Il normale avvio HOST applica
+backup e migrazione; i CLIENT verificano lo schema senza modificarlo. Sono
+sufficienti i normali aggiornamenti firmati dei componenti.
+
+### Esportazione CSV
+
+**Esporta tutti i prezzi**, in alto a destra, esporta i costi dell'**intero catalogo**,
+comprese anagrafiche archiviate, usando le configurazioni predefinite approvate.
+Ignora la ricerca, la linea selezionata, la pagina e la spunta delle alternative.
+Una riga corrisponde a un articolo/configurazione, non a una media dei formati del
+prodotto. Anche prodotti senza articoli o articoli non calcolabili sono presenti,
+con uno stato esplicito e senza costi inventati.
+
+Il menu **Esporta CSV** permette inoltre:
+
+- **Prodotto selezionato · Articoli e costi**;
+- **Prodotto selezionato · Dettaglio polveri**;
+- **Prodotti filtrati · Articoli e costi**, su tutte le pagine.
+
+Questi tre comandi rispettano le opzioni di consultazione della scheda. Il
+pannello condiviso mostra intestazioni, anteprima delle prime 8 righe e numero
+totale di righe. **Salva CSV** apre la scelta del file con conferma di sostituzione;
+il salvataggio avviene sui worker, con conteggio e percorso al termine. I file
+usano UTF-8 con BOM, separatore `;`, virgola decimale, unità nelle intestazioni e
+nessun simbolo monetario nelle celle numeriche. I numeri mantengono la precisione
+di calcolo; i valori mancanti restano celle vuote, distinti dallo zero.
+
+L'esportazione è abilitata dopo aver salvato o annullato le modifiche ai parametri.
+Usa la stessa fotografia immutabile di prezzi e dati tecnici della schermata.
+**Ricarica prezzi e dati** acquisisce una nuova fotografia. Il CSV riporta il
+momento di lettura, metodo di calcolo, revisioni tecniche ed economiche; il dettaglio
+riporta anche la data dei singoli prezzi.
+
+Le letture sono raggruppate in una transazione in sola lettura con isolamento
+serializzabile; si carica soltanto il catalogo tecnico necessario alle
+configurazioni approvate, senza leggere vendite o produzioni. JDBC, calcoli e
+scrittura CSV usano i worker condivisi, con protezione dai risultati obsoleti.
+La chiusura invalida i callback senza arrestare i servizi di EcoS.
+
+Il [motore CSV condiviso](csv-export.md) è in `orodent-core`; il pannello di
+anteprima/salvataggio riutilizzabile è in `orodent-module-api`. I mapper specifici
+rimangono nel modulo Costi. Nessuna esportazione modifica ricette, prezzi o scenari.
 
 ## TODO — Importazione CSV degli acquisti polveri
 

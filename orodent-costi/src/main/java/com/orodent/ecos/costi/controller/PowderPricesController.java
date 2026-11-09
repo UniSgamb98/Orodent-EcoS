@@ -246,7 +246,7 @@ public final class PowderPricesController {
                                         }));
     }
 
-    private boolean canLeave() {
+    public boolean canLeave() {
         if (saving) return false;
         if (!dirty()) return true;
         Alert alert =
