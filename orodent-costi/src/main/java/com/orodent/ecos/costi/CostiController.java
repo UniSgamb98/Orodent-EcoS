@@ -1,5 +1,6 @@
 package com.orodent.ecos.costi;
 
+import com.orodent.ecos.costi.consumption.*;
 import com.orodent.ecos.costi.controller.PowderPricesController;
 import com.orodent.ecos.costi.products.controller.ProductCostsController;
 import com.orodent.ecos.costi.products.service.ProductCostService;
@@ -43,6 +44,7 @@ final class CostiController {
         canLeave = controller::canLeave;
         close = controller::dispose;
         view.productsNav.setOnAction(e -> products());
+        view.consumptionNav.setOnAction(e -> consumption());
         root.getChildren().setAll(view);
         controller.start();
     }
@@ -59,6 +61,25 @@ final class CostiController {
                         context.showHome());
         canLeave = controller::canLeave;
         close = controller::dispose;
+        view.powdersNav.setOnAction(e -> powders());
+        view.consumptionNav.setOnAction(e -> consumption());
+        root.getChildren().setAll(view);
+        controller.start();
+    }
+
+    private void consumption() {
+        if (!canLeave.getAsBoolean()) return;
+        close.run();
+        var view = new ConsumptionView();
+        var controller =
+                new ConsumptionController(
+                        view,
+                        new ConsumptionService(context.connections(), context.workers()),
+                        context.workers(),
+                        context.showHome());
+        canLeave = controller::canLeave;
+        close = controller::dispose;
+        view.productsNav.setOnAction(e -> products());
         view.powdersNav.setOnAction(e -> powders());
         root.getChildren().setAll(view);
         controller.start();

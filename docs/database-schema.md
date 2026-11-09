@@ -224,3 +224,13 @@ L'HOST esegue il backup prima del passaggio; i CLIENT verificano tabelle, tipi e
 precisioni in sola lettura. Il passaggio è incluso nella normale release firmata
 dei componenti, senza sostituire il launcher o il runtime.
 [Calcolo e uso di Costi prodotti](costi-e-consumi.md#costi-prodotti).
+
+## Migrazione dalla versione 8 alla 9
+
+La V9 aggiunge soltanto `COSTI.SCORTA_MINIMA`: polvere TON, revisione, unità
+KG/GIORNI, valore decimale non negativo e timestamp. La coppia polvere/revisione
+è univoca. Il salvataggio blocca l'anagrafica senza cambiarne i valori e aggiunge
+una nuova politica nella stessa transazione, proteggendo le scritture concorrenti.
+Non si introducono movimenti di magazzino o dati di consumo inventati.
+Backup e migrazione sono eseguiti dall'HOST; i CLIENT verificano il contratto in
+sola lettura. [Uso e ipotesi di calcolo](consumi-e-fabbisogni.md).

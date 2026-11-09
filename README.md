@@ -55,6 +55,11 @@ CSV. **Esporta tutti i prezzi** include l’intero catalogo, anche fuori dai fil
 La V8 conserva le revisioni dei parametri di trasformazione.
 [Uso e promemoria CSV](docs/costi-e-consumi.md).
 
+**Consumi e fabbisogni** mostra curve per singola polvere, filtri per colore,
+previsioni da produzioni/vendite e simulazioni con autonomia residua. Le scorte
+minime in kg o giorni sono versionate dalla V9.
+[Uso e significato delle stime](docs/consumi-e-fabbisogni.md).
+
 L'esportazione CSV condivisa in `orodent-core` offre mapper per modulo e un profilo
 Excel italiano. [Contratto e utilizzo](docs/csv-export.md).
 
@@ -87,7 +92,7 @@ Anagrafiche e vendite risiedono in `orodent-database`, nello stesso database
 `OrodentEcoS`. La versione dello schema è registrata dall'HOST; i CLIENT eseguono
 solo una verifica di compatibilità. Vedere [integrazione Statistiche](docs/reuse-statistiche.md).
 
-Lo schema DB 8 organizza le tabelle in `ECOS`, `ANAGRAFICHE`, `VENDITE`, `TON` e `COSTI`.
+Lo schema DB 9 organizza le tabelle in `ECOS`, `ANAGRAFICHE`, `VENDITE`, `TON` e `COSTI`.
 I dati delle precedenti tabelle `APP` vengono migrati dall'HOST in transazione.
 Il passaggio può arrivare tramite una normale release dei componenti, mantenendo
 il launcher installato: il contatore delle migrazioni è distinto dal contratto

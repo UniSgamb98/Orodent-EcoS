@@ -13,9 +13,11 @@ import java.util.*;
  */
 public final class ProductCostRepository {
     private static final String USED_RECIPES =
-            "(SELECT composizione_id FROM TON.CONFIGURAZIONI_ARTICOLO WHERE stato='APPROVATA')";
+            "(SELECT composizione_id FROM TON.CONFIGURAZIONI_ARTICOLO WHERE stato IN"
+                + " ('APPROVATA','RITIRATA'))";
     private static final String USED_MODELS =
-            "(SELECT modello_id FROM TON.CONFIGURAZIONI_ARTICOLO WHERE stato='APPROVATA')";
+            "(SELECT modello_id FROM TON.CONFIGURAZIONI_ARTICOLO WHERE stato IN"
+                + " ('APPROVATA','RITIRATA'))";
     private final Connection connection;
 
     public ProductCostRepository(Connection connection) {
@@ -23,6 +25,10 @@ public final class ProductCostRepository {
     }
 
     public Catalogue load() throws SQLException {
+        return load(false);
+    }
+
+    public Catalogue load(boolean historical) throws SQLException {
         var products = new ArrayList<Product>();
         query(
                 "SELECT"
@@ -61,7 +67,7 @@ SELECT c.configurazione_id,c.articolo_id,c.numero_versione,c.composizione_id,c.m
        c.versione_calcolo,c.articolo_revisione,COALESCE(h.diametro_mm,a.diametro_mm),COALESCE(h.altezza_mm,a.altezza_mm)
 FROM TON.CONFIGURAZIONI_ARTICOLO c JOIN TON.ARTICOLI a ON a.articolo_id=c.articolo_id
 LEFT JOIN TON.ARTICOLI_REVISIONI h ON h.articolo_id=c.articolo_id AND h.numero_revisione=c.articolo_revisione
-WHERE c.stato='APPROVATA' ORDER BY c.articolo_id,c.numero_versione DESC
+WHERE c.stato IN ('APPROVATA','RITIRATA') ORDER BY c.articolo_id,c.numero_versione DESC
 """,
                 r ->
                         specifications
@@ -77,6 +83,16 @@ WHERE c.stato='APPROVATA' ORDER BY c.articolo_id,c.numero_versione DESC
                                                 (Integer) r.getObject(7),
                                                 r.getBigDecimal(8),
                                                 r.getBigDecimal(9))));
+        if (!historical) {
+            var approved = new HashSet<Long>();
+            query(
+                    "SELECT configurazione_id FROM TON.CONFIGURAZIONI_ARTICOLO WHERE"
+                        + " stato='APPROVATA'",
+                    r -> approved.add(r.getLong(1)));
+            specifications.replaceAll(
+                    (id, values) ->
+                            values.stream().filter(v -> approved.contains(v.id())).toList());
+        }
         var ingredients = new HashMap<Long, Map<Integer, List<Ingredient>>>();
         query(
                 "SELECT composizione_id,numero_strato FROM TON.COMPOSIZIONE_STRATI WHERE"
@@ -245,7 +261,7 @@ WHERE p.numero_versione=(SELECT MAX(v.numero_versione) FROM COSTI.PRODOTTI_PARAM
         try (var q =
                 connection.prepareStatement(
                         "UPDATE TON.PRODOTTI SET versione_modifica=versione_modifica WHERE"
-                            + " prodotto_id=?")) {
+                                + " prodotto_id=?")) {
             q.setLong(1, productId);
             if (q.executeUpdate() != 1)
                 throw new IllegalArgumentException(
@@ -255,7 +271,7 @@ WHERE p.numero_versione=(SELECT MAX(v.numero_versione) FROM COSTI.PRODOTTI_PARAM
         try (var q =
                 connection.prepareStatement(
                         "SELECT COALESCE(MAX(numero_versione),0) FROM COSTI.PRODOTTI_PARAMETRI"
-                            + " WHERE prodotto_id=?")) {
+                                + " WHERE prodotto_id=?")) {
             q.setLong(1, productId);
             try (var r = q.executeQuery()) {
                 r.next();

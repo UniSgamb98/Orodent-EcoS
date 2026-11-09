@@ -101,7 +101,7 @@ class ProductCostsSchemaTest {
                             return null;
                         });
         assertEquals(1, backups.get());
-        assertEquals("8", string("SELECT MAX(version) FROM ECOS.ECOS_SCHEMA_HISTORY"));
+        assertEquals(String.valueOf(DatabaseSchema.CURRENT_VERSION), string("SELECT MAX(version) FROM ECOS.ECOS_SCHEMA_HISTORY"));
         assertEquals(
                 checksum, string("SELECT checksum FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version=7"));
         assertEquals("92.1250", string("SELECT prezzo_semplice FROM COSTI.POLVERI_PREZZI"));

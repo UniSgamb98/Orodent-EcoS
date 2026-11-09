@@ -93,3 +93,6 @@ Il motore condiviso è implementato e verificato. **Costi prodotti** usa i mappe
 mostra anteprima e conteggio, sceglie il file e scrive sui worker condivisi,
 senza arrestarli alla chiusura.
 [Uso e ambiti di esportazione](costi-e-consumi.md#esportazione-csv).
+
+Anche [Consumi e fabbisogni](consumi-e-fabbisogni.md) usa lo stesso pannello e
+writer per tabelle di copertura, serie giornaliere e contributi del piano.

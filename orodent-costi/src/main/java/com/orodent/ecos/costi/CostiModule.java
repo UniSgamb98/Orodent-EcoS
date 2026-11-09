@@ -9,7 +9,7 @@ public final class CostiModule implements EcosModule {
             new ModuleDescriptor(
                     "costi",
                     "Costi e consumi",
-                    "Prezzi delle polveri, costi di produzione per articolo ed esportazioni CSV.",
+                    "Costi di produzione, prezzi delle polveri, consumi e autonomia delle scorte.",
                     "M3 3h10l8 8-10 10-8-8z M7 7h2v2H7z");
 
     @Override

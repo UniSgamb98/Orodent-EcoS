@@ -1,8 +1,8 @@
 # Costi e consumi
 
 La Home EcoS scopre il modulo `orodent-costi` tramite lo stesso contratto dei moduli
-TON e Statistiche. Sono operative **Polveri e prezzi** e **Costi prodotti**.
-Panoramica, Scenari e Consumi e fabbisogni sono ancora in preparazione.
+TON e Statistiche. Sono operative **Polveri e prezzi**, **Costi prodotti** e
+[Consumi e fabbisogni](consumi-e-fabbisogni.md). Panoramica e Scenari sono in preparazione.
 La navigazione conserva i servizi condivisi e protegge le modifiche non salvate.
 
 ## Polveri e prezzi
@@ -46,8 +46,8 @@ servizi condivisi. Migrazione e backup sono gestiti dal normale avvio HOST EcoS;
 i CLIENT controllano la compatibilità senza modificare lo schema.
 
 È una **fotografia manuale**: nessun carico da ordini, scarico da produzione o
-aggiornamento automatico del magazzino. Scenari, arrivi futuri e consumi saranno
-implementati separatamente.
+aggiornamento automatico del magazzino. Scenari e arrivi futuri saranno implementati separatamente.
+I consumi sono consultabili in [Consumi e fabbisogni](consumi-e-fabbisogni.md).
 
 ## Costi prodotti
 
