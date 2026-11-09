@@ -51,6 +51,9 @@ media ponderata. Il salvataggio conserva fotografie economiche indipendenti dall
 revisioni tecniche. La V7 aggiunge lo schema `COSTI`, senza carichi o scarichi
 automatici. [Uso e promemoria CSV](docs/costi-e-consumi.md).
 
+L'esportazione CSV condivisa in `orodent-core` offre mapper per modulo e un profilo
+Excel italiano. [Contratto e utilizzo](docs/csv-export.md).
+
 ## Moduli
 
 | Modulo | Responsabilità |

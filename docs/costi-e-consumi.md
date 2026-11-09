@@ -46,6 +46,53 @@ i CLIENT controllano la compatibilità senza modificare lo schema.
 aggiornamento automatico del magazzino. Scenari, calcolo costi articoli, arrivi
 futuri e consumi saranno implementati separatamente.
 
+## Design — Costi prodotti ed esportazione
+
+La prossima sezione prevista è **Costi prodotti**: elenco prodotti per linea e
+colore, tabella degli articoli/formati del prodotto selezionato e dettaglio delle
+polveri. Un prodotto può avere costi diversi per diametro, altezza e configurazione
+di composizione/modello. Devono essere visibili le revisioni utilizzate.
+
+Il calcolo deve distinguere costo polveri, maggiorazione perdite (fattore 1,005,
+applicato una sola volta), trasformazione in EUR/articolo e totale. Si prevede un
+valore di trasformazione del prodotto con eventuale eccezione per articolo.
+Prezzi o configurazioni mancanti producono uno stato **Incompleto**, senza un
+totale che faccia sembrare completo un calcolo parziale.
+
+### Esporta CSV
+
+Un pulsante **Esporta CSV** apre un pannello con:
+
+1. **Prospetto:** Articoli e costi / Dettaglio polveri.
+2. **Ambito:** Prodotto selezionato / Tutti i prodotti filtrati.
+3. Anteprima delle prime righe, colonne e numero totale di righe da esportare.
+4. **Salva CSV**, scelta del percorso e conferma se il file esiste già.
+
+Il riepilogo contiene una riga per articolo e configurazione valutata: codice
+articolo, linea, prodotto, colore, diametro, altezza, composizione e revisione,
+modello e revisione, peso miscela, fattore perdite, costo polveri, trasformazione,
+costo totale e stato di completezza. Le unità appartengono alle intestazioni.
+
+Il dettaglio contiene una riga per articolo/configurazione, strato e polvere:
+identificativi dell'articolo e delle revisioni, numero strato, codice polvere,
+revisione tecnica utilizzata, percentuale, grammi necessari inclusa maggiorazione,
+prezzo EUR/kg applicato, modalità e revisione economica, data del prezzo e costo
+della riga. Il riepilogo non somma costi di configurazioni alternative fra loro.
+
+L'esportazione usa una fotografia degli stessi risultati e parametri mostrati al
+momento della richiesta, senza ricalcolarli con prezzi cambiati nel frattempo.
+L'ambito filtrato comprende tutte le pagine. Il dettaglio resta riconducibile
+alle singole revisioni dei prezzi delle polveri, che possono avere date diverse.
+Valori mancanti: celle vuote e stato esplicito; valori zero: numero zero.
+I numeri esportati mantengono la precisione di calcolo, anche se la UI mostra
+importi arrotondati. Nessun simbolo monetario nelle celle numeriche.
+
+Il [motore CSV condiviso](csv-export.md) è già implementato in `orodent-core`, con
+la stessa separazione reader/writer, mapper e orchestrazione dell'importazione di
+Statistiche. Pannello, mapper specifici e calcolo Costi prodotti saranno collegati
+quando implementeremo questa schermata. L'esportazione non salva né modifica
+ricette, prezzi o scenari.
+
 ## TODO — Importazione CSV degli acquisti polveri
 
 **Da implementare dopo aver ricevuto un documento reale di esempio.** Il pulsante
