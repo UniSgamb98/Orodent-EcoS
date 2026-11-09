@@ -7,6 +7,7 @@ EcoS usa un solo database Derby, organizzato per dominio dei dati.
 | `ECOS` | `ECOS_SCHEMA_HISTORY` | Versioni, checksum e date delle migrazioni |
 | `ANAGRAFICHE` | `CLIENTI` | Anagrafica condivisa tra i moduli |
 | `VENDITE` | `VENDITE_DETTAGLIO` | Vendite e rettifiche condivise |
+| `COSTI` | `POLVERI_PREZZI`, `POLVERI_LOTTI` | Fotografie manuali dei prezzi e delle quantità delle polveri, con revisioni economiche |
 | `TON` | 28 tabelle: cataloghi, specifiche versionate, produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
 
 Statistiche legge clienti e vendite dagli schemi condivisi; TON gestisce il proprio
@@ -185,3 +186,21 @@ della copia precedente con tutte le istanze ferme; il launcher non esegue downgr
 del database. Il fallback a una release disponibile offline non annulla una migrazione:
 un'app incompatibile deve rifiutare il DB. Nessuna migrazione importa i dati della
 vecchia app Statistiche.
+
+## Migrazione dalla versione 6 alla 7
+
+`V7__costs_powder_prices.sql` aggiunge soltanto lo schema `COSTI` e due tabelle.
+Le polveri continuano a essere identificate da `TON.POLVERI`, senza copie delle
+anagrafiche o delle revisioni tecniche. I prezzi non introducono movimenti di
+magazzino e nessun dato TON, cliente o vendita viene riscritto.
+
+Il percorso HOST applica il backup consistente prima della migrazione, quindi
+registra DDL e checksum nella stessa transazione. I CLIENT verificano V7 in sola
+lettura. La normale release dei componenti può includere il nuovo modulo e la
+migrazione; non serve una nuova installazione del launcher.
+
+Ogni salvataggio di **Polveri e prezzi** aggiunge una revisione economica e le sue
+righe di lotto. L'unicità di polvere/versione protegge dalle scritture concorrenti;
+le revisioni precedenti restano conservate per i futuri scenari. La data di
+riferimento è quella dichiarata per la singola polvere, distinta dalla data tecnica
+di salvataggio. [Uso e promemoria CSV](costi-e-consumi.md).

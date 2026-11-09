@@ -155,7 +155,7 @@ class TonCatalogueMigrationTest {
         assertEquals(List.of(List.of(1L, 1L)), rows("SELECT * FROM TON.LINEE_PRODOTTI"));
         execute("ALTER TABLE TON.CONFIGURAZIONI_ARTICOLO DROP CONSTRAINT ck_ton_cfg_stor");
         new DatabaseSchema(connections).initialize();
-        assertEquals(6, number("SELECT MAX(version) FROM ECOS.ECOS_SCHEMA_HISTORY"));
+        assertEquals(DatabaseSchema.CURRENT_VERSION, number("SELECT MAX(version) FROM ECOS.ECOS_SCHEMA_HISTORY"));
     }
 
     private void execute(String... sql) {

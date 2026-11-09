@@ -14,7 +14,7 @@ class ModuleCatalogTest {
     @Test
     void discoversPackagedModulesWithoutOpeningTheirUiOrStartingServices() {
         ModuleCatalog catalog = ModuleCatalog.discover();
-        assertEquals(List.of("statistiche", "ton"), catalog.descriptors().stream()
+        assertEquals(List.of("costi", "statistiche", "ton"), catalog.descriptors().stream()
                 .map(ModuleDescriptor::id).toList());
         assertEquals("Statistiche", catalog.require("statistiche").descriptor().name());
     }

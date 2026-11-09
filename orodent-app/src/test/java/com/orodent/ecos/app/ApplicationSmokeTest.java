@@ -119,6 +119,17 @@ class ApplicationSmokeTest {
             followsDiskModelUsagesBackToArticles(stage);
             followsCompositionModelsAndUsages(stage);
 
+            runFx(() -> button(stage, "open-costi-button").fire());
+            awaitFx(() -> {
+                var node = stage.getScene().lookup("#costi-powders-table");
+                return node instanceof TableView<?> prices && !prices.isDisabled() && !prices.getItems().isEmpty();
+            }, "Costi e consumi deve leggere le polveri TON esistenti");
+            runFx(() -> {
+                assertNotNull(stage.getScene().lookup("#costi-module"));
+                button(stage, "costi-home").fire();
+                assertHome(stage);
+            });
+
             // Import the same CSV formats used by the application, away from the FX thread.
             importRepresentativeData(databasePort);
             runFx(() -> {
@@ -1219,6 +1230,7 @@ class ApplicationSmokeTest {
         assertNotNull(stage.getScene().lookup("#module-catalog"));
         assertNotNull(stage.getScene().lookup("#module-ton"));
         assertNotNull(stage.getScene().lookup("#module-statistiche"));
+        assertNotNull(stage.getScene().lookup("#module-costi"));
         Label status = (Label) stage.getScene().lookup("#database-status");
         assertNotNull(status);
         assertTrue(status.getText().contains("HOST"), status.getText());

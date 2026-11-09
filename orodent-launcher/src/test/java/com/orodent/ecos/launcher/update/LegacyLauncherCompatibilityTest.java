@@ -74,7 +74,7 @@ class LegacyLauncherCompatibilityTest {
                     "--add-modules", "com.orodent.ecos.app",
                     "--add-exports", "com.orodent.ecos.app/com.orodent.ecos.app.modules=ALL-UNNAMED",
                     discoveryProbe.toString()));
-            assertTrue(Files.readString(discoveryLog).contains("DISCOVERED statistiche,ton"));
+            assertTrue(Files.readString(discoveryLog).contains("DISCOVERED costi,statistiche,ton"));
             try (var files = Files.list(downloaded)) {
                 assertTrue(files.anyMatch(path -> path.getFileName().toString().startsWith("orodent-database-")));
             }

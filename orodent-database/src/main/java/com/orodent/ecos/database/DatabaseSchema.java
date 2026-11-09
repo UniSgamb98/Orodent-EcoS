@@ -29,7 +29,9 @@ public final class DatabaseSchema {
             "TON powder colors", "/database/migrations/V5__ton_powder_colors.sql");
     private static final SchemaMigration TON_CATALOGUES = new SchemaMigration(6,
             "TON catalogue hierarchy and history", "/database/migrations/V6__ton_catalogue_history.sql");
-    private static final List<SchemaMigration> MIGRATIONS = List.of(BASELINE, DOMAINS, TON_PRODUCTS, TON_DOMAIN, TON_POWDER_COLORS, TON_CATALOGUES);
+    private static final SchemaMigration COSTS_POWDER_PRICES = new SchemaMigration(7,
+            "Costs manual powder prices and lot snapshots", "/database/migrations/V7__costs_powder_prices.sql");
+    private static final List<SchemaMigration> MIGRATIONS = List.of(BASELINE, DOMAINS, TON_PRODUCTS, TON_DOMAIN, TON_POWDER_COLORS, TON_CATALOGUES, COSTS_POWDER_PRICES);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS = List.of(
             varchar("CODICE_CLIENTE", 50), varchar("CODICE_ISO", 10), varchar("CATEGORIA", 100),
@@ -146,6 +148,7 @@ public final class DatabaseSchema {
             verifyTables(connection, "ANAGRAFICHE", "VENDITE");
             if (version >= TON_PRODUCTS.version()) verifyColumns(connection, "TON", "PRODOTTI", PRODUCTS);
             if (version >= TON_DOMAIN.version()) TonSchema.verify(connection, version);
+            if (version >= COSTS_POWDER_PRICES.version()) CostsSchema.verify(connection);
             return version;
         }
         if (tableExists(connection, "APP", HISTORY)) {

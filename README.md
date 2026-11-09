@@ -1,7 +1,7 @@
 # Orodent-EcoS
 
 Un'unica applicazione desktop JavaFX, organizzata come monorepo Maven.
-La Home permette di aprire Ton e Statistiche nello stesso processo JavaFX.
+La Home permette di aprire TON, Statistiche e Costi e consumi nello stesso processo JavaFX.
 
 ## TON: navigazione e cataloghi tecnici
 
@@ -45,6 +45,12 @@ esistenti prima delle modifiche. Per distribuire questa versione, chiudere le
 istanze e riavviare prima l'HOST aggiornato, poi i CLIENT. I normali aggiornamenti
 firmati dei componenti supportano il passaggio senza sostituire Java o launcher.
 
+In **Costi e consumi → Polveri e prezzi** si compilano prezzi e quantità dichiarate
+per le polveri TON: prezzo semplice con kg facoltativi oppure righe per lotto con
+media ponderata. Il salvataggio conserva fotografie economiche indipendenti dalle
+revisioni tecniche. La V7 aggiunge lo schema `COSTI`, senza carichi o scarichi
+automatici. [Uso e promemoria CSV](docs/costi-e-consumi.md).
+
 ## Moduli
 
 | Modulo | Responsabilità |
@@ -55,11 +61,12 @@ firmati dei componenti supportano il passaggio senza sostituire Java o launcher.
 | `orodent-database` | Derby HOST/CLIENT, discovery, schema, modelli, repository e servizi di importazione |
 | `orodent-module-api` | Contratto dei moduli, metadati, servizi condivisi e ciclo di vita della UI |
 | `orodent-ton` | Laboratorio TON: linee, prodotti, articoli e polveri, storico e specifiche versionate |
+| `orodent-costi` | Prezzi polveri, lotti manuali e fotografie economiche per Costi e consumi |
 | `orodent-statistiche` | Dashboard vendite, analisi clienti/prodotti/sconti/resi, archivio e importazioni CSV |
 | `orodent-performance` | Solo con profilo `performance`: misure su dati sintetici, fuori dai pacchetti distribuiti |
 
 Le dipendenze hanno una sola direzione: `app` compone i servizi e scopre i provider
-`EcosModule` tramite `ServiceLoader`. TON e Statistiche implementano il contratto
+`EcosModule` tramite `ServiceLoader`. TON, Statistiche e Costi e consumi implementano il contratto
 di `module-api`, che espone JavaFX e i servizi condivisi; `database` utilizza `core`.
 I componenti non dipendono dall'app. La Home genera il catalogo dai loro metadati,
 con nome, icona, descrizione e apertura della schermata iniziale.
@@ -73,7 +80,7 @@ Anagrafiche e vendite risiedono in `orodent-database`, nello stesso database
 `OrodentEcoS`. La versione dello schema è registrata dall'HOST; i CLIENT eseguono
 solo una verifica di compatibilità. Vedere [integrazione Statistiche](docs/reuse-statistiche.md).
 
-Lo schema DB 6 organizza le tabelle in `ECOS`, `ANAGRAFICHE`, `VENDITE` e `TON`.
+Lo schema DB 7 organizza le tabelle in `ECOS`, `ANAGRAFICHE`, `VENDITE`, `TON` e `COSTI`.
 I dati delle precedenti tabelle `APP` vengono migrati dall'HOST in transazione.
 Il passaggio può arrivare tramite una normale release dei componenti, mantenendo
 il launcher installato: il contatore delle migrazioni è distinto dal contratto
