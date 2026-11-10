@@ -15,7 +15,7 @@ public class CostsShell extends BorderPane {
             productsNav = new Button("Costi prodotti"),
             powdersNav = new Button("Polveri e prezzi"),
             consumptionNav = new Button("Consumi e fabbisogni"),
-            ordersNav = new Button("Ordini in arrivo");
+            ordersNav = new Button("Ordini in arrivo"), scenariosNav=new Button("Scenari");
     private final VBox sidebar = new VBox(7);
 
     protected CostsShell(String current) {
@@ -46,6 +46,7 @@ public class CostsShell extends BorderPane {
         powdersNav.setId("costi-nav-powders");
         consumptionNav.setId("costi-nav-consumption");
         ordersNav.setId("costi-nav-orders");
+        scenariosNav.setId("costi-nav-scenarios");
         for (String section :
                 List.of(
                         "Panoramica",
@@ -63,18 +64,18 @@ public class CostsShell extends BorderPane {
                                             ? consumptionNav
                                             : section.equals("Ordini in arrivo")
                                                     ? ordersNav
-                                                    : new Button(section);
+                                                    : section.equals("Scenari")?scenariosNav:new Button(section);
             item.setMaxWidth(Double.MAX_VALUE);
             item.getStyleClass().add("costs-nav");
             item.setDisable(
                     item != productsNav
                             && item != powdersNav
                             && item != consumptionNav
-                            && item != ordersNav);
+                            && item != ordersNav && item != scenariosNav);
             if (section.equals(current)) item.getStyleClass().add("costs-nav-selected");
             sidebar.getChildren().add(item);
         }
-        Label planned = new Label("Panoramica e scenari sono in preparazione.");
+        Label planned = new Label("Panoramica in preparazione.");
         planned.getStyleClass().add("costs-muted");
         planned.setWrapText(true);
         sidebar.getChildren().add(planned);

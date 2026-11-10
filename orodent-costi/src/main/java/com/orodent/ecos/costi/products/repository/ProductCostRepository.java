@@ -21,6 +21,10 @@ public final class ProductCostRepository {
             "(SELECT modello_id FROM TON.CONFIGURAZIONI_ARTICOLO WHERE stato IN"
                     + " ('APPROVATA','RITIRATA'))";
     private final Connection connection;
+    private boolean scenarioCatalogue;
+    public Catalogue loadForScenarios() throws SQLException {scenarioCatalogue=true;try{return load(false);}finally{scenarioCatalogue=false;}}
+    private String usedRecipes(){return scenarioCatalogue?"(SELECT composizione_id FROM TON.COMPOSIZIONI WHERE stato<>'BOZZA')":USED_RECIPES;}
+    private String usedModels(){return scenarioCatalogue?"(SELECT modello_id FROM TON.MODELLI_DISCO WHERE stato<>'BOZZA')":USED_MODELS;}
 
     public ProductCostRepository(Connection connection) {
         this.connection = Objects.requireNonNull(connection);
@@ -99,7 +103,7 @@ WHERE c.stato IN ('APPROVATA','RITIRATA') ORDER BY c.articolo_id,c.numero_versio
         query(
                 "SELECT composizione_id,numero_strato FROM TON.COMPOSIZIONE_STRATI WHERE"
                         + " composizione_id IN "
-                        + USED_RECIPES
+                        + usedRecipes()
                         + " ORDER BY composizione_id,numero_strato",
                 r ->
                         ingredients
@@ -111,7 +115,7 @@ SELECT i.composizione_id,i.numero_strato,p.polvere_id,p.codice,r.numero_versione
 FROM TON.COMPOSIZIONE_INGREDIENTI i JOIN TON.POLVERI_REVISIONI r ON r.polvere_revisione_id=i.polvere_revisione_id
 JOIN TON.POLVERI p ON p.polvere_id=r.polvere_id WHERE i.composizione_id IN
 """
-                        + USED_RECIPES
+                        + usedRecipes()
                         + " ORDER BY i.composizione_id,i.numero_strato,CASE p.colore WHEN 'BIANCA'"
                         + " THEN 0 WHEN 'GIALLA' THEN 1 WHEN 'ROSA' THEN 2 WHEN 'GRIGIA' THEN 3"
                         + " ELSE 4 END,p.codice",
@@ -129,7 +133,7 @@ JOIN TON.POLVERI p ON p.polvere_id=r.polvere_id WHERE i.composizione_id IN
         query(
                 "SELECT composizione_id,numero_versione,stato FROM TON.COMPOSIZIONI WHERE"
                         + " composizione_id IN "
-                        + USED_RECIPES,
+                        + usedRecipes(),
                 r ->
                         recipes.put(
                                 r.getLong(1),
@@ -142,7 +146,7 @@ JOIN TON.POLVERI p ON p.polvere_id=r.polvere_id WHERE i.composizione_id IN
         query(
                 "SELECT modello_id,numero_strato,percentuale_altezza FROM TON.MODELLO_STRATI WHERE"
                         + " modello_id IN "
-                        + USED_MODELS,
+                        + usedModels(),
                 r ->
                         layers.computeIfAbsent(r.getLong(1), k -> new TreeMap<>())
                                 .put(r.getInt(2), r.getBigDecimal(3)));
@@ -150,7 +154,7 @@ JOIN TON.POLVERI p ON p.polvere_id=r.polvere_id WHERE i.composizione_id IN
         query(
                 "SELECT modello_id,altezza_da_mm,altezza_a_mm,superiore_mm,inferiore_mm FROM"
                         + " TON.MODELLO_SOVRAMATERIALI WHERE modello_id IN "
-                        + USED_MODELS
+                        + usedModels()
                         + " ORDER BY modello_id,altezza_da_mm",
                 r ->
                         ranges.computeIfAbsent(r.getLong(1), k -> new ArrayList<>())
@@ -165,7 +169,7 @@ JOIN TON.POLVERI p ON p.polvere_id=r.polvere_id WHERE i.composizione_id IN
                 "SELECT"
                     + " modello_id,codice,numero_versione,stato,grammi_per_mm,sovramateriale_superiore_mm,sovramateriale_inferiore_mm"
                     + " FROM TON.MODELLI_DISCO WHERE modello_id IN "
-                        + USED_MODELS,
+                        + usedModels(),
                 r ->
                         models.put(
                                 r.getLong(1),

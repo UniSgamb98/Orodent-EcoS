@@ -2,7 +2,7 @@
 
 La Home EcoS scopre il modulo `orodent-costi` tramite lo stesso contratto dei moduli
 TON e Statistiche. Sono operative **Polveri e prezzi**, **Costi prodotti** e
-[Consumi e fabbisogni](consumi-e-fabbisogni.md). Panoramica e Scenari sono in preparazione.
+[Consumi e fabbisogni](consumi-e-fabbisogni.md). [Scenari](scenari.md) è operativo; Panoramica è in preparazione.
 La navigazione conserva i servizi condivisi e protegge le modifiche non salvate.
 
 ## Polveri e prezzi
@@ -45,7 +45,7 @@ servizi condivisi. Migrazione e backup sono gestiti dal normale avvio HOST EcoS;
 i CLIENT controllano la compatibilità senza modificare lo schema.
 
 È una **fotografia manuale**: nessun carico da ordini, scarico da produzione o
-aggiornamento automatico del magazzino. Gli arrivi futuri sono separati dalle scorte dichiarate; gli scenari sono in preparazione.
+aggiornamento automatico del magazzino. Gli arrivi futuri sono separati dalle scorte dichiarate; gli scenari sono disponibili nella sezione dedicata.
 I consumi sono consultabili in [Consumi e fabbisogni](consumi-e-fabbisogni.md).
 
 ## Costi prodotti
@@ -246,3 +246,10 @@ I dati usati sono la fotografia acquisita con **Ricarica prezzi e dati**, manten
 immutabile: le variazioni in altri moduli richiedono una nuova lettura.
 Questa politica di valutazione è riutilizzabile dai futuri scenari; qui non si
 salvano scenari o prezzi alternativi.
+
+## Scenari
+
+La sezione [Scenari](scenari.md) conserva una fotografia della base e permette
+ipotesi su prezzi, ricette multistrato, modelli/sovramateriali e trasformazione.
+Confronto per linea/prodotto/articolo, medie esplicite e CSV; nessuna scrittura
+sulle anagrafiche, sui prezzi o sulle giacenze reali.

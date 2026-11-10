@@ -1,0 +1,21 @@
+#scenarios-module { -fx-font-weight: normal; }
+#scenarios-module .label, #scenarios-module .text-field, #scenarios-module .combo-box, #scenarios-module .table-cell { -fx-font-weight: normal; }
+#scenarios-module .button { -fx-padding: 8px 11px; -fx-background-color: #edf3f7; -fx-text-fill: #183f58; -fx-background-radius: 6px; -fx-border-color: transparent; -fx-cursor: hand; -fx-font-weight: normal; }
+#scenarios-module .button:hover { -fx-background-color: #e0eef2; }
+#scenarios-module .primary-button { -fx-background-color: #19758b; -fx-text-fill: white; -fx-font-weight: bold; }
+#scenarios-module .costs-nav { -fx-background-color: transparent; -fx-alignment: center-left; -fx-padding: 13px 10px; }
+#scenarios-module .costs-nav-selected { -fx-background-color: #e0eff3; -fx-font-weight: bold; }
+#scenarios-module .table-row-cell { -fx-cell-size: 36px; }
+#scenarios-module .table-view .column-header .label { -fx-font-weight: bold; }
+#scenarios-module .table-cell { -fx-padding: 6px; }
+#scenarios-module .tab-pane { -fx-background-color: white; }
+#scenarios-module .tab-header-background { -fx-background-color: #edf3f7; }
+#scenarios-module .tab { -fx-background-color: transparent; -fx-padding: 8px 12px; }
+#scenarios-module .tab:selected { -fx-background-color: white; -fx-border-color: transparent transparent #19758b transparent; -fx-border-width: 0 0 2px 0; }
+#scenarios-module .scroll-pane, #scenarios-module .scroll-pane > .viewport { -fx-background-color: white; }
+#scenarios-module .chart { -fx-background-color: white; }
+#scenarios-module .chart-plot-background { -fx-background-color: #f7fafc; }
+#scenarios-module .default-color0.chart-bar { -fx-bar-fill: #bdd0dc; }
+#scenarios-module .default-color1.chart-bar { -fx-bar-fill: #19758b; }
+#scenarios-module #scenarios-editor-feedback { -fx-padding: 9px; -fx-text-fill: #6c7f92; -fx-font-size: 12px; }
+#scenarios-module #scenarios-status { -fx-text-fill: #8d671b; -fx-font-size: 12px; }

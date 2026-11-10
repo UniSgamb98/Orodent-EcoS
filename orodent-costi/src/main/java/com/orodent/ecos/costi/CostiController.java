@@ -1,6 +1,7 @@
 package com.orodent.ecos.costi;
 
 import com.orodent.ecos.costi.consumption.*;
+import com.orodent.ecos.costi.scenarios.*;
 import com.orodent.ecos.costi.controller.PowderPricesController;
 import com.orodent.ecos.costi.orders.*;
 import com.orodent.ecos.costi.products.controller.ProductCostsController;
@@ -48,6 +49,7 @@ final class CostiController {
         view.productsNav.setOnAction(e -> products());
         view.consumptionNav.setOnAction(e -> consumption());
         view.ordersNav.setOnAction(e -> orders());
+        view.scenariosNav.setOnAction(e->scenarios());
         root.getChildren().setAll(view);
         controller.start();
     }
@@ -67,6 +69,7 @@ final class CostiController {
         view.powdersNav.setOnAction(e -> powders());
         view.consumptionNav.setOnAction(e -> consumption());
         view.ordersNav.setOnAction(e -> orders());
+        view.scenariosNav.setOnAction(e->scenarios());
         root.getChildren().setAll(view);
         controller.start();
     }
@@ -86,6 +89,7 @@ final class CostiController {
         view.productsNav.setOnAction(e -> products());
         view.powdersNav.setOnAction(e -> powders());
         view.ordersNav.setOnAction(e -> orders());
+        view.scenariosNav.setOnAction(e->scenarios());
         root.getChildren().setAll(view);
         controller.start();
     }
@@ -104,8 +108,17 @@ final class CostiController {
         view.productsNav.setOnAction(e -> products());
         view.powdersNav.setOnAction(e -> powders());
         view.consumptionNav.setOnAction(e -> consumption());
+        view.scenariosNav.setOnAction(e->scenarios());
         root.getChildren().setAll(view);
         controller.start();
+    }
+
+    private void scenarios(){
+        if(!canLeave.getAsBoolean())return;close.run();
+        var view=new ScenariosView();var controller=new ScenariosController(view,new ScenarioService(context.connections(),context.workers()),context.workers(),context.showHome());
+        canLeave=controller::canLeave;close=controller::dispose;
+        view.productsNav.setOnAction(e->products());view.powdersNav.setOnAction(e->powders());view.consumptionNav.setOnAction(e->consumption());view.ordersNav.setOnAction(e->orders());
+        root.getChildren().setAll(view);controller.start();
     }
 
     void dispose() {
