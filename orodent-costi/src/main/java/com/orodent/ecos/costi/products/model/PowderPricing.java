@@ -60,6 +60,12 @@ public final class PowderPricing {
                         .append(stock.version())
                         .append(" · ")
                         .append(stock.date() == null ? "Non compilata" : stock.date());
+        details.append("\nDisponibilità dichiarata a magazzino: ")
+                .append(stock.total() == null ? "Non dichiarata" : n(stock.total()) + " kg")
+                .append(
+                        "\n"
+                            + "Quantità della fotografia manuale; non aggiornata automaticamente"
+                            + " dai consumi.");
         if (selection.mode() == Mode.SEMPLICE)
             return new PowderPrice(
                     powder,
@@ -70,9 +76,7 @@ public final class PowderPricing {
                     false,
                     details + "\nPrezzo di riferimento: " + n(stock.reference()) + " €/kg");
         BigDecimal total = stock.total(), allocated = stock.allocated();
-        details.append("\nTotale dichiarato: ")
-                .append(n(total))
-                .append(" kg\nQuantità nei lotti: ")
+        details.append("\nQuantità nei lotti: ")
                 .append(n(allocated))
                 .append(" kg\nValore dei lotti: ")
                 .append(n(stock.lotValue()))

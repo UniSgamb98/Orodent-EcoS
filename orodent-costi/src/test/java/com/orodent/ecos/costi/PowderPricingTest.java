@@ -36,11 +36,25 @@ class PowderPricingTest {
     }
 
     @Test
+    void stockInformationDistinguishesUnknownAndZeroInSimpleMode() {
+        var selection = new Selection(Mode.SEMPLICE, false);
+        assertTrue(
+                PowderPricing.value(1, stock("100", null, "0", "0", List.of()), selection, today)
+                        .details()
+                        .contains("magazzino: Non dichiarata"));
+        assertTrue(
+                PowderPricing.value(1, stock("100", "0", "0", "0", List.of()), selection, today)
+                        .details()
+                        .contains("magazzino: 0 kg"));
+    }
+
+    @Test
     void referenceAndWeightedPricesRemainSeparateAndPartialStockRaisesWarning() {
         var stock = stock("100", "100", "80", "6400", List.of());
         var simple = PowderPricing.value(1, stock, new Selection(Mode.SEMPLICE, true), today);
         same("100", simple.price());
         assertFalse(simple.estimated());
+        assertTrue(simple.details().contains("Disponibilità dichiarata a magazzino: 100 kg"));
         assertFalse(new Selection(Mode.SEMPLICE, true).includeOrders());
         var advanced = PowderPricing.value(1, stock, new Selection(Mode.AVANZATA, false), today);
         same("84", advanced.price());
