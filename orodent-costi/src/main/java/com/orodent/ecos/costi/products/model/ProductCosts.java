@@ -164,6 +164,7 @@ public final class ProductCosts {
             BigDecimal grams,
             BigDecimal powderCost,
             BigDecimal total,
+            BigDecimal nominalMixPrice,
             List<Material> materials,
             List<String> problems) {
         public Result {
@@ -180,7 +181,7 @@ public final class ProductCosts {
         public Conflict() {
             super(
                     "Parametri modificati da un altro operatore. Ricarica prima di salvare: le tue"
-                        + " modifiche restano visibili.");
+                            + " modifiche restano visibili.");
         }
     }
 

@@ -1,5 +1,6 @@
 package com.orodent.ecos.costi.products.service;
 
+import com.orodent.ecos.costi.products.model.NominalMixtureCost;
 import com.orodent.ecos.costi.products.model.ProductCosts;
 import com.orodent.ecos.costi.products.model.ProductCosts.*;
 
@@ -53,6 +54,7 @@ public final class ProductCostCalculator {
                             null,
                             null,
                             null,
+                            null,
                             List.of(),
                             List.of("Nessun articolo nell'ambito scelto")));
         return List.copyOf(results);
@@ -73,6 +75,7 @@ public final class ProductCostCalculator {
                         : catalogue.recipes().get(specification.compositionId());
         Model model =
                 specification == null ? null : catalogue.models().get(specification.modelId());
+        BigDecimal nominalMixPrice = NominalMixtureCost.price(recipe, model, catalogue.prices());
         if (specification == null) problems.add("Configurazione predefinita approvata assente");
         else if (recipe == null || model == null) problems.add("Composizione o modello assente");
         if (recipe == null || model == null)
@@ -84,6 +87,7 @@ public final class ProductCostCalculator {
                     model,
                     parameters,
                     transformation,
+                    nominalMixPrice,
                     null,
                     null,
                     List.of(),
@@ -100,6 +104,7 @@ public final class ProductCostCalculator {
                     model,
                     parameters,
                     transformation,
+                    nominalMixPrice,
                     null,
                     null,
                     List.of(),
@@ -147,6 +152,7 @@ public final class ProductCostCalculator {
                 model,
                 parameters,
                 transformation,
+                nominalMixPrice,
                 grams,
                 missingPrice ? null : powderCost,
                 materials,
@@ -161,6 +167,7 @@ public final class ProductCostCalculator {
             Model model,
             Parameters parameters,
             BigDecimal transformation,
+            BigDecimal nominalMixPrice,
             BigDecimal grams,
             BigDecimal cost,
             List<Material> materials,
@@ -176,6 +183,7 @@ public final class ProductCostCalculator {
                 grams,
                 cost,
                 problems.isEmpty() ? cost.add(transformation) : null,
+                nominalMixPrice,
                 materials,
                 List.copyOf(problems));
     }

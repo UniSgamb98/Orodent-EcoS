@@ -2,6 +2,7 @@ package com.orodent.ecos.costi;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.orodent.ecos.costi.products.model.NominalMixtureCost;
 import com.orodent.ecos.costi.products.model.ProductCosts.*;
 import com.orodent.ecos.costi.products.service.ProductCostCalculator;
 
@@ -73,6 +74,90 @@ class ProductCostCalculatorTest {
     private void decimal(String expected, BigDecimal actual) {
         assertNotNull(actual);
         assertEquals(0, n(expected).compareTo(actual));
+    }
+
+    @Test
+    void productSummaryDoesNotHideDifferentNominalConfigurations() {
+        var first = model(List.of());
+        var second =
+                new Model(
+                        2,
+                        "OTHER",
+                        1,
+                        "APPROVATA",
+                        n("25"),
+                        n("5"),
+                        n("5"),
+                        Map.of(1, n("50"), 2, n("50")),
+                        List.of());
+        var secondArticle = new Article(2, 1, "SECOND", n("98"), n("20"), true, 12L);
+        var secondSpec = new Specification(12, 2, 1, 1, 2, "TON-OLD", 1, n("98"), n("20"));
+        var c =
+                new Catalogue(
+                        Instant.now(),
+                        List.of(product),
+                        List.of(article, secondArticle),
+                        Map.of(1L, List.of(spec), 2L, List.of(secondSpec)),
+                        Map.of(1L, recipe()),
+                        Map.of(1L, first, 2L, second),
+                        prices(),
+                        Map.of());
+        var summary = NominalMixtureCost.products(c).get(1L);
+        assertTrue(summary.variable());
+        assertNull(summary.price());
+        var bad =
+                new Model(
+                        3,
+                        "BAD",
+                        1,
+                        "APPROVATA",
+                        n("25"),
+                        n("0"),
+                        n("0"),
+                        Map.of(1, n("31"), 2, n("70")),
+                        List.of());
+        assertNull(NominalMixtureCost.price(recipe(), bad, prices()));
+    }
+
+    @Test
+    void nominalPriceWeightsLayersWithoutExcessLossesHeightOrTransformation() {
+        var a =
+                calculator
+                        .product(
+                                catalogue(model(List.of()), recipe(), prices()),
+                                1,
+                                Parameters.empty(),
+                                false,
+                                false)
+                        .getFirst();
+        // Layer 1 = 140 €/kg, layer 2 = 100 €/kg. 30% × 140 + 70% × 100 = 112.
+        decimal("112", a.nominalMixPrice());
+        var changed = model(List.of(new Range(n("0"), n("100"), n("5"), n("9"))));
+        var b =
+                calculator
+                        .product(
+                                catalogue(changed, recipe(), prices()), 1, parameters, false, false)
+                        .getFirst();
+        decimal("112", b.nominalMixPrice());
+        assertNotEquals(0, a.powderCost().compareTo(b.powderCost()));
+        assertNotEquals(
+                0,
+                b.powderCost()
+                        .divide(b.grams().movePointLeft(3), 12, java.math.RoundingMode.HALF_UP)
+                        .compareTo(b.nominalMixPrice()));
+        var summary = NominalMixtureCost.products(catalogue(changed, recipe(), prices())).get(1L);
+        assertFalse(summary.variable());
+        decimal("112", summary.price());
+        var missing =
+                calculator
+                        .product(
+                                catalogue(changed, recipe(), Map.of()), 1, parameters, false, false)
+                        .getFirst();
+        assertNull(missing.nominalMixPrice());
+        var csv = com.orodent.ecos.costi.products.csv.ProductCostCsv.summary(Instant.now());
+        decimal(
+                "112",
+                (BigDecimal) csv.map(b).get(csv.headers().indexOf("Miscela nominale (EUR/kg)")));
     }
 
     @Test

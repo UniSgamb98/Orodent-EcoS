@@ -186,3 +186,18 @@ La V10 aggiunge tabelle ordini, associazioni fornitore e nuovi dati base magazzi
 I vecchi snapshot restano immutati; una nuova revisione inizializza i totali delle
 vecchie modalità avanzate dalla somma dei lotti e il riferimento dalla loro media
 ponderata. Backup e migrazione sono gestiti dall'HOST nel normale aggiornamento.
+
+## Prezzo nominale della miscela
+
+In **Costi prodotti** l'elenco segue l'ordine **Linea → Prodotto → Miscela €/kg**.
+La tabella articoli e il CSV riportano lo stesso dato nominale per configurazione:
+`somma(quota nominale strato × quota polvere nello strato × prezzo riferimento €/kg)`.
+Entrambe le quote sono percentuali, quindi il prodotto viene diviso per 10.000.
+Sono esclusi sovramateriali, maggiorazione perdite e trasformazione; diametro e
+altezza non intervengono. Il costo **Polveri €** conserva il calcolo effettivo del
+disco con sovramateriali e maggiorazione 1,005.
+
+L'elenco usa le configurazioni predefinite approvate degli articoli del prodotto,
+comprese quelle degli articoli archiviati. Se non è possibile determinare un dato
+completo mostra `—`; se i prezzi nominali differiscono mostra **Più valori**.
+Le configurazioni alternative rimangono distinguibili nella tabella articoli.

@@ -46,7 +46,8 @@ public final class ProductCostCsv {
                         "Metodo costi",
                         "Riferimento calcolo TON",
                         "Fotografia prezzi al (UTC)",
-                        "Stato");
+                        "Stato",
+                        "Miscela nominale (EUR/kg)");
             }
 
             public List<?> map(Result r) {
@@ -79,7 +80,8 @@ public final class ProductCostCsv {
                         ProductCosts.CALCULATION,
                         s == null ? null : s.productionCalculation(),
                         capturedAt,
-                        r.status());
+                        r.status(),
+                        r.nominalMixPrice());
             }
         };
     }

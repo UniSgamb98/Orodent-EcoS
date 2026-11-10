@@ -1,5 +1,6 @@
 package com.orodent.ecos.costi.products.view;
 
+import com.orodent.ecos.costi.products.model.NominalMixtureCost;
 import com.orodent.ecos.costi.products.model.ProductCosts.*;
 import com.orodent.ecos.costi.view.CostsShell;
 import com.orodent.ecos.costi.view.PriceFormats;
@@ -40,6 +41,13 @@ public final class ProductCostsView extends CostsShell {
     public final MenuItem exportProduct = new MenuItem("Prodotto selezionato · Articoli e costi"),
             exportDetail = new MenuItem("Prodotto selezionato · Dettaglio polveri"),
             exportFiltered = new MenuItem("Prodotti filtrati · Articoli e costi");
+    private Map<Long, NominalMixtureCost.Summary> nominalPrices = Map.of();
+
+    public void nominalPrices(Map<Long, NominalMixtureCost.Summary> values) {
+        nominalPrices = Map.copyOf(values);
+        products.refresh();
+    }
+
     public final TableView<Product> products = new TableView<>();
     public final TableView<Result> articles = new TableView<>();
     public final TableView<Material> materials = new TableView<>();
@@ -91,8 +99,18 @@ public final class ProductCostsView extends CostsShell {
         line.setMaxWidth(Double.MAX_VALUE);
         products.setId("costs-products-list");
         products.setFixedCellSize(64);
-        column(products, "Prodotto", 165, p -> p.code() + (p.active() ? "" : " · Archiviato"));
-        column(products, "Linea", 100, p -> Objects.toString(p.lineCode(), "—"));
+        column(products, "Linea", 80, p -> Objects.toString(p.lineCode(), "—"));
+        column(products, "Prodotto", 145, p -> p.code() + (p.active() ? "" : " · Archiviato"));
+        column(
+                products,
+                "Miscela €/kg",
+                110,
+                p -> {
+                    var value = nominalPrices.get(p.id());
+                    return value != null && value.variable()
+                            ? "Più valori"
+                            : PriceFormats.number(value == null ? null : value.price(), 2, 4);
+                });
         products.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         products.setPlaceholder(
                 label("Nessun prodotto. Le anagrafiche si creano in TON.", "costs-muted"));
@@ -166,6 +184,7 @@ public final class ProductCostsView extends CostsShell {
                                                 ? " · predef."
                                                 : ""));
         column(articles, "Miscela g", 92, r -> PriceFormats.number(r.grams(), 1, 3));
+        column(articles, "Miscela €/kg", 110, r -> PriceFormats.number(r.nominalMixPrice(), 2, 4));
         column(articles, "Polveri €", 90, r -> PriceFormats.number(r.powderCost(), 2, 4));
         column(articles, "Trasform. €", 98, r -> PriceFormats.number(r.transformation(), 2, 4));
         column(articles, "Totale €", 95, r -> PriceFormats.number(r.total(), 2, 4));
@@ -253,9 +272,16 @@ public final class ProductCostsView extends CostsShell {
         split.setDividerPositions(.28);
         split.getStyleClass().add("costs-split");
         VBox.setVgrow(split, Priority.ALWAYS);
+        Label nominalNote =
+                new Label(
+                        "Miscela €/kg: costo nominale, senza sovramateriali, perdite o"
+                            + " trasformazione. Più valori: configurazioni predefinite con costi"
+                            + " nominali diversi.");
+        nominalNote.setWrapText(true);
+        nominalNote.getStyleClass().add("costs-muted");
         HBox toolbar = new HBox(12, refresh, snapshotDate);
         toolbar.setAlignment(Pos.CENTER_LEFT);
-        VBox page = new VBox(12, top, toolbar, split, feedback);
+        VBox page = new VBox(12, top, toolbar, nominalNote, split, feedback);
         page.setPadding(new Insets(18, 24, 14, 24));
         setCenter(page);
         setBottom(

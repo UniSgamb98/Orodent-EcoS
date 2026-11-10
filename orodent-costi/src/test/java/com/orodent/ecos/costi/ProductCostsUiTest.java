@@ -81,6 +81,15 @@ class ProductCostsUiTest {
             fx(
                     () -> {
                         assertNull(view().articles.getItems().getFirst().total());
+                        assertEquals(
+                                List.of("Linea", "Prodotto", "Miscela €/kg"),
+                                view().products.getColumns().stream()
+                                        .map(TableColumn::getText)
+                                        .toList());
+                        assertTrue(
+                                view().articles.getColumns().stream()
+                                        .anyMatch(c -> c.getText().equals("Miscela €/kg")));
+                        assertNotNull(view().articles.getItems().getFirst().nominalMixPrice());
                         view().commonCost.setText("12");
                         return null;
                     });
@@ -204,7 +213,7 @@ class ProductCostsUiTest {
                                 3,
                                 exportPreview().getItems().size(),
                                 "Global prices must use preferred configurations even when"
-                                    + " alternatives are shown");
+                                        + " alternatives are shown");
                         closeExport();
                         return null;
                     });

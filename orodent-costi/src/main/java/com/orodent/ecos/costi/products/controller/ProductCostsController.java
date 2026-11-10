@@ -1,6 +1,7 @@
 package com.orodent.ecos.costi.products.controller;
 
 import com.orodent.ecos.costi.products.csv.ProductCostCsv;
+import com.orodent.ecos.costi.products.model.NominalMixtureCost;
 import com.orodent.ecos.costi.products.model.ProductCosts;
 import com.orodent.ecos.costi.products.model.ProductCosts.*;
 import com.orodent.ecos.costi.products.service.ProductCostService;
@@ -151,6 +152,8 @@ public final class ProductCostsController {
         controls();
     }
 
+    private record Priced(Catalogue catalogue, Map<Long, NominalMixtureCost.Summary> prices) {}
+
     public void start() {
         if (disposed || loading || saving) return;
         loading = true;
@@ -161,8 +164,10 @@ public final class ProductCostsController {
         view.feedback("Caricamento dei cataloghi e dei prezzi…", false);
         controls();
         service.load()
+                .thenApplyAsync(
+                        loaded -> new Priced(loaded, NominalMixtureCost.products(loaded)), workers)
                 .whenComplete(
-                        (loaded, error) ->
+                        (priced, error) ->
                                 Platform.runLater(
                                         () -> {
                                             if (disposed || epoch != readEpoch) return;
@@ -172,6 +177,8 @@ public final class ProductCostsController {
                                                 controls();
                                                 return;
                                             }
+                                            Catalogue loaded = priced.catalogue();
+                                            view.nominalPrices(priced.prices());
                                             catalogue = loaded;
                                             Long previousLine =
                                                     view.line.getValue() == null
