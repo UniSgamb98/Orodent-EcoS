@@ -37,6 +37,11 @@ public final class ConsumptionCsv {
     }
 
     public static CsvExportMapper<Balance> balances(Analysis analysis, String scope) {
+        return balances(analysis, scope, null);
+    }
+
+    public static CsvExportMapper<Balance> balances(
+            Analysis analysis, String scope, LocalDate productionDate) {
         return new CsvExportMapper<>() {
             public List<String> headers() {
                 return List.of(
@@ -57,7 +62,10 @@ public final class ConsumptionCsv {
                         "Giorni alla scorta minima",
                         "Calendario",
                         "Periodo dal",
-                        "Periodo al");
+                        "Periodo al",
+                        "Arrivi previsti inclusi",
+                        "Prima carenza",
+                        "Data produzione simulata");
             }
 
             public List<?> map(Balance b) {
@@ -79,7 +87,10 @@ public final class ConsumptionCsv {
                         b.daysToMinimum(),
                         analysis.request().calendar().toString(),
                         analysis.request().from(),
-                        analysis.request().through());
+                        analysis.request().through(),
+                        analysis.request().includeArrivals(),
+                        b.firstShortage(),
+                        productionDate);
             }
         };
     }

@@ -19,8 +19,8 @@ public final class ConsumptionEngine {
         if (snapshot.powders().stream()
                 .anyMatch(p -> p.stockDate() != null && p.stockDate().isBefore(request.today())))
             warnings.add(
-                    "Le scorte datate prima di oggi sono estrapolate con il consumo medio:"
-                        + " eventuali rifornimenti successivi non sono inclusi.");
+                    "Le scorte datate prima di oggi sono estrapolate con il consumo medio: i"
+                        + " rifornimenti già ricevuti vanno riportati nella fotografia manuale.");
         var present = EnumSet.noneOf(Basis.class);
         record Key(long article, Long specification) {}
         var cache = new HashMap<Key, Result>();
@@ -136,7 +136,23 @@ public final class ConsumptionEngine {
                                                         request.today().plusDays(1),
                                                         request.today().plusDays(request.horizon()),
                                                         request.calendar())));
-                series.add(new Series(powder, basis, daily, rate, projected, complete));
+                var arrivals = new TreeMap<LocalDate, BigDecimal>();
+                if (request.includeArrivals())
+                    for (Arrival arrival : snapshot.arrivals())
+                        if (arrival.powderId() == powder.id()) {
+                            if (arrival.expected() == null
+                                    || arrival.expected().isBefore(request.today())) {
+                                warnings.add(
+                                        "Ordini senza data o scaduti esclusi dalle disponibilità:"
+                                                + " aggiorna la consegna prevista.");
+                                continue;
+                            }
+                            if (!arrival.expected()
+                                    .isAfter(request.today().plusDays(request.horizon())))
+                                arrivals.merge(
+                                        arrival.expected(), arrival.quantity(), BigDecimal::add);
+                        }
+                series.add(new Series(powder, basis, daily, rate, projected, complete, arrivals));
             }
         if (invalid.contains(Basis.VENDITE))
             warnings.add(

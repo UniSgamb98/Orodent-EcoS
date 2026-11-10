@@ -54,11 +54,11 @@ class ConsumptionUiTest {
         ProductCostFixture.execute(
                 db,
                 "INSERT INTO TON.POLVERI_REVISIONI(polvere_id,numero_versione,stato,approvato_il)"
-                    + " VALUES (3,1,'APPROVATA',CURRENT_TIMESTAMP)",
+                        + " VALUES (3,1,'APPROVATA',CURRENT_TIMESTAMP)",
                 "INSERT INTO TON.COMPOSIZIONI(prodotto_id,numero_versione,stato,approvato_il)"
-                    + " VALUES (1,2,'APPROVATA',CURRENT_TIMESTAMP)",
+                        + " VALUES (1,2,'APPROVATA',CURRENT_TIMESTAMP)",
                 "INSERT INTO TON.COMPOSIZIONE_STRATI(composizione_id,numero_strato) VALUES"
-                    + " (2,1),(2,2)",
+                        + " (2,1),(2,2)",
                 "INSERT INTO"
                     + " TON.COMPOSIZIONE_INGREDIENTI(composizione_id,numero_strato,polvere_revisione_id,percentuale_massa)"
                     + " VALUES (2,1,4,100),(2,2,4,100)",
@@ -190,7 +190,12 @@ class ConsumptionUiTest {
                                         .filter(b -> b.powder().id() == 1)
                                         .findFirst()
                                         .orElseThrow();
-                        assertEquals(0, ConsumptionTest.n("94.2715").compareTo(white.residual()));
+                        assertEquals(0, ConsumptionTest.n("5.7285").compareTo(white.required()));
+                        assertEquals(
+                                0,
+                                white.current()
+                                        .subtract(white.required())
+                                        .compareTo(white.residual()));
                         assertTrue(white.afterDays().compareTo(white.beforeDays()) < 0);
                         view().export.fire();
                         return null;

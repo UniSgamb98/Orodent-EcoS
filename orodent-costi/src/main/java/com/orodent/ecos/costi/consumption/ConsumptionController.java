@@ -57,6 +57,8 @@ public final class ConsumptionController {
         view.through.valueProperty().addListener((o, b, a) -> invalidate());
         view.horizon.valueProperty().addListener((o, b, a) -> invalidate());
         view.calendar.setOnAction(e -> invalidate());
+        view.includeArrivals.setOnAction(e -> invalidate());
+        view.productionDate.valueProperty().addListener((o, b, a) -> renderPlan());
         view.calculate.setOnAction(e -> calculate());
         view.onPlanChanged(
                 () -> {
@@ -101,7 +103,8 @@ public final class ConsumptionController {
                             view.through.getValue(),
                             LocalDate.now(),
                             view.horizon.getValue(),
-                            view.calendar.getValue());
+                            view.calendar.getValue(),
+                            view.includeArrivals.isSelected());
         } catch (RuntimeException invalid) {
             view.feedback(invalid.getMessage());
             return;
@@ -176,13 +179,7 @@ public final class ConsumptionController {
                 .getItems()
                 .setAll(
                         visible.stream()
-                                .map(
-                                        s ->
-                                                Consumption.balance(
-                                                        s,
-                                                        analysis.request().today(),
-                                                        analysis.request().calendar(),
-                                                        s.projected()))
+                                .map(s -> SupplyProjection.forecast(s, analysis.request()))
                                 .toList());
         view.warnings(analysis.warnings());
         StringBuilder totals = new StringBuilder();
@@ -249,6 +246,20 @@ public final class ConsumptionController {
 
     private void renderPlan() {
         if (required == null || analysis == null) return;
+        LocalDate productionDate;
+        try {
+            view.productionDate.commitValue();
+            productionDate = view.productionDate.getValue();
+            if (productionDate == null
+                    || productionDate.isBefore(analysis.request().today())
+                    || productionDate.isAfter(
+                            analysis.request().today().plusDays(analysis.request().horizon())))
+                throw new IllegalArgumentException();
+        } catch (RuntimeException invalid) {
+            view.planned.getItems().clear();
+            view.autonomy("Scegli una data di produzione tra oggi e la fine della previsione.");
+            return;
+        }
         List<Balance> all =
                 analysis.series().stream()
                         .filter(s -> s.basis() == view.planBasis.getValue())
@@ -258,10 +269,10 @@ public final class ConsumptionController {
                                                 || s.rate() != null && s.rate().signum() > 0)
                         .map(
                                 s ->
-                                        Consumption.balance(
+                                        SupplyProjection.order(
                                                 s,
-                                                analysis.request().today(),
-                                                analysis.request().calendar(),
+                                                analysis.request(),
+                                                productionDate,
                                                 required.getOrDefault(
                                                         s.powder().id(), BigDecimal.ZERO)))
                         .toList();
@@ -274,7 +285,11 @@ public final class ConsumptionController {
                 all.stream().filter(b -> b.residual() == null || b.afterDays() == null).count();
         Optional<Balance> shortage =
                 all.stream()
-                        .filter(b -> b.residual() != null && b.residual().signum() < 0)
+                        .filter(
+                                b ->
+                                        b.firstShortage() != null
+                                                || b.residual() != null
+                                                        && b.residual().signum() < 0)
                         .findFirst();
         Optional<Balance> minimum =
                 all.stream()
@@ -282,7 +297,11 @@ public final class ConsumptionController {
                         .min(Comparator.comparing(Balance::afterDays));
         String text =
                 shortage.isPresent()
-                        ? "Polveri insufficienti per l'ordine: " + shortage.get().powder().code()
+                        ? "Carenza prevista: "
+                                + shortage.get().powder().code()
+                                + " · "
+                                + Objects.toString(
+                                        shortage.get().firstShortage(), "alla produzione")
                         : minimum.map(
                                         b ->
                                                 "Dopo l'ordine: "
@@ -397,7 +416,8 @@ public final class ConsumptionController {
                                                                                         .toList(),
                                                                                 old.movements(),
                                                                                 old.warnings(),
-                                                                                old.approved());
+                                                                                old.approved(),
+                                                                                old.arrivals());
                                                                 analysis =
                                                                         new Analysis(
                                                                                 snapshot,
@@ -422,7 +442,9 @@ public final class ConsumptionController {
                                                                                                                         s
                                                                                                                                 .projected(),
                                                                                                                         s
-                                                                                                                                .complete())
+                                                                                                                                .complete(),
+                                                                                                                        s
+                                                                                                                                .arrivals())
                                                                                                                 : s)
                                                                                         .toList(),
                                                                                 analysis
@@ -476,7 +498,10 @@ public final class ConsumptionController {
                     plan ? "Simulazione produzione" : "Previsione globale",
                     "fabbisogni-polveri.csv",
                     rows,
-                    ConsumptionCsv.balances(analysis, plan ? "SIMULAZIONE" : "PREVISIONE"),
+                    ConsumptionCsv.balances(
+                            analysis,
+                            plan ? "SIMULAZIONE" : "PREVISIONE",
+                            plan ? view.productionDate.getValue() : null),
                     workers);
         }
     }
@@ -491,6 +516,8 @@ public final class ConsumptionController {
         view.through.setDisable(saving);
         view.calendar.setDisable(saving);
         view.horizon.setDisable(saving);
+        view.includeArrivals.setDisable(saving);
+        view.productionDate.setDisable(busy);
         view.export.setDisable(
                 busy
                         || analysis == null

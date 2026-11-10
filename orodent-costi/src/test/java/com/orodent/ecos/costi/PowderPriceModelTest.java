@@ -18,6 +18,23 @@ class PowderPriceModelTest {
     }
 
     @Test
+    void lotsAreOptionalDetailAndCannotReplaceTheBaseQuantityOrReferencePrice() {
+        var draft =
+                new Draft(
+                        Mode.AVANZATA,
+                        LocalDate.now(),
+                        n("90"),
+                        n("100"),
+                        List.of(new Lot("L1", n("30"), n("50"))));
+        assertEquals(0, n("100").compareTo(draft.quantity()));
+        assertEquals(0, n("70").compareTo(draft.unassigned()));
+        assertEquals(0, n("90").compareTo(draft.unitPrice()));
+        assertEquals(0, n("50").compareTo(draft.totals().unitPrice()));
+        var excess = new Draft(Mode.SEMPLICE, LocalDate.now(), n("90"), n("20"), draft.lots());
+        assertEquals(0, n("-10").compareTo(excess.unassigned()));
+    }
+
+    @Test
     void weightsByQuantityAndDoesNotRoundEachPurchaseBeforeAveraging() {
         var lots = List.of(new Lot("L1", n("100"), n("80")), new Lot("L2", n("50"), n("100")));
         var total = PowderPrices.aggregate(lots);
@@ -48,7 +65,9 @@ class PowderPriceModelTest {
                         simple.simplePrice(),
                         simple.simpleQuantity(),
                         lots);
-        assertEquals(0, n("15").compareTo(advanced.quantity()));
+        assertNull(advanced.quantity());
+        assertNull(advanced.unassigned());
+        assertEquals(0, n("15").compareTo(advanced.totals().quantity()));
         assertEquals(0, n("90").compareTo(advanced.simplePrice()));
         assertNull(
                 PowderPrices.aggregate(List.of(new Lot("Esaurito", BigDecimal.ZERO, n("80"))))
@@ -61,12 +80,8 @@ class PowderPriceModelTest {
         assertThrows(IllegalArgumentException.class, () -> new Lot("L", n("1"), n("80.00001")));
         assertThrows(IllegalArgumentException.class, () -> new Lot("L", n("-1"), n("80")));
         assertThrows(IllegalArgumentException.class, () -> new Lot("L", n("1"), n("0")));
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> new Draft(Mode.SEMPLICE, LocalDate.now(), null, null, List.of()));
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> new Draft(Mode.AVANZATA, LocalDate.now(), null, null, List.of()));
+        assertDoesNotThrow(() -> new Draft(Mode.SEMPLICE, LocalDate.now(), null, null, List.of()));
+        assertDoesNotThrow(() -> new Draft(Mode.AVANZATA, LocalDate.now(), null, null, List.of()));
         assertThrows(
                 IllegalArgumentException.class, () -> new Lot("L", n("9999999999999"), n("80")));
         assertEquals(n("1.25"), PriceFormats.decimal("1,25", "Prezzo"));

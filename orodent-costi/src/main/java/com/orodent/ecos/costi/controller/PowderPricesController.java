@@ -51,7 +51,11 @@ public final class PowderPricesController {
         view.search.textProperty().addListener(searchChanged);
         view.search.setOnAction(e -> reloadList(0));
         debounce.setOnFinished(e -> reloadList(0));
-        view.filter.setOnAction(e -> reloadList(0));
+        view.filter.setOnAction(
+                e -> {
+                    view.browseLevel();
+                    reloadList(0);
+                });
         view.inactive.setOnAction(e -> reloadList(0));
         view.previous.setOnAction(e -> reloadList(Math.max(0, offset - PowderPrices.PAGE_SIZE)));
         view.next.setOnAction(e -> reloadList(offset + PowderPrices.PAGE_SIZE));

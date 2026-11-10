@@ -12,7 +12,8 @@ public final class PowderPriceRepository {
     private static final String SELECT =
             """
 SELECT p.polvere_id,p.codice,p.nome,p.colore,p.attivo,
-       c.prezzo_id,c.numero_versione,c.modalita,c.data_riferimento,c.prezzo_semplice,c.quantita_semplice
+       c.prezzo_id,c.numero_versione,c.modalita,c.data_riferimento,CASE WHEN c.modello_dati=2 THEN c.prezzo_riferimento ELSE c.prezzo_semplice END AS prezzo_semplice,
+       CASE WHEN c.modello_dati=2 THEN c.quantita_totale ELSE c.quantita_semplice END AS quantita_semplice,c.modello_dati
 FROM TON.POLVERI p LEFT JOIN COSTI.POLVERI_PREZZI c ON c.polvere_id=p.polvere_id
   AND c.numero_versione=(SELECT MAX(v.numero_versione) FROM COSTI.POLVERI_PREZZI v WHERE v.polvere_id=p.polvere_id)
 """;
@@ -36,12 +37,11 @@ FROM TON.POLVERI p LEFT JOIN COSTI.POLVERI_PREZZI c ON c.polvere_id=p.polvere_id
                         + (inactive ? "" : " AND p.attivo=TRUE")
                         + switch (filter) {
                             case TUTTE -> "";
-                            case SEMPLICE -> " AND c.modalita='SEMPLICE'";
-                            case AVANZATA -> " AND c.modalita='AVANZATA'";
+                            case SEMPLICE -> "";
+                            case AVANZATA -> "";
                             case MANCANTI ->
-                                    " AND (c.prezzo_id IS NULL OR (c.modalita='AVANZATA' AND NOT"
-                                            + " EXISTS (SELECT 1 FROM COSTI.POLVERI_LOTTI z WHERE"
-                                            + " z.prezzo_id=c.prezzo_id AND z.quantita_kg>0)))";
+                                    " AND (c.prezzo_id IS NULL OR c.prezzo_riferimento IS NULL OR"
+                                            + " c.quantita_totale IS NULL)";
                         };
         int total;
         String from = SELECT.substring(SELECT.indexOf("FROM TON.POLVERI"));
@@ -81,7 +81,11 @@ FROM TON.POLVERI p LEFT JOIN COSTI.POLVERI_PREZZI c ON c.polvere_id=p.polvere_id
                                             h.mode,
                                             h.date,
                                             draft == null ? null : draft.quantity(),
-                                            draft == null ? null : draft.unitPrice());
+                                            draft == null ? null : draft.unitPrice(),
+                                            draft == null
+                                                    ? BigDecimal.ZERO
+                                                    : draft.totals().quantity(),
+                                            draft == null ? null : draft.totals().unitPrice());
                                 })
                         .toList();
         return new Page(rows, total, offset);
@@ -107,6 +111,14 @@ FROM TON.POLVERI p LEFT JOIN COSTI.POLVERI_PREZZI c ON c.polvere_id=p.polvere_id
     }
 
     public Detail save(long powderId, int expectedVersion, Draft draft) throws SQLException {
+        try (var lock =
+                connection.prepareStatement(
+                        "UPDATE TON.POLVERI SET versione_modifica=versione_modifica WHERE"
+                                + " polvere_id=?")) {
+            lock.setLong(1, powderId);
+            if (lock.executeUpdate() != 1)
+                throw new IllegalArgumentException("Polvere non disponibile.");
+        }
         Detail current = load(powderId);
         if (current.version() != expectedVersion) throw new Conflict();
         if (expectedVersion == Integer.MAX_VALUE)
@@ -115,8 +127,8 @@ FROM TON.POLVERI p LEFT JOIN COSTI.POLVERI_PREZZI c ON c.polvere_id=p.polvere_id
         try (var q =
                 connection.prepareStatement(
                         "INSERT INTO"
-                            + " COSTI.POLVERI_PREZZI(polvere_id,numero_versione,data_riferimento,modalita,prezzo_semplice,quantita_semplice)"
-                            + " VALUES (?,?,?,?,?,?)",
+                            + " COSTI.POLVERI_PREZZI(polvere_id,numero_versione,data_riferimento,modalita,prezzo_riferimento,quantita_totale,modello_dati)"
+                            + " VALUES (?,?,?,?,?,?,2)",
                         Statement.RETURN_GENERATED_KEYS)) {
             q.setLong(1, powderId);
             q.setInt(2, expectedVersion + 1);
@@ -190,7 +202,8 @@ FROM TON.POLVERI p LEFT JOIN COSTI.POLVERI_PREZZI c ON c.polvere_id=p.polvere_id
                 mode == null ? null : Mode.valueOf(mode),
                 date == null ? null : date.toLocalDate(),
                 r.getBigDecimal("prezzo_semplice"),
-                r.getBigDecimal("quantita_semplice"));
+                r.getBigDecimal("quantita_semplice"),
+                r.getInt("modello_dati"));
     }
 
     private record Header(
@@ -200,9 +213,20 @@ FROM TON.POLVERI p LEFT JOIN COSTI.POLVERI_PREZZI c ON c.polvere_id=p.polvere_id
             Mode mode,
             LocalDate date,
             BigDecimal price,
-            BigDecimal quantity) {
+            BigDecimal quantity,
+            int model) {
         Draft draft(List<Lot> lots) {
-            return mode == null ? null : new Draft(mode, date, price, quantity, lots);
+            if (mode == null) return null;
+            if (model == 1 && mode == Mode.AVANZATA) {
+                var totals = com.orodent.ecos.costi.model.PowderPrices.aggregate(lots);
+                return new Draft(
+                        mode,
+                        date,
+                        totals.unitPrice() == null ? price : totals.unitPrice(),
+                        totals.quantity(),
+                        lots);
+            }
+            return new Draft(mode, date, price, quantity, lots);
         }
     }
 }

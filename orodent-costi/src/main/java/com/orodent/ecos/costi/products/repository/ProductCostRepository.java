@@ -14,10 +14,10 @@ import java.util.*;
 public final class ProductCostRepository {
     private static final String USED_RECIPES =
             "(SELECT composizione_id FROM TON.CONFIGURAZIONI_ARTICOLO WHERE stato IN"
-                + " ('APPROVATA','RITIRATA'))";
+                    + " ('APPROVATA','RITIRATA'))";
     private static final String USED_MODELS =
             "(SELECT modello_id FROM TON.CONFIGURAZIONI_ARTICOLO WHERE stato IN"
-                + " ('APPROVATA','RITIRATA'))";
+                    + " ('APPROVATA','RITIRATA'))";
     private final Connection connection;
 
     public ProductCostRepository(Connection connection) {
@@ -87,7 +87,7 @@ WHERE c.stato IN ('APPROVATA','RITIRATA') ORDER BY c.articolo_id,c.numero_versio
             var approved = new HashSet<Long>();
             query(
                     "SELECT configurazione_id FROM TON.CONFIGURAZIONI_ARTICOLO WHERE"
-                        + " stato='APPROVATA'",
+                            + " stato='APPROVATA'",
                     r -> approved.add(r.getLong(1)));
             specifications.replaceAll(
                     (id, values) ->
@@ -195,12 +195,12 @@ WHERE p.numero_versione=(SELECT MAX(v.numero_versione) FROM COSTI.POLVERI_PREZZI
         var prices = new HashMap<Long, PowderPrice>();
         query(
                 """
-SELECT p.prezzo_id,p.polvere_id,p.numero_versione,p.data_riferimento,p.modalita,p.prezzo_semplice FROM COSTI.POLVERI_PREZZI p
+SELECT p.prezzo_id,p.polvere_id,p.numero_versione,p.data_riferimento,p.modalita,CASE WHEN p.modello_dati=2 THEN p.prezzo_riferimento ELSE p.prezzo_semplice END,p.modello_dati FROM COSTI.POLVERI_PREZZI p
 WHERE p.numero_versione=(SELECT MAX(v.numero_versione) FROM COSTI.POLVERI_PREZZI v WHERE v.polvere_id=p.polvere_id)
 """,
                 r -> {
                     BigDecimal price = r.getBigDecimal(6);
-                    if ("AVANZATA".equals(r.getString(5))) {
+                    if (r.getInt(7) == 1 && "AVANZATA".equals(r.getString(5))) {
                         var totals = lotTotals.get(r.getLong(1));
                         price =
                                 totals == null || totals[0].signum() == 0
@@ -213,7 +213,7 @@ WHERE p.numero_versione=(SELECT MAX(v.numero_versione) FROM COSTI.POLVERI_PREZZI
                                     r.getLong(2),
                                     r.getInt(3),
                                     r.getDate(4).toLocalDate(),
-                                    r.getString(5),
+                                    r.getInt(7) == 2 ? "RIFERIMENTO" : r.getString(5),
                                     price));
                 });
         return new Catalogue(

@@ -34,7 +34,9 @@ public final class DatabaseSchema {
     private static final SchemaMigration COSTS_PRODUCT_PARAMETERS = new SchemaMigration(8,
             "Costs product transformation parameters", "/database/migrations/V8__costs_product_parameters.sql");
     private static final SchemaMigration COSTS_STOCK = new SchemaMigration(9, "Costs minimum stock policies", "/database/migrations/V9__costs_minimum_stock.sql");
-    private static final List<SchemaMigration> MIGRATIONS = List.of(BASELINE, DOMAINS, TON_PRODUCTS, TON_DOMAIN, TON_POWDER_COLORS, TON_CATALOGUES, COSTS_POWDER_PRICES, COSTS_PRODUCT_PARAMETERS, COSTS_STOCK);
+    private static final SchemaMigration WAREHOUSE_ORDERS = new SchemaMigration(10,
+            "Warehouse base totals and expected powder orders", "/database/migrations/V10__warehouse_and_purchase_orders.sql");
+    private static final List<SchemaMigration> MIGRATIONS = List.of(BASELINE, DOMAINS, TON_PRODUCTS, TON_DOMAIN, TON_POWDER_COLORS, TON_CATALOGUES, COSTS_POWDER_PRICES, COSTS_PRODUCT_PARAMETERS, COSTS_STOCK, WAREHOUSE_ORDERS);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS = List.of(
             varchar("CODICE_CLIENTE", 50), varchar("CODICE_ISO", 10), varchar("CATEGORIA", 100),
@@ -98,6 +100,7 @@ public final class DatabaseSchema {
             for (SchemaMigration migration : MIGRATIONS) {
                 if (migration.version() > version) {
                     migration.apply(connection, false);
+                    if (migration.version() == WAREHOUSE_ORDERS.version()) WarehouseMigration.apply(connection);
                     recordMigration(connection, "ECOS", migration);
                 }
             }
@@ -154,6 +157,7 @@ public final class DatabaseSchema {
             if (version >= COSTS_POWDER_PRICES.version()) CostsSchema.verify(connection);
             if (version >= COSTS_PRODUCT_PARAMETERS.version()) ProductCostsSchema.verify(connection);
             if (version >= COSTS_STOCK.version()) StockPolicySchema.verify(connection);
+            if (version >= WAREHOUSE_ORDERS.version()) WarehouseSchema.verify(connection);
             return version;
         }
         if (tableExists(connection, "APP", HISTORY)) {

@@ -50,7 +50,7 @@ class ConsumptionTest {
                 db,
                 "UPDATE COSTI.POLVERI_PREZZI SET quantita_semplice=100 WHERE polvere_id=1",
                 "INSERT INTO TON.PRODUZIONI(numero,linea_id,data_produzione,stato,confermata_il)"
-                    + " VALUES ('P1',1,DATE('2026-11-03'),'CONFERMATA',CURRENT_TIMESTAMP)",
+                        + " VALUES ('P1',1,DATE('2026-11-03'),'CONFERMATA',CURRENT_TIMESTAMP)",
                 "INSERT INTO"
                     + " TON.PRODUZIONE_RIGHE(produzione_id,numero_riga,configurazione_id,quantita_prodotta)"
                     + " VALUES (1,1,1,10)",
@@ -90,6 +90,50 @@ class ConsumptionTest {
     }
 
     @Test
+    void optionalReceiptsUseRemainingQuantityAndExcludeOverdueUndatedAndExcludedRows() {
+        ProductCostFixture.execute(
+                db,
+                "INSERT INTO COSTI.ORDINI_POLVERI(fornitore,numero_ordine,posizione) VALUES"
+                    + " ('F','A',1),('F','B',1),('F','C',1),('F','D',1)",
+                "INSERT INTO"
+                    + " COSTI.ORDINI_POLVERI_REVISIONI(ordine_id,numero_versione,polvere_id,codice_sorgente,descrizione,data_ordine,consegna_prevista,quantita_ordinata,quantita_consegnata,quantita_residua,prezzo_kg,escluso,origine)"
+                    + " VALUES"
+                    + " (1,1,1,'WHITE','',DATE('2026-11-01'),DATE('2026-11-12'),100,40,60,55,FALSE,'CSV'),(2,1,1,'WHITE','',DATE('2026-11-01'),DATE('2026-11-08'),100,0,100,55,FALSE,'CSV'),(3,1,1,'WHITE','',DATE('2026-11-01'),NULL,100,0,100,55,FALSE,'CSV'),(4,1,1,'WHITE','',DATE('2026-11-01'),DATE('2026-11-12'),100,0,100,55,TRUE,'CSV')");
+        var base = load();
+        var r = request();
+        var included =
+                new ConsumptionService(db, Runnable::run)
+                        .load(
+                                new Request(
+                                        r.from(),
+                                        r.through(),
+                                        r.today(),
+                                        r.horizon(),
+                                        r.calendar(),
+                                        true))
+                        .join();
+        assertEquals(3, included.snapshot().arrivals().size());
+        for (var series : included.series()) {
+            var original =
+                    base.series().stream()
+                            .filter(
+                                    o ->
+                                            o.powder().id() == series.powder().id()
+                                                    && o.basis() == series.basis())
+                            .findFirst()
+                            .orElseThrow();
+            assertTrue(original.arrivals().isEmpty());
+            if (series.powder().id() == 1) {
+                assertEquals(1, series.arrivals().size());
+                value("60", series.arrivals().get(LocalDate.of(2026, 11, 12)));
+                value("0", Consumption.receipts(series, LocalDate.of(2026, 11, 11)));
+                value("60", Consumption.receipts(series, LocalDate.of(2026, 11, 12)));
+            }
+        }
+        assertTrue(included.warnings().stream().anyMatch(w -> w.contains("scaduti")));
+    }
+
+    @Test
     void separatePowdersAndSourcesUseAllDaysAndPinnedProductionConfiguration() {
         Analysis a = load();
         assertEquals(4, a.series().size());
@@ -113,7 +157,7 @@ class ConsumptionTest {
         ProductCostFixture.execute(
                 db,
                 "UPDATE TON.CONFIGURAZIONI_ARTICOLO SET stato='RITIRATA' WHERE"
-                    + " configurazione_id=1");
+                        + " configurazione_id=1");
         Analysis retired = load();
         assertTrue(
                 retired.series().stream()

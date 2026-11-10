@@ -118,7 +118,9 @@ public final class PowderChart extends Pane {
                                     ? "Non determinabile"
                                     : PriceFormats.number(value, 0, 4) + " kg")
                     .append(
-                            metric == Metric.DISPONIBILITA && date.equals(s.powder().stockDate())
+                            metric == Metric.DISPONIBILITA
+                                            && date.equals(s.powder().stockDate())
+                                            && Consumption.receipts(s, date).signum() == 0
                                     ? " · dichiarata"
                                     : date.isAfter(analysis.request().through())
                                                     || metric == Metric.DISPONIBILITA
@@ -132,7 +134,11 @@ public final class PowderChart extends Pane {
                                         ? "Non determinabile"
                                         : PriceFormats.number(stock, 0, 3) + " kg");
             BigDecimal coverage =
-                    stock == null ? null : Consumption.divide(stock.max(BigDecimal.ZERO), s.rate());
+                    SupplyProjection.coverage(
+                            s, date, stock, analysis.request().calendar(), BigDecimal.ZERO);
+            text.append("\nArrivi previsti cumulati: ")
+                    .append(PriceFormats.number(Consumption.receipts(s, date), 0, 3))
+                    .append(" kg");
             text.append("\nCopertura: ")
                     .append(
                             coverage == null

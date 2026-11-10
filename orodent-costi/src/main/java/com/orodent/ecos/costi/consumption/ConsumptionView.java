@@ -15,7 +15,9 @@ import java.util.function.Function;
 
 public final class ConsumptionView extends CostsShell {
     public final DatePicker from = new DatePicker(LocalDate.now().minusMonths(6)),
-            through = new DatePicker(LocalDate.now().minusDays(1));
+            through = new DatePicker(LocalDate.now().minusDays(1)),
+            productionDate = new DatePicker(LocalDate.now());
+    public final CheckBox includeArrivals = new CheckBox("Includi arrivi previsti");
     public final Spinner<Integer> horizon = new Spinner<>(1, 365, 30);
     public final ComboBox<Basis> basis = new ComboBox<>(), planBasis = new ComboBox<>();
     public final ComboBox<CalendarMode> calendar = new ComboBox<>();
@@ -58,7 +60,7 @@ public final class ConsumptionView extends CostsShell {
         Label title = label("Consumi e fabbisogni");
         title.getStyleClass().add("costs-title");
         HBox heading = new HBox(15, title, export, exportDaily);
-        for (DatePicker picker : List.of(from, through)) {
+        for (DatePicker picker : List.of(from, through, productionDate)) {
             picker.setConverter(
                     new javafx.util.StringConverter<LocalDate>() {
                         private final java.time.format.DateTimeFormatter format =
@@ -106,6 +108,7 @@ public final class ConsumptionView extends CostsShell {
                         label("Previsione, giorni"),
                         horizon,
                         calendar,
+                        includeArrivals,
                         refresh);
         FlowPane selection = new FlowPane(12, 8, label("Base"), basis, label("Grafico"), metric);
         for (String color : List.of("BIANCA", "GIALLA", "ROSA", "GRIGIA", "ALTRE")) {
@@ -156,7 +159,12 @@ public final class ConsumptionView extends CostsShell {
         VBox simulation =
                 new VBox(
                         12,
-                        new HBox(10, label("Consumo di riferimento per l’autonomia"), planBasis),
+                        new HBox(
+                                10,
+                                label("Consumo di riferimento per l’autonomia"),
+                                planBasis,
+                                label("Data produzione"),
+                                productionDate),
                         label("Articoli, configurazioni approvate e quantità da produrre"),
                         planRows,
                         new HBox(10, add, calculate),
@@ -324,7 +332,7 @@ public final class ConsumptionView extends CostsShell {
         table.setFixedCellSize(38);
         column(table, "Polvere", 140, b -> b.powder().code());
         column(table, "Base", 100, b -> b.basis().toString());
-        column(table, "Stimati oggi kg", 110, b -> number(b.current()));
+        column(table, "Stimati alla data kg", 110, b -> number(b.current()));
         column(table, "Necessari kg", 100, b -> number(b.required()));
         column(table, "Residuo kg", 100, b -> number(b.residual()));
         column(
@@ -347,6 +355,7 @@ public final class ConsumptionView extends CostsShell {
                                         + " kg");
         column(table, "Da acquistare kg", 120, b -> number(b.buy()));
         column(table, "Dichiarati kg", 110, b -> number(b.powder().stock()));
+        column(table, "Prima carenza", 110, b -> Objects.toString(b.firstShortage(), "—"));
         column(table, "Data scorte", 105, b -> Objects.toString(b.powder().stockDate(), "—"));
         column(table, "Media kg/giorno", 120, b -> number(b.rate()));
         column(table, "Giorni alla minima", 130, b -> number(b.daysToMinimum()));

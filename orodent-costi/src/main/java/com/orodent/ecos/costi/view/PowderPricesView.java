@@ -25,6 +25,7 @@ public final class PowderPricesView extends CostsShell {
     public final ComboBox<Filter> filter = new ComboBox<>();
     public final CheckBox inactive = new CheckBox("Includi archiviate");
     public final TableView<Row> table = new TableView<>();
+    public final Button orders = new Button("Ordini e importazione CSV");
     private final VBox form = new VBox(14), simple = new VBox(14), advanced = new VBox(14);
     private final Label code = new Label("Seleziona una polvere"),
             name = new Label("Le anagrafiche arrivano dal catalogo TON."),
@@ -34,7 +35,8 @@ public final class PowderPricesView extends CostsShell {
     private final Label totalQuantity = new Label("—"),
             totalValue = new Label("—"),
             averagePrice = new Label("—"),
-            totalNote = new Label();
+            totalNote = new Label(),
+            unassignedQuantity = new Label();
     private final ToggleButton simpleMode = new ToggleButton("Semplice"),
             advancedMode = new ToggleButton("Avanzata");
     private final ToggleGroup modes = new ToggleGroup();
@@ -46,11 +48,7 @@ public final class PowderPricesView extends CostsShell {
     private boolean showing;
 
     public record FormState(
-            Mode mode,
-            String dateText,
-            String price,
-            String quantity,
-            List<LotsEditor.Input> lots) {}
+            String dateText, String price, String quantity, List<LotsEditor.Input> lots) {}
 
     public PowderPricesView() {
         super("Polveri e prezzi");
@@ -64,10 +62,9 @@ public final class PowderPricesView extends CostsShell {
                         label("Costi e consumi › Polveri e prezzi", "costs-breadcrumb"),
                         title,
                         subtitle);
-        Button csv = new Button("Importa CSV");
-        csv.setDisable(true);
-        csv.getStyleClass().add("secondary-button");
-        VBox csvArea = new VBox(3, csv, label("In preparazione", "costs-eyebrow"));
+        orders.setId("costi-orders");
+        orders.getStyleClass().add("secondary-button");
+        VBox csvArea = new VBox(3, orders);
         csvArea.setAlignment(Pos.CENTER_RIGHT);
         Region gap = new Region();
         HBox.setHgrow(gap, Priority.ALWAYS);
@@ -167,17 +164,19 @@ public final class PowderPricesView extends CostsShell {
         HBox totals =
                 new HBox(
                         7,
-                        summary("Quantità totale", totalQuantity),
-                        summary("Valore totale", totalValue),
-                        summary("Prezzo medio ponderato", averagePrice));
+                        summary("Quantità nei lotti", totalQuantity),
+                        summary("Valore dei lotti", totalValue),
+                        summary("Media dei soli lotti", averagePrice));
         averagePrice.setId("costi-average-price");
         totalQuantity.setId("costi-total-quantity");
         totalValue.setId("costi-total-value");
+        unassignedQuantity.setId("costi-unassigned");
         advanced.getChildren()
                 .addAll(
                         label("Quantità e prezzi distinti per lotto di acquisto", "costs-muted"),
                         lots,
                         totals,
+                        summary("Quantità non assegnata ai lotti", unassignedQuantity),
                         totalNote);
         totalNote.setWrapText(true);
         totalNote.getStyleClass().add("costs-muted");
@@ -224,11 +223,14 @@ public final class PowderPricesView extends CostsShell {
                             renderMode();
                             changed();
                         });
+        simpleMode.setOnAction(e -> filter.setValue(Filter.SEMPLICE));
+        advancedMode.setOnAction(e -> filter.setValue(Filter.AVANZATA));
         lots.onChanged(this::changed);
         clear();
     }
 
     private void setupTable() {
+        table.getColumns().clear();
         table.setId("costi-powders-table");
         table.setFixedCellSize(64);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
@@ -265,9 +267,21 @@ public final class PowderPricesView extends CostsShell {
                             }
                         });
         table.getColumns().add(powder);
-        column("Modalità", 100, row -> row.mode() == null ? "Da compilare" : row.mode().toString());
-        column("Quantità", 110, row -> PriceFormats.quantity(row.quantity()));
-        column("Prezzo usato", 130, row -> PriceFormats.price(row.unitPrice()));
+        column("Totale kg", 110, row -> PriceFormats.quantity(row.quantity()));
+        if (mode() == Mode.AVANZATA) {
+            column("Nei lotti kg", 100, row -> PriceFormats.quantity(row.allocated()));
+            column("Non assegnata", 110, row -> PriceFormats.quantity(row.unassigned()));
+            column("Dettaglio", 140, Row::detailStatus);
+        } else {
+            column("Prezzo rif.", 130, row -> PriceFormats.price(row.unitPrice()));
+            column(
+                    "Dati base",
+                    120,
+                    row ->
+                            row.quantity() == null || row.unitPrice() == null
+                                    ? "Da compilare"
+                                    : "Compilati");
+        }
         table.getColumns().forEach(c -> c.setSortable(false));
     }
 
@@ -331,10 +345,24 @@ public final class PowderPricesView extends CostsShell {
 
     private void renderMode() {
         boolean isSimple = mode() == Mode.SEMPLICE;
-        simple.setVisible(isSimple);
-        simple.setManaged(isSimple);
+        simple.setVisible(true);
+        simple.setManaged(true);
         advanced.setVisible(!isSimple);
         advanced.setManaged(!isSimple);
+        setupTable();
+    }
+
+    public void browseLevel() {
+        boolean before = showing;
+        showing = true;
+        try {
+            if (filter.getValue() == Filter.AVANZATA) advancedMode.setSelected(true);
+            else if (filter.getValue() == Filter.SEMPLICE || modes.getSelectedToggle() == null)
+                simpleMode.setSelected(true);
+            renderMode();
+        } finally {
+            showing = before;
+        }
     }
 
     private Mode mode() {
@@ -343,7 +371,6 @@ public final class PowderPricesView extends CostsShell {
 
     public FormState state() {
         return new FormState(
-                mode(),
                 date.getEditor().getText(),
                 simplePrice.getText(),
                 simpleQuantity.getText(),
@@ -385,8 +412,7 @@ public final class PowderPricesView extends CostsShell {
             simpleQuantity.setText(
                     PriceFormats.edit(draft == null ? null : draft.simpleQuantity()));
             lots.show(draft == null ? List.of() : draft.lots());
-            (draft != null && draft.mode() == Mode.AVANZATA ? advancedMode : simpleMode)
-                    .setSelected(true);
+            browseLevel();
             renderMode();
             form.setVisible(true);
             footer.setVisible(true);
@@ -448,12 +474,22 @@ public final class PowderPricesView extends CostsShell {
             totalQuantity.setText(PriceFormats.quantity(totals.quantity()));
             totalValue.setText(PriceFormats.currency(totals.value()));
             averagePrice.setText(PriceFormats.price(totals.unitPrice()));
+            var total = PriceFormats.decimal(simpleQuantity.getText(), "Quantità totale");
+            var unassigned = total == null ? null : total.subtract(totals.quantity());
+            unassignedQuantity.setText(PriceFormats.quantity(unassigned));
             totalNote.setText(
-                    totals.unitPrice() == null
-                            ? "La media richiede una quantità totale maggiore di zero."
-                            : "Media ponderata sulle quantità dichiarate; i dati della modalità"
-                                    + " semplice restano conservati.");
+                    total == null
+                            ? "Compila la quantità totale nei dati base per calcolare la parte non"
+                                    + " assegnata."
+                            : unassigned.signum() < 0
+                                    ? "Incongruenza: i lotti superano il totale dichiarato di "
+                                            + PriceFormats.number(unassigned.abs(), 0, 3)
+                                            + " kg."
+                                    : "I lotti sono un dettaglio del totale. La media dei soli"
+                                            + " lotti non sostituisce il prezzo di riferimento,"
+                                            + " soprattutto con quantità non assegnate.");
         } catch (IllegalArgumentException invalid) {
+            unassignedQuantity.setText("Da verificare");
             totalQuantity.setText("—");
             totalValue.setText("—");
             averagePrice.setText("Da verificare");

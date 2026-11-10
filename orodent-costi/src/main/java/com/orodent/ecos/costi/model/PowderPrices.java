@@ -29,10 +29,10 @@ public final class PowderPrices {
     }
 
     public enum Filter {
-        TUTTE("Tutte le modalità"),
-        SEMPLICE("Semplice"),
-        AVANZATA("Avanzata"),
-        MANCANTI("Da compilare");
+        TUTTE("Tutte le polveri"),
+        SEMPLICE("Vista semplice"),
+        AVANZATA("Vista avanzata"),
+        MANCANTI("Dati base da compilare");
         private final String label;
 
         Filter(String label) {
@@ -77,16 +77,11 @@ public final class PowderPrices {
                     || referenceDate.getYear() < 1900
                     || referenceDate.getYear() > 9999)
                 throw new IllegalArgumentException("Inserisci una data di riferimento valida.");
-            simplePrice = decimal(simplePrice, 4, false, "Prezzo semplice");
+            simplePrice = decimal(simplePrice, 8, false, "Prezzo semplice");
             simpleQuantity = decimal(simpleQuantity, 3, true, "Quantità semplice");
             lots = List.copyOf(lots);
             if (lots.size() > MAX_LOTS)
                 throw new IllegalArgumentException("Massimo 500 righe per polvere.");
-            if (mode == Mode.SEMPLICE && simplePrice == null)
-                throw new IllegalArgumentException("Inserisci il prezzo di riferimento in €/kg.");
-            if (mode == Mode.AVANZATA && lots.isEmpty())
-                throw new IllegalArgumentException(
-                        "Inserisci almeno una riga nella modalità avanzata.");
         }
 
         public Totals totals() {
@@ -94,11 +89,15 @@ public final class PowderPrices {
         }
 
         public BigDecimal quantity() {
-            return mode == Mode.SEMPLICE ? simpleQuantity : totals().quantity();
+            return simpleQuantity;
+        }
+
+        public BigDecimal unassigned() {
+            return simpleQuantity == null ? null : simpleQuantity.subtract(totals().quantity());
         }
 
         public BigDecimal unitPrice() {
-            return mode == Mode.SEMPLICE ? simplePrice : totals().unitPrice();
+            return simplePrice;
         }
     }
 
@@ -123,7 +122,29 @@ public final class PowderPrices {
             Mode mode,
             LocalDate referenceDate,
             BigDecimal quantity,
-            BigDecimal unitPrice) {}
+            BigDecimal unitPrice,
+            BigDecimal allocated,
+            BigDecimal lotMean) {
+        public Row(Powder p, Mode mode, LocalDate date, BigDecimal quantity, BigDecimal price) {
+            this(p, mode, date, quantity, price, BigDecimal.ZERO, null);
+        }
+
+        public BigDecimal unassigned() {
+            return quantity == null ? null : quantity.subtract(allocated);
+        }
+
+        public String detailStatus() {
+            return allocated.signum() == 0
+                    ? "Lotti da compilare"
+                    : unassigned() == null
+                            ? "Totale da compilare"
+                            : unassigned().signum() < 0
+                                    ? "Lotti oltre il totale"
+                                    : unassigned().signum() > 0
+                                            ? "Assegnazione parziale"
+                                            : "Assegnazione completa";
+        }
+    }
 
     public record Page(List<Row> rows, int total, int offset) {
         public Page {
@@ -152,15 +173,15 @@ public final class PowderPrices {
                                     ? ": usa un valore maggiore o uguale a zero."
                                     : ": usa un valore maggiore di zero."));
         try {
-            if (value.setScale(scale, RoundingMode.UNNECESSARY).precision() > 15)
-                throw new ArithmeticException();
+            if (value.setScale(scale, RoundingMode.UNNECESSARY).precision()
+                    > (scale == 8 ? 19 : 15)) throw new ArithmeticException();
         } catch (ArithmeticException invalid) {
             throw new IllegalArgumentException(
                     label
                             + ": massimo "
                             + scale
                             + " decimali e "
-                            + (15 - scale)
+                            + ((scale == 8 ? 19 : 15) - scale)
                             + " cifre intere, senza arrotondamenti automatici.");
         }
         return value.stripTrailingZeros();

@@ -117,6 +117,8 @@ class PowderPricesUiTest {
                         lot(0, "L-2026-041", "100", "80");
                         lot(1, "L-2026-041", "50", "100");
                         assertTrue(label("costi-total-quantity").contains("150"));
+                        field("costi-simple-quantity").setText("200");
+                        assertTrue(label("costi-unassigned").contains("50"));
                         assertTrue(label("costi-average-price").contains("86,6667"));
                         toggle("costi-mode-simple").fire();
                         assertEquals("92,125", field("costi-simple-price").getText());
@@ -170,7 +172,7 @@ class PowderPricesUiTest {
             await(
                     () ->
                             !field("costi-simple-price").isDisabled()
-                                    && !toggle("costi-mode-advanced").isSelected());
+                                    && toggle("costi-mode-advanced").isSelected());
             fx(
                     () -> {
                         assertEquals("", field("costi-simple-price").getText());
@@ -180,6 +182,7 @@ class PowderPricesUiTest {
             await(
                     () ->
                             toggle("costi-mode-advanced").isSelected()
+                                    && field("costi-lot-0-price") != null
                                     && !field("costi-lot-0-price").isDisabled());
             fx(
                     () -> {

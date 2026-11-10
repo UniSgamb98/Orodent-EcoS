@@ -73,6 +73,56 @@ class StockPolicySchemaTest {
     }
 
     @Test
+    void warehouseUpgradeAppendsBaseTotalsWithoutChangingLegacySnapshots() {
+        db.withTransaction(
+                c -> {
+                    var q = c.createStatement();
+                    q.executeUpdate("INSERT INTO TON.POLVERI(codice,nome) VALUES ('P','Bianca')");
+                    q.executeUpdate(
+                            "INSERT INTO"
+                                + " COSTI.POLVERI_PREZZI(polvere_id,numero_versione,modalita,data_riferimento,prezzo_semplice,quantita_semplice)"
+                                + " VALUES (1,1,'AVANZATA',DATE('2026-11-01'),92,999)");
+                    q.executeUpdate(
+                            "INSERT INTO"
+                                + " COSTI.POLVERI_LOTTI(prezzo_id,posizione,lotto,quantita_kg,prezzo_kg)"
+                                + " VALUES (1,1,'A',100,80),(1,2,'B',50,100)");
+                    return null;
+                });
+        new DatabaseSchema(db).initialize(c -> null);
+        db.withConnection(
+                c -> {
+                    var q = c.createStatement();
+                    var r =
+                            q.executeQuery(
+                                    "SELECT"
+                                        + " numero_versione,prezzo_semplice,quantita_semplice,modello_dati,prezzo_riferimento,quantita_totale"
+                                        + " FROM COSTI.POLVERI_PREZZI ORDER BY numero_versione");
+                    assertTrue(r.next());
+                    assertEquals(1, r.getInt(1));
+                    assertEquals(0, new java.math.BigDecimal("92").compareTo(r.getBigDecimal(2)));
+                    assertEquals(0, new java.math.BigDecimal("999").compareTo(r.getBigDecimal(3)));
+                    assertEquals(1, r.getInt(4));
+                    assertTrue(r.next());
+                    assertEquals(2, r.getInt(1));
+                    assertEquals(2, r.getInt(4));
+                    assertEquals(new java.math.BigDecimal("86.66666667"), r.getBigDecimal(5));
+                    assertEquals(0, new java.math.BigDecimal("150").compareTo(r.getBigDecimal(6)));
+                    assertFalse(r.next());
+                    var lots = q.executeQuery("SELECT COUNT(*) FROM COSTI.POLVERI_LOTTI");
+                    lots.next();
+                    assertEquals(4, lots.getInt(1));
+                    return null;
+                });
+        new DatabaseSchema(db).initialize();
+        db.withConnection(
+                c -> {
+                    c.setReadOnly(true);
+                    DatabaseSchema.verifyCompatible(c);
+                    return null;
+                });
+    }
+
+    @Test
     void migratesV8AfterBackupOnceAndClientChecksAreReadOnly() {
         db.withConnection(
                 c -> {
@@ -90,7 +140,7 @@ class StockPolicySchemaTest {
                             return null;
                         });
         assertEquals(1, backups.get());
-        assertEquals(9, version());
+        assertEquals(DatabaseSchema.CURRENT_VERSION, version());
         new DatabaseSchema(db)
                 .initialize(
                         c -> {

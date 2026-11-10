@@ -110,3 +110,21 @@ timestamp. I salvataggi sono versionati e protetti dai conflitti; non vengono
 ritentati automaticamente. Non si salvano finte giacenze o risultati di previsione.
 Il normale aggiornamento dei componenti include la migrazione, con backup HOST
 prima delle modifiche e verifica CLIENT in sola lettura. Non serve un nuovo runtime.
+
+## Arrivi previsti
+
+**Includi arrivi previsti** acquisisce gli ordini insieme alla fotografia degli altri
+dati. Ricaricare dopo modifiche agli ordini. Il residuo si aggiunge alla disponibilità
+alla data prevista; righe escluse, scadute o senza data non vengono aggiunte.
+Le scadute devono essere riscadenzate nella sezione Ordini. La quantità dichiarata
+non viene modificata e, se manca, gli arrivi non inventano una giacenza iniziale.
+
+Il grafico conserva una curva per polvere/fonte; il popup mostra anche gli arrivi
+cumulati. La prima carenza e gli acquisti necessari considerano tutto l'orizzonte:
+una consegna futura non nasconde un esaurimento precedente. Le stime sono giornaliere,
+con consegna disponibile in quel giorno, senza orari di scarico.
+Nella simulazione scegliere **Data produzione** tra oggi e la fine della previsione.
+Il residuo è quello stimato a tale data meno il piano, e la copertura residua include
+le consegne successive finché non si verifica il primo esaurimento. Non si sommano
+previsioni basate su vendite e produzioni. Il CSV riporta inclusione degli arrivi,
+prima carenza e data della produzione simulata.

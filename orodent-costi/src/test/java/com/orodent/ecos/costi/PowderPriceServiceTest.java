@@ -130,7 +130,7 @@ class PowderPriceServiceTest {
                                         .rows()
                                         .getFirst()
                                         .unitPrice()));
-        assertEquals(0, service.page("", Filter.AVANZATA, false, 0).join().total());
+        assertEquals(1, service.page("", Filter.AVANZATA, false, 0).join().total());
         assertEquals(2, scalar("SELECT COUNT(*) FROM COSTI.POLVERI_PREZZI"));
         assertEquals(4, scalar("SELECT COUNT(*) FROM COSTI.POLVERI_LOTTI"));
         assertEquals(1, scalar("SELECT versione_modifica FROM TON.POLVERI WHERE polvere_id=1"));

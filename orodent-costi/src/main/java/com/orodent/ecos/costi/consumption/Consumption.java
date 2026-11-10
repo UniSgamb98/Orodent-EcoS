@@ -80,17 +80,32 @@ public final class Consumption {
             Long specificationId,
             BigDecimal quantity) {}
 
+    public record Arrival(
+            long orderId,
+            long powderId,
+            LocalDate expected,
+            BigDecimal quantity,
+            String order,
+            int position) {}
+
     public record Snapshot(
             Catalogue catalogue,
             List<Powder> powders,
             List<Movement> movements,
             List<String> warnings,
-            Set<Long> approved) {
+            Set<Long> approved,
+            List<Arrival> arrivals) {
+        public Snapshot(
+                Catalogue c, List<Powder> p, List<Movement> m, List<String> w, Set<Long> a) {
+            this(c, p, m, w, a, List.of());
+        }
+
         public Snapshot {
             powders = List.copyOf(powders);
             movements = List.copyOf(movements);
             warnings = List.copyOf(warnings);
             approved = Set.copyOf(approved);
+            arrivals = List.copyOf(arrivals);
         }
     }
 
@@ -99,7 +114,17 @@ public final class Consumption {
             LocalDate through,
             LocalDate today,
             int horizon,
-            CalendarMode calendar) {
+            CalendarMode calendar,
+            boolean includeArrivals) {
+        public Request(
+                LocalDate from,
+                LocalDate through,
+                LocalDate today,
+                int horizon,
+                CalendarMode calendar) {
+            this(from, through, today, horizon, calendar, false);
+        }
+
         public Request {
             if (from == null || through == null || today == null || calendar == null)
                 throw new IllegalArgumentException(
@@ -121,9 +146,21 @@ public final class Consumption {
             NavigableMap<LocalDate, BigDecimal> daily,
             BigDecimal rate,
             BigDecimal projected,
-            boolean complete) {
+            boolean complete,
+            NavigableMap<LocalDate, BigDecimal> arrivals) {
+        public Series(
+                Powder p,
+                Basis b,
+                NavigableMap<LocalDate, BigDecimal> d,
+                BigDecimal r,
+                BigDecimal projected,
+                boolean complete) {
+            this(p, b, d, r, projected, complete, new TreeMap<>());
+        }
+
         public Series {
             daily = Collections.unmodifiableNavigableMap(new TreeMap<>(daily));
+            arrivals = Collections.unmodifiableNavigableMap(new TreeMap<>(arrivals));
         }
     }
 
@@ -163,7 +200,23 @@ public final class Consumption {
             BigDecimal afterDays,
             BigDecimal minimumKg,
             BigDecimal buy,
-            BigDecimal daysToMinimum) {}
+            BigDecimal daysToMinimum,
+            LocalDate firstShortage) {
+        public Balance(
+                Powder p,
+                Basis b,
+                BigDecimal c,
+                BigDecimal q,
+                BigDecimal r,
+                BigDecimal rate,
+                BigDecimal before,
+                BigDecimal after,
+                BigDecimal min,
+                BigDecimal buy,
+                BigDecimal days) {
+            this(p, b, c, q, r, rate, before, after, min, buy, days, null);
+        }
+    }
 
     public static long days(LocalDate from, LocalDate through, CalendarMode mode) {
         if (through.isBefore(from)) return 0;
@@ -183,14 +236,22 @@ public final class Consumption {
     public static BigDecimal stockOn(Series series, LocalDate date, CalendarMode calendar) {
         Powder p = series.powder();
         if (p.stock() == null || p.stockDate() == null || date.isBefore(p.stockDate())) return null;
-        if (date.equals(p.stockDate())) return p.stock();
+        if (date.equals(p.stockDate())) return p.stock().add(receipts(series, date));
         if (series.rate() == null || !series.complete()) return null;
         return p.stock()
                 .subtract(
                         series.rate()
                                 .multiply(
                                         BigDecimal.valueOf(
-                                                days(p.stockDate().plusDays(1), date, calendar))));
+                                                days(p.stockDate().plusDays(1), date, calendar))))
+                .add(receipts(series, date));
+    }
+
+    public static BigDecimal receipts(Series s, LocalDate date) {
+        if (s.powder().stockDate() == null || date.isBefore(s.powder().stockDate()))
+            return BigDecimal.ZERO;
+        return s.arrivals().subMap(s.powder().stockDate(), true, date, true).values().stream()
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public static Balance balance(

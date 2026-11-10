@@ -11,19 +11,18 @@ La schermata usa un solo pannello di dettaglio. Ogni polvere TON compare una vol
 indipendentemente dal numero di revisioni della sua scheda tecnica. Le anagrafiche
 si modificano in TON; qui si registrano soltanto dati economici e quantità dichiarate.
 
-- **Semplice:** prezzo €/kg obbligatorio e positivo, quantità kg facoltativa.
-  Una quantità assente rimane sconosciuta, distinta dallo zero.
-- **Avanzata:** righe con lotto (facoltativo se sconosciuto), quantità kg e prezzo
-  €/kg. Il lotto non è un identificatore univoco: lo stesso lotto può apparire
-  in acquisti diversi, anche con prezzi diversi.
-- Si conservano i dati di entrambe le modalità. Cambiare modalità non cancella
-  l'altra compilazione; **Annulla** ripristina l'ultima fotografia caricata.
-- La data **Dati della polvere al** appartiene alla polvere selezionata. Le altre
-  polveri possono avere date diverse: non è una rivalutazione globale.
-- Quantità: fino a 3 decimali; prezzi: fino a 4. Nei campi usare virgola o punto
-  decimale senza separatori delle migliaia. Il salvataggio non arrotonda gli input.
-- Quantità zero nei lotti consentita: una fotografia con totale zero non ha un
-  prezzo medio ponderato calcolabile. Non si usa zero come prezzo mancante.
+- **Vista semplice:** tutte le polveri, quantità totale e prezzo di riferimento €/kg.
+  I dati mancanti rimangono sconosciuti, distinti dallo zero.
+- **Vista avanzata:** tutte le polveri, con dettaglio facoltativo per lotto, quantità
+  e prezzo di acquisto. Il lotto può ripetersi per acquisti con prezzi diversi.
+- I lotti descrivono il totale dei dati base: **non assegnata = totale − somma lotti**.
+  Il dettaglio mancante, parziale o eccedente è segnalato. Cambiare vista non modifica
+  dati e non crea una revisione. **Annulla** ripristina la fotografia salvata.
+- Il prezzo medio ponderato riguarda soltanto i lotti compilati: non sostituisce
+  il riferimento applicato ai costi prodotti, soprattutto con copertura parziale.
+- La data è quella della fotografia della singola polvere. Quantità: 3 decimali;
+  prezzi dei lotti: 4; riferimento: fino a 8 per conservare le medie pregresse.
+  Virgola o punto decimale, senza separatori delle migliaia. Nessun arrotondamento degli input.
 
 Il prezzo medio è `somma(kg × €/kg) / somma(kg)`. Gli importi si sommano in
 `BigDecimal`, senza arrotondare ogni riga ai centesimi; il rapporto è conservato
@@ -46,7 +45,7 @@ servizi condivisi. Migrazione e backup sono gestiti dal normale avvio HOST EcoS;
 i CLIENT controllano la compatibilità senza modificare lo schema.
 
 È una **fotografia manuale**: nessun carico da ordini, scarico da produzione o
-aggiornamento automatico del magazzino. Scenari e arrivi futuri saranno implementati separatamente.
+aggiornamento automatico del magazzino. Gli arrivi futuri sono separati dalle scorte dichiarate; gli scenari sono in preparazione.
 I consumi sono consultabili in [Consumi e fabbisogni](consumi-e-fabbisogni.md).
 
 ## Costi prodotti
@@ -69,8 +68,7 @@ indicazione esplicita nella scheda.
 La tab **Dettaglio polveri** mostra strato, polvere e revisione tecnica, percentuale,
 grammi da pesare, prezzo applicato e costo della riga. Indica modalità del prezzo,
 revisione economica e data di riferimento. Non richiede che le polveri abbiano la
-stessa data. Prezzi semplici e medie ponderate vengono dalla modalità attualmente
-salvata per ciascuna polvere in **Polveri e prezzi**.
+stessa data. Si applica il prezzo di riferimento salvato in **Polveri e prezzi**, indipendentemente dalla vista scelta.
 
 ### Regola di calcolo COSTI-NOMINALE-1
 
@@ -156,24 +154,35 @@ Il [motore CSV condiviso](csv-export.md) è in `orodent-core`; il pannello di
 anteprima/salvataggio riutilizzabile è in `orodent-module-api`. I mapper specifici
 rimangono nel modulo Costi. Nessuna esportazione modifica ricette, prezzi o scenari.
 
-## TODO — Importazione CSV degli acquisti polveri
+## Ordini di approvvigionamento
 
-**Da implementare dopo aver ricevuto un documento reale di esempio.** Il pulsante
-è indicato come in preparazione e non simula un'importazione già disponibile.
+Aprire **Ordini in arrivo**, oppure il pulsante in **Polveri e prezzi**.
+**Importa CSV ordini** legge il formato del gestionale con separatore `;`, UTF-8
+(anche BOM) o Windows-1252, date `gg/mm/aaaa`, quantità KG/KG. e prezzo netto €/kg.
+Intestazioni richieste:
 
-- [ ] Definire formato, intestazioni, separatori, codifica, unità, valuta e convenzioni
-      di prezzo (netto, sconti e decimali).
-- [ ] Collegare la tipologia/codice importato all'identità della polvere TON,
-      gestendo codici sconosciuti senza creare anagrafiche o revisioni implicite.
-- [ ] Importare lotto, quantità acquistata, prezzo e riferimento al documento/riga.
-- [ ] Distinguere quantità **acquistata** nel documento e quantità **ancora disponibile**
-      dichiarata dall'utente. Un acquisto storico non prova una disponibilità attuale.
-- [ ] Conservare più acquisti dello stesso lotto, anche con prezzi diversi.
-- [ ] Definire una chiave di provenienza documento/riga per riconoscere duplicati
-      e reimportazioni; il solo lotto non basta.
-- [ ] Prevedere anteprima con errori e scelta esplicita fra aggiungere o sostituire
-      le quantità della fotografia, senza duplicarle implicitamente.
-- [ ] Salvare tutta l'importazione scelta in transazione, senza alterare le
-      fotografie economiche precedenti e senza introdurre movimenti automatici.
+```text
+Cons. prev.;Data ordine;Ordine;Pos.;Fornitore;Articolo;Descrizione;Un. Mis.;Quantita';UnitValue;Consegnata;Da consegn.
+```
 
-Questi punti sono un promemoria funzionale, non un tracciato CSV definitivo.
+L'anteprima mostra tutte le righe valide e gli errori. Gli articoli vengono
+riconosciuti per codice TON o collegamento fornitore già salvato. Se sconosciuti,
+selezionare esplicitamente la polvere TON prima di confermare. Non vengono create
+anagrafiche tecniche. Le associazioni sono conservate per le prossime importazioni.
+
+La chiave è **fornitore + ordine + posizione**, non il lotto. Reimportare aggiorna
+le righe cambiate e lascia invariate le identiche, senza duplicarle. Le righe
+assenti dal file restano presenti. Tutta l'importazione è atomica e versionata;
+se nel frattempo i dati cambiano occorre ricaricare l'anteprima.
+
+**Data prevista / esclusione** consente una nuova data concordata o l'esclusione
+dalle simulazioni. Queste scelte sopravvivono alle reimportazioni; selezionare
+**Usa la data del CSV** per rimuovere la data manuale. Il residuo da ricevere è
+`Da consegn.`: il consegnato non carica automaticamente il magazzino.
+Il file ordini non contiene lotti; la futura importazione dei documenti d'acquisto
+per compilare i lotti del magazzino rimane da definire con un esempio reale.
+
+La V10 aggiunge tabelle ordini, associazioni fornitore e nuovi dati base magazzino.
+I vecchi snapshot restano immutati; una nuova revisione inizializza i totali delle
+vecchie modalità avanzate dalla somma dei lotti e il riferimento dalla loro media
+ponderata. Backup e migrazione sono gestiti dall'HOST nel normale aggiornamento.

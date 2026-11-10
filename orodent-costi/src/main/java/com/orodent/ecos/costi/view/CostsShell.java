@@ -14,7 +14,8 @@ public class CostsShell extends BorderPane {
     public final Button home = new Button("Home Orodent-EcoS"),
             productsNav = new Button("Costi prodotti"),
             powdersNav = new Button("Polveri e prezzi"),
-            consumptionNav = new Button("Consumi e fabbisogni");
+            consumptionNav = new Button("Consumi e fabbisogni"),
+            ordersNav = new Button("Ordini in arrivo");
     private final VBox sidebar = new VBox(7);
 
     protected CostsShell(String current) {
@@ -44,13 +45,15 @@ public class CostsShell extends BorderPane {
         productsNav.setId("costi-nav-products");
         powdersNav.setId("costi-nav-powders");
         consumptionNav.setId("costi-nav-consumption");
+        ordersNav.setId("costi-nav-orders");
         for (String section :
                 List.of(
                         "Panoramica",
                         "Costi prodotti",
                         "Scenari",
                         "Consumi e fabbisogni",
-                        "Polveri e prezzi")) {
+                        "Polveri e prezzi",
+                        "Ordini in arrivo")) {
             Button item =
                     section.equals("Costi prodotti")
                             ? productsNav
@@ -58,10 +61,16 @@ public class CostsShell extends BorderPane {
                                     ? powdersNav
                                     : section.equals("Consumi e fabbisogni")
                                             ? consumptionNav
-                                            : new Button(section);
+                                            : section.equals("Ordini in arrivo")
+                                                    ? ordersNav
+                                                    : new Button(section);
             item.setMaxWidth(Double.MAX_VALUE);
             item.getStyleClass().add("costs-nav");
-            item.setDisable(item != productsNav && item != powdersNav && item != consumptionNav);
+            item.setDisable(
+                    item != productsNav
+                            && item != powdersNav
+                            && item != consumptionNav
+                            && item != ordersNav);
             if (section.equals(current)) item.getStyleClass().add("costs-nav-selected");
             sidebar.getChildren().add(item);
         }

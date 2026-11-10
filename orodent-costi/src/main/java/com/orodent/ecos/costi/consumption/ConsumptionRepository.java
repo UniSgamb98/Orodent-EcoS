@@ -133,7 +133,18 @@ public final class ConsumptionRepository {
                                         + " stato='APPROVATA'")) {
             while (r.next()) approved.add(r.getLong(1));
         }
-        return new Snapshot(catalogue, powders, movements, warnings, approved);
+        var arrivals = new ArrayList<Arrival>();
+        for (var row : new com.orodent.ecos.costi.orders.OrderRepository(connection).list())
+            if (row.open())
+                arrivals.add(
+                        new Arrival(
+                                row.id(),
+                                row.powderId(),
+                                row.date(),
+                                row.row().remaining(),
+                                row.row().key().order(),
+                                row.row().key().position()));
+        return new Snapshot(catalogue, powders, movements, warnings, approved, arrivals);
     }
 
     public Settings save(long powder, Settings expected) throws SQLException {
