@@ -19,7 +19,7 @@ si modificano in TON; qui si registrano soltanto dati economici e quantità dich
   Il dettaglio mancante, parziale o eccedente è segnalato. Cambiare vista non modifica
   dati e non crea una revisione. **Annulla** ripristina la fotografia salvata.
 - Il prezzo medio ponderato riguarda soltanto i lotti compilati: non sostituisce
-  il riferimento applicato ai costi prodotti, soprattutto con copertura parziale.
+  il riferimento: la fonte dei Costi prodotti si sceglie nel relativo selettore.
 - La data è quella della fotografia della singola polvere. Quantità: 3 decimali;
   prezzi dei lotti: 4; riferimento: fino a 8 per conservare le medie pregresse.
   Virgola o punto decimale, senza separatori delle migliaia. Nessun arrotondamento degli input.
@@ -68,7 +68,7 @@ indicazione esplicita nella scheda.
 La tab **Dettaglio polveri** mostra strato, polvere e revisione tecnica, percentuale,
 grammi da pesare, prezzo applicato e costo della riga. Indica modalità del prezzo,
 revisione economica e data di riferimento. Non richiede che le polveri abbiano la
-stessa data. Si applica il prezzo di riferimento salvato in **Polveri e prezzi**, indipendentemente dalla vista scelta.
+stessa data. La fonte si sceglie con **Prezzi polveri** in Costi prodotti: riferimento semplice oppure valutazione avanzata. La vista aperta in **Polveri e prezzi** non cambia questa scelta.
 
 ### Regola di calcolo COSTI-NOMINALE-1
 
@@ -201,3 +201,48 @@ L'elenco usa le configurazioni predefinite approvate degli articoli del prodotto
 comprese quelle degli articoli archiviati. Se non è possibile determinare un dato
 completo mostra `—`; se i prezzi nominali differiscono mostra **Più valori**.
 Le configurazioni alternative rimangono distinguibili nella tabella articoli.
+
+## Fonte dei prezzi: semplice e avanzata
+
+Il selettore **Prezzi polveri**, sopra ai due pannelli di Costi prodotti, si applica
+all'intero catalogo, al dettaglio e a tutte le esportazioni. Cambia la valutazione,
+non i dati salvati del magazzino o i parametri di trasformazione. Si può cambiare
+fonte anche durante la compilazione dei parametri, conservando la bozza.
+
+- **Semplice · Riferimento**: prezzo dei dati base di ciascuna polvere.
+- **Avanzata · Media ponderata**: valore dei lotti più valore della parte non
+  assegnata, diviso per la quantità totale dichiarata. La parte non assegnata viene
+  valorizzata al prezzo di riferimento. Con tutti i kg assegnati ai lotti non serve
+  un riferimento per il calcolo avanzato.
+
+Esempio: totale 100 kg, lotti 80 kg a 80 €/kg, riferimento 100 €/kg.
+La media è `(80 × 80 + 20 × 100) / 100 = 84 €/kg`.
+Il triangolo giallo accanto al prezzo, in **Dettaglio polveri**, segnala il ricorso
+al riferimento per i kg non assegnati. Il tooltip lo spiega; al clic si apre il
+popup con totale, kg nei lotti, kg non assegnati, valore e formula del calcolo.
+Un avviso sopra ai pannelli apre anche il riepilogo delle polveri interessate.
+Gli altri prezzi hanno un pulsante informativo per consultare la provenienza.
+
+**Includi ordini in arrivo**, disponibile solo in avanzata e disattivato all'apertura,
+aggiunge quantità **residue** e relativo valore di tutti gli ordini aperti con
+consegna dalla data della fotografia in poi. Non c'è un orizzonte temporale di
+costo: la media include tutti gli arrivi futuri scelti. Righe escluse, consegnate,
+scadute o senza data non partecipano. Il popup distingue i singoli contributi,
+riporta documento/posizione e revisione, e segnala righe scadute/senza data omesse.
+Per includerle bisogna aggiornare la data in **Ordini in arrivo** e ricaricare.
+La stima non carica il magazzino né altera gli ordini.
+
+Totale sconosciuto, lotti oltre il totale, riferimento mancante per la parte non
+assegnata o nessuna quantità positiva rendono il prezzo avanzato non calcolabile.
+Non si sostituisce silenziosamente una media parziale al costo dell'intera scorta.
+Scorta zero con un ordine futuro valido può essere valorizzata sul solo arrivo;
+scorta sconosciuta resta sconosciuta anche in presenza di ordini.
+
+La media è arrotondata a 8 decimali, dopo aver sommato i valori senza arrotondamenti
+intermedi. Il costo nominale della miscela continua a escludere sovramateriali,
+perdite e trasformazione. La sorgente compare anche nel CSV riepilogativo; il CSV
+di dettaglio comprende flag di stima e spiegazione completa delle valutazioni.
+I dati usati sono la fotografia acquisita con **Ricarica prezzi e dati**, mantenuta
+immutabile: le variazioni in altri moduli richiedono una nuova lettura.
+Questa politica di valutazione è riutilizzabile dai futuri scenari; qui non si
+salvano scenari o prezzi alternativi.

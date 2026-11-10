@@ -1,5 +1,7 @@
 package com.orodent.ecos.costi.products.repository;
 
+import com.orodent.ecos.costi.orders.OrderRepository;
+import com.orodent.ecos.costi.products.model.PowderPricing;
 import com.orodent.ecos.costi.products.model.ProductCosts.*;
 
 import java.math.BigDecimal;
@@ -192,10 +194,27 @@ WHERE p.numero_versione=(SELECT MAX(v.numero_versione) FROM COSTI.POLVERI_PREZZI
                     total[0] = total[0].add(r.getBigDecimal(2));
                     total[1] = total[1].add(r.getBigDecimal(2).multiply(r.getBigDecimal(3)));
                 });
+        var stocks = new HashMap<Long, PowderPricing.Stock>();
+        var receipts = new HashMap<Long, List<PowderPricing.Receipt>>();
+        for (var order : new OrderRepository(connection).list())
+            if (order.open())
+                receipts.computeIfAbsent(order.powderId(), k -> new ArrayList<>())
+                        .add(
+                                new PowderPricing.Receipt(
+                                        order.id(),
+                                        order.version(),
+                                        order.row().key().supplier()
+                                                + " / "
+                                                + order.row().key().order()
+                                                + " / "
+                                                + order.row().key().position(),
+                                        order.date(),
+                                        order.row().remaining(),
+                                        order.row().price()));
         var prices = new HashMap<Long, PowderPrice>();
         query(
                 """
-SELECT p.prezzo_id,p.polvere_id,p.numero_versione,p.data_riferimento,p.modalita,CASE WHEN p.modello_dati=2 THEN p.prezzo_riferimento ELSE p.prezzo_semplice END,p.modello_dati FROM COSTI.POLVERI_PREZZI p
+SELECT p.prezzo_id,p.polvere_id,p.numero_versione,p.data_riferimento,p.modalita,CASE WHEN p.modello_dati=2 THEN p.prezzo_riferimento ELSE p.prezzo_semplice END,p.modello_dati,CASE WHEN p.modello_dati=2 THEN p.quantita_totale ELSE p.quantita_semplice END FROM COSTI.POLVERI_PREZZI p
 WHERE p.numero_versione=(SELECT MAX(v.numero_versione) FROM COSTI.POLVERI_PREZZI v WHERE v.polvere_id=p.polvere_id)
 """,
                 r -> {
@@ -207,6 +226,22 @@ WHERE p.numero_versione=(SELECT MAX(v.numero_versione) FROM COSTI.POLVERI_PREZZI
                                         ? null
                                         : totals[1].divide(totals[0], 8, RoundingMode.HALF_UP);
                     }
+                    var total =
+                            lotTotals.getOrDefault(
+                                    r.getLong(1),
+                                    new BigDecimal[] {BigDecimal.ZERO, BigDecimal.ZERO});
+                    stocks.put(
+                            r.getLong(2),
+                            new PowderPricing.Stock(
+                                    r.getInt(3),
+                                    r.getDate(4).toLocalDate(),
+                                    price,
+                                    r.getInt(7) == 1 && "AVANZATA".equals(r.getString(5))
+                                            ? total[0]
+                                            : r.getBigDecimal(8),
+                                    total[0],
+                                    total[1],
+                                    receipts.getOrDefault(r.getLong(2), List.of())));
                     prices.put(
                             r.getLong(2),
                             new PowderPrice(
@@ -216,6 +251,18 @@ WHERE p.numero_versione=(SELECT MAX(v.numero_versione) FROM COSTI.POLVERI_PREZZI
                                     r.getInt(7) == 2 ? "RIFERIMENTO" : r.getString(5),
                                     price));
                 });
+        receipts.forEach(
+                (id, orders) ->
+                        stocks.putIfAbsent(
+                                id,
+                                new PowderPricing.Stock(
+                                        0,
+                                        null,
+                                        null,
+                                        null,
+                                        BigDecimal.ZERO,
+                                        BigDecimal.ZERO,
+                                        orders)));
         return new Catalogue(
                 Instant.now(),
                 products,
@@ -224,7 +271,9 @@ WHERE p.numero_versione=(SELECT MAX(v.numero_versione) FROM COSTI.POLVERI_PREZZI
                 recipes,
                 models,
                 prices,
-                parameters());
+                parameters(),
+                stocks,
+                new PowderPricing.Selection(PowderPricing.Mode.SEMPLICE, false));
     }
 
     private Map<Long, Parameters> parameters() throws SQLException {

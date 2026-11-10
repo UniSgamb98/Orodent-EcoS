@@ -77,7 +77,17 @@ public final class ProductCosts {
     }
 
     public record PowderPrice(
-            long powderId, int version, LocalDate date, String mode, BigDecimal price) {}
+            long powderId,
+            int version,
+            LocalDate date,
+            String mode,
+            BigDecimal price,
+            boolean estimated,
+            String details) {
+        public PowderPrice(long id, int version, LocalDate date, String mode, BigDecimal price) {
+            this(id, version, date, mode, price, false, "");
+        }
+    }
 
     /** Null common price means unknown; absent overrides inherit it. Zero is an explicit cost. */
     public record Parameters(int version, BigDecimal commonCost, Map<Long, BigDecimal> overrides) {
@@ -116,8 +126,34 @@ public final class ProductCosts {
             Map<Long, Recipe> recipes,
             Map<Long, Model> models,
             Map<Long, PowderPrice> prices,
-            Map<Long, Parameters> parameters) {
+            Map<Long, Parameters> parameters,
+            Map<Long, PowderPricing.Stock> stocks,
+            PowderPricing.Selection pricing) {
+        public Catalogue(
+                Instant capturedAt,
+                List<Product> products,
+                List<Article> articles,
+                Map<Long, List<Specification>> specifications,
+                Map<Long, Recipe> recipes,
+                Map<Long, Model> models,
+                Map<Long, PowderPrice> prices,
+                Map<Long, Parameters> parameters) {
+            this(
+                    capturedAt,
+                    products,
+                    articles,
+                    specifications,
+                    recipes,
+                    models,
+                    prices,
+                    parameters,
+                    Map.of(),
+                    new PowderPricing.Selection(PowderPricing.Mode.SEMPLICE, false));
+        }
+
         public Catalogue {
+            stocks = Map.copyOf(stocks);
+            Objects.requireNonNull(pricing);
             products = List.copyOf(products);
             articles = List.copyOf(articles);
             specifications = immutableLists(specifications);
@@ -142,7 +178,9 @@ public final class ProductCosts {
                     recipes,
                     models,
                     prices,
-                    updated);
+                    updated,
+                    stocks,
+                    pricing);
         }
     }
 
@@ -165,6 +203,7 @@ public final class ProductCosts {
             BigDecimal powderCost,
             BigDecimal total,
             BigDecimal nominalMixPrice,
+            String pricingSource,
             List<Material> materials,
             List<String> problems) {
         public Result {

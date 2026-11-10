@@ -47,7 +47,9 @@ public final class ProductCostCsv {
                         "Riferimento calcolo TON",
                         "Fotografia prezzi al (UTC)",
                         "Stato",
-                        "Miscela nominale (EUR/kg)");
+                        "Miscela nominale (EUR/kg)",
+                        "Fonte prezzi",
+                        "Polveri con stima riferimento");
             }
 
             public List<?> map(Result r) {
@@ -81,7 +83,14 @@ public final class ProductCostCsv {
                         s == null ? null : s.productionCalculation(),
                         capturedAt,
                         r.status(),
-                        r.nominalMixPrice());
+                        r.nominalMixPrice(),
+                        r.pricingSource(),
+                        r.materials().stream()
+                                .filter(m -> m.price() != null && m.price().estimated())
+                                .map(m -> m.ingredient().code())
+                                .distinct()
+                                .sorted()
+                                .collect(java.util.stream.Collectors.joining(", ")));
             }
         };
     }
@@ -120,7 +129,10 @@ public final class ProductCostCsv {
                         "Fattore perdite",
                         "Metodo costi",
                         "Fotografia prezzi al (UTC)",
-                        "Stato");
+                        "Stato",
+                        "Fonte prezzi selezionata",
+                        "Stima riferimento",
+                        "Dettaglio valutazione");
             }
 
             public List<?> map(Detail d) {
@@ -150,7 +162,10 @@ public final class ProductCostCsv {
                         ProductCosts.LOSS_FACTOR,
                         ProductCosts.CALCULATION,
                         capturedAt,
-                        r.status());
+                        r.status(),
+                        r.pricingSource(),
+                        p == null ? null : p.estimated(),
+                        p == null ? null : p.details());
             }
         };
     }

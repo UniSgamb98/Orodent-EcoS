@@ -1,6 +1,7 @@
 package com.orodent.ecos.costi.products.view;
 
 import com.orodent.ecos.costi.products.model.NominalMixtureCost;
+import com.orodent.ecos.costi.products.model.PowderPricing;
 import com.orodent.ecos.costi.products.model.ProductCosts.*;
 import com.orodent.ecos.costi.view.CostsShell;
 import com.orodent.ecos.costi.view.PriceFormats;
@@ -46,6 +47,28 @@ public final class ProductCostsView extends CostsShell {
     public void nominalPrices(Map<Long, NominalMixtureCost.Summary> values) {
         nominalPrices = Map.copyOf(values);
         products.refresh();
+    }
+
+    public final ComboBox<PowderPricing.Mode> pricingMode = new ComboBox<>();
+    public final CheckBox includeOrders = new CheckBox("Includi ordini in arrivo");
+    public final Button valuationWarning =
+            new Button("⚠ Prezzi integrati con il riferimento · Dettagli");
+
+    public PowderPricing.Selection pricingSelection() {
+        return new PowderPricing.Selection(pricingMode.getValue(), includeOrders.isSelected());
+    }
+
+    private void priceInfo(String title, String message) {
+        Alert dialog = new Alert(Alert.AlertType.INFORMATION);
+        dialog.setTitle(title);
+        dialog.setHeaderText(title);
+        if (getScene() != null) dialog.initOwner(getScene().getWindow());
+        TextArea text = new TextArea(message);
+        text.setEditable(false);
+        text.setWrapText(true);
+        text.setPrefSize(660, 360);
+        dialog.getDialogPane().setContent(text);
+        dialog.showAndWait();
     }
 
     public final TableView<Product> products = new TableView<>();
@@ -199,11 +222,56 @@ public final class ProductCostsView extends CostsShell {
                 m -> m.ingredient().code() + " · v" + m.ingredient().technicalVersion());
         column(materials, "Massa %", 85, m -> PriceFormats.number(m.ingredient().percent(), 0, 4));
         column(materials, "Da pesare g", 105, m -> PriceFormats.number(m.grams(), 1, 4));
-        column(
-                materials,
-                "Prezzo €/kg",
-                110,
-                m -> m.price() == null ? "—" : PriceFormats.number(m.price().price(), 2, 8));
+        TableColumn<Material, Material> priceColumn = new TableColumn<>("Prezzo €/kg");
+        priceColumn.setPrefWidth(150);
+        priceColumn.setSortable(false);
+        priceColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue()));
+        priceColumn.setCellFactory(
+                c ->
+                        new TableCell<>() {
+                            protected void updateItem(Material material, boolean empty) {
+                                super.updateItem(material, empty);
+                                setText(null);
+                                setGraphic(null);
+                                if (empty || material == null) return;
+                                PowderPrice price = material.price();
+                                Label amount =
+                                        new Label(
+                                                price == null
+                                                        ? "—"
+                                                        : PriceFormats.number(price.price(), 2, 8));
+                                HBox row = new HBox(7, amount);
+                                row.setAlignment(Pos.CENTER_LEFT);
+                                if (price != null && !price.details().isBlank()) {
+                                    Button info = new Button(price.estimated() ? "⚠" : "ⓘ");
+                                    info.setId(
+                                            price.estimated()
+                                                    ? "costs-price-warning"
+                                                    : "costs-price-info");
+                                    if (price.estimated())
+                                        info.setStyle(
+                                                "-fx-text-fill: #a66a00; -fx-background-color:"
+                                                        + " #fff3cd;");
+                                    info.setTooltip(
+                                            new Tooltip(
+                                                    price.estimated()
+                                                            ? "Una parte della scorta usa il prezzo"
+                                                                  + " di riferimento. Clicca per il"
+                                                                  + " calcolo."
+                                                            : "Mostra origine e calcolo del"
+                                                                    + " prezzo"));
+                                    info.setOnAction(
+                                            e ->
+                                                    priceInfo(
+                                                            material.ingredient().code()
+                                                                    + " · Valutazione",
+                                                            price.details()));
+                                    row.getChildren().add(info);
+                                }
+                                setGraphic(row);
+                            }
+                        });
+        materials.getColumns().add(priceColumn);
         column(materials, "Costo €", 95, m -> PriceFormats.number(m.cost(), 2, 6));
         column(
                 materials,
@@ -216,7 +284,7 @@ public final class ProductCostsView extends CostsShell {
                                         + " · v"
                                         + m.price().version()
                                         + " · "
-                                        + m.price().date());
+                                        + Objects.toString(m.price().date(), "Non compilata"));
         materials.setId("costs-products-materials");
         materials.setFixedCellSize(38);
         materials.setPrefHeight(210);
@@ -279,9 +347,39 @@ public final class ProductCostsView extends CostsShell {
                             + " nominali diversi.");
         nominalNote.setWrapText(true);
         nominalNote.getStyleClass().add("costs-muted");
+        pricingMode.getItems().setAll(PowderPricing.Mode.values());
+        pricingMode.setValue(PowderPricing.Mode.SEMPLICE);
+        pricingMode.setId("costs-pricing-mode");
+        includeOrders.setId("costs-include-orders");
+        includeOrders.setTooltip(
+                new Tooltip(
+                        "Include quantità residue e prezzi degli ordini aperti. Righe escluse,"
+                                + " scadute o senza data non partecipano alla media."));
+        includeOrders.setDisable(true);
+        valuationWarning.setId("costs-valuation-warning");
+        valuationWarning.setStyle("-fx-text-fill: #a66a00; -fx-background-color: #fff3cd;");
+        valuationWarning.setVisible(false);
+        valuationWarning.setManaged(false);
+        valuationWarning.setOnAction(
+                e -> {
+                    var messages = new LinkedHashSet<String>();
+                    for (Result r : articles.getItems())
+                        for (Material m : r.materials())
+                            if (m.price() != null && m.price().estimated())
+                                messages.add(m.ingredient().code() + "\n" + m.price().details());
+                    priceInfo("Quantità non assegnate ai lotti", String.join("\n\n", messages));
+                });
+        FlowPane pricingControls =
+                new FlowPane(
+                        12,
+                        8,
+                        new Label("Prezzi polveri"),
+                        pricingMode,
+                        includeOrders,
+                        valuationWarning);
         HBox toolbar = new HBox(12, refresh, snapshotDate);
         toolbar.setAlignment(Pos.CENTER_LEFT);
-        VBox page = new VBox(12, top, toolbar, nominalNote, split, feedback);
+        VBox page = new VBox(12, top, toolbar, pricingControls, nominalNote, split, feedback);
         page.setPadding(new Insets(18, 24, 14, 24));
         setCenter(page);
         setBottom(
@@ -321,6 +419,12 @@ public final class ProductCostsView extends CostsShell {
 
     public void results(List<Result> results, Long keepArticle, Long keepSpec) {
         articles.getItems().setAll(results);
+        boolean estimated =
+                results.stream()
+                        .flatMap(r -> r.materials().stream())
+                        .anyMatch(m -> m.price() != null && m.price().estimated());
+        valuationWarning.setVisible(estimated);
+        valuationWarning.setManaged(estimated);
         Result keep =
                 results.stream()
                         .filter(

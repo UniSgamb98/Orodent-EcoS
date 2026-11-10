@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.orodent.ecos.core.ConnectionProvider;
 import com.orodent.ecos.core.csv.*;
 import com.orodent.ecos.costi.products.csv.ProductCostCsv;
+import com.orodent.ecos.costi.products.model.PowderPricing;
 import com.orodent.ecos.costi.products.model.ProductCosts.*;
 import com.orodent.ecos.costi.products.service.*;
 import com.orodent.ecos.database.DatabaseSchema;
@@ -77,6 +78,55 @@ class ProductCostServiceTest {
     private List<Result> calculate(Catalogue catalogue) {
         return service.calculate(catalogue, List.of(1L), Map.of(1L, parameters(0)), false, false)
                 .join();
+    }
+
+    @Test
+    void valuationUsesSnapshotLotsAndOutstandingOrdersAndCsvDescribesTheSelectedPolicy() {
+        var date = java.time.LocalDate.now().plusDays(10);
+        ProductCostFixture.execute(
+                db,
+                "UPDATE COSTI.POLVERI_PREZZI SET"
+                        + " modello_dati=2,prezzo_riferimento=100,quantita_totale=100 WHERE"
+                        + " prezzo_id=2",
+                "INSERT INTO COSTI.POLVERI_LOTTI(prezzo_id,posizione,lotto,quantita_kg,prezzo_kg)"
+                        + " VALUES (2,1,'WHITE-LOT',80,80)",
+                "INSERT INTO COSTI.ORDINI_POLVERI(fornitore,numero_ordine,posizione) VALUES"
+                        + " ('F','ORD',1),('F','ORD',2)",
+                "INSERT INTO"
+                    + " COSTI.ORDINI_POLVERI_REVISIONI(ordine_id,numero_versione,polvere_id,codice_sorgente,descrizione,data_ordine,consegna_prevista,quantita_ordinata,quantita_consegnata,quantita_residua,prezzo_kg,escluso,origine)"
+                    + " VALUES (1,1,1,'WHITE','',CURRENT_DATE,DATE('"
+                        + date
+                        + "'),150,50,100,116,FALSE,'CSV'),(2,1,1,'WHITE','',CURRENT_DATE,DATE('"
+                        + date
+                        + "'),1000,0,1000,1,TRUE,'CSV')");
+        Catalogue raw = service.load().join();
+        assertEquals(1, raw.stocks().get(1L).receipts().size());
+        var advanced =
+                PowderPricing.apply(
+                        raw, new PowderPricing.Selection(PowderPricing.Mode.AVANZATA, false));
+        assertEquals(0, n("84").compareTo(advanced.prices().get(1L).price()));
+        var result = calculate(advanced).getFirst();
+        assertEquals(0, n("97.92").compareTo(result.nominalMixPrice()));
+        assertTrue(result.materials().getFirst().price().estimated());
+        var incoming =
+                PowderPricing.apply(
+                        advanced, new PowderPricing.Selection(PowderPricing.Mode.AVANZATA, true));
+        assertEquals(0, n("100").compareTo(incoming.prices().get(1L).price()));
+        var rows = calculate(incoming);
+        var mapper = ProductCostCsv.summary(incoming.capturedAt());
+        assertTrue(
+                mapper.map(rows.getFirst())
+                        .get(mapper.headers().indexOf("Fonte prezzi"))
+                        .toString()
+                        .contains("ordini"));
+        var details = ProductCostCsv.detail(incoming.capturedAt());
+        var detail = ProductCostCsv.details(rows).getFirst();
+        assertTrue(
+                details.map(detail)
+                        .get(details.headers().indexOf("Dettaglio valutazione"))
+                        .toString()
+                        .contains("100 kg × 116 €/kg"));
+        assertEquals(0, n("100").compareTo(raw.prices().get(1L).price()));
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.orodent.ecos.costi;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.orodent.ecos.core.ConnectionProvider;
+import com.orodent.ecos.costi.products.model.PowderPricing;
 import com.orodent.ecos.costi.products.service.ProductCostService;
 import com.orodent.ecos.costi.products.view.ProductCostsView;
 import com.orodent.ecos.database.DatabaseSchema;
@@ -44,6 +45,13 @@ class ProductCostsUiTest {
                 };
         new DatabaseSchema(db).initialize();
         ProductCostFixture.seed(db);
+        ProductCostFixture.execute(
+                db,
+                "UPDATE COSTI.POLVERI_PREZZI SET"
+                        + " modello_dati=2,prezzo_riferimento=100,quantita_totale=100 WHERE"
+                        + " prezzo_id=2",
+                "INSERT INTO COSTI.POLVERI_LOTTI(prezzo_id,posizione,lotto,quantita_kg,prezzo_kg)"
+                        + " VALUES (2,1,'WHITE-LOT',80,80)");
         var workers = Executors.newFixedThreadPool(2);
         var homes = new AtomicInteger();
         FxTestSupport.start();
@@ -80,6 +88,72 @@ class ProductCostsUiTest {
                                     && !view().commonCost.isDisabled());
             fx(
                     () -> {
+                        view().pricingMode.setValue(PowderPricing.Mode.AVANZATA);
+                        return null;
+                    });
+            await(() -> !view().pricingMode.isDisabled() && view().valuationWarning.isVisible());
+            fx(
+                    () -> {
+                        assertEquals(
+                                0,
+                                new java.math.BigDecimal("97.92")
+                                        .compareTo(
+                                                view().articles
+                                                        .getItems()
+                                                        .getFirst()
+                                                        .nominalMixPrice()));
+                        Platform.runLater(
+                                () -> {
+                                    var dialog =
+                                            Window.getWindows().stream()
+                                                    .filter(
+                                                            w ->
+                                                                    w != stage
+                                                                            && w.isShowing()
+                                                                            && w.getScene() != null
+                                                                            && w.getScene()
+                                                                                            .getRoot()
+                                                                                    instanceof
+                                                                                    DialogPane)
+                                                    .findFirst()
+                                                    .orElseThrow();
+                                    var pane = (DialogPane) dialog.getScene().getRoot();
+                                    assertTrue(
+                                            ((TextArea) pane.getContent())
+                                                    .getText()
+                                                    .contains("20 kg × 100 €/kg"));
+                                    ((Button) pane.lookupButton(ButtonType.OK)).fire();
+                                });
+                        view().valuationWarning.fire();
+                        view().includeOrders.fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            !view().pricingMode.isDisabled()
+                                    && view().articles
+                                            .getItems()
+                                            .getFirst()
+                                            .pricingSource()
+                                            .contains("ordini"));
+            fx(
+                    () -> {
+                        view().pricingMode.setValue(PowderPricing.Mode.SEMPLICE);
+                        return null;
+                    });
+            await(() -> !view().pricingMode.isDisabled() && !view().valuationWarning.isVisible());
+            fx(
+                    () -> {
+                        assertTrue(view().includeOrders.isDisabled());
+                        assertFalse(view().includeOrders.isSelected());
+                        assertEquals(
+                                0,
+                                new java.math.BigDecimal("112")
+                                        .compareTo(
+                                                view().articles
+                                                        .getItems()
+                                                        .getFirst()
+                                                        .nominalMixPrice()));
                         assertNull(view().articles.getItems().getFirst().total());
                         assertEquals(
                                 List.of("Linea", "Prodotto", "Miscela €/kg"),

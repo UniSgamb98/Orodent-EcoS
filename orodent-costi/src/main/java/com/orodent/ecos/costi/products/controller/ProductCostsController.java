@@ -2,6 +2,7 @@ package com.orodent.ecos.costi.products.controller;
 
 import com.orodent.ecos.costi.products.csv.ProductCostCsv;
 import com.orodent.ecos.costi.products.model.NominalMixtureCost;
+import com.orodent.ecos.costi.products.model.PowderPricing;
 import com.orodent.ecos.costi.products.model.ProductCosts;
 import com.orodent.ecos.costi.products.model.ProductCosts.*;
 import com.orodent.ecos.costi.products.service.ProductCostService;
@@ -74,6 +75,17 @@ public final class ProductCostsController {
                     recalculate();
                 });
         view.alternatives.setOnAction(e -> recalculate());
+        view.pricingMode.setOnAction(
+                e -> {
+                    if (rendering) return;
+                    if (view.pricingMode.getValue() == PowderPricing.Mode.SEMPLICE)
+                        view.includeOrders.setSelected(false);
+                    reprice();
+                });
+        view.includeOrders.setOnAction(
+                e -> {
+                    if (!rendering) reprice();
+                });
         view.previous.setOnAction(e -> filter(Math.max(0, offset - ProductCosts.PAGE_SIZE)));
         view.next.setOnAction(e -> filter(offset + ProductCosts.PAGE_SIZE));
         view.products
@@ -154,6 +166,51 @@ public final class ProductCostsController {
 
     private record Priced(Catalogue catalogue, Map<Long, NominalMixtureCost.Summary> prices) {}
 
+    private static Priced price(Catalogue source, PowderPricing.Selection selection) {
+        Catalogue valued = PowderPricing.apply(source, selection);
+        return new Priced(valued, NominalMixtureCost.products(valued));
+    }
+
+    private void reprice() {
+        if (disposed || catalogue == null || loading || saving || exporting) return;
+        loading = true;
+        calculating = false;
+        calculationEpoch++;
+        long epoch = ++readEpoch;
+        debounce.stop();
+        Catalogue snapshot = catalogue;
+        var selection = view.pricingSelection();
+        view.costsPending(true);
+        controls();
+        CompletableFuture.supplyAsync(() -> price(snapshot, selection), workers)
+                .whenComplete(
+                        (priced, error) ->
+                                Platform.runLater(
+                                        () -> {
+                                            if (disposed || epoch != readEpoch) return;
+                                            loading = false;
+                                            if (error != null) {
+                                                rendering = true;
+                                                try {
+                                                    view.pricingMode.setValue(
+                                                            snapshot.pricing().mode());
+                                                    view.includeOrders.setSelected(
+                                                            snapshot.pricing().includeOrders());
+                                                } finally {
+                                                    rendering = false;
+                                                }
+                                                view.costsPending(false);
+                                                view.feedback(message(error), true);
+                                                controls();
+                                                return;
+                                            }
+                                            catalogue = priced.catalogue();
+                                            view.nominalPrices(priced.prices());
+                                            if (selected != null) recalculate();
+                                            else controls();
+                                        }));
+    }
+
     public void start() {
         if (disposed || loading || saving) return;
         loading = true;
@@ -163,9 +220,9 @@ public final class ProductCostsController {
         debounce.stop();
         view.feedback("Caricamento dei cataloghi e dei prezzi…", false);
         controls();
+        var selection = view.pricingSelection();
         service.load()
-                .thenApplyAsync(
-                        loaded -> new Priced(loaded, NominalMixtureCost.products(loaded)), workers)
+                .thenApplyAsync(loaded -> price(loaded, selection), workers)
                 .whenComplete(
                         (priced, error) ->
                                 Platform.runLater(
@@ -598,6 +655,11 @@ public final class ProductCostsController {
         view.save.setDisable(blocked || !dirty() || !valid);
         view.cancel.setDisable(blocked || !dirty());
         view.refresh.setDisable(blocked);
+        view.pricingMode.setDisable(blocked || calculating);
+        view.includeOrders.setDisable(
+                blocked
+                        || calculating
+                        || view.pricingMode.getValue() != PowderPricing.Mode.AVANZATA);
         view.home.setDisable(saving);
         view.products.setDisable(blocked);
         view.search.setDisable(blocked);

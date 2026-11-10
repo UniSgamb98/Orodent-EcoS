@@ -55,6 +55,7 @@ public final class ProductCostCalculator {
                             null,
                             null,
                             null,
+                            catalogue.pricing().label(),
                             List.of(),
                             List.of("Nessun articolo nell'ambito scelto")));
         return List.copyOf(results);
@@ -87,6 +88,7 @@ public final class ProductCostCalculator {
                     model,
                     parameters,
                     transformation,
+                    catalogue.pricing().label(),
                     nominalMixPrice,
                     null,
                     null,
@@ -104,6 +106,7 @@ public final class ProductCostCalculator {
                     model,
                     parameters,
                     transformation,
+                    catalogue.pricing().label(),
                     nominalMixPrice,
                     null,
                     null,
@@ -152,6 +155,7 @@ public final class ProductCostCalculator {
                 model,
                 parameters,
                 transformation,
+                catalogue.pricing().label(),
                 nominalMixPrice,
                 grams,
                 missingPrice ? null : powderCost,
@@ -167,6 +171,7 @@ public final class ProductCostCalculator {
             Model model,
             Parameters parameters,
             BigDecimal transformation,
+            String pricingSource,
             BigDecimal nominalMixPrice,
             BigDecimal grams,
             BigDecimal cost,
@@ -184,6 +189,7 @@ public final class ProductCostCalculator {
                 cost,
                 problems.isEmpty() ? cost.add(transformation) : null,
                 nominalMixPrice,
+                pricingSource,
                 materials,
                 List.copyOf(problems));
     }
