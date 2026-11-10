@@ -32,8 +32,13 @@ pesano gli articoli, non stimano automaticamente consumi o nuove giacenze.
 
 ## Modifiche: Applica prima di Salva
 
-Le quattro schede hanno buffer separati dall'ipotesi applicata. Le celle delle
-tabelle si modificano con doppio clic; Invio o uscita dal campo confermano la cella.
+Le quattro schede hanno buffer separati dall'ipotesi applicata. Nei prezzi polveri
+il tipo di variazione e il valore sono controlli sempre visibili: scegliere
+Invariato / Variazione % / Prezzo EUR/kg e digitare direttamente. L'unità cambia
+con il tipo; Invariato disabilita il valore. Passando al prezzo diretto si propone
+il prezzo risultante dal buffer corrente; tornando alla percentuale si riparte da
+zero, senza interpretare un prezzo come percentuale. Le altre tabelle si modificano
+con doppio clic; Invio o uscita dal campo confermano la cella.
 **Applica ... allo scenario** valida e aggiorna l'anteprima. Finché una scheda ha
 modifiche non applicate, salvataggio ed esportazione sono disabilitati. Cambiando
 scheda/origine si può annullare o scartare il buffer, senza sostituire dati alla cieca.
@@ -77,8 +82,11 @@ con ricerca digitabile nei selettori. **Trova articolo per codice** cerca almeno
 caratteri e visualizza al massimo 100 risultati; selezionandone uno imposta anche
 linea e prodotto. La scelta resta stabile durante le modifiche.
 
-Mostra base/scenario, totale per articolo, delta, miscela nominale EUR/kg, grammi e
-spessore totale. **Dettaglio per strato** apre riepilogo, grammi per strato e
+Mostra Base e Scenario affiancati, totale per articolo, delta, miscela nominale
+EUR/kg, grammi e spessore totale. Prezzi a due decimali e variazioni a un decimale
+rendono leggibile la sintesi; tooltip, dettagli e CSV conservano la precisione.
+Il pulsante Nascondi elenco / Mostra elenco scenari permette di recuperare spazio
+senza cambiare scenario né perdere modifiche. **Dettaglio per strato** apre riepilogo, grammi per strato e
 contributi di ciascuna polvere; doppio clic sulla polvere mostra la provenienza dei
 prezzi. Il calcolo di massa riusa `ProductCostCalculator`: percentuali sull'altezza
 nominale, sovramateriali agli strati esterni, perdite 1,005 una sola volta. Il
@@ -87,8 +95,20 @@ nominale EUR/kg esclude sovramateriali e perdite. Le pressioni non cambiano i co
 Il confronto parte dalle **Linee**; doppio clic o Apri gruppo scende ai **Prodotti**
 e poi agli **Articoli**. Il percorso in alto permette di risalire. I pulsanti
 nell'anteprima aprono direttamente il confronto della linea o del prodotto scelti.
-Filtro Solo variati, ordine per nome/delta EUR/delta %, grafico dei primi 12
-risultati calcolabili dell'ordinamento scelto. Le righe incomplete restano visibili.
+Filtro Solo variati e ordine per nome/delta EUR/delta %. Ogni riga mostra due
+barre orizzontali con entrambi i prezzi affiancati e delta EUR/%. Le barre hanno
+la stessa scala per tutti i risultati filtrati, anche fra pagine. Si mostrano
+12 righe per pagina con navigazione esplicita: nessun risultato è scartato.
+Le righe incomplete restano visibili con valori sconosciuti, senza inventare zeri.
+Clic sul nome apre il gruppo o il dettaglio articolo. La tabella completa è
+richiudibile sotto Mostra dettagli del confronto.
+
+I tre riquadri Base media / Scenario media / Variazione riassumono l'ambito e il
+filtro visualizzati, considerando tutte le pagine. Le medie sono calcolate sugli
+articoli sottostanti con la ponderazione scelta, mai facendo la media delle medie
+di linea o prodotto. La copertura indica articoli confrontabili e, per le medie
+storiche, quanti hanno volumi. Periodo e fonte restano visibili; le spiegazioni
+del calcolo sono nel pulsante Come leggere il confronto e nel tooltip della fonte.
 
 Tre ponderazioni:
 

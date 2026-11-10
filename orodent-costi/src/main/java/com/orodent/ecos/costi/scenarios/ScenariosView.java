@@ -46,6 +46,7 @@ public final class ScenariosView extends CostsShell {
         saved.setMinHeight(140);
         VBox.setVgrow(saved, Priority.ALWAYS);
         VBox list = new VBox(12, new Label("I TUOI SCENARI"), create, search, archived, saved);
+        list.setId("scenarios-saved-panel");
         list.setPrefWidth(230);
         list.setMinWidth(180);
         list.setStyle("-fx-padding: 18; -fx-background-color: #f7fafc;");
@@ -117,13 +118,31 @@ public final class ScenariosView extends CostsShell {
             steps.getTabs().add(tab);
         }
         ((ScrollPane) steps.getTabs().getFirst().getContent()).setFitToWidth(true);
-        HBox actions = new HBox(10, save, duplicate, archive, history);
-        FlowPane header = new FlowPane(12, 10, new Label("Scenari"), name, status, actions);
-        VBox workspace = new VBox(12, header, notes, base, steps, feedback);
+        FlowPane actions = new FlowPane(10, 8, save, duplicate, archive, history);
+        Button toggleList = new Button("Nascondi elenco");
+        toggleList.setId("scenarios-toggle-list");
+        toggleList.setTooltip(
+                new Tooltip("Mostra o nasconde gli scenari salvati per dare spazio al lavoro."));
+        FlowPane header = new FlowPane(12, 10, toggleList, new Label("Scenari"), name, status);
+        VBox workspace = new VBox(12, header, actions, notes, base, steps, feedback);
+        workspace.setMinWidth(0);
         VBox.setVgrow(steps, Priority.ALWAYS);
         workspace.setStyle("-fx-padding: 18;");
         SplitPane split = new SplitPane(list, workspace);
         split.setDividerPositions(.18);
+        double[] listPosition = {.18};
+        toggleList.setOnAction(
+                e -> {
+                    if (split.getItems().contains(list)) {
+                        listPosition[0] = split.getDividerPositions()[0];
+                        split.getItems().remove(list);
+                        toggleList.setText("Mostra elenco scenari");
+                    } else {
+                        split.getItems().addFirst(list);
+                        split.setDividerPositions(listPosition[0]);
+                        toggleList.setText("Nascondi elenco");
+                    }
+                });
         setCenter(split);
         setBottom(
                 new Label(

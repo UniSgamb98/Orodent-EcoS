@@ -157,34 +157,7 @@ public final class ScenarioEngine {
         for (var entry : groups.entrySet()) {
             var rows = entry.getValue();
             Product product = rows.getFirst().before().product();
-            BigDecimal sum = BigDecimal.ZERO, b = BigDecimal.ZERO, a = BigDecimal.ZERO;
-            int comparable = 0, weighted = 0;
-            for (Row row : rows) {
-                if (row.articleId() == null
-                        || row.before().total() == null
-                        || row.after().total() == null) continue;
-                comparable++;
-                BigDecimal w =
-                        switch (weight) {
-                            case ARTICLES -> BigDecimal.ONE;
-                            case SALES -> row.sales();
-                            case PRODUCTION -> row.production();
-                        };
-                if (w == null || w.signum() <= 0) continue;
-                weighted++;
-                sum = sum.add(w);
-                b = b.add(row.before().total().multiply(w));
-                a = a.add(row.after().total().multiply(w));
-            }
-            BigDecimal before = sum.signum() == 0 ? null : b.divide(sum, 8, RoundingMode.HALF_UP),
-                    after = sum.signum() == 0 ? null : a.divide(sum, 8, RoundingMode.HALF_UP),
-                    delta = before == null ? null : after.subtract(before),
-                    percent =
-                            before == null || b.signum() == 0
-                                    ? null
-                                    : a.subtract(b)
-                                            .multiply(new BigDecimal("100"))
-                                            .divide(b, 8, RoundingMode.HALF_UP);
+            Group totals = summarize(rows, weight);
             result.add(
                     new Group(
                             entry.getKey(),
@@ -193,17 +166,62 @@ public final class ScenarioEngine {
                                     : product.code(),
                             product.lineId(),
                             byLine ? 0 : product.id(),
-                            (int) rows.stream().filter(r -> r.articleId() != null).count(),
-                            comparable,
-                            weighted,
-                            sum,
-                            before,
-                            after,
-                            delta,
-                            percent));
+                            totals.articles(),
+                            totals.comparable(),
+                            totals.weighted(),
+                            totals.weight(),
+                            totals.before(),
+                            totals.after(),
+                            totals.delta(),
+                            totals.percent()));
         }
         result.sort(Comparator.comparing(Group::name));
         return List.copyOf(result);
+    }
+
+    /** Aggregate underlying articles, never averages of group averages. */
+    public Group summarize(List<Row> rows, Weight weight) {
+        BigDecimal sum = BigDecimal.ZERO, b = BigDecimal.ZERO, a = BigDecimal.ZERO;
+        int comparable = 0, weighted = 0;
+        for (Row row : rows) {
+            if (row.articleId() == null
+                    || row.before().total() == null
+                    || row.after().total() == null) continue;
+            comparable++;
+            BigDecimal w =
+                    switch (weight) {
+                        case ARTICLES -> BigDecimal.ONE;
+                        case SALES -> row.sales();
+                        case PRODUCTION -> row.production();
+                    };
+            if (w == null || w.signum() <= 0) continue;
+            weighted++;
+            sum = sum.add(w);
+            b = b.add(row.before().total().multiply(w));
+            a = a.add(row.after().total().multiply(w));
+        }
+        BigDecimal before = sum.signum() == 0 ? null : b.divide(sum, 8, RoundingMode.HALF_UP),
+                after = sum.signum() == 0 ? null : a.divide(sum, 8, RoundingMode.HALF_UP),
+                delta = before == null ? null : after.subtract(before),
+                percent =
+                        before == null || b.signum() == 0
+                                ? null
+                                : a.subtract(b)
+                                        .multiply(new BigDecimal("100"))
+                                        .divide(b, 8, RoundingMode.HALF_UP);
+        return new Group(
+                "summary",
+                "Ambito visualizzato",
+                null,
+                0,
+                (int) rows.stream().filter(r -> r.articleId() != null).count(),
+                comparable,
+                weighted,
+                sum,
+                before,
+                after,
+                delta,
+                percent);
     }
 
     public Refresh refresh(Draft old, Base next) {

@@ -19,3 +19,24 @@
 #scenarios-module .default-color1.chart-bar { -fx-bar-fill: #19758b; }
 #scenarios-module #scenarios-editor-feedback { -fx-padding: 9px; -fx-text-fill: #6c7f92; -fx-font-size: 12px; }
 #scenarios-module #scenarios-status { -fx-text-fill: #8d671b; -fx-font-size: 12px; }
+
+#scenarios-module .impact-caption { -fx-text-fill: #657c8c; -fx-font-size: 12px; }
+#scenarios-module .impact-metric { -fx-padding: 16px; -fx-background-color: #f4f8fa; -fx-border-color: #dce7ee; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-pref-width: 245px; }
+#scenarios-module .impact-metric-value { -fx-font-size: 23px; -fx-font-weight: bold; -fx-text-fill: #183f58; }
+#scenarios-module .preview-metric { -fx-min-width: 0; -fx-pref-width: 130px; -fx-max-width: 10000px; -fx-padding: 10px 7px; }
+#scenarios-module .preview-metric .impact-metric-value { -fx-font-size: 19px; }
+#scenarios-module .preview-metric .impact-caption { -fx-font-size: 10px; }
+#scenarios-module .impact-scenario-text { -fx-text-fill: #19758b; }
+#scenarios-module .impact-neutral { -fx-text-fill: #657c8c; }
+#scenarios-module .impact-increase { -fx-text-fill: #ab4c27; }
+#scenarios-module .impact-decrease { -fx-text-fill: #28705d; }
+#scenarios-module .impact-row { -fx-padding: 15px 12px; -fx-background-color: #fff; -fx-border-color: #dce7ee; -fx-background-radius: 7px; -fx-border-radius: 7px; }
+#scenarios-module .impact-link { -fx-background-color: transparent; -fx-padding: 0; -fx-alignment: center-left; -fx-font-weight: bold; -fx-text-fill: #183f58; }
+#scenarios-module .impact-link:hover { -fx-text-fill: #19758b; -fx-underline: true; }
+#scenarios-module .impact-base { -fx-background-color: #bbceda; -fx-background-radius: 3px; }
+#scenarios-module .impact-scenario { -fx-background-color: #19758b; -fx-background-radius: 3px; }
+#scenarios-module .impact-track { -fx-background-color: #f1f5f8; -fx-background-radius: 3px; }
+#scenarios-module .impact-price, #scenarios-module .impact-delta { -fx-font-weight: bold; }
+#scenarios-module #scenarios-price-table .table-cell { -fx-padding: 4px 6px; -fx-alignment: center-left; }
+#scenarios-module .scenario-price-mode { -fx-padding: 2px; -fx-font-size: 12px; }
+#scenarios-module .scenario-price-value { -fx-padding: 5px; }

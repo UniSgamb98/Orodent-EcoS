@@ -1,5 +1,6 @@
 package com.orodent.ecos.costi.scenarios;
 
+import static com.orodent.ecos.costi.scenarios.ScenarioPresentation.*;
 import static com.orodent.ecos.costi.scenarios.ScenarioTables.*;
 
 import com.orodent.ecos.costi.products.model.ProductCosts.*;
@@ -21,7 +22,7 @@ public final class ScenarioPreview extends VBox {
     public final ComboBox<Line> line = new ComboBox<>();
     public final ComboBox<Product> product = new ComboBox<>();
     public final ComboBox<Row> article = new ComboBox<>();
-    private final Label costValue = new Label(), deltaValue = new Label();
+    private final Label baseValue = new Label(), costValue = new Label(), deltaValue = new Label();
     public final Label summary = new Label("Scegli un articolo per vedere l'impatto.");
     public final Button compareLine = new Button("Confronta la linea →"),
             compareProduct = new Button("Confronta il prodotto →"),
@@ -57,7 +58,16 @@ public final class ScenarioPreview extends VBox {
         line.setId("scenarios-preview-line");
         product.setId("scenarios-preview-product");
         article.setId("scenarios-preview-article");
-        costValue.setStyle("-fx-font-size: 27px; -fx-font-weight: bold; -fx-text-fill: #19758b;");
+        var baseCost = metric("BASE · €/articolo", baseValue, "scenarios-preview-base");
+        var scenarioCost = metric("SCENARIO · €/articolo", costValue, "scenarios-preview-cost");
+        baseCost.getStyleClass().add("preview-metric");
+        scenarioCost.getStyleClass().add("preview-metric");
+        costValue.getStyleClass().add("impact-scenario-text");
+        HBox.setHgrow(baseCost, Priority.ALWAYS);
+        HBox.setHgrow(scenarioCost, Priority.ALWAYS);
+        var costs = new HBox(8, baseCost, scenarioCost);
+        deltaValue.setWrapText(true);
+        deltaValue.setId("scenarios-preview-delta");
         summary.setId("scenarios-preview-summary");
         summary.setWrapText(true);
         getChildren()
@@ -71,8 +81,7 @@ public final class ScenarioPreview extends VBox {
                         article,
                         find,
                         new Separator(),
-                        new Label("COSTO SCENARIO €/ARTICOLO"),
-                        costValue,
+                        costs,
                         deltaValue,
                         summary,
                         detail,
@@ -228,32 +237,36 @@ public final class ScenarioPreview extends VBox {
         compareLine.setDisable(selected == null);
         compareProduct.setDisable(selected == null);
         if (selected == null) {
+            baseValue.setText("—");
             costValue.setText("—");
+            baseValue.setTooltip(null);
+            costValue.setTooltip(null);
             deltaValue.setText("");
             summary.setText("Nessun articolo disponibile nell'ambito selezionato.");
             return;
         }
         Row r = selected;
-        costValue.setText(ScenarioDetails.n(r.after().total()));
+        baseValue.setText(money(r.before().total()));
+        costValue.setText(money(r.after().total()));
+        precise(baseValue, r.before().total(), "€/articolo");
+        precise(costValue, r.after().total(), "€/articolo");
         deltaValue.setText(
-                "Δ "
-                        + ScenarioDetails.n(r.delta())
-                        + " € · "
-                        + ScenarioDetails.n(r.percent())
-                        + "%");
-        deltaValue.setStyle(
-                "-fx-text-fill: "
-                        + (r.delta() != null && r.delta().signum() < 0 ? "#28705d" : "#a34c27")
-                        + ";");
+                r.delta() != null && r.delta().signum() == 0
+                        ? "Costo invariato"
+                        : delta(r.delta()) + " · " + percent(r.percent()));
+        deltaValue
+                .getStyleClass()
+                .removeAll("impact-neutral", "impact-increase", "impact-decrease");
+        deltaValue.getStyleClass().add(tone(r.delta()));
         summary.setText(
                 "Mostrando "
                         + r.before().article().code()
-                        + "\n\nBase €/articolo: "
-                        + ScenarioDetails.n(r.before().total())
                         + "\n\nMiscela nominale €/kg\n"
-                        + ScenarioDetails.n(r.before().nominalMixPrice())
+                        + com.orodent.ecos.costi.view.PriceFormats.number(
+                                r.before().nominalMixPrice(), 2, 2)
                         + " → "
-                        + ScenarioDetails.n(r.after().nominalMixPrice())
+                        + com.orodent.ecos.costi.view.PriceFormats.number(
+                                r.after().nominalMixPrice(), 2, 2)
                         + "\nMiscela g: "
                         + ScenarioDetails.n(r.before().grams())
                         + " → "

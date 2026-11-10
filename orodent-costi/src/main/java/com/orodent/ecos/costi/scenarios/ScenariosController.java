@@ -233,9 +233,9 @@ public final class ScenariosController {
                             + " · "
                             + draft.changes()
                             + " modifiche applicate\nBase congelata · volumi "
-                            + draft.base().from()
+                            + ScenarioPresentation.date(draft.base().from())
                             + " – "
-                            + draft.base().through());
+                            + ScenarioPresentation.date(draft.base().through()));
             restoreListSelection();
         } finally {
             rendering = false;
@@ -689,8 +689,7 @@ public final class ScenariosController {
                                             "Le modifiche tecniche già impostate si applicheranno"
                                                 + " anche ai nuovi prodotti che condividono quelle"
                                                 + " composizioni o modelli. Proseguire e verificare"
-                                                + " le configurazioni coinvolte?"))
-                                return;
+                                                + " le configurazioni coinvolte?")) return;
                             Draft d = collect();
                             draft =
                                     d.state(

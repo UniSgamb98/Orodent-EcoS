@@ -115,8 +115,12 @@ class ScenariosUiTest {
             fx(
                     () -> {
                         view().steps.getSelectionModel().select(1);
-                        edit("scenarios-price-table", 0, 2, "Variazione %");
-                        edit("scenarios-price-table", 0, 3, "10");
+                        button("scenarios-toggle-list").fire();
+                        stage.getScene().getRoot().applyCss();
+                        stage.getScene().getRoot().layout();
+                        assertNull(stage.getScene().lookup("#scenarios-saved-panel"));
+                        priceMode(1).setValue("Prezzo €/kg");
+                        field("scenario-price-value-1").setText("110");
                         assertTrue(view().save.isDisabled());
                         button("scenarios-apply-prices").fire();
                         return null;
@@ -132,6 +136,25 @@ class ScenariosUiTest {
                                             == 0);
             fx(
                     () -> {
+                        assertEquals("110", field("scenario-price-value-1").getText());
+                        assertEquals("Prezzo €/kg", priceMode(1).getValue());
+                        stage.getScene().getRoot().applyCss();
+                        stage.getScene().getRoot().layout();
+                        snapshot("target/scenario-direct-price-ui.png");
+                        priceMode(1).setValue("Invariato");
+                        assertTrue(field("scenario-price-value-1").isDisabled());
+                        priceMode(1).setValue("Variazione %");
+                        assertFalse(field("scenario-price-value-1").isDisabled());
+                        assertEquals("0", field("scenario-price-value-1").getText());
+                        field("scenario-price-value-1").setText("10");
+                        assertTrue(view().save.isDisabled());
+                        button("scenarios-apply-prices").fire();
+                        return null;
+                    });
+            await(() -> !view().name.isDisabled() && !view().save.isDisabled());
+            fx(
+                    () -> {
+                        snapshot("target/scenario-prices-ui.png");
                         editorTabs().getSelectionModel().select(1);
                         TableView<?> ingredients = table("scenarios-recipe-ingredients");
                         assertEquals(2, ingredients.getItems().size());
@@ -208,6 +231,21 @@ class ScenariosUiTest {
                     () -> {
                         view().preview.compareLine.fire();
                         view().comparison.weight.setValue(Weight.SALES);
+                        assertFalse(
+                                ((TitledPane)
+                                                stage.getScene()
+                                                        .lookup("#scenarios-comparison-details"))
+                                        .isExpanded());
+                        assertNotNull(stage.getScene().lookup("#scenarios-impact-rows"));
+                        assertEquals(
+                                com.orodent.ecos.costi.view.PriceFormats.currency(
+                                        view().preview.selected().before().total()),
+                                ((Label) stage.getScene().lookup("#scenarios-mean-base"))
+                                        .getText());
+                        assertTrue(
+                                ((Label) stage.getScene().lookup("#scenarios-comparison-summary"))
+                                        .getText()
+                                        .contains("1 articoli su 2"));
                         assertEquals(1, view().comparison.table.getItems().size());
                         assertTrue(
                                 view().comparison
@@ -218,7 +256,13 @@ class ScenariosUiTest {
                                         .contains("1/2"));
                         view().preview.compareProduct.fire();
                         assertEquals(2, view().comparison.table.getItems().size());
+                        stage.getScene().getRoot().applyCss();
+                        stage.getScene().getRoot().layout();
                         snapshot("target/scenario-comparison-ui.png");
+                        button("scenarios-toggle-list").fire();
+                        assertNotNull(stage.getScene().lookup("#scenarios-saved-panel"));
+                        assertEquals(1, view().saved.getItems().size());
+                        button("scenarios-toggle-list").fire();
                         view().comparison.exportArticles.fire();
                         return null;
                     });
@@ -248,6 +292,11 @@ class ScenariosUiTest {
                             .commonCost()
                             .compareTo(new java.math.BigDecimal("22")));
             assertEquals(2, stored.history(loaded.id()).join().size());
+            fx(
+                    () -> {
+                        checkPagedComparison(new ScenarioEngine().analyse(loaded));
+                        return null;
+                    });
             assertEquals(
                     0,
                     db.withConnection(
@@ -283,6 +332,83 @@ class ScenariosUiTest {
 
     ScenariosView view() {
         return stage == null ? null : (ScenariosView) stage.getScene().lookup("#scenarios-module");
+    }
+
+    void checkPagedComparison(Analysis real) {
+        Row template = real.rows().getFirst();
+        var rows = new ArrayList<Row>();
+        for (int i = 1; i <= 25; i++) {
+            rows.add(
+                    new Row(
+                            displayResult(template.before(), i, i),
+                            displayResult(template.after(), i, i + 1),
+                            java.math.BigDecimal.ONE,
+                            java.math.BigDecimal.ONE));
+        }
+        view().comparison
+                .show(new Analysis(real.draft(), real.before(), real.after(), rows, List.of()));
+        stage.getScene().getRoot().applyCss();
+        stage.getScene().getRoot().layout();
+        assertEquals(
+                "1–12 di 25",
+                ((Label) stage.getScene().lookup("#scenarios-comparison-page")).getText());
+        assertEquals(
+                "13,00 €", ((Label) stage.getScene().lookup("#scenarios-mean-base")).getText());
+        assertEquals(12, stage.getScene().getRoot().lookupAll(".impact-row").size());
+        double largest =
+                stage.getScene().getRoot().lookupAll(".impact-scenario").stream()
+                        .filter(n -> n.getParent().getClass() == javafx.scene.layout.Pane.class)
+                        .mapToDouble(
+                                n ->
+                                        ((javafx.scene.layout.Region) n).getPrefWidth()
+                                                / ((javafx.scene.layout.Pane) n.getParent())
+                                                        .getWidth())
+                        .max()
+                        .orElseThrow();
+        assertEquals(0.5, largest, 0.0001, "All pages must share the same maximum (26 €)");
+        button("scenarios-comparison-next").fire();
+        button("scenarios-comparison-next").fire();
+        assertEquals(
+                "25–25 di 25",
+                ((Label) stage.getScene().lookup("#scenarios-comparison-page")).getText());
+        assertEquals(1, stage.getScene().getRoot().lookupAll(".impact-row").size());
+        assertTrue(button("scenarios-comparison-next").isDisabled());
+        assertEquals(
+                "13,00 €", ((Label) stage.getScene().lookup("#scenarios-mean-base")).getText());
+        view().comparison.show(real);
+    }
+
+    com.orodent.ecos.costi.products.model.ProductCosts.Result displayResult(
+            com.orodent.ecos.costi.products.model.ProductCosts.Result source, int id, int cost) {
+        var article =
+                new com.orodent.ecos.costi.products.model.ProductCosts.Article(
+                        id + 100,
+                        source.product().id(),
+                        String.format("MSTA2-%02d", id),
+                        java.math.BigDecimal.valueOf(98),
+                        java.math.BigDecimal.valueOf(10),
+                        true,
+                        null);
+        return new com.orodent.ecos.costi.products.model.ProductCosts.Result(
+                source.product(),
+                article,
+                source.specification(),
+                source.recipe(),
+                source.model(),
+                source.parameters(),
+                source.transformation(),
+                source.grams(),
+                source.powderCost(),
+                java.math.BigDecimal.valueOf(cost),
+                source.nominalMixPrice(),
+                source.pricingSource(),
+                source.materials(),
+                List.of());
+    }
+
+    @SuppressWarnings("unchecked")
+    ComboBox<String> priceMode(long id) {
+        return (ComboBox<String>) stage.getScene().lookup("#scenario-price-mode-" + id);
     }
 
     Button button(String id) {

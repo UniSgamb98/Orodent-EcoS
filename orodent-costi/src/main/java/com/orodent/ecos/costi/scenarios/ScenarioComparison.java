@@ -1,10 +1,10 @@
 package com.orodent.ecos.costi.scenarios;
 
+import static com.orodent.ecos.costi.scenarios.ScenarioPresentation.*;
 import static com.orodent.ecos.costi.scenarios.ScenarioTables.*;
 
 import com.orodent.ecos.costi.scenarios.Scenarios.*;
 
-import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
@@ -31,8 +31,12 @@ public final class ScenarioComparison extends BorderPane {
     public final TableView<Display> table = new TableView<>();
     private final HBox crumbs = new HBox(8);
     private final Label context = new Label(), coverage = new Label();
-    private final BarChart<String, Number> chart =
-            new BarChart<>(new CategoryAxis(), new NumberAxis());
+    private final ScenarioImpactRows impactRows = new ScenarioImpactRows();
+    private final Label baseMean = new Label(),
+            scenarioMean = new Label(),
+            deltaMean = new Label(),
+            summaryCaption = new Label();
+    private final TitledPane details = new TitledPane();
     private Analysis analysis;
     private String lineKey;
     private long productId;
@@ -50,11 +54,14 @@ public final class ScenarioComparison extends BorderPane {
         changedOnly.setOnAction(e -> render());
         context.setWrapText(true);
         coverage.setWrapText(true);
-        chart.setAnimated(false);
-        chart.setPrefHeight(220);
-        chart.setMinHeight(170);
-        chart.setMaxHeight(250);
-        ((NumberAxis) chart.getYAxis()).setLabel("€/articolo");
+        weight.setTooltip(
+                new Tooltip(
+                        "La ponderazione cambia le medie dei gruppi e del riepilogo. I costi dei"
+                                + " singoli articoli restano invariati."));
+        summaryCaption.setWrapText(true);
+        summaryCaption.setId("scenarios-comparison-summary");
+        context.getStyleClass().add("impact-caption");
+        coverage.getStyleClass().add("impact-caption");
         col(table, "Linea / prodotto / articolo", 210, Display::name);
         col(table, "Base media €", 120, r -> ScenarioDetails.n(r.before()));
         col(table, "Scenario media €", 130, r -> ScenarioDetails.n(r.after()));
@@ -79,11 +86,38 @@ public final class ScenarioComparison extends BorderPane {
                     return row;
                 });
         Button drill = new Button("Apri gruppo / dettaglio →");
+        drill.disableProperty().bind(table.getSelectionModel().selectedItemProperty().isNull());
         drill.setOnAction(
                 e -> {
                     var selected = table.getSelectionModel().getSelectedItem();
                     if (selected != null) drill(selected);
                 });
+        Button help = new Button("ⓘ Come leggere il confronto");
+        help.setOnAction(
+                e ->
+                        message(
+                                getScene().getWindow(),
+                                "Leggere il confronto",
+                                "Base e Scenario sono i costi per articolo, in euro. Le due barre"
+                                    + " usano la stessa scala per tutti i risultati filtrati, anche"
+                                    + " fra pagine. Clic sul nome per scendere da linea a prodotto"
+                                    + " e articolo.\n\n"
+                                    + "I riquadri in alto riassumono tutto l'ambito visualizzato,"
+                                    + " non la sola pagina. Ogni articolo pesa allo stesso modo"
+                                    + " oppure secondo le quantità vendute o prodotte nel periodo"
+                                    + " della fotografia. Non si fa la media delle medie dei"
+                                    + " gruppi.\n\n"
+                                    + "Entrambi i costi devono essere calcolabili. Nelle medie"
+                                    + " storiche servono volumi positivi: i risultati senza peso"
+                                    + " sono esclusi. La copertura indica quanti articoli"
+                                    + " partecipano al calcolo.\n\n"
+                                    + "La variazione percentuale misura quanto cambia il costo"
+                                    + " medio, non la media delle percentuali dei singoli articoli."
+                                    + " Se la base è zero, la percentuale non è calcolabile.\n\n"
+                                    + "Verde: costo in diminuzione. Arancione: costo in aumento. I"
+                                    + " valori mancanti restano sconosciuti. Prezzi arrotondati"
+                                    + " solo a video; precisione completa nei dettagli e nei"
+                                    + " CSV."));
         setTop(
                 new VBox(
                         10,
@@ -96,17 +130,44 @@ public final class ScenarioComparison extends BorderPane {
                                 new Label("Ordine"),
                                 order,
                                 changedOnly,
-                                drill),
+                                help),
                         context));
-        VBox content =
+        var metrics =
+                new FlowPane(
+                        12,
+                        12,
+                        metric("COSTO BASE · €/articolo", baseMean, "scenarios-mean-base"),
+                        metric(
+                                "COSTO SCENARIO · €/articolo",
+                                scenarioMean,
+                                "scenarios-mean-scenario"),
+                        metric("VARIAZIONE DEL COSTO MEDIO", deltaMean, "scenarios-mean-delta"));
+        scenarioMean.getStyleClass().add("impact-scenario-text");
+        details.setText("Mostra dettagli del confronto");
+        details.setId("scenarios-comparison-details");
+        details.setContent(new VBox(10, drill, table));
+        details.setExpanded(false);
+        details.expandedProperty()
+                .addListener(
+                        (o, b, a) ->
+                                details.setText(
+                                        a
+                                                ? "Nascondi dettagli del confronto"
+                                                : "Mostra dettagli del confronto"));
+        var content =
                 new VBox(
-                        10,
-                        chart,
+                        14,
+                        metrics,
+                        summaryCaption,
+                        impactRows,
                         coverage,
-                        table,
+                        details,
                         new FlowPane(10, 8, export, exportArticles, exportDetails));
-        VBox.setVgrow(table, Priority.ALWAYS);
-        setCenter(content);
+        content.setStyle("-fx-padding: 14 0 8 0;");
+        var scroll = new ScrollPane(content);
+        scroll.setFitToWidth(true);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        setCenter(scroll);
         setStyle("-fx-padding: 14;");
     }
 
@@ -250,46 +311,89 @@ public final class ScenarioComparison extends BorderPane {
         table.getColumns()
                 .get(2)
                 .setText(productId != 0 ? "Scenario €/articolo" : "Scenario media €/art.");
+        var visibleArticles = new HashSet<Long>();
+        var visibleGroups = new HashSet<String>();
+        for (Display d : current) {
+            if (d.row() != null && d.row().articleId() != null)
+                visibleArticles.add(d.row().articleId());
+            if (d.group() != null) visibleGroups.add(d.group().key());
+        }
+        var visibleScope =
+                scope.stream()
+                        .filter(
+                                r ->
+                                        productId != 0
+                                                ? visibleArticles.contains(r.articleId())
+                                                : visibleGroups.contains(
+                                                        lineKey == null
+                                                                ? Objects.toString(
+                                                                        r.before()
+                                                                                .product()
+                                                                                .lineId(),
+                                                                        "none")
+                                                                : Long.toString(
+                                                                        r.before().product().id())))
+                        .toList();
+        Group totals = new ScenarioEngine().summarize(visibleScope, weight.getValue());
+        baseMean.setText(money(totals.before()));
+        scenarioMean.setText(money(totals.after()));
+        deltaMean.setText(delta(totals.delta()) + " · " + percent(totals.percent()));
+        deltaMean.getStyleClass().removeAll("impact-neutral", "impact-increase", "impact-decrease");
+        deltaMean.getStyleClass().add(tone(totals.delta()));
+        precise(baseMean, totals.before(), "€/articolo");
+        precise(scenarioMean, totals.after(), "€/articolo");
+        deltaMean.setTooltip(
+                new Tooltip(
+                        "Differenza: "
+                                + ScenarioDetails.n(totals.delta())
+                                + " €\nVariazione del costo medio: "
+                                + ScenarioDetails.n(totals.percent())
+                                + "%\n"
+                                + "Calcolo sugli articoli, non sulla media delle medie dei"
+                                + " gruppi."));
+        summaryCaption.setText(
+                weight.getValue()
+                        + " · "
+                        + totals.comparable()
+                        + " articoli su "
+                        + totals.articles()
+                        + " confrontabili"
+                        + (weight.getValue() == Weight.ARTICLES
+                                ? ""
+                                : " · " + totals.weighted() + " con volumi")
+                        + " · Ambito visualizzato"
+                        + (changedOnly.isSelected() ? " · Solo variati" : "")
+                        + (totals.before() == null
+                                ? "\nMedia non disponibile: costi completi o volumi insufficienti."
+                                : ""));
+        String period =
+                date(analysis.draft().base().from())
+                        + " – "
+                        + date(analysis.draft().base().through());
         context.setText(
                 "Fonte: "
                         + analysis.draft().selection().label()
                         + " · Fotografia "
-                        + analysis.before().capturedAt()
-                        + "\nVolumi: "
-                        + analysis.draft().base().from()
-                        + " – "
-                        + analysis.draft().base().through()
-                        + " · Solo vendite positive e produzioni confermate. I risultati incompleti"
-                        + " non entrano nelle medie.\n"
-                        + "Δ% = variazione del costo medio (non media delle percentuali). Peso zero"
-                        + " escluso; nessun volume inventato.");
-        long comparable =
-                scope.stream()
-                        .filter(
-                                r ->
-                                        r.before().total() != null
-                                                && r.after().total() != null
-                                                && r.articleId() != null)
-                        .count();
-        coverage.setText(
-                comparable
-                        + " / "
-                        + scope.stream().filter(r -> r.articleId() != null).count()
-                        + " articoli con entrambi i costi calcolabili · Grafico: primi 12 risultati"
-                        + " calcolabili.\n"
-                        + String.join("\n", analysis.problems()));
-        var before = new XYChart.Series<String, Number>();
-        before.setName("Base");
-        var after = new XYChart.Series<String, Number>();
-        after.setName("Scenario");
-        rows.stream()
-                .filter(r -> r.before() != null && r.after() != null)
-                .limit(12)
-                .forEach(
-                        r -> {
-                            before.getData().add(new XYChart.Data<>(r.name(), r.before()));
-                            after.getData().add(new XYChart.Data<>(r.name(), r.after()));
-                        });
-        chart.getData().setAll(before, after);
+                        + timestamp(analysis.before().capturedAt())
+                        + " · Volumi "
+                        + period);
+        context.setTooltip(
+                new Tooltip(
+                        "Le medie usano solo articoli con entrambi i costi calcolabili.\n"
+                            + "Vendite: quantità positive. Produzioni: quantità confermate. Peso"
+                            + " zero escluso.\n"
+                            + "Δ%: variazione del costo medio, non media delle variazioni"
+                            + " percentuali.\n"
+                            + "I prezzi sono arrotondati solo a video. Nei dettagli e nei CSV resta"
+                            + " la precisione completa."));
+        coverage.setText(String.join("\n", analysis.problems()));
+        coverage.setVisible(!analysis.problems().isEmpty());
+        coverage.setManaged(coverage.isVisible());
+        impactRows.show(
+                rows,
+                selected -> {
+                    table.getSelectionModel().select(selected);
+                    drill(selected);
+                });
     }
 }

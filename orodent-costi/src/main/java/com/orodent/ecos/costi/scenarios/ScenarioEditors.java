@@ -10,7 +10,6 @@ import javafx.beans.property.*;
 import javafx.collections.*;
 import javafx.collections.transformation.FilteredList;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.layout.*;
 
 import java.math.BigDecimal;
@@ -89,22 +88,16 @@ public final class ScenarioEditors extends BorderPane {
         Button applyPrice = button("Applica prezzi allo scenario", this::applyPrices);
         applyPrice.setId("scenarios-apply-prices");
         var modeColumn = (TableColumn<EditRow, String>) prices.getColumns().get(2);
-        modeColumn.setCellFactory(
-                ComboBoxTableCell.forTableColumn("Invariato", "Variazione %", "Prezzo €/kg"));
-        modeColumn.setOnEditCommit(
-                e -> {
-                    e.getRowValue().cells[2].set(e.getNewValue());
-                    if (e.getRowValue().get(3).isBlank() && !e.getNewValue().equals("Invariato"))
-                        e.getRowValue().cells[3].set("0");
-                    priceChanged();
-                });
-        prices.getColumns()
-                .get(3)
-                .setOnEditCommit(
-                        e -> {
-                            e.getRowValue().cells[3].set((String) e.getNewValue());
-                            priceChanged();
-                        });
+        modeColumn.setCellFactory(c -> ScenarioPriceCells.mode(this::priceMode));
+        var valueColumn = (TableColumn<EditRow, String>) prices.getColumns().get(3);
+        valueColumn.setCellFactory(c -> ScenarioPriceCells.value(this::priceChanged));
+        prices.setFixedCellSize(48);
+        prices.setPrefHeight(365);
+        prices.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        prices.getColumns().get(0).setPrefWidth(240);
+        modeColumn.setPrefWidth(170);
+        modeColumn.setMinWidth(150);
+        prices.getColumns().get(3).setMinWidth(140);
         prices.setId("scenarios-price-table");
         color.getItems().setAll("Tutte", "BIANCA", "GIALLA", "ROSA", "GRIGIA", "ALTRE");
         color.setValue("Tutte");
@@ -117,15 +110,16 @@ public final class ScenarioEditors extends BorderPane {
                 new VBox(
                         10,
                         new Label(
-                                "Prezzi applicati alle polveri · doppio clic sulle celle per"
-                                        + " modificare"),
+                                "Scegli il tipo di modifica e inserisci una percentuale o un prezzo"
+                                        + " €/kg."),
                         new FlowPane(
                                 10,
                                 8,
                                 priceSearch,
                                 color,
+                                new Label("Variazione di gruppo (%)"),
                                 batchValue,
-                                button("Applica % alle righe visibili", this::batch),
+                                button("Applica % alle polveri visibili", this::batch),
                                 button(
                                         "Ripristina polvere selezionata",
                                         () -> {
@@ -606,9 +600,7 @@ public final class ScenarioEditors extends BorderPane {
             loadModel(modelSource.getValue());
             loadTransform(transformProduct.getValue());
             pending.set(false);
-            feedback.setText(
-                    "Doppio clic sulle celle per modificare. Applica una scheda per aggiornare"
-                            + " l'anteprima.");
+            feedback.setText("Applica le modifiche della scheda per aggiornare l'anteprima.");
         } finally {
             rendering = false;
         }
@@ -656,6 +648,32 @@ public final class ScenarioEditors extends BorderPane {
                                         && (color.getValue() == null
                                                 || color.getValue().equals("Tutte")
                                                 || color.getValue().equals(r.label))));
+        prices.setPrefHeight(Math.min(365, Math.max(120, 46 + prices.getItems().size() * 48)));
+    }
+
+    private void priceMode(EditRow row, String mode) {
+        if (row.get(2).equals(mode)) return;
+        String value = "";
+        if (mode.equals("Prezzo €/kg")) {
+            var original = valued.prices().get(row.id);
+            BigDecimal base = original == null ? null : original.price();
+            try {
+                if (!row.get(2).equals("Invariato"))
+                    base =
+                            new PriceChange(
+                                            row.get(2).equals("Variazione %")
+                                                    ? PriceMode.PERCENT
+                                                    : PriceMode.PRICE,
+                                            decimal(row.get(3), "Valore", false))
+                                    .apply(base);
+            } catch (IllegalArgumentException ignored) {
+                // An invalid buffered percentage does not become an absolute price.
+            }
+            value = edit(base);
+        } else if (mode.equals("Variazione %")) value = "0";
+        row.cells[2].set(mode);
+        row.cells[3].set(value);
+        priceChanged();
     }
 
     private void priceOutput() {
@@ -672,7 +690,7 @@ public final class ScenarioEditors extends BorderPane {
                                                         : PriceMode.PRICE,
                                                 decimal(row.get(3), "Prezzo", false))
                                         .apply(base);
-                row.cells[4].set(PriceFormats.number(value, 2, 8));
+                row.cells[4].set(PriceFormats.number(value, 2, 2));
             } catch (RuntimeException e) {
                 row.cells[4].set("Da correggere");
             }
