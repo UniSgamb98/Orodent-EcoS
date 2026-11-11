@@ -13,10 +13,15 @@ import javafx.util.StringConverter;
 import java.time.LocalDate;
 import java.time.format.*;
 import java.util.*;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 /** One shared snapshot editor: inline prices and detail fields never hold independent drafts. */
 public final class PowderPricesView extends CostsShell {
+    public enum InlineField {
+        PRICE,
+        QUANTITY
+    }
+
     public final Button refresh = new Button("Ricarica"),
             previous = new Button("←"),
             next = new Button("→");
@@ -43,7 +48,8 @@ public final class PowderPricesView extends CostsShell {
             averagePrice = new Label("—"),
             totalNote = new Label(),
             unassignedQuantity = new Label();
-    private final TextField simplePrice = new TextField(), simpleQuantity = new TextField();
+    private final StringProperty referencePrice = new SimpleStringProperty(""),
+            availableQuantity = new SimpleStringProperty("");
     private final DatePicker date = new DatePicker();
     private final LotsEditor lots = new LotsEditor();
     private final HBox footer = new HBox(10);
@@ -51,7 +57,7 @@ public final class PowderPricesView extends CostsShell {
     private final LongProperty selectedPowder = new SimpleLongProperty();
     private final BooleanProperty locked = new SimpleBooleanProperty();
     private Runnable changed = () -> {}, colorsChanged = () -> {};
-    private Consumer<Row> priceRequested = row -> {};
+    private BiConsumer<Row, InlineField> valueRequested = (row, field) -> {};
     private boolean showing;
     private Mode retainedMode = Mode.AVANZATA;
     private String layoutMode = "";
@@ -111,7 +117,9 @@ public final class PowderPricesView extends CostsShell {
                         table,
                         paging,
                         unknown,
-                        label("Modifica il prezzo nella cella e premi Salva.", "costs-muted"));
+                        label(
+                                "Modifica quantità o prezzo nella cella e premi Salva.",
+                                "costs-muted"));
         catalogue.getStyleClass().add("costs-card");
         catalogue.setMinSize(0, 0);
         VBox.setVgrow(table, Priority.ALWAYS);
@@ -147,16 +155,6 @@ public final class PowderPricesView extends CostsShell {
         detailHeader.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(identityGroup, Priority.ALWAYS);
         identityGroup.setMinWidth(0);
-        simplePrice.setId("costi-simple-price");
-        simpleQuantity.setId("costi-simple-quantity");
-        simplePrice.setPromptText("Da compilare");
-        simpleQuantity.setPromptText("Non indicata");
-        FlowPane baseFields =
-                new FlowPane(
-                        12,
-                        8,
-                        field("Prezzo di riferimento €/kg", simplePrice),
-                        field("Quantità disponibile kg · facoltativa", simpleQuantity));
         available.setId("costi-available");
         averagePrice.setId("costi-average-price");
         totalQuantity.setId("costi-total-quantity");
@@ -177,7 +175,7 @@ public final class PowderPricesView extends CostsShell {
         valuesFooter.getStyleClass().add("powders-value-summary");
         totalNote.setWrapText(true);
         totalNote.getStyleClass().add("costs-muted");
-        form.getChildren().addAll(baseFields, quantities, lots, valuesFooter, totalNote);
+        form.getChildren().addAll(quantities, lots, valuesFooter, totalNote);
         form.setMinHeight(0);
         lots.setMinHeight(0);
         VBox.setVgrow(lots, Priority.ALWAYS);
@@ -214,8 +212,9 @@ public final class PowderPricesView extends CostsShell {
         content.setPadding(new Insets(18, 22, 16, 22));
         setCenter(content);
         layoutWorkspace(false);
-        for (TextField input : List.of(simplePrice, simpleQuantity, date.getEditor()))
-            input.textProperty().addListener((o, b, a) -> changed());
+        for (StringProperty input :
+                List.of(referencePrice, availableQuantity, date.getEditor().textProperty()))
+            input.addListener((o, b, a) -> changed());
         lots.onChanged(this::changed);
         clear();
     }
@@ -267,34 +266,34 @@ public final class PowderPricesView extends CostsShell {
                                 setGraphic(box);
                             }
                         });
-        TableColumn<Row, String> quantity = new TableColumn<>("Disponibilità kg");
+        TableColumn<Row, Row> quantity = new TableColumn<>("Disponibilità kg");
         quantity.setPrefWidth(125);
-        quantity.setMinWidth(105);
-        quantity.setCellValueFactory(
-                c ->
-                        new ReadOnlyObjectWrapper<>(
-                                PriceFormats.number(c.getValue().quantity(), 0, 3)));
+        quantity.setMinWidth(115);
+        quantity.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue()));
         quantity.setCellFactory(
                 c ->
-                        new TableCell<>() {
-                            @Override
-                            protected void updateItem(String value, boolean empty) {
-                                super.updateItem(value, empty);
-                                setText(empty ? null : value);
-                                setStyle("-fx-alignment: center-right;");
-                            }
-                        });
+                        new PowderValueCell(
+                                selectedPowder,
+                                locked,
+                                availableQuantity,
+                                Row::quantity,
+                                "quantity",
+                                "Disponibilità kg",
+                                r -> valueRequested.accept(r, InlineField.QUANTITY)));
         TableColumn<Row, Row> price = new TableColumn<>("Prezzo €/kg");
         price.setPrefWidth(135);
         price.setMinWidth(115);
         price.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue()));
         price.setCellFactory(
                 c ->
-                        new PowderPriceCell(
+                        new PowderValueCell(
                                 selectedPowder,
                                 locked,
-                                simplePrice,
-                                r -> priceRequested.accept(r)));
+                                referencePrice,
+                                Row::unitPrice,
+                                "price",
+                                "Prezzo di riferimento €/kg",
+                                r -> valueRequested.accept(r, InlineField.PRICE)));
         table.getColumns().setAll(powder, quantity, price);
         table.getColumns().forEach(c -> c.setSortable(false));
     }
@@ -345,28 +344,20 @@ public final class PowderPricesView extends CostsShell {
         colorsChanged = action;
     }
 
-    public void onPriceRequested(Consumer<Row> action) {
-        priceRequested = action;
+    public void onValueRequested(BiConsumer<Row, InlineField> action) {
+        valueRequested = action;
     }
 
-    public void focusInlinePrice(long id) {
+    public void focusInline(long id, InlineField kind) {
+        if (layoutMode.equals("compact")) compact.getSelectionModel().select(listTab);
         table.applyCss();
         table.layout();
-        var field = table.lookup("#costi-inline-price-" + id);
+        String prefix = kind == InlineField.QUANTITY ? "quantity" : "price";
+        var field = table.lookup("#costi-inline-" + prefix + "-" + id);
         if (field instanceof TextField input) {
             input.requestFocus();
             input.selectAll();
-        } else simplePrice.requestFocus();
-    }
-
-    private static VBox field(String caption, TextField input) {
-        input.setPrefWidth(210);
-        input.setMaxWidth(235);
-        Label title = new Label(caption);
-        title.setLabelFor(input);
-        VBox box = new VBox(6, title, input);
-        box.setPrefWidth(235);
-        return box;
+        }
     }
 
     private static HBox inlineSummary(String text, Label value) {
@@ -418,8 +409,8 @@ public final class PowderPricesView extends CostsShell {
     public FormState state() {
         return new FormState(
                 date.getEditor().getText(),
-                simplePrice.getText(),
-                simpleQuantity.getText(),
+                referencePrice.get(),
+                availableQuantity.get(),
                 lots.inputs());
     }
 
@@ -433,8 +424,8 @@ public final class PowderPricesView extends CostsShell {
         return new Draft(
                 retainedMode,
                 reference,
-                PriceFormats.decimal(simplePrice.getText(), "Prezzo di riferimento"),
-                PriceFormats.decimal(simpleQuantity.getText(), "Quantità disponibile"),
+                PriceFormats.decimal(referencePrice.get(), "Prezzo di riferimento"),
+                PriceFormats.decimal(availableQuantity.get(), "Quantità disponibile"),
                 lots.values());
     }
 
@@ -456,9 +447,8 @@ public final class PowderPricesView extends CostsShell {
             retainedMode = draft == null ? Mode.AVANZATA : draft.mode();
             date.setValue(draft == null ? LocalDate.now() : draft.referenceDate());
             date.getEditor().setText(date.getConverter().toString(date.getValue()));
-            simplePrice.setText(PriceFormats.edit(draft == null ? null : draft.simplePrice()));
-            simpleQuantity.setText(
-                    PriceFormats.edit(draft == null ? null : draft.simpleQuantity()));
+            referencePrice.set(PriceFormats.edit(draft == null ? null : draft.simplePrice()));
+            availableQuantity.set(PriceFormats.edit(draft == null ? null : draft.simpleQuantity()));
             lots.show(draft == null ? List.of() : draft.lots());
             selectedPowder.set(value.powder().id());
             form.setVisible(true);
@@ -544,7 +534,7 @@ public final class PowderPricesView extends CostsShell {
             totalQuantity.setText(PriceFormats.quantity(totals.quantity()));
             totalValue.setText(PriceFormats.currency(totals.value()));
             averagePrice.setText(PriceFormats.price(totals.unitPrice()));
-            var total = PriceFormats.decimal(simpleQuantity.getText(), "Quantità totale");
+            var total = PriceFormats.decimal(availableQuantity.get(), "Quantità totale");
             available.setText(PriceFormats.quantity(total));
             var unassigned = total == null ? null : total.subtract(totals.quantity());
             unassignedQuantity.setText(PriceFormats.quantity(unassigned));

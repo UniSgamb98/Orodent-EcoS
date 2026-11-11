@@ -38,6 +38,7 @@ public final class PowderPricesController {
     private long listEpoch, detailEpoch, selectionEpoch, selectedId;
     private int offset;
     private long inlineFocus;
+    private PowderPricesView.InlineField inlineField = PowderPricesView.InlineField.PRICE;
     private Set<String> appliedColors;
     private boolean appliedInactive;
     private boolean disposed, busy, saving, updatingList;
@@ -52,7 +53,7 @@ public final class PowderPricesController {
         appliedInactive = view.inactive.isSelected();
         view.onColorsChanged(this::changeFilter);
         view.inactive.setOnAction(e -> changeFilter());
-        view.onPriceRequested(this::requestPrice);
+        view.onValueRequested(this::requestValue);
         view.previous.setOnAction(e -> reloadList(Math.max(0, offset - PowderPrices.PAGE_SIZE)));
         view.next.setOnAction(e -> reloadList(offset + PowderPrices.PAGE_SIZE));
         view.table.getSelectionModel().selectedItemProperty().addListener(selectionChanged);
@@ -112,7 +113,7 @@ public final class PowderPricesController {
                     if (canLeave()) load(row.powder().id());
                     else {
                         restoreSelection();
-                        if (inlineFocus != 0) view.focusInlinePrice(selectedId);
+                        if (inlineFocus != 0) view.focusInline(selectedId, inlineField);
                         inlineFocus = 0;
                     }
                 });
@@ -154,12 +155,13 @@ public final class PowderPricesController {
         }
     }
 
-    private void requestPrice(Row row) {
+    private void requestValue(Row row, PowderPricesView.InlineField kind) {
+        inlineField = kind;
         if (disposed || busy) return;
         inlineFocus = row.powder().id();
         if (original != null && selectedId == inlineFocus) {
             inlineFocus = 0;
-            view.focusInlinePrice(selectedId);
+            view.focusInline(selectedId, inlineField);
             return;
         }
         view.table.getSelectionModel().select(row);
@@ -231,7 +233,7 @@ public final class PowderPricesController {
                                                     controls();
                                                     if (inlineFocus == id) {
                                                         inlineFocus = 0;
-                                                        view.focusInlinePrice(id);
+                                                        view.focusInline(id, inlineField);
                                                     }
                                                 }));
     }
@@ -327,7 +329,7 @@ public final class PowderPricesController {
         attachScene(view.getScene(), null);
         view.sceneProperty().removeListener(sceneChanged);
         view.onColorsChanged(() -> {});
-        view.onPriceRequested(row -> {});
+        view.onValueRequested((row, field) -> {});
         view.inactive.setOnAction(null);
         for (Button button :
                 java.util.List.of(

@@ -97,14 +97,17 @@ class PowderPricesUiTest {
                     () ->
                             table().getItems().size() == 2
                                     && label("costi-status").equals("Prezzo da compilare")
-                                    && !field("costi-simple-price").isDisabled()
-                                    && field("costi-simple-price").isVisible());
+                                    && field("costi-inline-price-1") != null
+                                    && !field("costi-inline-price-1").isDisabled()
+                                    && field("costi-inline-price-1").isVisible());
             fx(
                     () -> {
                         assertNull(stage.getScene().lookup("#costi-search"));
                         assertNull(stage.getScene().lookup("#costi-filter"));
                         assertNull(stage.getScene().lookup("#costi-mode-advanced"));
                         assertEquals(3, table().getColumns().size());
+                        assertNull(stage.getScene().lookup("#costi-simple-price"));
+                        assertNull(stage.getScene().lookup("#costi-simple-quantity"));
                         assertTrue(
                                 ((CheckBox) stage.getScene().lookup("#costi-color-bianca"))
                                         .isSelected());
@@ -116,7 +119,7 @@ class PowderPricesUiTest {
                         assertFalse(
                                 stage.getScene().getRoot().lookupAll(".powder-white").isEmpty());
                         field("costi-inline-price-1").setText("92,1250");
-                        assertEquals("92,1250", field("costi-simple-price").getText());
+                        assertEquals("92,1250", view().state().price());
                         button("costi-save").fire();
                         return null;
                     });
@@ -132,10 +135,12 @@ class PowderPricesUiTest {
                         lot(0, "L-2026-041", "100", "80");
                         lot(1, "L-2026-041", "50", "100");
                         assertTrue(label("costi-total-quantity").contains("150"));
-                        field("costi-simple-quantity").setText("200");
+                        field("costi-inline-quantity-1").setText("200");
+                        assertEquals("200", view().state().quantity());
+                        assertEquals("200 kg", label("costi-available"));
                         assertTrue(label("costi-unassigned").contains("50"));
                         assertTrue(label("costi-average-price").contains("86,6667"));
-                        assertEquals("92,125", field("costi-simple-price").getText());
+                        assertEquals("92,125", field("costi-inline-price-1").getText());
                         assertEquals("100", field("costi-lot-0-quantity").getText());
                         button("costi-save").fire();
                         return null;
@@ -154,6 +159,16 @@ class PowderPricesUiTest {
                         assertTrue(feedback().contains("Data"));
                         button("costi-cancel").fire();
                         assertEquals(savedDate, reference.getEditor().getText());
+                        field("costi-inline-quantity-1").setText("200,1234");
+                        button("costi-save").fire();
+                        assertTrue(feedback().contains("decimali"));
+                        button("costi-cancel").fire();
+                        assertEquals("200", field("costi-inline-quantity-1").getText());
+                        field("costi-inline-quantity-1").clear();
+                        assertEquals("Non indicata", label("costi-available"));
+                        field("costi-inline-quantity-1").setText("0");
+                        assertEquals("0 kg", label("costi-available"));
+                        button("costi-cancel").fire();
                         field("costi-lot-0-price").setText("80,12345");
                         button("costi-save").fire();
                         assertTrue(feedback().contains("decimali"));
@@ -176,7 +191,7 @@ class PowderPricesUiTest {
             fx(
                     () -> {
                         Platform.runLater(() -> Platform.runLater(() -> answer(ButtonType.CANCEL)));
-                        field("costi-inline-price-2").requestFocus();
+                        field("costi-inline-quantity-2").requestFocus();
                         return null;
                     });
             await(() -> table().getSelectionModel().getSelectedIndex() == 0);
@@ -189,12 +204,12 @@ class PowderPricesUiTest {
                     });
             await(
                     () ->
-                            !field("costi-simple-price").isDisabled()
+                            !field("costi-inline-price-1").isDisabled()
                                     && field("costi-inline-price-2").isEditable());
             fx(
                     () -> {
-                        assertEquals("", field("costi-simple-price").getText());
-                        field("costi-inline-price-1").requestFocus();
+                        assertEquals("", view().state().price());
+                        field("costi-inline-quantity-1").requestFocus();
                         return null;
                     });
             await(
@@ -204,10 +219,11 @@ class PowderPricesUiTest {
             fx(
                     () -> {
                         assertEquals("80", field("costi-lot-0-price").getText());
-                        field("costi-simple-price").setText("93,5");
-                        assertEquals("93,5", field("costi-inline-price-1").getText());
+                        field("costi-inline-price-1").setText("93,5");
+                        assertEquals("93,5", view().state().price());
                         button("costi-cancel").fire();
                         assertEquals("92,125", field("costi-inline-price-1").getText());
+                        assertTrue(field("costi-inline-quantity-1").isEditable());
                         snapshot("target/powders-unified-wide.png");
                         ((CheckBox) stage.getScene().lookup("#costi-color-bianca")).fire();
                         return null;

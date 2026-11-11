@@ -19,15 +19,17 @@ mostra zero righe. L'opzione Includi archiviate conserva la sua funzione.
 
 A sinistra: **Polvere → Disponibilità kg → Prezzo €/kg**, con sfondi pastello sui
 codici e nomi. Non ci sono ricerca testuale né selettore Semplice/Avanzata/Mancanti.
-Il prezzo è modificabile direttamente nella cella: la selezione carica la fotografia
-prima di abilitare l'input, proteggendo eventuali modifiche dell'altra polvere.
-Il campo inline e quello del dettaglio sono sincronizzati e rappresentano lo
-stesso prezzo di riferimento. Invio termina l'input ma non scrive nel database.
+Prezzo e disponibilità sono modificabili direttamente nelle celle: la selezione
+carica la fotografia prima di abilitare gli input, proteggendo eventuali modifiche
+dell'altra polvere. Non ci sono campi duplicati nel dettaglio: i riepiloghi Totale,
+Nei lotti e Da assegnare riflettono subito la quantità digitata nell'elenco.
+La quantità vuota resta sconosciuta, distinta da zero, e ammette fino a tre decimali.
+Invio termina l'input ma non scrive nel database.
 **Salva** registra la revisione completa; **Annulla** ripristina prezzo, data,
 disponibilità e lotti. Il cambio filtro, la selezione di un'altra polvere e l'uscita
 proteggono le modifiche non salvate. Un errore conserva gli input e non ritenta la scrittura.
 
-A destra si vedono sempre dati base e lotti, anche per fotografie salvate in passato
+A destra si vedono data, riepiloghi della disponibilità e lotti, anche per fotografie salvate in passato
 in modalità semplice. Il metadato storico della modalità è conservato; non limita
 il dettaglio e non sceglie la fonte di calcolo in Costi prodotti o Scenari.
 
