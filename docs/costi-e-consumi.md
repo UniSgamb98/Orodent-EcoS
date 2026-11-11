@@ -183,12 +183,22 @@ anche quando il CSV usa un codice fornitore associato. Le schede senza colore
 e i codici ancora da collegare rimangono neutri: non si deduce il colore dal nome.
 La stessa evidenza compare nell'anteprima e nelle scelte di collegamento.
 
-Con almeno 1.380 px utili nel contenuto, l'anteprima CSV si affianca alla destra
-della tabella; con meno spazio passa sotto. Ridimensionare la finestra conserva
-la riga selezionata, il file e i collegamenti in corso. Le associazioni sono in
-due colonne allineate, Codice CSV e Polvere TON, con selettori compatti fino a
-240 px. I tooltip mostrano i codici e i nomi completi. Senza anteprima, l'elenco
-resta compatto e non si allarga fino a occupare tutta una finestra molto ampia.
+La pagina utilizza l'altezza disponibile della finestra: le tabelle crescono
+insieme ai pannelli e i comandi dell'importazione rimangono visibili in basso.
+Con almeno 1.320 px utili nel contenuto, ordini e anteprima sono affiancati con un
+divisore regolabile. Nelle finestre più strette si passa fra **Ordini salvati** e
+**Importazione CSV**, senza impilare elenchi e barre di scorrimento nella pagina.
+L'apertura di un file porta all'importazione; chiudendola si torna all'elenco.
+Ridimensionare o cambiare scheda conserva selezione, file e collegamenti in corso.
+
+L'anteprima distingue **Righe CSV** da **Collegamenti**. Ogni scheda usa tutto lo
+spazio del pannello; le associazioni mostrano codice, fornitore e selettore TON
+vicini, in righe compatte con ricerca e filtro Solo da collegare. La lista è
+virtualizzata: anche molti codici non creano tutti i controlli contemporaneamente.
+La scheda Collegamenti si apre automaticamente se manca un'associazione, altrimenti
+si mostrano le righe. Gli errori hanno una scheda dedicata e bloccano la conferma.
+Un riepilogo indica righe valide e codici collegati; le operazioni sulle righe
+sono Nuova / Aggiorna / Invariata. I tooltip conservano codici e nomi completi.
 
 La chiave è **fornitore + ordine + posizione**, non il lotto. Reimportare aggiorna
 le righe cambiate e lascia invariate le identiche, senza duplicarle. Le righe

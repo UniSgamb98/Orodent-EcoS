@@ -9,6 +9,32 @@
 #costi-orders-module .powder-gray { -fx-background-color: #e3e7ed; -fx-border-color: #cbd1db; }
 #costi-orders-module .powder-other { -fx-background-color: #edf3f7; -fx-border-color: #dce5ed; }
 #costi-orders-module #orders-mappings { -fx-padding: 4px 4px 8px 0; }
-#costi-orders-module #orders-mappings .combo-box { -fx-pref-width: 230px; -fx-max-width: 240px; }
 
 #costi-orders-module .column-header.orders-number .label { -fx-alignment: center-right; }
+
+/* Full-height workspace, with one scrolling list per active panel. */
+#costi-orders-module .orders-card { -fx-padding: 14px; }
+#costi-orders-module .orders-section-title { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #173f5f; }
+#costi-orders-module .orders-count { -fx-background-color: #edf5f8; -fx-background-radius: 12px; -fx-padding: 5px 10px; -fx-text-fill: #57748a; -fx-font-size: 11px; }
+#costi-orders-module .orders-split { -fx-padding: 0; -fx-background-color: transparent; -fx-border-width: 0; }
+#costi-orders-module .orders-split > .split-pane-divider { -fx-padding: 0 5px; -fx-background-color: transparent; }
+#costi-orders-module .orders-split > .split-pane-divider:hover { -fx-background-color: #d6e6ee; }
+#costi-orders-module .tab-pane { -fx-background-color: transparent; -fx-padding: 0; }
+#costi-orders-module .tab-header-background { -fx-background-color: #edf3f7; }
+#costi-orders-module .tab { -fx-padding: 7px 12px; -fx-background-color: transparent; }
+#costi-orders-module .tab:selected { -fx-background-color: white; -fx-border-color: transparent transparent #19758b transparent; -fx-border-width: 0 0 2px 0; }
+#costi-orders-module .orders-mapping-body { -fx-padding: 12px 0 0 0; }
+#costi-orders-module #orders-mappings { -fx-padding: 0; -fx-background-color: white; -fx-border-color: #dce5ed; -fx-border-radius: 5px; }
+#costi-orders-module #orders-mappings .orders-mapping-row { -fx-background-color: white; -fx-padding: 8px 10px; -fx-border-color: transparent transparent #edf1f5 transparent; }
+#costi-orders-module #orders-mappings .combo-box { -fx-max-width: 300px; }
+#costi-orders-module .orders-mapping-code { -fx-font-weight: bold; -fx-text-fill: #173f5f; }
+#costi-orders-module .button { -fx-padding: 8px 11px; -fx-background-color: #edf3f7; -fx-background-radius: 6px; -fx-text-fill: #173f5f; -fx-cursor: hand; }
+#costi-orders-module .button:hover { -fx-background-color: #e0edf3; }
+#costi-orders-module .primary-button { -fx-background-color: #19758b; -fx-text-fill: white; -fx-font-weight: bold; }
+#costi-orders-module .primary-button:hover { -fx-background-color: #155f72; }
+#costi-orders-module .orders-feedback { -fx-padding: 8px 10px; -fx-background-color: #edf5f8; -fx-background-radius: 5px; -fx-text-fill: #176d86; }
+
+#costi-orders-module .costs-nav { -fx-background-color: transparent; -fx-alignment: center-left; -fx-padding: 13px 10px; }
+#costi-orders-module .costs-nav:hover { -fx-background-color: #edf3f7; }
+#costi-orders-module .costs-nav-selected { -fx-background-color: #e0eff3; -fx-text-fill: #176d86; }
+#costi-orders-module .costs-title { -fx-font-size: 25px; }
