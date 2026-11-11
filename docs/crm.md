@@ -34,8 +34,12 @@ non sono i forni di produzione TON. I cataloghi restano quindi distinti.
 La V13 si applica con il normale percorso EcoS: backup prima dell'evoluzione,
 modifiche dello schema sull'HOST e verifica di compatibilità sui CLIENT. La
 cartella e il DB della vecchia applicazione Clients non vengono aperti né modificati.
-Il CRM nuovo parte vuoto: l'importazione delle anagrafiche esistenti richiede una
-migrazione dati separata, preservando UUID, operatori e relazioni. Non basta
+Il CRM nuovo parte vuoto. Per i backup **CRM2** (`clients.txt` e note XML) è
+disponibile il [kit di migrazione](../scripts/crm-migration/LEGGIMI.md): il primo
+BAT prepara i dati e il report; il secondo verifica la destinazione sull'HOST,
+crea un backup ed esegue l'importazione in un'unica transazione. Richiede un CRM
+ancora vuoto e conserva gli operatori già presenti, riusando i nomi coincidenti.
+Questo percorso importa CRM2, non un database Clients aggiornato. Non basta
 copiare i file Derby del vecchio DB sopra quelli di EcoS.
 
 ## Operazioni, concorrenza e ciclo di vita
@@ -70,6 +74,10 @@ anagrafiche come le specifiche tecniche TON. Le interazioni commerciali conserva
 le loro date e il rispettivo operatore.
 
 ## Verifica
+
+Il generatore CRM2 ha test Python su formato, identità, storico e anomalie.
+`LegacyCrmImportTest` esegue il pacchetto sintetico generato da Python su Derby,
+verificando backup, relazioni, rollback, operatori e rifiuto di file alterati.
 
 `CrmIntegrationTest` copre creazione del lead e separazione dei dati, chiamata e
 calendario, conflitti fra sessioni, rollback e revisione, integrità dei collegamenti

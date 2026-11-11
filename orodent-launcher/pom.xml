@@ -27,6 +27,10 @@
         <configuration><outputDirectory>${project.build.directory}/distribution</outputDirectory>
           <resources><resource><directory>src/distribution</directory><filtering>false</filtering></resource></resources>
         </configuration>
+      </execution><execution><id>crm-migration-kit</id><phase>prepare-package</phase><goals><goal>copy-resources</goal></goals>
+        <configuration><outputDirectory>${project.build.directory}/distribution/tools/crm-migration</outputDirectory>
+          <resources><resource><directory>${project.parent.basedir}/scripts/crm-migration</directory><filtering>false</filtering><includes><include>*.py</include><include>*.bat</include><include>LEGGIMI.md</include></includes></resource></resources>
+        </configuration>
       </execution></executions>
     </plugin>
     <plugin>

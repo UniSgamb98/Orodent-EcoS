@@ -1,0 +1,1 @@
+Laboratorio D'Angelo;Mario Rossi;mario@example.test;0123456789;Italia;;Città di prova;;;;;;Laboratorio;;;;;;;note1;mario;2;;2026-12-12;3;2020-01-01;;;;

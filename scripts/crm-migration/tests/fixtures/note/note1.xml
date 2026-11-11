@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<note><chiamata number="2" data="2021-02-03" operatore="Mario" newInterest="Listino">Nota con apici l'ufficio; seconda chiamata.</chiamata><chiamata number="1" data="2021-02-03" operatore="Mario" newInterest="Presentazione">Prima chiamata; testo su più righe.
+-- Questo è testo, non SQL.</chiamata></note>

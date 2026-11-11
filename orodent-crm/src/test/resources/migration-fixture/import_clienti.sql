@@ -1,0 +1,2 @@
+-- Auto-generato da scripts/generate_import_sql.py; eseguire nell'ordine indicato nel report.
+INSERT INTO CRM.CLIENTI (ID, RAGIONE_SOCIALE, TIPO_CLIENTE, STATO_TRATTATIVA, COINVOLGIMENTO, PARTITA_IVA, CODICE_FISCALE, ACQUISIZIONE, OPERATORE_ID) VALUES ('fc6cc49b-dadc-5965-b8e4-ccff5ee4c1d5', 'Laboratorio D''Angelo', 'Laboratorio', 'Listino', 3, NULL, NULL, DATE('2020-01-01'), (SELECT ID FROM ECOS.OPERATORI WHERE UPPER(TRIM(USERNAME)) = 'MARIO'));

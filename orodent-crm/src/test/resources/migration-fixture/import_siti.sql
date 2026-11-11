@@ -1,0 +1,1 @@
+-- Auto-generato da scripts/generate_import_sql.py; eseguire nell'ordine indicato nel report.

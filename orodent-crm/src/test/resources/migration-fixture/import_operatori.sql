@@ -1,0 +1,2 @@
+-- Auto-generato da scripts/generate_import_sql.py; eseguire nell'ordine indicato nel report.
+INSERT INTO ECOS.OPERATORI (ID, USERNAME, ATTIVO) SELECT 'd687a509-cf51-5d1c-976b-329b1f9d948d', 'MARIO', 1 FROM SYSIBM.SYSDUMMY1 WHERE NOT EXISTS (SELECT 1 FROM ECOS.OPERATORI WHERE UPPER(TRIM(USERNAME)) = 'MARIO');

@@ -1,0 +1,23 @@
+IMPORT LEGACY CRM - REPORT
+Clienti letti: 1
+Documenti XML letti: 1
+Documenti XML collegati: 1
+Documenti XML non collegati: 0
+Chiamate XML importate: 2
+Operatori distinti: 1
+Righe clienti malformate: 0
+Coinvolgimenti non validi: 0
+Date non valide: 0
+XML non validi: 0
+NoteId duplicati: 0
+
+Ordine di esecuzione e statement:
+1. import_operatori.sql: 1
+2. import_cataloghi.sql: 2
+3. import_clienti.sql: 1
+4. import_contatti.sql: 1
+5. import_indirizzi.sql: 1
+6. import_telefoni.sql: 1
+7. import_email.sql: 1
+8. import_siti.sql: 0
+9. import_note_interazioni.sql: 5
