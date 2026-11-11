@@ -6,6 +6,7 @@ import com.orodent.ecos.features.home.view.HomeView;
 import com.orodent.ecos.module.EcosModule;
 import com.orodent.ecos.module.ModuleContext;
 import com.orodent.ecos.module.ModuleSession;
+import com.orodent.ecos.module.OperatorSession;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.application.Platform;
@@ -22,6 +23,7 @@ public final class AppController implements AppNavigator {
     private final Stage stage;
     private final AppContainer app;
     private final String globalCss;
+    private final OperatorSession operators = new OperatorSession();
     private Scene scene;
     private final BorderPane shell = new BorderPane();
     private final StackPane page = new StackPane();
@@ -59,7 +61,7 @@ public final class AppController implements AppNavigator {
         EcosModule module = app.modules().require(moduleId);
         ModuleSession session = module.open(new ModuleContext(
                 app.connectionProvider(), app.backgroundExecutor(),
-                app.clientiCsvImportService(), app.venditeCsvImportService(), this::showHome));
+                app.clientiCsvImportService(), app.venditeCsvImportService(), this::showHome, operators));
         showView(session.root(), session::close);
         stage.setTitle("Orodent-EcoS - " + module.descriptor().name());
     }

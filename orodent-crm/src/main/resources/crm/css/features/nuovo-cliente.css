@@ -1,0 +1,65 @@
+.crm-module .new-client-form {
+    -fx-background-color: -app-surface;
+    -fx-background-radius: 10;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 18;
+    -fx-max-width: 560;
+}.crm-module .new-client-field-label {
+    -fx-text-fill: -app-text-muted;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+}.crm-module .new-client-actions {
+    -fx-alignment: center-left;
+}.crm-module .new-client-form-grid {
+    -fx-padding: 2 2 10 2;
+}.crm-module .new-client-form-column {
+    -fx-min-width: 320;
+    -fx-pref-width: 420;
+}.crm-module .new-client-card-hint {
+    -fx-text-fill: -app-text-placeholder;
+    -fx-font-size: 11px;
+}.crm-module .new-client-repeatable-row {
+    -fx-alignment: center-left;
+}.crm-module .new-client-add-button {
+    -fx-background-color: -app-control-bg;
+    -fx-text-fill: -app-text;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-min-width: 38;
+    -fx-pref-width: 38;
+    -fx-padding: 6 0;
+}.crm-module .new-client-remove-button {
+    -fx-background-color: -app-danger-bg;
+    -fx-text-fill: -app-text;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-min-width: 38;
+    -fx-pref-width: 38;
+    -fx-padding: 6 0;
+}.crm-module .new-client-add-button-placeholder {
+    -fx-min-width: 38;
+    -fx-pref-width: 38;
+}.crm-module .new-client-contact-flow {
+    -fx-pref-wrap-length: 760;
+}.crm-module .new-client-contact-card {
+    -fx-background-color: -app-card-bg;
+    -fx-background-radius: 8;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 12;
+    -fx-pref-width: 320;
+}.crm-module .new-client-linked-combo {
+    -fx-background-color: -app-light-bg;
+    -fx-border-color: -app-light-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}.crm-module .new-client-linked-combo .text-field {
+    -fx-background-color: -app-light-bg;
+    -fx-text-fill: -app-text-dark;
+    -fx-prompt-text-fill: -app-text-secondary-dark;
+}

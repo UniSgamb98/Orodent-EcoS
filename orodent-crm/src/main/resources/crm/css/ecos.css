@@ -1,0 +1,33 @@
+.crm-module { -fx-background-color: #f3f6fa; -fx-font-family: "Segoe UI",Arial,sans-serif; -fx-font-size:13px; }
+.crm-module .crm-header { -fx-padding:12px 24px; -fx-background-color:white; -fx-border-color:transparent transparent #dce5ed transparent; }
+.crm-module .crm-header .button { -fx-padding:10px 14px; -fx-background-color:#edf3f7; -fx-background-radius:6px; -fx-text-fill:#173f5f; -fx-cursor:hand; }
+.crm-module .crm-header .crm-primary { -fx-background-color:#19758b; -fx-text-fill:white; -fx-font-weight:bold; }
+.crm-module .sidebar { -fx-background-color:white; }
+.crm-module {
+ -app-bg:#f3f6fa; -app-surface:#ffffff; -app-surface-alt:#edf3f7;
+ -app-sidebar-bg:#ffffff; -app-card-bg:#ffffff; -app-field-bg:#ffffff;
+ -app-control-bg:#edf3f7; -app-control-alt-bg:#e4eef3; -app-row-hover:#e0f0f3;
+ -app-row-border:#edf1f5; -app-border:#cbd9e4; -app-border-soft:#d7e2eb;
+ -app-primary:#19758b; -app-primary-hover:#155f72; -app-primary-dark:#155f72;
+ -app-danger-bg:#fbe5e7; -app-warning:#9b6400; -app-badge-bg:#edf3f7;
+ -app-text:#173f5f; -app-text-soft:#173f5f; -app-text-muted:#607d93;
+ -app-text-muted-2:#607d93; -app-text-subtle:#607d93; -app-text-placeholder:#8195a5;
+ -app-text-placeholder-2:#8195a5; -app-error:#a52d35; -app-login-gradient-start:#f3f6fa;
+ -app-login-gradient-end:#e8f1f5; -app-login-subtitle:#607d93; -app-login-label:#173f5f;
+ -app-login-prompt:#8195a5;
+}
+.crm-module .crm-header .label { -fx-text-fill:#173f5f; }
+.crm-module .crm-header .button { -fx-text-fill:#173f5f; }
+.crm-module .crm-header .crm-primary { -fx-text-fill:white; }
+#crm-module .sidebar { -fx-min-width:180px; -fx-pref-width:180px; -fx-max-width:180px; }
+#crm-module .sidebar-button { -fx-text-fill:#173f5f; -fx-font-size:13px; }
+#crm-module .sidebar-button:hover { -fx-background-color:#e0f0f3; -fx-text-fill:#173f5f; }
+#crm-module .clients-primary-button, #crm-module .new-client-primary-button, #crm-module .login-primary-button,
+#crm-module .client-profile-primary-button, #crm-module .client-profile-timeline-filter-active { -fx-text-fill:white; }
+#crm-module .clients-data-row-selected { -fx-background-color:#e0f0f3; }
+#crm-module .client-profile-timeline-call-badge { -fx-text-fill:#1d4ed8; }
+#crm-module .client-profile-timeline-next-badge { -fx-text-fill:#166534; }
+#crm-module .client-profile-delete-interaction-button { -fx-text-fill:#a52d35; }
+#crm-module .client-profile-small-filter-active, #crm-module .calendar-primary-button,
+#crm-module .calendar-toggle-selected, #crm-module .calendar-toggle-button:hover,
+#crm-module .clients-saved-search-button:selected { -fx-text-fill:white; }

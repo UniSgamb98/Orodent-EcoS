@@ -78,6 +78,7 @@ Excel italiano. [Contratto e utilizzo](docs/csv-export.md).
 | `orodent-database` | Derby HOST/CLIENT, discovery, schema, modelli, repository e servizi di importazione |
 | `orodent-module-api` | Contratto dei moduli, metadati, servizi condivisi e ciclo di vita della UI |
 | `orodent-ton` | Laboratorio TON: linee, prodotti, articoli e polveri, storico e specifiche versionate |
+| `orodent-crm` | Lead e contatti commerciali, schede, note/chiamate, calendario, preferiti, viste salvate e cataloghi dei laboratori |
 | `orodent-costi` | Prezzi e lotti, costi per articolo, consumi, scenari versionati con basi congelate e confronto per linea/prodotto/articolo, CSV |
 | `orodent-statistiche` | Dashboard vendite, analisi clienti/prodotti/sconti/resi, archivio e importazioni CSV |
 | `orodent-performance` | Solo con profilo `performance`: misure su dati sintetici, fuori dai pacchetti distribuiti |
@@ -372,3 +373,6 @@ GitHub normalmente reindirizza il vecchio URL e conserva issue e pull request.
 Non creare un'altra repository chiamata Ton-V3 dopo la rinomina: interromperebbe
 il reindirizzamento. Il nome della cartella locale può restare Ton-V3;
 se la sposti, aggiorna anche le istruzioni dell'ambiente che usano percorsi assoluti.
+
+Il modulo **CRM**, trasferito da Clients `DEPLOYIED`, usa operatori e database di
+EcoS: [funzioni, schema e limiti della prima integrazione](docs/crm.md).

@@ -1,0 +1,99 @@
+.crm-module .clients-table {
+    -fx-background-color: -app-surface;
+    -fx-background-radius: 10;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+}.crm-module .clients-table-row, .crm-module .clients-empty-row {
+    -fx-padding: 12;
+    -fx-spacing: 8;
+}.crm-module .clients-table-header {
+    -fx-background-color: -app-surface-alt;
+    -fx-background-radius: 10 10 0 0;
+}.crm-module .clients-table-cell {
+    -fx-text-fill: -app-text-muted;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+}.crm-module .clients-empty-label {
+    -fx-text-fill: -app-text-placeholder;
+    -fx-font-size: 13px;
+}.crm-module .clients-load-state {
+    -fx-text-fill: -app-text-placeholder;
+    -fx-font-size: 12px;
+    -fx-font-style: italic;
+    -fx-padding: 12;
+}.crm-module .clients-data-row {
+    -fx-border-color: -app-row-border;
+    -fx-border-width: 1 0 0 0;
+}.crm-module .clients-data-row:hover {
+    -fx-background-color: -app-row-hover;
+}.crm-module .clients-data-row-selected {
+    -fx-background-color: derive(-app-primary-dark, -18%);
+    -fx-border-color: -app-primary;
+    -fx-border-width: 1 0 1 3;
+}.crm-module .clients-table-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}.crm-module .clients-table-header-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -app-text-muted;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-alignment: center-left;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}.crm-module .clients-table-header-button:hover {
+    -fx-text-fill: -app-text;
+}.crm-module .clients-row-actions-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -app-text-muted;
+    -fx-font-size: 16px;
+    -fx-font-weight: 700;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}.crm-module .clients-row-actions-button:hover {
+    -fx-background-color: -app-control-alt-bg;
+}.crm-module .clients-actions-header {
+    -fx-alignment: center;
+}.crm-module .clients-detail-panel {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+}.crm-module .clients-detail-header {
+    -fx-alignment: top-left;
+}.crm-module .clients-detail-company-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -app-text;
+    -fx-font-size: 16px;
+    -fx-font-weight: 700;
+    -fx-alignment: top-left;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}.crm-module .clients-detail-company-button:hover {
+    -fx-text-fill: -app-primary-hover;
+}.crm-module .clients-detail-close-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -app-text-muted;
+    -fx-font-size: 20px;
+    -fx-font-weight: 400;
+    -fx-padding: 0 5;
+    -fx-cursor: hand;
+    -fx-min-width: 30;
+    -fx-min-height: 30;
+    -fx-alignment: center;
+}.crm-module .clients-detail-close-button:hover {
+    -fx-background-color: -app-control-alt-bg;
+    -fx-text-fill: -app-text;
+}.crm-module .clients-detail-section {
+    -fx-padding: 12 0 0 0;
+    -fx-border-color: -app-row-border;
+    -fx-border-width: 1 0 0 0;
+}.crm-module .clients-detail-section-title {
+    -fx-text-fill: -app-text-subtle;
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+}.crm-module .clients-detail-value {
+    -fx-text-fill: -app-text-soft;
+    -fx-font-size: 13px;
+}

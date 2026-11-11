@@ -1,0 +1,154 @@
+.crm-module {
+    -app-bg: #2b2b2b;
+    -app-surface: #252526;
+    -app-surface-alt: #1f1f1f;
+    -app-sidebar-bg: #1e1e1e;
+    -app-card-bg: #202124;
+    -app-field-bg: #3a3a3a;
+    -app-control-bg: #3f3f46;
+    -app-control-alt-bg: #2f2f33;
+    -app-row-hover: #303033;
+    -app-row-border: #333333;
+    -app-border: #3c3c3c;
+    -app-border-soft: #4b5563;
+    -app-primary: #007acc;
+    -app-primary-hover: #1490df;
+    -app-primary-dark: #0e639c;
+    -app-danger-bg: #5f2727;
+    -app-warning: #facc15;
+    -app-badge-bg: #1f2937;
+    -app-light-bg: #ffffff;
+    -app-light-border: #d0d0d0;
+    -app-text: #ffffff;
+    -app-text-soft: #f0f0f0;
+    -app-text-muted: #d6d6d6;
+    -app-text-muted-2: #d4d4d4;
+    -app-text-subtle: #bdbdbd;
+    -app-text-placeholder: #9a9a9a;
+    -app-text-placeholder-2: #8b8b8b;
+    -app-text-secondary-dark: #777777;
+    -app-text-dark: #202020;
+    -app-error: #ff7b72;
+    -app-login-gradient-start: #1f2933;
+    -app-login-gradient-end: #111827;
+    -app-login-subtitle: #c9d1d9;
+    -app-login-label: #d7dde4;
+    -app-login-prompt: #8b949e;
+
+    -fx-font-family: "Segoe UI", "Roboto", sans-serif;
+    -fx-background-color: -app-bg;
+    -fx-text-fill: -app-text-soft;
+}.crm-module .button {
+    -fx-background-color: #444;
+    -fx-text-fill: -app-text;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-padding: 6 12;
+}.crm-module .button:hover {
+    -fx-background-color: #666;
+}.crm-module .list-view {
+    -fx-background-color: -app-field-bg;
+    -fx-control-inner-background: -app-field-bg;
+    -fx-cell-hover-color: #555;
+    -fx-text-fill: -app-text;
+}.crm-module .label {
+    -fx-text-fill: -app-text;
+}.crm-module .choice-box {
+    -fx-background-color: -app-control-bg;
+    -fx-mark-color: -app-text-soft;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}.crm-module .choice-box > .label {
+    -fx-text-fill: -app-text-soft;
+}.crm-module .choice-box .context-menu {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+}.crm-module .choice-box .context-menu .menu-item .label {
+    -fx-text-fill: -app-text-soft;
+}.crm-module .choice-box .context-menu .menu-item:focused {
+    -fx-background-color: -app-primary;
+}.crm-module .choice-box .context-menu .menu-item:focused .label {
+    -fx-text-fill: -app-text;
+}.crm-module .title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-text-soft;
+}.crm-module .container {
+    -fx-padding: 20;
+    -fx-spacing: 12;
+    -fx-alignment: center;
+}.crm-module .menu-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -app-text;
+    -fx-font-size: 18px;
+    -fx-cursor: hand;
+    -fx-padding: 5 10;
+}.crm-module .menu-button:hover {
+    -fx-background-color: #333;
+}.crm-module .sidebar {
+    -fx-background-color: -app-sidebar-bg;
+    -fx-border-color: -app-border;
+    -fx-border-width: 0 1 0 0;
+}.crm-module .sidebar-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #cccccc;
+    -fx-font-size: 14px;
+    -fx-alignment: center-left;
+    -fx-padding: 8 10;
+    -fx-cursor: hand;
+    -fx-background-radius: 6;
+}.crm-module .sidebar-button:hover {
+    -fx-background-color: -app-primary;
+    -fx-text-fill: -app-text;
+}.crm-module .dashboard-content {
+    -fx-background-color: -app-bg;
+}.crm-module .login-root {
+    -fx-background-color: linear-gradient(to bottom right, -app-login-gradient-start, -app-login-gradient-end);
+}.crm-module .login-wrapper {
+    -fx-background-color: transparent;
+}.crm-module .login-card {
+    -fx-background-color: -app-surface;
+    -fx-background-radius: 18;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 18;
+    -fx-padding: 32;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 18, 0.3, 0, 6);
+}.crm-module .login-heading {
+    -fx-alignment: center-left;
+}.crm-module .login-title {
+    -fx-font-size: 28px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -app-text;
+}.crm-module .login-subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: -app-login-subtitle;
+}.crm-module .login-form {
+    -fx-padding: 8 0 0 0;
+}.crm-module .login-field-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -app-login-label;
+}.crm-module .login-field {
+    -fx-background-color: -app-sidebar-bg;
+    -fx-border-color: -app-border-soft;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-text-fill: -app-text;
+    -fx-prompt-text-fill: -app-login-prompt;
+    -fx-padding: 10 12;
+}.crm-module .login-field:focused {
+    -fx-border-color: -app-primary-hover;
+}.crm-module .login-primary-button {
+    -fx-background-color: -app-primary;
+    -fx-text-fill: -app-text;
+    -fx-font-weight: 700;
+    -fx-background-radius: 8;
+    -fx-padding: 10 22;
+}.crm-module .login-primary-button:hover {
+    -fx-background-color: -app-primary-hover;
+}.crm-module .login-error {
+    -fx-text-fill: -app-error;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+}

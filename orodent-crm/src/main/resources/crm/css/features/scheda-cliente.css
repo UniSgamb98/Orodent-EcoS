@@ -1,0 +1,289 @@
+.crm-module .client-profile-hero {
+    -fx-background-color: -app-surface;
+    -fx-background-radius: 10;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 18;
+}.crm-module .client-profile-column {
+    -fx-min-width: 0;
+}.crm-module .client-profile-side-column {
+    -fx-min-width: 330;
+    -fx-pref-width: 560;
+    -fx-max-width: 620;
+}.crm-module .client-profile-main-column {
+    -fx-pref-width: 640;
+}.crm-module .client-profile-data-grid {
+    -fx-hgap: 12;
+    -fx-vgap: 10;
+}.crm-module .client-profile-related-sections-grid {
+    -fx-hgap: 12;
+    -fx-vgap: 12;
+}.crm-module .client-profile-details-panel {
+    -fx-background-color: -app-surface;
+    -fx-background-radius: 10;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 16;
+}.crm-module .client-profile-resources-panel {
+    -fx-background-color: -app-surface;
+    -fx-background-radius: 10;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 16;
+}.crm-module .client-profile-resources-title {
+    -fx-text-fill: -app-text;
+    -fx-font-size: 15px;
+    -fx-font-weight: 700;
+}.crm-module .client-profile-resources-flow {
+    -fx-pref-wrap-length: 900;
+}.crm-module .client-profile-resource-card {
+    -fx-min-width: 150;
+    -fx-pref-width: 170;
+    -fx-min-height: 82;
+    -fx-background-color: -app-card-bg;
+    -fx-background-radius: 8;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8;
+    -fx-padding: 12;
+}.crm-module .client-profile-resource-card-title {
+    -fx-text-fill: -app-text-muted;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+}.crm-module .client-profile-header-actions, .crm-module .client-profile-summary-row {
+    -fx-alignment: center-left;
+}.crm-module .client-profile-favorite-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -app-text-placeholder;
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+    -fx-padding: 0 8;
+}.crm-module .client-profile-favorite-active {
+    -fx-text-fill: -app-warning;
+}.crm-module .client-profile-badges, .crm-module .client-profile-timeline-actions {
+    -fx-alignment: center-left;
+}.crm-module .client-profile-badge {
+    -fx-background-color: -app-badge-bg;
+    -fx-background-radius: 999;
+    -fx-text-fill: -app-text-muted-2;
+    -fx-font-size: 11px;
+    -fx-padding: 5 10;
+}.crm-module .client-profile-info-label {
+    -fx-text-fill: -app-text-muted-2;
+    -fx-font-size: 12px;
+}.crm-module .client-profile-timeline-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-padding: 0;
+}.crm-module .client-profile-timeline-scroll > .viewport {
+    -fx-background-color: transparent;
+}.crm-module .client-profile-timeline-card, .crm-module .client-profile-note-editor {
+    -fx-background-color: -app-card-bg;
+    -fx-background-radius: 8;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 12;
+}.crm-module .client-profile-timeline-title {
+    -fx-text-fill: -app-text;
+    -fx-font-weight: 700;
+}.crm-module .client-profile-note-area {
+    -fx-background-color: -app-surface-alt;
+    -fx-control-inner-background: -app-surface-alt;
+    -fx-text-fill: -app-text;
+    -fx-prompt-text-fill: -app-text-placeholder-2;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-min-height: 160;
+    -fx-max-width: 760;
+}.crm-module .client-profile-timeline-filter-bar {
+    -fx-alignment: center-left;
+}.crm-module .client-profile-small-filter-button {
+    -fx-background-color: -app-surface-alt;
+    -fx-text-fill: -app-text-muted-2;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 999;
+    -fx-background-radius: 999;
+    -fx-font-size: 10px;
+    -fx-padding: 3 8;
+}.crm-module .client-profile-small-filter-active {
+    -fx-background-color: -app-primary-dark;
+    -fx-border-color: -app-primary-dark;
+    -fx-text-fill: -app-text;
+}.crm-module .client-profile-call-date-picker {
+    -fx-background-color: -app-surface-alt;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}.crm-module .client-profile-call-details {
+    -fx-alignment: center-left;
+}.crm-module .client-profile-call-outcome-choice {
+    -fx-pref-width: 170px;
+}.crm-module .client-profile-timeline-outcome-badge {
+    -fx-background-color: #eef2ff;
+    -fx-background-radius: 999px;
+    -fx-padding: 3px 8px;
+    -fx-text-fill: #4338ca;
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+}.crm-module .date-picker-popup > .month-year-pane .label {
+    -fx-text-fill: -app-text-dark;
+}.crm-module .client-profile-edit-row {
+    -fx-alignment: center-left;
+}.crm-module .client-profile-edit-label {
+    -fx-text-fill: -app-text-muted-2;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+}.crm-module .client-profile-edit-field {
+    -fx-background-color: -app-surface-alt;
+    -fx-text-fill: -app-text;
+    -fx-prompt-text-fill: -app-text-placeholder-2;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}.crm-module .client-profile-edit-section-title {
+    -fx-text-fill: -app-text;
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+    -fx-padding: 8 0 0 0;
+}.crm-module .client-profile-edit-values-section {
+    -fx-padding: 4 0 0 0;
+}.crm-module .client-profile-linked-combo {
+    -fx-background-color: -app-surface-alt;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}.crm-module .client-profile-linked-combo .text-field {
+    -fx-background-color: -app-surface-alt;
+    -fx-text-fill: -app-text;
+    -fx-prompt-text-fill: -app-text-placeholder-2;
+}.crm-module .client-profile-linked-combo .arrow-button {
+    -fx-background-color: -app-control-alt-bg;
+    -fx-background-radius: 0 8 8 0;
+}.crm-module .client-profile-linked-combo .arrow {
+    -fx-background-color: -app-text-muted-2;
+}.crm-module .client-profile-primary-check {
+    -fx-text-fill: -app-text-muted-2;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-padding: 4 0 4 0;
+}.crm-module .client-profile-primary-check .box {
+    -fx-background-color: -app-surface-alt;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+}.crm-module .client-profile-primary-check:selected .box {
+    -fx-background-color: -app-primary-dark;
+    -fx-border-color: -app-primary-dark;
+}.crm-module .client-profile-primary-check:selected .mark {
+    -fx-background-color: -app-text;
+}.crm-module .client-profile-involvement-box {
+    -fx-alignment: center;
+    -fx-spacing: 8;
+}.crm-module .client-profile-involvement-slider {
+    -fx-pref-width: 140;
+}.crm-module .client-profile-edit-interaction-actions {
+    -fx-alignment: center-left;
+    -fx-spacing: 8;
+}.crm-module .client-profile-delete-interaction-button {
+    -fx-background-color: rgba(127, 29, 29, 0.65);
+    -fx-text-fill: #fecaca;
+    -fx-border-color: rgba(248, 113, 113, 0.35);
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-padding: 6 0;
+    -fx-cursor: hand;
+}.crm-module .client-profile-delete-interaction-button:hover {
+    -fx-background-color: rgba(153, 27, 27, 0.9);
+    -fx-text-fill: -app-text;
+}.crm-module .client-profile-timeline-card-header {
+    -fx-alignment: center-left;
+    -fx-spacing: 8;
+}.crm-module .client-profile-timeline-type-badge, .crm-module .client-profile-timeline-next-badge {
+    -fx-background-radius: 999;
+    -fx-font-size: 10px;
+    -fx-font-weight: 800;
+    -fx-padding: 3 8;
+}.crm-module .client-profile-timeline-call-badge {
+    -fx-background-color: rgba(37, 99, 235, 0.18);
+    -fx-text-fill: #bfdbfe;
+}.crm-module .client-profile-timeline-note-badge {
+    -fx-background-color: rgba(148, 163, 184, 0.16);
+    -fx-text-fill: -app-text-muted-2;
+}.crm-module .client-profile-timeline-next-badge {
+    -fx-background-color: rgba(22, 163, 74, 0.18);
+    -fx-text-fill: #bbf7d0;
+}.crm-module .client-profile-contact-card {
+    -fx-background-color: -app-card-bg;
+    -fx-background-radius: 8;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 12;
+}.crm-module .client-profile-contact-name {
+    -fx-text-fill: -app-text;
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+}.crm-module .client-profile-contact-value-group {
+    -fx-spacing: 4;
+}.crm-module .client-profile-contact-value-title {
+    -fx-text-fill: -app-text-muted-2;
+    -fx-font-size: 10px;
+    -fx-font-weight: 800;
+}.crm-module .client-profile-contact-value {
+    -fx-text-fill: -app-text-muted-2;
+    -fx-font-size: 12px;
+}.crm-module .client-profile-resource-group {
+    -fx-background-color: -app-surface-alt;
+    -fx-background-radius: 10;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 14;
+    -fx-min-width: 360;
+    -fx-pref-width: 520;
+}.crm-module .client-profile-resource-group-header, .crm-module .client-profile-forno-row {
+    -fx-alignment: center-left;
+}.crm-module .client-profile-forno-card {
+    -fx-background-color: -app-card-bg;
+    -fx-background-radius: 8;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 12;
+}.crm-module .client-profile-resource-value, .crm-module .client-profile-resource-note {
+    -fx-text-fill: -app-text-muted-2;
+    -fx-font-size: 12px;
+}.crm-module .client-profile-material-title {
+    -fx-text-fill: -app-text;
+    -fx-font-size: 15px;
+    -fx-font-weight: 800;
+}.crm-module .client-profile-resource-field-label {
+    -fx-text-fill: -app-text-muted-2;
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
+}.crm-module .client-profile-resource-combo {
+    -fx-background-color: -app-surface-alt;
+    -fx-control-inner-background: -app-surface-alt;
+    -fx-text-fill: -app-text;
+    -fx-prompt-text-fill: -app-text-placeholder-2;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-pref-width: 180;
+}.crm-module .client-profile-resource-note-editor {
+    -fx-background-color: -app-surface-alt;
+    -fx-control-inner-background: -app-surface-alt;
+    -fx-text-fill: -app-text;
+    -fx-prompt-text-fill: -app-text-placeholder-2;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-pref-row-count: 2;
+    -fx-max-height: 72;
+}

@@ -1,0 +1,21 @@
+.crm-module .settings-content {
+    -fx-background-color: -app-bg;
+}.crm-module .settings-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -app-text;
+}.crm-module .settings-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: -app-text-subtle;
+}.crm-module .settings-section {
+    -fx-min-height: 110;
+    -fx-background-color: -app-surface;
+    -fx-background-radius: 10;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 10;
+    -fx-padding: 16;
+}.crm-module .settings-section-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -app-text;
+}.crm-module .settings-forno-row { -fx-padding: 8; -fx-background-color: -app-surface-alt; -fx-background-radius: 8; }.crm-module .settings-section .check-box { -fx-text-fill: -app-text; }.crm-module .settings-add-button, .crm-module .settings-remove-button { -fx-background-color: -app-control-alt-bg; -fx-text-fill: -app-text; -fx-font-weight: 700; -fx-cursor: hand; }.crm-module .settings-remove-button { -fx-background-color: -app-danger-bg; }.crm-module .settings-error { -fx-text-fill: -app-error; -fx-font-size: 12px; }

@@ -1,0 +1,132 @@
+.crm-module .calendar-content {
+    -fx-background-color: -app-bg;
+}.crm-module .calendar-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -app-text;
+}.crm-module .calendar-subtitle, .crm-module .calendar-agenda-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: -app-text-subtle;
+}.crm-module .calendar-toolbar, .crm-module .calendar-panel, .crm-module .calendar-agenda-panel {
+    -fx-background-color: -app-surface;
+    -fx-background-radius: 12;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 12;
+    -fx-padding: 14;
+}.crm-module .calendar-period-label {
+    -fx-min-width: 150;
+    -fx-pref-width: 150;
+    -fx-alignment: center;
+    -fx-font-size: 16px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -app-text;
+}.crm-module .calendar-operator-filter {
+    -fx-min-width: 160;
+}.crm-module .calendar-primary-button, .crm-module .calendar-secondary-button, .crm-module .calendar-toggle-button {
+    -fx-background-radius: 8;
+    -fx-font-weight: 700;
+    -fx-padding: 7 12;
+}.crm-module .calendar-primary-button {
+    -fx-background-color: -app-primary;
+    -fx-text-fill: -app-text;
+}.crm-module .calendar-primary-button:hover {
+    -fx-background-color: -app-primary-hover;
+}.crm-module .calendar-secondary-button, .crm-module .calendar-toggle-button {
+    -fx-background-color: -app-control-alt-bg;
+    -fx-text-fill: -app-text-muted;
+}.crm-module .calendar-secondary-button:hover, .crm-module .calendar-toggle-button:hover, .crm-module .calendar-toggle-selected {
+    -fx-background-color: -app-primary-dark;
+    -fx-text-fill: -app-text;
+}.crm-module .calendar-month-grid {
+    -fx-padding: 4;
+}.crm-module .calendar-day-header {
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -app-text-muted;
+}.crm-module .calendar-day-cell {
+    -fx-background-color: -app-surface-alt;
+    -fx-background-radius: 10;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 10;
+    -fx-padding: 8;
+}.crm-module .calendar-day-today {
+    -fx-background-color: -app-control-alt-bg;
+}.crm-module .calendar-day-today .calendar-day-number, .crm-module .calendar-day-today .calendar-week-day-date {
+    -fx-text-fill: -app-primary;
+}.crm-module .calendar-day-selected {
+    -fx-border-color: -app-primary;
+    -fx-border-width: 2;
+}.crm-module .calendar-day-number {
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -app-text;
+}.crm-module .calendar-activity-chip {
+    -fx-background-color: -app-badge-bg;
+    -fx-background-radius: 999;
+    -fx-padding: 3 7;
+    -fx-font-size: 10px;
+    -fx-text-fill: -app-text-muted;
+    -fx-alignment: center-left;
+    -fx-cursor: hand;
+}.crm-module .calendar-more-calls, .crm-module .calendar-agenda-empty {
+    -fx-font-size: 11px;
+    -fx-text-fill: -app-text-subtle;
+}.crm-module .calendar-week {
+    -fx-min-height: 510;
+}.crm-module .calendar-week-day {
+    -fx-min-width: 105;
+    -fx-pref-width: 105;
+    -fx-background-color: -app-surface-alt;
+    -fx-background-radius: 10;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 10;
+    -fx-padding: 8;
+}.crm-module .calendar-week-day-header {
+    -fx-padding: 2 0 8 0;
+}.crm-module .calendar-week-day-name {
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -app-text-muted;
+}.crm-module .calendar-week-day-date {
+    -fx-font-size: 18px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -app-text;
+}.crm-module .calendar-week-scroll, .crm-module .calendar-week-scroll > .viewport {
+    -fx-background-color: transparent;
+}.crm-module .calendar-week-call {
+    -fx-background-color: -app-badge-bg;
+    -fx-background-radius: 8;
+    -fx-padding: 8;
+    -fx-font-size: 11px;
+    -fx-text-fill: -app-text-muted;
+    -fx-alignment: center-left;
+    -fx-cursor: hand;
+}.crm-module .calendar-week-call:hover {
+    -fx-background-color: -app-primary-dark;
+    -fx-text-fill: -app-text;
+}.crm-module .calendar-week-empty {
+    -fx-padding: 8 2;
+    -fx-font-size: 11px;
+    -fx-text-fill: -app-text-subtle;
+}.crm-module .calendar-agenda-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -app-text;
+}.crm-module .calendar-agenda-item {
+    -fx-background-color: -app-surface-alt;
+    -fx-background-radius: 10;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 10;
+    -fx-padding: 10;
+    -fx-cursor: hand;
+}.crm-module .calendar-agenda-operator {
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -app-primary-hover;
+    -fx-text-alignment: center;
+}.crm-module .calendar-agenda-text {
+    -fx-font-size: 12px;
+    -fx-text-fill: -app-text-muted;
+    -fx-wrap-text: true;
+    -fx-text-alignment: center;
+}

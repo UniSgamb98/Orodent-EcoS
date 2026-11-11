@@ -31,6 +31,7 @@ class ScenarioSchemaTest {
         new DatabaseSchema(db).initialize();
         db.withTransaction(
                 c -> {
+                    SchemaV12Fixture.removeCrm(c);
                     var q = c.createStatement();
                     q.executeUpdate("DROP TABLE COSTI.SCENARI_REVISIONI");
                     q.executeUpdate("DROP TABLE COSTI.SCENARI");

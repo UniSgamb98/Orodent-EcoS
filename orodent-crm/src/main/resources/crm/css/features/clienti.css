@@ -1,0 +1,132 @@
+.crm-module .clients-content {
+    -fx-background-color: -app-bg;
+}.crm-module .clients-title-bar {
+    -fx-alignment: center-left;
+}.crm-module .clients-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-text;
+}.crm-module .clients-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: -app-text-subtle;
+}.crm-module .clients-filter-bar {
+    -fx-alignment: center-left;
+}.crm-module .clients-filter-bar {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 12;
+}.crm-module .clients-filter-control {
+    -fx-min-width: 130;
+}.crm-module .clients-search-filter-control {
+    -fx-min-width: 220;
+}.crm-module .clients-search-field {
+    -fx-background-color: -app-field-bg;
+    -fx-text-fill: -app-text;
+    -fx-prompt-text-fill: -app-text-placeholder;
+    -fx-background-radius: 8;
+    -fx-padding: 9 12;
+}.crm-module .clients-filter-control .choice-box {
+    -fx-pref-width: 150;
+}.crm-module .clients-primary-button {
+    -fx-background-color: -app-primary;
+    -fx-text-fill: -app-text;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-padding: 9 14;
+}.crm-module .clients-primary-button:hover {
+    -fx-background-color: -app-primary-hover;
+}.crm-module .clients-filter-button {
+    -fx-background-color: -app-control-bg;
+    -fx-text-fill: -app-text-soft;
+    -fx-background-radius: 16;
+    -fx-padding: 7 12;
+}.crm-module .clients-other-filters-button, .crm-module .clients-clear-filters-button, .crm-module .clients-save-search-button, .crm-module .clients-manage-search-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -app-text-muted;
+    -fx-border-color: -app-border-soft;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 9 12;
+    -fx-cursor: hand;
+}.crm-module .clients-other-filters-button:hover, .crm-module .clients-clear-filters-button:hover, .crm-module .clients-save-search-button:hover, .crm-module .clients-manage-search-button:hover {
+    -fx-background-color: -app-control-alt-bg;
+    -fx-text-fill: -app-text;
+}.crm-module .clients-filter-actions {
+    -fx-alignment: center-left;
+    -fx-padding: 0 2;
+}.crm-module .clients-filter-info, .crm-module .clients-filter-commands {
+    -fx-alignment: center-left;
+}.crm-module .clients-clear-filters-button, .crm-module .clients-manage-search-button {
+    -fx-border-color: transparent;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}.crm-module .clients-save-search-button {
+    -fx-text-fill: -app-primary-hover;
+    -fx-border-color: transparent;
+}.crm-module .clients-manage-search-button .context-menu {
+    -fx-background-color: -app-surface;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+}.crm-module .clients-manage-search-button .context-menu .menu-item .label {
+    -fx-text-fill: -app-text-soft;
+    -fx-font-size: 13px;
+}.crm-module .clients-manage-search-button .context-menu .menu-item:focused {
+    -fx-background-color: -app-primary;
+}.crm-module .clients-manage-search-button .context-menu .menu-item:focused .label {
+    -fx-text-fill: -app-text;
+}.crm-module .clients-saved-searches-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}.crm-module .clients-saved-searches-scroll > .viewport {
+    -fx-background-color: transparent;
+}.crm-module .clients-saved-search-buttons {
+    -fx-alignment: center-left;
+}.crm-module .clients-saved-search-button {
+    -fx-background-color: -app-control-bg;
+    -fx-text-fill: -app-text-muted;
+    -fx-background-radius: 16;
+    -fx-padding: 7 12;
+    -fx-cursor: hand;
+}.crm-module .clients-saved-search-button:hover {
+    -fx-background-color: -app-control-alt-bg;
+    -fx-text-fill: -app-text;
+}.crm-module .clients-saved-search-button:selected {
+    -fx-background-color: -app-primary;
+    -fx-text-fill: -app-text;
+}.crm-module .clients-unsaved-search-label {
+    -fx-text-fill: -app-warning;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+}.crm-module .clients-results-count {
+    -fx-text-fill: -app-text-muted;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+}.crm-module .clients-filter-label {
+    -fx-text-fill: -app-text-muted;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+}.crm-module .clients-operator-filter-choice {
+    -fx-pref-width: 150;
+}.crm-module .new-client-choice-box, .crm-module .client-profile-edit-choice-box {
+    -fx-background-radius: 8;
+}.crm-module .new-client-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}.crm-module .new-client-section {
+    -fx-background-color: -app-surface;
+    -fx-background-radius: 10;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 16;
+}.crm-module .new-client-section-title {
+    -fx-text-fill: -app-text;
+    -fx-font-size: 15px;
+    -fx-font-weight: 700;
+}

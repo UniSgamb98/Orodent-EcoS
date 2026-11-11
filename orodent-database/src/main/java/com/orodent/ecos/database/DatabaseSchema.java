@@ -39,7 +39,8 @@ public final class DatabaseSchema {
     private static final SchemaMigration COST_SCENARIOS = new SchemaMigration(11, "Versioned cost scenarios and frozen bases", "/database/migrations/V11__cost_scenarios.sql");
     private static final SchemaMigration TON_POWDER_SUPPLIER = new SchemaMigration(12,
             "TON powder supplier", "/database/migrations/V12__ton_powder_supplier.sql");
-    private static final List<SchemaMigration> MIGRATIONS = List.of(BASELINE, DOMAINS, TON_PRODUCTS, TON_DOMAIN, TON_POWDER_COLORS, TON_CATALOGUES, COSTS_POWDER_PRICES, COSTS_PRODUCT_PARAMETERS, COSTS_STOCK, WAREHOUSE_ORDERS, COST_SCENARIOS, TON_POWDER_SUPPLIER);
+    private static final SchemaMigration CRM = new SchemaMigration(13, "CRM leads, operators and commercial activity", "/database/migrations/V13__crm.sql");
+    private static final List<SchemaMigration> MIGRATIONS = List.of(BASELINE, DOMAINS, TON_PRODUCTS, TON_DOMAIN, TON_POWDER_COLORS, TON_CATALOGUES, COSTS_POWDER_PRICES, COSTS_PRODUCT_PARAMETERS, COSTS_STOCK, WAREHOUSE_ORDERS, COST_SCENARIOS, TON_POWDER_SUPPLIER, CRM);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS = List.of(
             varchar("CODICE_CLIENTE", 50), varchar("CODICE_ISO", 10), varchar("CATEGORIA", 100),
@@ -162,6 +163,7 @@ public final class DatabaseSchema {
             if (version >= COSTS_STOCK.version()) StockPolicySchema.verify(connection);
             if (version >= WAREHOUSE_ORDERS.version()) WarehouseSchema.verify(connection);
             if (version >= COST_SCENARIOS.version()) ScenarioSchema.verify(connection);
+            if (version >= CRM.version()) CrmSchema.verify(connection);
             return version;
         }
         if (tableExists(connection, "APP", HISTORY)) {

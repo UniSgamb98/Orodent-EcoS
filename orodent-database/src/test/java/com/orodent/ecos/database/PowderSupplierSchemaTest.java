@@ -27,6 +27,7 @@ class PowderSupplierSchemaTest {
             new DatabaseSchema(db).initialize();
             db.withTransaction(
                     c -> {
+                        SchemaV12Fixture.removeCrm(c);
                         try (var q = c.createStatement()) {
                             q.executeUpdate("ALTER TABLE TON.POLVERI DROP COLUMN FORNITORE");
                             q.executeUpdate(
