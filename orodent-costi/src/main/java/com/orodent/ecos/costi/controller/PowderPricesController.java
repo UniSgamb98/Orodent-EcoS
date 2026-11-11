@@ -5,7 +5,6 @@ import com.orodent.ecos.costi.model.PowderPrices.*;
 import com.orodent.ecos.costi.service.PowderPriceService;
 import com.orodent.ecos.costi.view.PowderPricesView;
 
-import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.event.EventHandler;
@@ -13,8 +12,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
-import javafx.util.Duration;
 
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -25,8 +24,6 @@ public final class PowderPricesController {
     private final PowderPricesView view;
     private final PowderPriceService service;
     private final Runnable showHome;
-    private final PauseTransition debounce = new PauseTransition(Duration.millis(250));
-    private final ChangeListener<String> searchChanged = (o, b, a) -> debounce.playFromStart();
     private final ChangeListener<Window> windowChanged = (o, b, a) -> attachWindow(a);
     private final ChangeListener<Scene> sceneChanged = (o, b, a) -> attachScene(b, a);
     private final ChangeListener<Row> selectionChanged = (o, b, a) -> select(a);
@@ -40,6 +37,9 @@ public final class PowderPricesController {
     private CompletableFuture<?> listRead, detailRead;
     private long listEpoch, detailEpoch, selectionEpoch, selectedId;
     private int offset;
+    private long inlineFocus;
+    private Set<String> appliedColors;
+    private boolean appliedInactive;
     private boolean disposed, busy, saving, updatingList;
 
     public PowderPricesController(
@@ -48,15 +48,11 @@ public final class PowderPricesController {
         this.service = service;
         this.showHome = showHome;
         view.onChanged(this::controls);
-        view.search.textProperty().addListener(searchChanged);
-        view.search.setOnAction(e -> reloadList(0));
-        debounce.setOnFinished(e -> reloadList(0));
-        view.filter.setOnAction(
-                e -> {
-                    view.browseLevel();
-                    reloadList(0);
-                });
-        view.inactive.setOnAction(e -> reloadList(0));
+        appliedColors = view.selectedColors();
+        appliedInactive = view.inactive.isSelected();
+        view.onColorsChanged(this::changeFilter);
+        view.inactive.setOnAction(e -> changeFilter());
+        view.onPriceRequested(this::requestPrice);
         view.previous.setOnAction(e -> reloadList(Math.max(0, offset - PowderPrices.PAGE_SIZE)));
         view.next.setOnAction(e -> reloadList(offset + PowderPrices.PAGE_SIZE));
         view.table.getSelectionModel().selectedItemProperty().addListener(selectionChanged);
@@ -114,22 +110,21 @@ public final class PowderPricesController {
                             || intent != selectionEpoch
                             || view.table.getSelectionModel().getSelectedItem() != row) return;
                     if (canLeave()) load(row.powder().id());
-                    else restoreSelection();
+                    else {
+                        restoreSelection();
+                        if (inlineFocus != 0) view.focusInlinePrice(selectedId);
+                        inlineFocus = 0;
+                    }
                 });
     }
 
     private void reloadList(int start) {
         if (disposed) return;
-        debounce.stop();
         long epoch = ++listEpoch;
         if (listRead != null) listRead.cancel(false);
         try {
             listRead =
-                    service.page(
-                                    view.search.getText(),
-                                    view.filter.getValue(),
-                                    view.inactive.isSelected(),
-                                    start)
+                    service.page(view.selectedColors(), view.inactive.isSelected(), start)
                             .whenComplete(
                                     (page, error) ->
                                             Platform.runLater(
@@ -157,6 +152,38 @@ public final class PowderPricesController {
         } catch (IllegalArgumentException invalid) {
             view.feedback(invalid.getMessage(), true);
         }
+    }
+
+    private void requestPrice(Row row) {
+        if (disposed || busy) return;
+        inlineFocus = row.powder().id();
+        if (original != null && selectedId == inlineFocus) {
+            inlineFocus = 0;
+            view.focusInlinePrice(selectedId);
+            return;
+        }
+        view.table.getSelectionModel().select(row);
+        select(row);
+    }
+
+    private void changeFilter() {
+        if (disposed || busy || !canLeave()) {
+            view.selectedColors(appliedColors);
+            view.inactive.setSelected(appliedInactive);
+            return;
+        }
+        appliedColors = view.selectedColors();
+        appliedInactive = view.inactive.isSelected();
+        selectionEpoch++;
+        detailEpoch++;
+        if (detailRead != null) detailRead.cancel(false);
+        inlineFocus = 0;
+        selectedId = 0;
+        original = null;
+        baseline = null;
+        view.clear();
+        controls();
+        reloadList(0);
     }
 
     private void restoreSelection() {
@@ -202,6 +229,10 @@ public final class PowderPricesController {
                                                     view.show(detail);
                                                     baseline = view.state();
                                                     controls();
+                                                    if (inlineFocus == id) {
+                                                        inlineFocus = 0;
+                                                        view.focusInlinePrice(id);
+                                                    }
                                                 }));
     }
 
@@ -289,18 +320,15 @@ public final class PowderPricesController {
         disposed = true;
         listEpoch++;
         detailEpoch++;
-        debounce.stop();
         if (listRead != null) listRead.cancel(false);
         if (detailRead != null) detailRead.cancel(false);
-        view.search.textProperty().removeListener(searchChanged);
         view.table.getSelectionModel().selectedItemProperty().removeListener(selectionChanged);
         view.onChanged(() -> {});
         attachScene(view.getScene(), null);
         view.sceneProperty().removeListener(sceneChanged);
-        view.search.setOnAction(null);
-        view.filter.setOnAction(null);
+        view.onColorsChanged(() -> {});
+        view.onPriceRequested(row -> {});
         view.inactive.setOnAction(null);
-        debounce.setOnFinished(null);
         for (Button button :
                 java.util.List.of(
                         view.home, view.save, view.cancel, view.refresh, view.previous, view.next))

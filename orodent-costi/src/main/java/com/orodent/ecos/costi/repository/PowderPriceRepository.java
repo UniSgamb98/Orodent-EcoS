@@ -25,6 +25,33 @@ FROM TON.POLVERI p LEFT JOIN COSTI.POLVERI_PREZZI c ON c.polvere_id=p.polvere_id
 
     public Page page(String search, Filter filter, boolean inactive, int offset, int limit)
             throws SQLException {
+        return page(
+                search,
+                filter,
+                inactive,
+                offset,
+                limit,
+                Set.of("BIANCA", "GIALLA", "ROSA", "GRIGIA"));
+    }
+
+    public Page page(
+            String search,
+            Filter filter,
+            boolean inactive,
+            int offset,
+            int limit,
+            Set<String> selectedColors)
+            throws SQLException {
+        var colors =
+                List.of("BIANCA", "GIALLA", "ROSA", "GRIGIA").stream()
+                        .filter(selectedColors::contains)
+                        .toList();
+        String colorWhere =
+                colors.isEmpty()
+                        ? " AND 1=0"
+                        : " AND (p.colore IS NULL OR p.colore IN ("
+                                + String.join(",", Collections.nCopies(colors.size(), "?"))
+                                + "))";
         String pattern =
                 "%"
                         + search.toUpperCase(Locale.ROOT)
@@ -35,6 +62,7 @@ FROM TON.POLVERI p LEFT JOIN COSTI.POLVERI_PREZZI c ON c.polvere_id=p.polvere_id
         String where =
                 " WHERE (UPPER(p.codice) LIKE ? ESCAPE '\\' OR UPPER(p.nome) LIKE ? ESCAPE '\\')"
                         + (inactive ? "" : " AND p.attivo=TRUE")
+                        + colorWhere
                         + switch (filter) {
                             case TUTTE -> "";
                             case SEMPLICE -> "";
@@ -48,6 +76,7 @@ FROM TON.POLVERI p LEFT JOIN COSTI.POLVERI_PREZZI c ON c.polvere_id=p.polvere_id
         try (var q = connection.prepareStatement("SELECT COUNT(*) " + from + where)) {
             q.setString(1, pattern);
             q.setString(2, pattern);
+            for (int i = 0; i < colors.size(); i++) q.setString(3 + i, colors.get(i));
             try (var r = q.executeQuery()) {
                 r.next();
                 total = r.getInt(1);
@@ -64,8 +93,9 @@ FROM TON.POLVERI p LEFT JOIN COSTI.POLVERI_PREZZI c ON c.polvere_id=p.polvere_id
                                 + " ONLY")) {
             q.setString(1, pattern);
             q.setString(2, pattern);
-            q.setInt(3, offset);
-            q.setInt(4, limit);
+            for (int i = 0; i < colors.size(); i++) q.setString(3 + i, colors.get(i));
+            q.setInt(3 + colors.size(), offset);
+            q.setInt(4 + colors.size(), limit);
             try (var r = q.executeQuery()) {
                 while (r.next()) headers.add(header(r));
             }

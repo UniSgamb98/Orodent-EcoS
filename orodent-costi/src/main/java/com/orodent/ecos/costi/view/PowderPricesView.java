@@ -3,7 +3,7 @@ package com.orodent.ecos.costi.view;
 import com.orodent.ecos.costi.model.PowderPrices;
 import com.orodent.ecos.costi.model.PowderPrices.*;
 
-import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.*;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -11,41 +11,51 @@ import javafx.scene.layout.*;
 import javafx.util.StringConverter;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.ResolverStyle;
-import java.util.List;
+import java.time.format.*;
+import java.util.*;
+import java.util.function.Consumer;
 
-/** One screen and one editor: mode switching swaps only the editable detail body. */
+/** One shared snapshot editor: inline prices and detail fields never hold independent drafts. */
 public final class PowderPricesView extends CostsShell {
     public final Button refresh = new Button("Ricarica"),
             previous = new Button("←"),
             next = new Button("→");
     public final Button save = new Button("Salva"), cancel = new Button("Annulla");
-    public final TextField search = new TextField();
-    public final ComboBox<Filter> filter = new ComboBox<>();
     public final CheckBox inactive = new CheckBox("Includi archiviate");
     public final TableView<Row> table = new TableView<>();
-    public final Button orders = new Button("Ordini e importazione CSV");
-    private final VBox form = new VBox(14), simple = new VBox(14), advanced = new VBox(14);
+    public final Button orders = new Button("Ordini in arrivo");
+    public final Map<String, CheckBox> colors = new LinkedHashMap<>();
+    private final VBox form = new VBox(8), catalogue = new VBox(12), detail = new VBox(12);
+    private final SplitPane split = new SplitPane();
+    private final BorderPane workspace = new BorderPane();
+    private final TabPane compact = new TabPane();
+    private final Tab listTab = new Tab("Polveri"), detailTab = new Tab("Dettaglio e lotti");
     private final Label code = new Label("Seleziona una polvere"),
-            name = new Label("Le anagrafiche arrivano dal catalogo TON."),
+            name = new Label(),
             status = new Label(),
             feedback = new Label(),
-            count = new Label();
-    private final Label totalQuantity = new Label("—"),
+            count = new Label(),
+            unknown = new Label("Le polveri senza colore restano visibili nei filtri attivi.");
+    private final VBox identity = new VBox(4, code, name);
+    private final Label available = new Label("—"),
+            totalQuantity = new Label("—"),
             totalValue = new Label("—"),
             averagePrice = new Label("—"),
             totalNote = new Label(),
             unassignedQuantity = new Label();
-    private final ToggleButton simpleMode = new ToggleButton("Semplice"),
-            advancedMode = new ToggleButton("Avanzata");
-    private final ToggleGroup modes = new ToggleGroup();
     private final TextField simplePrice = new TextField(), simpleQuantity = new TextField();
     private final DatePicker date = new DatePicker();
     private final LotsEditor lots = new LotsEditor();
     private final HBox footer = new HBox(10);
-    private Runnable changed = () -> {};
+    private final Label editContext = new Label("Seleziona una polvere");
+    private final LongProperty selectedPowder = new SimpleLongProperty();
+    private final BooleanProperty locked = new SimpleBooleanProperty();
+    private Runnable changed = () -> {}, colorsChanged = () -> {};
+    private Consumer<Row> priceRequested = row -> {};
     private boolean showing;
+    private Mode retainedMode = Mode.AVANZATA;
+    private String layoutMode = "";
+    private double divider = .34;
 
     public record FormState(
             String dateText, String price, String quantity, List<LotsEditor.Input> lots) {}
@@ -53,67 +63,67 @@ public final class PowderPricesView extends CostsShell {
     public PowderPricesView() {
         super("Polveri e prezzi");
         setId("costi-module");
-        Label title = label("Polveri e prezzi", "costs-title");
-        Label subtitle =
-                label("Prezzi e quantità di riferimento per i tuoi calcoli", "costs-muted");
-        VBox pageHeading =
+        getStylesheets()
+                .add(PowderPricesView.class.getResource("/costi/powders.css").toExternalForm());
+        var heading =
                 new VBox(
-                        5,
-                        label("Costi e consumi › Polveri e prezzi", "costs-breadcrumb"),
-                        title,
-                        subtitle);
+                        4,
+                        label("Polveri e prezzi", "costs-title"),
+                        label(
+                                "Disponibilità, prezzi di riferimento e dettaglio dei lotti",
+                                "costs-muted"));
+        Region headingGap = new Region();
+        HBox.setHgrow(headingGap, Priority.ALWAYS);
         orders.setId("costi-orders");
-        orders.getStyleClass().add("secondary-button");
-        VBox csvArea = new VBox(3, orders);
-        csvArea.setAlignment(Pos.CENTER_RIGHT);
-        Region gap = new Region();
-        HBox.setHgrow(gap, Priority.ALWAYS);
-        HBox top = new HBox(10, pageHeading, gap, csvArea);
+        HBox top = new HBox(12, heading, headingGap, orders);
         top.setAlignment(Pos.CENTER_LEFT);
-        search.setId("costi-search");
-        search.setPromptText("Cerca polvere per codice o nome");
-        search.setMinWidth(100);
-        HBox.setHgrow(search, Priority.ALWAYS);
-        filter.getItems().setAll(Filter.values());
-        filter.setValue(Filter.TUTTE);
-        filter.setId("costi-filter");
-        filter.setMinWidth(120);
+        FlowPane colorBar = new FlowPane(12, 8);
+        String[] labels = {"Bianche", "Gialle", "Rosa", "Grigie"};
+        String[] values = {"BIANCA", "GIALLA", "ROSA", "GRIGIA"};
+        for (int i = 0; i < values.length; i++) {
+            String color = values[i];
+            CheckBox box = new CheckBox(labels[i]);
+            box.setSelected(true);
+            box.setId("costi-color-" + color.toLowerCase(Locale.ROOT));
+            box.getStyleClass().addAll("powder-color-filter", colorStyle(color));
+            box.setOnAction(e -> colorsChanged.run());
+            colors.put(color, box);
+            colorBar.getChildren().add(box);
+        }
         refresh.setId("costi-refresh");
-        refresh.getStyleClass().add("secondary-button");
-        HBox tools = new HBox(8, search, filter);
-        tools.setAlignment(Pos.CENTER_LEFT);
-        HBox options = new HBox(8, inactive, refresh);
-        options.setAlignment(Pos.CENTER_LEFT);
         setupTable();
         previous.setId("costi-previous");
         next.setId("costi-next");
         previous.setAccessibleText("Pagina precedente");
         next.setAccessibleText("Pagina successiva");
+        count.setWrapText(true);
         HBox paging = new HBox(9, previous, count, next);
         paging.setAlignment(Pos.CENTER_LEFT);
-        count.setWrapText(true);
-        VBox catalogue =
-                new VBox(
-                        12,
-                        tools,
-                        options,
+        unknown.getStyleClass().add("costs-muted");
+        unknown.setWrapText(true);
+        unknown.setVisible(false);
+        unknown.setManaged(false);
+        catalogue
+                .getChildren()
+                .addAll(
+                        colorBar,
+                        new FlowPane(10, 8, inactive, refresh),
                         table,
                         paging,
-                        label(
-                                "Anagrafiche da TON · Prezzi legati alla polvere, non alle"
-                                        + " revisioni tecniche",
-                                "costs-muted"));
+                        unknown,
+                        label("Modifica il prezzo nella cella e premi Salva.", "costs-muted"));
         catalogue.getStyleClass().add("costs-card");
-        catalogue.setMinWidth(310);
+        catalogue.setMinSize(0, 0);
         VBox.setVgrow(table, Priority.ALWAYS);
-        code.getStyleClass().add("costs-detail-title");
+        code.getStyleClass().add("powder-detail-code");
         code.setWrapText(true);
         name.setWrapText(true);
         name.getStyleClass().add("costs-muted");
         status.getStyleClass().add("costs-muted");
         status.setId("costi-status");
         date.setId("costi-date");
-        date.setMaxWidth(Double.MAX_VALUE);
+        date.setPrefWidth(160);
+        date.setMaxWidth(180);
         date.setPromptText("gg/mm/aaaa");
         date.setConverter(
                 new StringConverter<>() {
@@ -121,127 +131,108 @@ public final class PowderPricesView extends CostsShell {
                             DateTimeFormatter.ofPattern("dd/MM/uuuu")
                                     .withResolverStyle(ResolverStyle.STRICT);
 
-                    @Override
                     public String toString(LocalDate value) {
                         return value == null ? "" : format.format(value);
                     }
 
-                    @Override
                     public LocalDate fromString(String text) {
                         return text == null || text.isBlank()
                                 ? null
                                 : LocalDate.parse(text.strip(), format);
                     }
                 });
-        Label dateLabel = new Label("Dati della polvere al");
-        dateLabel.setLabelFor(date);
-        date.setTooltip(
-                new Tooltip(
-                        "Data della fotografia della polvere selezionata; ogni polvere conserva il"
-                                + " proprio riferimento."));
-        simpleMode.setToggleGroup(modes);
-        advancedMode.setToggleGroup(modes);
-        simpleMode.setId("costi-mode-simple");
-        advancedMode.setId("costi-mode-advanced");
-        simpleMode.setMaxWidth(Double.MAX_VALUE);
-        advancedMode.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(simpleMode, Priority.ALWAYS);
-        HBox.setHgrow(advancedMode, Priority.ALWAYS);
-        HBox switcher = new HBox(simpleMode, advancedMode);
-        switcher.getStyleClass().add("costs-modes");
+        date.setTooltip(new Tooltip("Data della fotografia della polvere selezionata."));
+        VBox identityGroup = new VBox(7, identity, status);
+        HBox detailHeader = new HBox(14, identityGroup, new VBox(5, new Label("Dati al"), date));
+        detailHeader.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(identityGroup, Priority.ALWAYS);
+        identityGroup.setMinWidth(0);
         simplePrice.setId("costi-simple-price");
         simpleQuantity.setId("costi-simple-quantity");
+        simplePrice.setPromptText("Da compilare");
         simpleQuantity.setPromptText("Non indicata");
-        simplePrice.setPromptText("€/kg");
-        simple.getChildren()
-                .addAll(
+        FlowPane baseFields =
+                new FlowPane(
+                        12,
+                        8,
                         field("Prezzo di riferimento €/kg", simplePrice),
-                        field("Quantità disponibile kg · facoltativa", simpleQuantity),
-                        label(
-                                "Il costo è calcolabile anche senza quantità. Senza quantità non si"
-                                        + " stima la copertura.",
-                                "costs-muted"));
-        HBox totals =
-                new HBox(
-                        7,
-                        summary("Quantità nei lotti", totalQuantity),
-                        summary("Valore dei lotti", totalValue),
-                        summary("Media dei soli lotti", averagePrice));
+                        field("Quantità disponibile kg · facoltativa", simpleQuantity));
+        available.setId("costi-available");
         averagePrice.setId("costi-average-price");
         totalQuantity.setId("costi-total-quantity");
         totalValue.setId("costi-total-value");
         unassignedQuantity.setId("costi-unassigned");
-        advanced.getChildren()
-                .addAll(
-                        label("Quantità e prezzi distinti per lotto di acquisto", "costs-muted"),
-                        lots,
-                        totals,
-                        summary("Quantità non assegnata ai lotti", unassignedQuantity),
-                        totalNote);
+        HBox quantities =
+                new HBox(
+                        8,
+                        summary("Totale dichiarato", available),
+                        summary("Nei lotti", totalQuantity),
+                        summary("Da assegnare", unassignedQuantity));
+        FlowPane valuesFooter =
+                new FlowPane(
+                        18,
+                        6,
+                        inlineSummary("Valore dei lotti", totalValue),
+                        inlineSummary("Media dei soli lotti", averagePrice));
+        valuesFooter.getStyleClass().add("powders-value-summary");
         totalNote.setWrapText(true);
         totalNote.getStyleClass().add("costs-muted");
-        form.getChildren().addAll(new HBox(10, dateLabel, date), switcher, simple, advanced);
-        ScrollPane scroll = new ScrollPane(form);
-        scroll.setFitToWidth(true);
-        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scroll.getStyleClass().add("costs-detail-scroll");
-        VBox.setVgrow(scroll, Priority.ALWAYS);
+        form.getChildren().addAll(baseFields, quantities, lots, valuesFooter, totalNote);
+        form.setMinHeight(0);
+        lots.setMinHeight(0);
+        VBox.setVgrow(lots, Priority.ALWAYS);
+        VBox.setVgrow(form, Priority.ALWAYS);
         save.setId("costi-save");
         cancel.setId("costi-cancel");
         save.getStyleClass().add("primary-button");
-        cancel.getStyleClass().add("secondary-button");
         footer.setAlignment(Pos.CENTER_RIGHT);
-        footer.getChildren().addAll(cancel, save);
+        Region footerGap = new Region();
+        HBox.setHgrow(footerGap, Priority.ALWAYS);
+        editContext.getStyleClass().add("costs-muted");
+        footer.getChildren().addAll(editContext, footerGap, cancel, save);
         feedback.setId("costi-feedback");
         feedback.setWrapText(true);
-        feedback.setMinHeight(22);
-        VBox detail = new VBox(8, code, name, status, scroll, feedback, footer);
+        feedback.setMinHeight(Region.USE_PREF_SIZE);
+        feedback.visibleProperty().bind(feedback.textProperty().isNotEmpty());
+        feedback.managedProperty().bind(feedback.visibleProperty());
+        detail.getChildren().addAll(detailHeader, form);
         detail.setId("costi-detail");
-        detail.setMinWidth(390);
+        detail.setMinSize(0, 0);
         detail.getStyleClass().add("costs-card");
-        SplitPane split = new SplitPane(catalogue, detail);
-        split.setDividerPositions(.46);
         split.getStyleClass().add("costs-split");
-        VBox.setVgrow(split, Priority.ALWAYS);
-        VBox content = new VBox(16, top, split);
-        content.setPadding(new Insets(20, 24, 16, 24));
+        split.setMinSize(0, 0);
+        listTab.setClosable(false);
+        detailTab.setClosable(false);
+        compact.getTabs().setAll(listTab, detailTab);
+        compact.setMinSize(0, 0);
+        compact.setId("costi-compact-tabs");
+        workspace.setMinSize(0, 0);
+        workspace.widthProperty().addListener((o, b, a) -> layoutWorkspace(false));
+        VBox.setVgrow(workspace, Priority.ALWAYS);
+        VBox content = new VBox(14, top, workspace, feedback, footer);
+        content.setMinSize(0, 0);
+        content.setPadding(new Insets(18, 22, 16, 22));
         setCenter(content);
-        Label note =
-                label(
-                        "Quantità aggiornate manualmente · Nessun carico o scarico automatico",
-                        "costs-footer");
-        setBottom(note);
-        for (TextField field : List.of(simplePrice, simpleQuantity, date.getEditor()))
-            field.textProperty().addListener((o, b, a) -> changed());
-        modes.selectedToggleProperty()
-                .addListener(
-                        (o, b, a) -> {
-                            if (a == null) {
-                                if (b != null) b.setSelected(true);
-                                return;
-                            }
-                            renderMode();
-                            changed();
-                        });
-        simpleMode.setOnAction(e -> filter.setValue(Filter.SEMPLICE));
-        advancedMode.setOnAction(e -> filter.setValue(Filter.AVANZATA));
+        layoutWorkspace(false);
+        for (TextField input : List.of(simplePrice, simpleQuantity, date.getEditor()))
+            input.textProperty().addListener((o, b, a) -> changed());
         lots.onChanged(this::changed);
         clear();
     }
 
     private void setupTable() {
-        table.getColumns().clear();
         table.setId("costi-powders-table");
         table.setFixedCellSize(64);
+        table.setMinHeight(100);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         table.setPlaceholder(
                 label(
-                        "Nessuna polvere trovata. Le anagrafiche si creano in TON → Dati tecnici →"
-                                + " Polveri.",
+                        "Nessuna polvere con i colori selezionati. Le anagrafiche si gestiscono in"
+                                + " TON.",
                         "costs-muted"));
         TableColumn<Row, Row> powder = new TableColumn<>("Polvere");
-        powder.setPrefWidth(165);
-        powder.setMinWidth(110);
+        powder.setPrefWidth(230);
+        powder.setMinWidth(175);
         powder.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue()));
         powder.setCellFactory(
                 c ->
@@ -254,74 +245,145 @@ public final class PowderPricesView extends CostsShell {
                                     setGraphic(null);
                                     return;
                                 }
-                                Label title = label(row.powder().code(), "costs-code");
-                                Label name =
-                                        label(
+                                Label title = new Label(row.powder().code());
+                                title.getStyleClass().add("costs-code");
+                                Label text =
+                                        new Label(
                                                 row.powder().name()
                                                         + (row.powder().active()
                                                                 ? ""
-                                                                : " · Archiviata"),
-                                                "costs-muted");
-                                name.setWrapText(true);
-                                setGraphic(new VBox(3, title, name));
+                                                                : " · Archiviata"));
+                                text.getStyleClass().add("powder-badge-name");
+                                title.setMaxWidth(Double.MAX_VALUE);
+                                text.setMaxWidth(Double.MAX_VALUE);
+                                var box = new VBox(3, title, text);
+                                box.getStyleClass()
+                                        .addAll("powder-badge", colorStyle(row.powder().color()));
+                                box.setMaxWidth(Double.MAX_VALUE);
+                                Tooltip.install(
+                                        box,
+                                        new Tooltip(
+                                                row.powder().code() + "\n" + row.powder().name()));
+                                setGraphic(box);
                             }
                         });
-        table.getColumns().add(powder);
-        column("Totale kg", 110, row -> PriceFormats.quantity(row.quantity()));
-        if (mode() == Mode.AVANZATA) {
-            column("Nei lotti kg", 100, row -> PriceFormats.quantity(row.allocated()));
-            column("Non assegnata", 110, row -> PriceFormats.quantity(row.unassigned()));
-            column("Dettaglio", 140, Row::detailStatus);
-        } else {
-            column("Prezzo rif.", 130, row -> PriceFormats.price(row.unitPrice()));
-            column(
-                    "Dati base",
-                    120,
-                    row ->
-                            row.quantity() == null || row.unitPrice() == null
-                                    ? "Da compilare"
-                                    : "Compilati");
-        }
+        TableColumn<Row, String> quantity = new TableColumn<>("Disponibilità kg");
+        quantity.setPrefWidth(125);
+        quantity.setMinWidth(105);
+        quantity.setCellValueFactory(
+                c ->
+                        new ReadOnlyObjectWrapper<>(
+                                PriceFormats.number(c.getValue().quantity(), 0, 3)));
+        quantity.setCellFactory(
+                c ->
+                        new TableCell<>() {
+                            @Override
+                            protected void updateItem(String value, boolean empty) {
+                                super.updateItem(value, empty);
+                                setText(empty ? null : value);
+                                setStyle("-fx-alignment: center-right;");
+                            }
+                        });
+        TableColumn<Row, Row> price = new TableColumn<>("Prezzo €/kg");
+        price.setPrefWidth(135);
+        price.setMinWidth(115);
+        price.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue()));
+        price.setCellFactory(
+                c ->
+                        new PowderPriceCell(
+                                selectedPowder,
+                                locked,
+                                simplePrice,
+                                r -> priceRequested.accept(r)));
+        table.getColumns().setAll(powder, quantity, price);
         table.getColumns().forEach(c -> c.setSortable(false));
     }
 
-    private void column(String title, double width, java.util.function.Function<Row, String> text) {
-        TableColumn<Row, String> column = new TableColumn<>(title);
-        column.setPrefWidth(width);
-        column.setMinWidth(title.equals("Modalità") ? 100 : 70);
-        column.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(text.apply(c.getValue())));
-        if (title.equals("Prezzo usato"))
-            column.setCellFactory(
-                    ignored ->
-                            new TableCell<>() {
-                                @Override
-                                protected void updateItem(String value, boolean empty) {
-                                    super.updateItem(value, empty);
-                                    setText(empty ? null : value);
-                                    getStyleClass().remove("costs-price-missing");
-                                    if (!empty && "Da compilare".equals(value))
-                                        getStyleClass().add("costs-price-missing");
-                                }
-                            });
-        table.getColumns().add(column);
+    private void layoutWorkspace(boolean selected) {
+        String next = workspace.getWidth() >= 1120 ? "split" : "compact";
+        if (next.equals(layoutMode)) {
+            if (selected && next.equals("compact")) compact.getSelectionModel().select(detailTab);
+            return;
+        }
+        if (layoutMode.equals("split") && split.getDividerPositions().length > 0)
+            divider = split.getDividerPositions()[0];
+        workspace.setCenter(null);
+        split.getItems().clear();
+        listTab.setContent(null);
+        detailTab.setContent(null);
+        layoutMode = next;
+        catalogue.setMinWidth(0);
+        detail.setMinWidth(0);
+        if (next.equals("split")) {
+            catalogue.setMinWidth(490);
+            detail.setMinWidth(560);
+            split.getItems().setAll(catalogue, detail);
+            split.setDividerPositions(divider);
+            workspace.setCenter(split);
+        } else {
+            listTab.setContent(catalogue);
+            detailTab.setContent(detail);
+            workspace.setCenter(compact);
+            compact.getSelectionModel().select(selected ? detailTab : listTab);
+        }
     }
 
-    private static VBox field(String text, TextField input) {
-        Label label = new Label(text);
-        label.setLabelFor(input);
-        return new VBox(6, label, input);
+    public Set<String> selectedColors() {
+        var selected = new LinkedHashSet<String>();
+        colors.forEach(
+                (color, box) -> {
+                    if (box.isSelected()) selected.add(color);
+                });
+        return Set.copyOf(selected);
+    }
+
+    public void selectedColors(Set<String> selected) {
+        colors.forEach((color, box) -> box.setSelected(selected.contains(color)));
+    }
+
+    public void onColorsChanged(Runnable action) {
+        colorsChanged = action;
+    }
+
+    public void onPriceRequested(Consumer<Row> action) {
+        priceRequested = action;
+    }
+
+    public void focusInlinePrice(long id) {
+        table.applyCss();
+        table.layout();
+        var field = table.lookup("#costi-inline-price-" + id);
+        if (field instanceof TextField input) {
+            input.requestFocus();
+            input.selectAll();
+        } else simplePrice.requestFocus();
+    }
+
+    private static VBox field(String caption, TextField input) {
+        input.setPrefWidth(210);
+        input.setMaxWidth(235);
+        Label title = new Label(caption);
+        title.setLabelFor(input);
+        VBox box = new VBox(6, title, input);
+        box.setPrefWidth(235);
+        return box;
+    }
+
+    private static HBox inlineSummary(String text, Label value) {
+        value.getStyleClass().add("powders-inline-value");
+        var box = new HBox(8, label(text, "costs-summary-label"), value);
+        box.setAlignment(Pos.CENTER_LEFT);
+        return box;
     }
 
     private static VBox summary(String text, Label value) {
-        Label heading = label(text, "costs-summary-label");
-        heading.setWrapText(true);
         value.getStyleClass().add("costs-summary-value");
         value.setWrapText(true);
-        VBox box = new VBox(5, heading, value);
+        var box = new VBox(5, label(text, "costs-summary-label"), value);
         box.getStyleClass().add("costs-summary");
         box.setMinWidth(0);
-        HBox.setHgrow(box, Priority.ALWAYS);
         box.setPrefWidth(150);
+        HBox.setHgrow(box, Priority.ALWAYS);
         return box;
     }
 
@@ -330,6 +392,16 @@ public final class PowderPricesView extends CostsShell {
         label.getStyleClass().add(style);
         label.setWrapText(true);
         return label;
+    }
+
+    private static String colorStyle(String color) {
+        return switch (Objects.toString(color, "")) {
+            case "BIANCA" -> "powder-white";
+            case "GIALLA" -> "powder-yellow";
+            case "ROSA" -> "powder-pink";
+            case "GRIGIA" -> "powder-gray";
+            default -> "powder-unknown";
+        };
     }
 
     public void onChanged(Runnable action) {
@@ -341,32 +413,6 @@ public final class PowderPricesView extends CostsShell {
             updateTotals();
             changed.run();
         }
-    }
-
-    private void renderMode() {
-        boolean isSimple = mode() == Mode.SEMPLICE;
-        simple.setVisible(true);
-        simple.setManaged(true);
-        advanced.setVisible(!isSimple);
-        advanced.setManaged(!isSimple);
-        setupTable();
-    }
-
-    public void browseLevel() {
-        boolean before = showing;
-        showing = true;
-        try {
-            if (filter.getValue() == Filter.AVANZATA) advancedMode.setSelected(true);
-            else if (filter.getValue() == Filter.SEMPLICE || modes.getSelectedToggle() == null)
-                simpleMode.setSelected(true);
-            renderMode();
-        } finally {
-            showing = before;
-        }
-    }
-
-    private Mode mode() {
-        return advancedMode.isSelected() ? Mode.AVANZATA : Mode.SEMPLICE;
     }
 
     public FormState state() {
@@ -381,41 +427,43 @@ public final class PowderPricesView extends CostsShell {
         LocalDate reference;
         try {
             reference = date.getConverter().fromString(date.getEditor().getText());
-        } catch (java.time.format.DateTimeParseException invalid) {
+        } catch (DateTimeParseException invalid) {
             throw new IllegalArgumentException("Data: usa il formato gg/mm/aaaa.");
         }
         return new Draft(
-                mode(),
+                retainedMode,
                 reference,
-                PriceFormats.decimal(simplePrice.getText(), "Prezzo semplice"),
-                PriceFormats.decimal(simpleQuantity.getText(), "Quantità semplice"),
+                PriceFormats.decimal(simplePrice.getText(), "Prezzo di riferimento"),
+                PriceFormats.decimal(simpleQuantity.getText(), "Quantità disponibile"),
                 lots.values());
     }
 
-    public void show(Detail detail) {
+    public void show(Detail value) {
         showing = true;
         try {
-            code.setText(detail.powder().code());
+            selectedPowder.set(0);
+            code.setText(value.powder().code());
             name.setText(
-                    detail.powder().name()
-                            + (detail.powder().active()
-                                    ? " · Anagrafica TON"
-                                    : " · Archiviata in TON"));
+                    value.powder().name()
+                            + (value.powder().active() ? "" : " · Archiviata in TON"));
+            identity.getStyleClass()
+                    .setAll("powder-detail-identity", colorStyle(value.powder().color()));
             status.setText(
-                    detail.version() == 0
+                    value.version() == 0
                             ? "Prezzo da compilare"
-                            : "Fotografia salvata · revisione " + detail.version());
-            Draft draft = detail.draft();
+                            : "Fotografia salvata · revisione " + value.version());
+            Draft draft = value.draft();
+            retainedMode = draft == null ? Mode.AVANZATA : draft.mode();
             date.setValue(draft == null ? LocalDate.now() : draft.referenceDate());
             date.getEditor().setText(date.getConverter().toString(date.getValue()));
             simplePrice.setText(PriceFormats.edit(draft == null ? null : draft.simplePrice()));
             simpleQuantity.setText(
                     PriceFormats.edit(draft == null ? null : draft.simpleQuantity()));
             lots.show(draft == null ? List.of() : draft.lots());
-            browseLevel();
-            renderMode();
+            selectedPowder.set(value.powder().id());
             form.setVisible(true);
-            footer.setVisible(true);
+            form.setManaged(true);
+
             form.setDisable(false);
             updateTotals();
             feedback("", false);
@@ -424,21 +472,39 @@ public final class PowderPricesView extends CostsShell {
         }
     }
 
+    public void showSelectedDetail() {
+        layoutWorkspace(true);
+    }
+
     public void clear() {
+        selectedPowder.set(0);
         code.setText("Seleziona una polvere");
-        name.setText("Le anagrafiche arrivano dal catalogo TON.");
+        name.setText("Prezzi e lotti si salvano per identità della polvere TON.");
+        identity.getStyleClass().setAll("powder-detail-identity");
         status.setText("");
         form.setVisible(false);
-        footer.setVisible(false);
+        form.setManaged(false);
+
         feedback("", false);
     }
 
     public void controls(boolean busy, boolean dirty, boolean selected) {
-        form.setDisable(busy);
+        locked.set(busy);
+        editContext.setText(
+                !selected
+                        ? "Seleziona una polvere"
+                        : code.getText()
+                                + (dirty
+                                        ? " · Modifiche non salvate"
+                                        : " · Nessuna modifica in sospeso"));
+        form.setDisable(busy || !selected);
+        date.setDisable(busy || !selected);
         save.setDisable(busy || !dirty || !selected);
         cancel.setDisable(busy || !dirty || !selected);
         home.setDisable(busy);
         table.setDisable(busy);
+        colors.values().forEach(b -> b.setDisable(busy));
+        inactive.setDisable(busy);
     }
 
     public void page(Page page) {
@@ -454,11 +520,16 @@ public final class PowderPricesView extends CostsShell {
                                 + (page.offset() + page.rows().size())
                                 + " di "
                                 + page.total()
-                                + " · "
-                                + missing
-                                + (missing == 1
-                                        ? " prezzo da compilare in pagina"
-                                        : " prezzi da compilare in pagina"));
+                                + (missing == 0
+                                        ? ""
+                                        : " · "
+                                                + missing
+                                                + (missing == 1
+                                                        ? " prezzo da compilare"
+                                                        : " prezzi da compilare")));
+        boolean uncolored = page.rows().stream().anyMatch(r -> r.powder().color() == null);
+        unknown.setVisible(uncolored);
+        unknown.setManaged(uncolored);
     }
 
     public void feedback(String message, boolean error) {
@@ -469,31 +540,32 @@ public final class PowderPricesView extends CostsShell {
 
     private void updateTotals() {
         try {
-            var values = lots.values();
-            var totals = PowderPrices.aggregate(values);
+            var totals = PowderPrices.aggregate(lots.values());
             totalQuantity.setText(PriceFormats.quantity(totals.quantity()));
             totalValue.setText(PriceFormats.currency(totals.value()));
             averagePrice.setText(PriceFormats.price(totals.unitPrice()));
             var total = PriceFormats.decimal(simpleQuantity.getText(), "Quantità totale");
+            available.setText(PriceFormats.quantity(total));
             var unassigned = total == null ? null : total.subtract(totals.quantity());
             unassignedQuantity.setText(PriceFormats.quantity(unassigned));
             totalNote.setText(
                     total == null
-                            ? "Compila la quantità totale nei dati base per calcolare la parte non"
-                                    + " assegnata."
+                            ? "Senza quantità totale non si calcolano scorta e quantità da"
+                                    + " assegnare."
                             : unassigned.signum() < 0
-                                    ? "Incongruenza: i lotti superano il totale dichiarato di "
+                                    ? "Incongruenza: i lotti superano il totale di "
                                             + PriceFormats.number(unassigned.abs(), 0, 3)
                                             + " kg."
-                                    : "I lotti sono un dettaglio del totale. La media dei soli"
-                                            + " lotti non sostituisce il prezzo di riferimento,"
-                                            + " soprattutto con quantità non assegnate.");
+                                    : "La media dei soli lotti è distinta dal prezzo di"
+                                            + " riferimento; i lotti sono un dettaglio della"
+                                            + " disponibilità totale.");
         } catch (IllegalArgumentException invalid) {
+            available.setText("Da verificare");
             unassignedQuantity.setText("Da verificare");
             totalQuantity.setText("—");
             totalValue.setText("—");
             averagePrice.setText("Da verificare");
-            totalNote.setText("Completa o correggi quantità e prezzi delle righe.");
+            totalNote.setText("Completa o correggi quantità e prezzi dei lotti.");
         }
     }
 }

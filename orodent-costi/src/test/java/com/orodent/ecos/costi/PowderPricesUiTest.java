@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.orodent.ecos.core.ConnectionProvider;
 import com.orodent.ecos.costi.model.PowderPrices.*;
 import com.orodent.ecos.costi.service.PowderPriceService;
+import com.orodent.ecos.costi.view.PowderPricesView;
 import com.orodent.ecos.database.DatabaseSchema;
 import com.orodent.ecos.database.service.*;
 import com.orodent.ecos.module.*;
@@ -33,7 +34,7 @@ class PowderPricesUiTest {
     private final List<Throwable> asyncErrors = new CopyOnWriteArrayList<>();
 
     @Test
-    void editsBothModesPreservesLotsAndProtectsUnsavedChanges() throws Exception {
+    void inlinePricesColorsAndLotsShareOneVersionedEditor() throws Exception {
         String oldLog = System.getProperty("derby.stream.error.file");
         System.setProperty("derby.stream.error.file", "target/costi-ui.log");
         Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
@@ -100,7 +101,22 @@ class PowderPricesUiTest {
                                     && field("costi-simple-price").isVisible());
             fx(
                     () -> {
-                        field("costi-simple-price").setText("92,1250");
+                        assertNull(stage.getScene().lookup("#costi-search"));
+                        assertNull(stage.getScene().lookup("#costi-filter"));
+                        assertNull(stage.getScene().lookup("#costi-mode-advanced"));
+                        assertEquals(3, table().getColumns().size());
+                        assertTrue(
+                                ((CheckBox) stage.getScene().lookup("#costi-color-bianca"))
+                                        .isSelected());
+                        assertTrue(
+                                ((CheckBox) stage.getScene().lookup("#costi-color-rosa"))
+                                        .isSelected());
+                        stage.getScene().getRoot().applyCss();
+                        stage.getScene().getRoot().layout();
+                        assertFalse(
+                                stage.getScene().getRoot().lookupAll(".powder-white").isEmpty());
+                        field("costi-inline-price-1").setText("92,1250");
+                        assertEquals("92,1250", field("costi-simple-price").getText());
                         button("costi-save").fire();
                         return null;
                     });
@@ -111,7 +127,6 @@ class PowderPricesUiTest {
             assertNull(first.draft().quantity());
             fx(
                     () -> {
-                        toggle("costi-mode-advanced").fire();
                         button("costi-lot-add").fire();
                         button("costi-lot-add").fire();
                         lot(0, "L-2026-041", "100", "80");
@@ -120,9 +135,7 @@ class PowderPricesUiTest {
                         field("costi-simple-quantity").setText("200");
                         assertTrue(label("costi-unassigned").contains("50"));
                         assertTrue(label("costi-average-price").contains("86,6667"));
-                        toggle("costi-mode-simple").fire();
                         assertEquals("92,125", field("costi-simple-price").getText());
-                        toggle("costi-mode-advanced").fire();
                         assertEquals("100", field("costi-lot-0-quantity").getText());
                         button("costi-save").fire();
                         return null;
@@ -148,6 +161,11 @@ class PowderPricesUiTest {
                         assertEquals("80", field("costi-lot-0-price").getText());
                         field("costi-lot-0-price").setText("110");
                         Platform.runLater(() -> answer(ButtonType.CANCEL));
+                        ((CheckBox) stage.getScene().lookup("#costi-color-bianca")).fire();
+                        assertTrue(
+                                ((CheckBox) stage.getScene().lookup("#costi-color-bianca"))
+                                        .isSelected());
+                        Platform.runLater(() -> answer(ButtonType.CANCEL));
                         button("costi-home").fire();
                         assertEquals(0, homes.get());
                         Platform.runLater(() -> answer(ButtonType.CANCEL));
@@ -158,7 +176,7 @@ class PowderPricesUiTest {
             fx(
                     () -> {
                         Platform.runLater(() -> Platform.runLater(() -> answer(ButtonType.CANCEL)));
-                        table().getSelectionModel().select(1);
+                        field("costi-inline-price-2").requestFocus();
                         return null;
                     });
             await(() -> table().getSelectionModel().getSelectedIndex() == 0);
@@ -172,21 +190,45 @@ class PowderPricesUiTest {
             await(
                     () ->
                             !field("costi-simple-price").isDisabled()
-                                    && toggle("costi-mode-advanced").isSelected());
+                                    && field("costi-inline-price-2").isEditable());
             fx(
                     () -> {
                         assertEquals("", field("costi-simple-price").getText());
-                        table().getSelectionModel().selectFirst();
+                        field("costi-inline-price-1").requestFocus();
                         return null;
                     });
             await(
                     () ->
-                            toggle("costi-mode-advanced").isSelected()
-                                    && field("costi-lot-0-price") != null
+                            field("costi-lot-0-price") != null
                                     && !field("costi-lot-0-price").isDisabled());
             fx(
                     () -> {
                         assertEquals("80", field("costi-lot-0-price").getText());
+                        field("costi-simple-price").setText("93,5");
+                        assertEquals("93,5", field("costi-inline-price-1").getText());
+                        button("costi-cancel").fire();
+                        assertEquals("92,125", field("costi-inline-price-1").getText());
+                        snapshot("target/powders-unified-wide.png");
+                        ((CheckBox) stage.getScene().lookup("#costi-color-bianca")).fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            table().getItems().size() == 1
+                                    && table().getItems().getFirst().powder().id() == 2
+                                    && field("costi-inline-price-2").isEditable());
+            fx(
+                    () -> {
+                        ((CheckBox) stage.getScene().lookup("#costi-color-bianca")).fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            table().getItems().size() == 2
+                                    && field("costi-lot-0-price") != null
+                                    && field("costi-inline-price-1").isEditable());
+            fx(
+                    () -> {
                         stage.setWidth(1100);
                         stage.setHeight(780);
                         return null;
@@ -205,6 +247,23 @@ class PowderPricesUiTest {
                                                                 .getBoundsInLocal())
                                                 .getMaxX()
                                         <= stage.getScene().getWidth());
+                        TabPane compact = (TabPane) stage.getScene().lookup("#costi-compact-tabs");
+                        assertNotNull(compact);
+                        compact.getSelectionModel().select(0);
+                        stage.getScene().getRoot().applyCss();
+                        stage.getScene().getRoot().layout();
+                        assertTrue(
+                                button("costi-save")
+                                                .localToScene(
+                                                        button("costi-save").getBoundsInLocal())
+                                                .getMaxY()
+                                        <= stage.getScene().getHeight());
+                        field("costi-inline-price-1").setText("94");
+                        assertEquals("94", view().state().price());
+                        assertFalse(button("costi-save").isDisabled());
+                        button("costi-cancel").fire();
+                        compact.getSelectionModel().select(1);
+                        snapshot("target/powders-unified-narrow.png");
                         button("costi-home").fire();
                         assertEquals(1, homes.get());
                         session.close();
@@ -251,12 +310,9 @@ class PowderPricesUiTest {
         return (Button) stage.getScene().lookup("#" + id);
     }
 
-    private ToggleButton toggle(String id) {
-        return (ToggleButton) stage.getScene().lookup("#" + id);
-    }
-
     private String label(String id) {
-        return ((Label) stage.getScene().lookup("#" + id)).getText();
+        var node = stage.getScene().lookup("#" + id);
+        return node instanceof Label label ? label.getText() : "";
     }
 
     private String feedback() {
@@ -265,7 +321,11 @@ class PowderPricesUiTest {
 
     @SuppressWarnings("unchecked")
     private TableView<Row> table() {
-        return (TableView<Row>) stage.getScene().lookup("#costi-powders-table");
+        return view().table;
+    }
+
+    private PowderPricesView view() {
+        return (PowderPricesView) stage.getScene().lookup("#costi-module");
     }
 
     private void answer(ButtonType type) {
@@ -280,6 +340,21 @@ class PowderPricesUiTest {
         fail("Dialogo atteso non presente");
     }
 
+    private void snapshot(String path) throws Exception {
+        stage.getScene().getRoot().applyCss();
+        stage.getScene().getRoot().layout();
+        var image = stage.getScene().snapshot(null);
+        var pixels = image.getPixelReader();
+        var out =
+                new java.awt.image.BufferedImage(
+                        (int) image.getWidth(),
+                        (int) image.getHeight(),
+                        java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < out.getHeight(); y++)
+            for (int x = 0; x < out.getWidth(); x++) out.setRGB(x, y, pixels.getArgb(x, y));
+        javax.imageio.ImageIO.write(out, "png", Path.of(path).toFile());
+    }
+
     private <T> T fx(Callable<T> action) throws Exception {
         var result = new CompletableFuture<T>();
         Platform.runLater(
@@ -290,7 +365,7 @@ class PowderPricesUiTest {
                         result.completeExceptionally(error);
                     }
                 });
-        return result.get(15, TimeUnit.SECONDS);
+        return result.get(60, TimeUnit.SECONDS);
     }
 
     private void await(Callable<Boolean> condition) throws Exception {

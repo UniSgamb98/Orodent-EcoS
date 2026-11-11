@@ -16,7 +16,10 @@ public final class LotsEditor extends VBox {
 
     private final List<Line> lines = new ArrayList<>();
     private final VBox rows = new VBox(7);
-    private final Button add = new Button("+ Aggiungi riga");
+    private final Button add = new Button("+ Aggiungi lotto");
+    private final Label empty =
+            new Label(
+                    "Nessun lotto inserito. Usa Aggiungi lotto per dettagliare la disponibilità.");
     private Runnable changed = () -> {};
 
     public LotsEditor() {
@@ -38,7 +41,24 @@ public final class LotsEditor extends VBox {
                         changed.run();
                     }
                 });
-        getChildren().addAll(header, rows, add);
+        Label title = new Label("Lotti di acquisto");
+        title.getStyleClass().add("powders-section-title");
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox tools = new HBox(10, title, spacer, add);
+        tools.setAlignment(Pos.CENTER_LEFT);
+        var scroll = new ScrollPane(rows);
+        scroll.setFitToWidth(true);
+        scroll.setMinHeight(0);
+        scroll.getStyleClass().add("costs-detail-scroll");
+        empty.setWrapText(true);
+        empty.getStyleClass().add("costs-muted");
+        empty.setMaxWidth(330);
+        var body = new StackPane(scroll, empty);
+        body.setMinHeight(60);
+        VBox.setVgrow(body, Priority.ALWAYS);
+        getChildren().addAll(tools, header, body);
+        setMinHeight(0);
     }
 
     public void onChanged(Runnable action) {
@@ -54,7 +74,7 @@ public final class LotsEditor extends VBox {
                             lot.code(),
                             PriceFormats.edit(lot.quantity()),
                             PriceFormats.edit(lot.unitPrice())));
-        add.setDisable(lines.size() >= PowderPrices.MAX_LOTS);
+        reindex();
     }
 
     public List<Input> inputs() {
@@ -82,6 +102,8 @@ public final class LotsEditor extends VBox {
     }
 
     private void reindex() {
+        empty.setVisible(lines.isEmpty());
+        empty.setManaged(lines.isEmpty());
         for (int i = 0; i < lines.size(); i++) {
             Line line = lines.get(i);
             String id = "costi-lot-" + i;
@@ -159,7 +181,7 @@ public final class LotsEditor extends VBox {
                 var q = PriceFormats.decimal(quantity.getText(), "Quantità");
                 var p = PriceFormats.decimal(price.getText(), "Prezzo");
                 value.setText(
-                        q == null || p == null || q.signum() < 0 || p.signum() <= 0
+                        q == null || p == null || q.signum() < 0 || p.signum() < 0
                                 ? "—"
                                 : PriceFormats.currency(q.multiply(p)));
             } catch (IllegalArgumentException invalid) {

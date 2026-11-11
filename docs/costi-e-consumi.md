@@ -11,18 +11,40 @@ La schermata usa un solo pannello di dettaglio. Ogni polvere TON compare una vol
 indipendentemente dal numero di revisioni della sua scheda tecnica. Le anagrafiche
 si modificano in TON; qui si registrano soltanto dati economici e quantità dichiarate.
 
-- **Vista semplice:** tutte le polveri, quantità totale e prezzo di riferimento €/kg.
-  I dati mancanti rimangono sconosciuti, distinti dallo zero.
-- **Vista avanzata:** tutte le polveri, con dettaglio facoltativo per lotto, quantità
-  e prezzo di acquisto. Il lotto può ripetersi per acquisti con prezzi diversi.
-- I lotti descrivono il totale dei dati base: **non assegnata = totale − somma lotti**.
-  Il dettaglio mancante, parziale o eccedente è segnalato. Cambiare vista non modifica
-  dati e non crea una revisione. **Annulla** ripristina la fotografia salvata.
-- Il prezzo medio ponderato riguarda soltanto i lotti compilati: non sostituisce
-  il riferimento: la fonte dei Costi prodotti si sceglie nel relativo selettore.
-- La data è quella della fotografia della singola polvere. Quantità: 3 decimali;
-  prezzi dei lotti: 4; riferimento: fino a 8 per conservare le medie pregresse.
-  Virgola o punto decimale, senza separatori delle migliaia. Nessun arrotondamento degli input.
+La pagina ha un'unica vista. I checkbox **Bianche, Gialle, Rosa, Grigie**, tutti
+selezionati inizialmente, filtrano il catalogo per colore TON. I filtri sono
+applicati nel database prima della paginazione. Le polveri senza colore restano
+visibili con qualsiasi filtro attivo, con una nota; nessun checkbox selezionato
+mostra zero righe. L'opzione Includi archiviate conserva la sua funzione.
+
+A sinistra: **Polvere → Disponibilità kg → Prezzo €/kg**, con sfondi pastello sui
+codici e nomi. Non ci sono ricerca testuale né selettore Semplice/Avanzata/Mancanti.
+Il prezzo è modificabile direttamente nella cella: la selezione carica la fotografia
+prima di abilitare l'input, proteggendo eventuali modifiche dell'altra polvere.
+Il campo inline e quello del dettaglio sono sincronizzati e rappresentano lo
+stesso prezzo di riferimento. Invio termina l'input ma non scrive nel database.
+**Salva** registra la revisione completa; **Annulla** ripristina prezzo, data,
+disponibilità e lotti. Il cambio filtro, la selezione di un'altra polvere e l'uscita
+proteggono le modifiche non salvate. Un errore conserva gli input e non ritenta la scrittura.
+
+A destra si vedono sempre dati base e lotti, anche per fotografie salvate in passato
+in modalità semplice. Il metadato storico della modalità è conservato; non limita
+il dettaglio e non sceglie la fonte di calcolo in Costi prodotti o Scenari.
+
+- Disponibilità totale e prezzo di riferimento sono dati base; quantità mancante
+  e prezzo mancante restano sconosciuti, distinti dallo zero.
+- I lotti sono un dettaglio facoltativo del totale: **da assegnare = totale − somma lotti**.
+  Lo stesso lotto può ripetersi per acquisti con prezzi differenti. Eccedenze e input
+  incompleti sono segnalati; non si modifica automaticamente la disponibilità.
+- La media dei soli lotti rimane distinta dal prezzo di riferimento. La fonte di
+  valutazione economica si sceglie in Costi prodotti e Scenari.
+- Data della fotografia per singola polvere; quantità fino a 3 decimali, prezzi lotti
+  fino a 4, riferimento fino a 8 per conservare le medie pregresse. Virgola o punto
+  decimale, senza separatori delle migliaia e senza arrotondare gli input.
+
+L'elenco occupa circa un terzo della pagina e il dettaglio usa l'altezza disponibile.
+Nelle finestre strette si passa fra Polveri e Dettaglio e lotti; Salva/Annulla e gli
+esiti rimangono visibili sotto entrambe le schede. Ridimensionare conserva gli input.
 
 Il prezzo medio è `somma(kg × €/kg) / somma(kg)`. Gli importi si sommano in
 `BigDecimal`, senza arrotondare ogni riga ai centesimi; il rapporto è conservato
@@ -38,7 +60,7 @@ l'ultima revisione. La coppia polvere/versione impedisce la sovrascrittura da pa
 di due operatori concorrenti. Un conflitto conserva le modifiche nell'editor:
 ricaricare prima di decidere cosa salvare. Le scritture non sono ritentate automaticamente.
 
-Ricerche e salvataggi usano i worker EcoS, con paginazione e protezione dai risultati
+Filtri, letture e salvataggi usano i worker EcoS, con paginazione e protezione dai risultati
 obsoleti. Uscita verso Home e chiusura della finestra proteggono le modifiche non
 salvate. La chiusura del modulo invalida le letture pendenti, senza arrestare i
 servizi condivisi. Migrazione e backup sono gestiti dal normale avvio HOST EcoS;

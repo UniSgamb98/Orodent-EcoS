@@ -77,6 +77,27 @@ class PowderPriceServiceTest {
     }
 
     @Test
+    void colorSelectionIsAppliedBeforePaginationAndRetainsUnspecifiedPowders() {
+        for (int i = 0; i < 40; i++)
+            execute(
+                    "INSERT INTO TON.POLVERI(codice,nome,colore) VALUES ('W"
+                            + i
+                            + "','Bianca','BIANCA')");
+        execute("INSERT INTO TON.POLVERI(codice,nome) VALUES ('UNSPECIFIED','Da classificare')");
+        assertEquals(42, service.page(java.util.Set.of("BIANCA"), false, 0).join().total());
+        assertEquals(2, service.page(java.util.Set.of("BIANCA"), false, 40).join().rows().size());
+        var pink = service.page(java.util.Set.of("ROSA"), true, 0).join();
+        assertEquals(2, pink.total());
+        assertEquals("PINK", pink.rows().getFirst().powder().code());
+        assertNull(pink.rows().getLast().powder().color());
+        assertEquals(1, service.page(java.util.Set.of("ROSA"), false, 0).join().total());
+        assertEquals(0, service.page(java.util.Set.of(), true, 0).join().total());
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> service.page(java.util.Set.of("BLACK"), true, 0));
+    }
+
+    @Test
     void usesOneTonIdentityRatherThanListingItsTechnicalRevisions() {
         execute(
                 "INSERT INTO TON.POLVERI_REVISIONI(polvere_id,numero_versione) VALUES (1,1)",

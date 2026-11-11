@@ -6,6 +6,7 @@ import com.orodent.ecos.costi.model.PowderPrices.*;
 import com.orodent.ecos.costi.repository.PowderPriceRepository;
 
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
@@ -36,6 +37,25 @@ public final class PowderPriceService {
                                                         inactive,
                                                         offset,
                                                         PowderPrices.PAGE_SIZE)),
+                workers);
+    }
+
+    public CompletableFuture<Page> page(Set<String> colors, boolean inactive, int offset) {
+        var chosen = Set.copyOf(colors);
+        if (!Set.of("BIANCA", "GIALLA", "ROSA", "GRIGIA").containsAll(chosen) || offset < 0)
+            throw new IllegalArgumentException("Filtro colori o pagina non validi.");
+        return CompletableFuture.supplyAsync(
+                () ->
+                        connections.withConnection(
+                                c ->
+                                        new PowderPriceRepository(c)
+                                                .page(
+                                                        "",
+                                                        Filter.TUTTE,
+                                                        inactive,
+                                                        offset,
+                                                        PowderPrices.PAGE_SIZE,
+                                                        chosen)),
                 workers);
     }
 
