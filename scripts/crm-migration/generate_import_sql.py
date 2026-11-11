@@ -463,13 +463,13 @@ def generate_files(clients_file: Path, notes_file: Path, out_dir: Path, *, allow
     if diagnostics.unmatched_note_ids:
         report.append("\nXML senza anagrafica: " + ", ".join(diagnostics.unmatched_note_ids) + "\n")
     if diagnostics.missing_note_ids:
-        report.append("\nStorici XML mancanti per clienti gia contattati: " + ", ".join(diagnostics.missing_note_ids) + "\n")
+        report.append("\nStorici XML mancanti per clienti gia contattati: " + ", ".join(diagnostics.missing_note_ids) + "\nAvviso non bloccante: anagrafiche importate senza lo storico XML mancante.\n")
     if diagnostics.invalid_involvement_rows:
         report.append("\nRighe con coinvolgimento non valido: " + ", ".join(map(str, diagnostics.invalid_involvement_rows)) + "\n")
     if diagnostics.xml_errors:
         report.append("\nErrori XML:\n" + "\n".join(diagnostics.xml_errors) + "\n")
     (out_dir / "import_report.txt").write_text("".join(report), encoding="utf-8", newline="\n")
-    anomalies = bool(diagnostics.xml_errors or diagnostics.duplicate_note_ids or diagnostics.unmatched_note_ids or diagnostics.missing_note_ids or diagnostics.invalid_dates or diagnostics.invalid_involvement_rows)
+    anomalies = bool(diagnostics.xml_errors or diagnostics.duplicate_note_ids or diagnostics.unmatched_note_ids or diagnostics.invalid_dates or diagnostics.invalid_involvement_rows)
     properties = {"format": "1", "source": "CRM2", "target": "OrodentEcoS", "schema.minimum": "13", "clients": str(len(clients)), "blocked": str(anomalies and not allow_anomalies).lower(), "anomalies.accepted": str(anomalies and allow_anomalies).lower(), "files.count": str(len(counts)), "operators.count": str(len(operators))}
     for index, (name, count) in enumerate(counts.items(), 1):
         properties.update({f"file.{index}.name": name, f"file.{index}.statements": str(count), f"file.{index}.sha256": hashlib.sha256((out_dir/name).read_bytes()).hexdigest()})

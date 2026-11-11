@@ -134,9 +134,12 @@ class GeneratorTest(unittest.TestCase):
             if file.is_file():
                 self.assertEqual(file.read_bytes(),(self.output/file.name).read_bytes(),file.name)
 
-    def test_missing_history_for_a_previously_contacted_client_is_not_silently_ignored(self):
-        with self.assertRaises(ValueError):
-            self.prepare(row=self.row(note_id='missing',volte_contattati='3'))
+    def test_missing_history_is_reported_without_blocking_import(self):
+        self.clients.write_text(self.row(note_id="missing",volte_contattati="3"),encoding="utf-8")
+        merged=self.root/"empty-notes.txt"
+        merged.write_text("",encoding="utf-8")
+        g.generate(self.clients,merged,self.output)
+        self.assertIn("blocked=false",(self.output/"migration.properties").read_text())
         self.assertIn('Storici XML mancanti',(self.output/'import_report.txt').read_text())
 
 if __name__=='__main__':

@@ -63,6 +63,10 @@ importati, date non valide diventano sconosciute e i loro valori originali sono
 conservati nelle note. Non supera errori strutturali, UUID duplicati o campi troppo
 lunghi. Usarlo solo dopo aver verificato ogni anomalia.
 
+Gli storici XML mancanti per clienti già contattati sono avvisi non bloccanti:
+le anagrafiche vengono importate, conservando le date disponibili in `clients.txt`,
+ma senza le note XML assenti. Gli identificativi restano elencati nel report.
+
 ## Contenuto trasferito
 
 Anagrafiche e stato finale, operatori, contatti/referenti, indirizzi, telefoni,
