@@ -170,6 +170,26 @@ riconosciuti per codice TON o collegamento fornitore già salvato. Se sconosciut
 selezionare esplicitamente la polvere TON prima di confermare. Non vengono create
 anagrafiche tecniche. Le associazioni sono conservate per le prossime importazioni.
 
+La tabella degli ordini mostra **Data → Ordine → Polvere → Ordinati → €/kg →
+Data prevista**. Data conserva il valore originale `Cons. prev.` del CSV;
+Data prevista usa l'eventuale modifica manuale, contrassegnata con `*`.
+L'ordinamento iniziale è Data prevista crescente (date mancanti in fondo),
+poi numero ordine e posizione numerica. Le intestazioni restano ordinabili;
+fornitore, quantità consegnate/residue e stato sono consultabili nel tooltip
+della riga senza occupare colonne.
+
+La polvere ha uno sfondo pastello coerente con il colore della scheda TON,
+anche quando il CSV usa un codice fornitore associato. Le schede senza colore
+e i codici ancora da collegare rimangono neutri: non si deduce il colore dal nome.
+La stessa evidenza compare nell'anteprima e nelle scelte di collegamento.
+
+Con almeno 1.380 px utili nel contenuto, l'anteprima CSV si affianca alla destra
+della tabella; con meno spazio passa sotto. Ridimensionare la finestra conserva
+la riga selezionata, il file e i collegamenti in corso. Le associazioni sono in
+due colonne allineate, Codice CSV e Polvere TON, con selettori compatti fino a
+240 px. I tooltip mostrano i codici e i nomi completi. Senza anteprima, l'elenco
+resta compatto e non si allarga fino a occupare tutta una finestra molto ampia.
+
 La chiave è **fornitore + ordine + posizione**, non il lotto. Reimportare aggiorna
 le righe cambiate e lascia invariate le identiche, senza duplicarle. Le righe
 assenti dal file restano presenti. Tutta l'importazione è atomica e versionata;

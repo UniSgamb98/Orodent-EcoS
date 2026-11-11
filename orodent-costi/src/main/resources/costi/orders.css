@@ -1,0 +1,14 @@
+#costi-orders-module .orders-card { -fx-padding: 16px; -fx-background-color: white; -fx-background-radius: 9px; -fx-border-color: #dce5ed; -fx-border-radius: 9px; }
+#costi-orders-module .orders-preview-title { -fx-font-size: 19px; -fx-font-weight: bold; -fx-text-fill: #173f5f; }
+#costi-orders-module .orders-scroll, #costi-orders-module .orders-scroll > .viewport { -fx-background-color: transparent; -fx-border-width: 0; }
+#costi-orders-module .table-cell { -fx-padding: 5px 6px; }
+#costi-orders-module .orders-powder-badge { -fx-padding: 5px 8px; -fx-background-radius: 5px; -fx-border-radius: 5px; -fx-text-fill: #243e50; -fx-font-size: 12px; }
+#costi-orders-module .powder-white { -fx-background-color: #f6f6f0; -fx-border-color: #deded2; }
+#costi-orders-module .powder-yellow { -fx-background-color: #fff1b8; -fx-border-color: #eddf9e; }
+#costi-orders-module .powder-pink { -fx-background-color: #fbe1e8; -fx-border-color: #eec6d1; }
+#costi-orders-module .powder-gray { -fx-background-color: #e3e7ed; -fx-border-color: #cbd1db; }
+#costi-orders-module .powder-other { -fx-background-color: #edf3f7; -fx-border-color: #dce5ed; }
+#costi-orders-module #orders-mappings { -fx-padding: 4px 4px 8px 0; }
+#costi-orders-module #orders-mappings .combo-box { -fx-pref-width: 230px; -fx-max-width: 240px; }
+
+#costi-orders-module .column-header.orders-number .label { -fx-alignment: center-right; }

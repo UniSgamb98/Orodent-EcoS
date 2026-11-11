@@ -59,7 +59,15 @@ public final class PowderOrders {
         }
     }
 
-    public record Powder(long id, String code, String name) {
+    public record Powder(long id, String code, String name, String color) {
+        public Powder {
+            color = Objects.toString(color, "ALTRE").strip().toUpperCase(Locale.ROOT);
+        }
+
+        public Powder(long id, String code, String name) {
+            this(id, code, name, "ALTRE");
+        }
+
         @Override
         public String toString() {
             return code + " · " + name;

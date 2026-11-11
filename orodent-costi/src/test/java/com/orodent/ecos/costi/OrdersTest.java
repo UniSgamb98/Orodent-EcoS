@@ -51,9 +51,9 @@ class OrdersTest {
                 c -> {
                     c.createStatement()
                             .executeUpdate(
-                                    "INSERT INTO TON.POLVERI(codice,nome) VALUES"
-                                            + " ('ZST5Y-025OP','Bianca 5Y'),('ZST4Y-015OP','Bianca"
-                                            + " 4Y')");
+                                    "INSERT INTO TON.POLVERI(codice,nome,colore) VALUES"
+                                        + " ('ZST5Y-025OP','Bianca"
+                                        + " 5Y','BIANCA'),('ZST4Y-015OP','Bianca 4Y','BIANCA')");
                     return null;
                 });
         service = new OrderService(db, Runnable::run);
@@ -95,6 +95,7 @@ class OrdersTest {
     void exactSampleIsIdempotentAndPartialDeliveryRetainsManualDecisions() throws Exception {
         var p = preview("\ufeff" + HEADER + A + B);
         assertTrue(p.valid());
+        assertTrue(p.powders().stream().allMatch(powder -> "BIANCA".equals(powder.color())));
         assertEquals(2, p.mappings().size());
         assertEquals(new Report(2, 0, 0), service.apply(p, p.mappings()).join());
         p = preview(HEADER + A + B);
