@@ -166,6 +166,8 @@ public final class ProductCostsController {
 
     private record Priced(Catalogue catalogue, Map<Long, NominalMixtureCost.Summary> prices) {}
 
+    private record Loaded(Priced priced, Map<Long, String> colors) {}
+
     private static Priced price(Catalogue source, PowderPricing.Selection selection) {
         Catalogue valued = PowderPricing.apply(source, selection);
         return new Priced(valued, NominalMixtureCost.products(valued));
@@ -221,10 +223,15 @@ public final class ProductCostsController {
         view.feedback("Caricamento dei cataloghi e dei prezzi…", false);
         controls();
         var selection = view.pricingSelection();
-        service.load()
-                .thenApplyAsync(loaded -> price(loaded, selection), workers)
+        service.loadForScreen()
+                .thenApplyAsync(
+                        loaded ->
+                                new Loaded(
+                                        price(loaded.catalogue(), selection),
+                                        loaded.powderColors()),
+                        workers)
                 .whenComplete(
-                        (priced, error) ->
+                        (screen, error) ->
                                 Platform.runLater(
                                         () -> {
                                             if (disposed || epoch != readEpoch) return;
@@ -234,6 +241,8 @@ public final class ProductCostsController {
                                                 controls();
                                                 return;
                                             }
+                                            Priced priced = screen.priced();
+                                            view.powderColors(screen.colors());
                                             Catalogue loaded = priced.catalogue();
                                             view.nominalPrices(priced.prices());
                                             catalogue = loaded;

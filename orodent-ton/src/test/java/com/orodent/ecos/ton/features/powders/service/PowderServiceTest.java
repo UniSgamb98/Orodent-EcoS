@@ -86,7 +86,7 @@ class PowderServiceTest {
                     try (var statement =
                             connection.prepareStatement(
                                     "UPDATE TON.POLVERI SET colore=NULL,ordine_visualizzazione=0"
-                                        + " WHERE polvere_id=?")) {
+                                            + " WHERE polvere_id=?")) {
                         statement.setLong(1, legacy.powder().id());
                         statement.executeUpdate();
                     }
@@ -138,6 +138,43 @@ class PowderServiceTest {
         assertEquals(opened.get(), onWorker.get());
         assertEquals(2, opened.get());
         assertEquals(1, service.findPage("polvere", false, 0).join().total());
+    }
+
+    @Test
+    void supplierIsOptionalSharedIdentityAndSurvivesTechnicalVersionChanges() {
+        var created =
+                service.create(
+                                new IdentityDraft(
+                                        "SUP",
+                                        "Polvere",
+                                        PowderColor.BIANCA,
+                                        true,
+                                        "  Azienda S.p.A.  "),
+                                data("5.150", 3),
+                                true)
+                        .join();
+        assertEquals(
+                "Azienda S.p.A.", service.load(created.powder().id()).join().powder().supplier());
+        var corrected =
+                service.saveIdentity(
+                                created,
+                                new IdentityDraft(
+                                        "SUP",
+                                        "Polvere",
+                                        PowderColor.BIANCA,
+                                        true,
+                                        "Nuovo fornitore"))
+                        .join();
+        var next = service.newVersion(corrected, corrected.latest()).join();
+        assertEquals("Nuovo fornitore", next.powder().supplier());
+        assertEquals(2, next.revisions().size());
+        assertEquals(1, service.findPage("Nuovo fornitore", false, 0).join().total());
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        new IdentityDraft(
+                                "SUP", "Polvere", PowderColor.BIANCA, true, "a".repeat(151)));
+        assertEquals("", identity("DEFAULT").supplier());
     }
 
     @Test

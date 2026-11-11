@@ -11,7 +11,7 @@ import java.util.*;
 public final class PowderPriceRepository {
     private static final String SELECT =
             """
-SELECT p.polvere_id,p.codice,p.nome,p.colore,p.attivo,
+SELECT p.polvere_id,p.codice,p.nome,p.colore,p.attivo,p.fornitore,
        c.prezzo_id,c.numero_versione,c.modalita,c.data_riferimento,CASE WHEN c.modello_dati=2 THEN c.prezzo_riferimento ELSE c.prezzo_semplice END AS prezzo_semplice,
        CASE WHEN c.modello_dati=2 THEN c.quantita_totale ELSE c.quantita_semplice END AS quantita_semplice,c.modello_dati
 FROM TON.POLVERI p LEFT JOIN COSTI.POLVERI_PREZZI c ON c.polvere_id=p.polvere_id
@@ -226,7 +226,7 @@ FROM TON.POLVERI p LEFT JOIN COSTI.POLVERI_PREZZI c ON c.polvere_id=p.polvere_id
                         r.getString("codice"),
                         r.getString("nome"),
                         r.getString("colore"),
-                        r.getBoolean("attivo")),
+                        r.getBoolean("attivo"), Objects.toString(r.getString("fornitore"), "")),
                 r.getLong("prezzo_id"),
                 r.getInt("numero_versione"),
                 mode == null ? null : Mode.valueOf(mode),

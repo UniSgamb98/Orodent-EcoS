@@ -59,6 +59,22 @@ public final class PowderPriceService {
                 workers);
     }
 
+    /** Complete, virtualized catalogue for the price screen: no hidden rows on later pages. */
+    public CompletableFuture<Page> all(boolean inactive) {
+        return CompletableFuture.supplyAsync(
+                () ->
+                        connections.withConnection(
+                                c ->
+                                        new PowderPriceRepository(c)
+                                                .page(
+                                                        "",
+                                                        Filter.TUTTE,
+                                                        inactive,
+                                                        0,
+                                                        Integer.MAX_VALUE)),
+                workers);
+    }
+
     public CompletableFuture<Detail> load(long powderId) {
         return CompletableFuture.supplyAsync(
                 () -> connections.withConnection(c -> new PowderPriceRepository(c).load(powderId)),

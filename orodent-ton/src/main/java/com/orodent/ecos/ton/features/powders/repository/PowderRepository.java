@@ -26,7 +26,7 @@ public final class PowderRepository {
                                 .replace("_", "\\_")
                         + "%";
         String where =
-                " WHERE (UPPER(codice) LIKE ? ESCAPE '\\' OR UPPER(nome) LIKE ? ESCAPE '\\')"
+                " WHERE (UPPER(codice) LIKE ? ESCAPE '\\' OR UPPER(nome || ' ' || COALESCE(fornitore,'')) LIKE ? ESCAPE '\\')"
                         + (inactive ? "" : " AND attivo=TRUE");
         long count;
         try (var query = connection.prepareStatement("SELECT COUNT(*) FROM TON.POLVERI" + where)) {
@@ -170,7 +170,7 @@ public final class PowderRepository {
     public long insertPowder(IdentityDraft draft) throws SQLException {
         try (var statement =
                 connection.prepareStatement(
-                        "INSERT INTO TON.POLVERI(codice,nome,colore,attivo) VALUES" + " (?,?,?,?)",
+                        "INSERT INTO TON.POLVERI(codice,nome,colore,attivo,fornitore) VALUES" + " (?,?,?,?,?)",
                         Statement.RETURN_GENERATED_KEYS)) {
             identity(statement, draft);
             statement.executeUpdate();
@@ -188,13 +188,13 @@ public final class PowderRepository {
         try (var statement =
                 connection.prepareStatement(
                         """
-                        UPDATE TON.POLVERI SET codice=?,nome=?,colore=?,attivo=?,
+                        UPDATE TON.POLVERI SET codice=?,nome=?,colore=?,attivo=?,fornitore=?,
                         versione_modifica=versione_modifica+1,aggiornato_il=CURRENT_TIMESTAMP
                         WHERE polvere_id=? AND versione_modifica=?
                         """)) {
             identity(statement, draft);
-            statement.setLong(5, original.id());
-            statement.setInt(6, original.revision());
+            statement.setLong(6, original.id());
+            statement.setInt(7, original.revision());
             if (statement.executeUpdate() != 1) throw new Conflict();
         }
     }
@@ -285,6 +285,7 @@ WHERE polvere_revisione_id=? AND polvere_id=? AND versione_modifica=? AND stato=
         statement.setString(2, draft.name());
         statement.setString(3, draft.color() == null ? null : draft.color().name());
         statement.setBoolean(4, draft.active());
+        statement.setString(5, draft.supplier());
     }
 
     private static void technical(PreparedStatement statement, TechnicalDraft draft, int first)
@@ -304,7 +305,7 @@ WHERE polvere_revisione_id=? AND polvere_id=? AND versione_modifica=? AND stato=
                         ? null
                         : PowderColor.valueOf(rows.getString("colore")),
                 rows.getBoolean("attivo"),
-                rows.getInt("versione_modifica"));
+                rows.getInt("versione_modifica"), Objects.toString(rows.getString("fornitore"), ""));
     }
 
     private record RevisionSummary(int number, State state, Integer yttria) {}

@@ -131,7 +131,9 @@ class ProductCostServiceTest {
 
     @Test
     void readsLatestEconomicIdentityPricesButPinnedTechnicalRevisionsOnWorker() {
-        Catalogue catalogue = service.load().join();
+        var screen = service.loadForScreen().join();
+        Catalogue catalogue = screen.catalogue();
+        assertEquals(Map.of(1L, "BIANCA", 2L, "GIALLA"), screen.powderColors());
         assertEquals(2, catalogue.products().size());
         assertEquals(0, n("200").compareTo(catalogue.prices().get(2L).price()));
         Result first = calculate(catalogue).getFirst();

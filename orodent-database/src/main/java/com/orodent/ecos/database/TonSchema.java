@@ -350,6 +350,8 @@ final class TonSchema {
         }
         var tables = new ArrayList<>(TABLES);
         if (schemaVersion >= 5) tables.add(POWDER_COLORS);
+        if (schemaVersion >= 12) tables.add(new Table("POLVERI",
+                List.of(column("FORNITORE", Types.VARCHAR, 150, 0, true, false, null)), List.of()));
         if (schemaVersion >= 6) tables.addAll(CATALOGUES);
         for (Table table : tables) {
             Map<String, Column> columns = actual.getOrDefault(table.name(), Map.of());

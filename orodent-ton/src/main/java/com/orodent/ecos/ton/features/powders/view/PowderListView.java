@@ -40,7 +40,7 @@ public final class PowderListView extends VBox {
         intro.setWrapText(true);
         intro.getStyleClass().add("muted-label");
         search.setId("ton-powders-search");
-        search.setPromptText("Cerca codice o nome");
+        search.setPromptText("Cerca codice, nome o fornitore");
         HBox.setHgrow(search, Priority.ALWAYS);
         inactive.setId("ton-powders-inactive");
         table.setId("ton-powders-table");
@@ -52,6 +52,7 @@ public final class PowderListView extends VBox {
                         List.of(
                                 column("Codice", r -> r.powder().code(), 110),
                                 column("Nome", r -> r.powder().name(), 200),
+                                column("Fornitore", r -> r.powder().supplier(), 160),
                                 column("Colore", r -> r.powder().colorLabel(), 110),
                                 column(
                                         "Classe Y",

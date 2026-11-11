@@ -1,6 +1,5 @@
 package com.orodent.ecos.costi.controller;
 
-import com.orodent.ecos.costi.model.PowderPrices;
 import com.orodent.ecos.costi.model.PowderPrices.*;
 import com.orodent.ecos.costi.service.PowderPriceService;
 import com.orodent.ecos.costi.view.PowderPricesView;
@@ -36,7 +35,7 @@ public final class PowderPricesController {
     private Window window;
     private CompletableFuture<?> listRead, detailRead;
     private long listEpoch, detailEpoch, selectionEpoch, selectedId;
-    private int offset;
+    private String appliedSupplier;
     private long inlineFocus;
     private PowderPricesView.InlineField inlineField = PowderPricesView.InlineField.PRICE;
     private Set<String> appliedColors;
@@ -49,18 +48,18 @@ public final class PowderPricesController {
         this.service = service;
         this.showHome = showHome;
         view.onChanged(this::controls);
+        appliedSupplier = view.selectedSupplier();
         appliedColors = view.selectedColors();
         appliedInactive = view.inactive.isSelected();
         view.onColorsChanged(this::changeFilter);
         view.inactive.setOnAction(e -> changeFilter());
         view.onValueRequested(this::requestValue);
-        view.previous.setOnAction(e -> reloadList(Math.max(0, offset - PowderPrices.PAGE_SIZE)));
-        view.next.setOnAction(e -> reloadList(offset + PowderPrices.PAGE_SIZE));
+
         view.table.getSelectionModel().selectedItemProperty().addListener(selectionChanged);
         view.refresh.setOnAction(
                 e -> {
                     if (busy || !canLeave()) return;
-                    reloadList(offset);
+                    reloadList();
                     if (selectedId != 0) load(selectedId);
                 });
         view.cancel.setOnAction(
@@ -82,7 +81,7 @@ public final class PowderPricesController {
     }
 
     public void start() {
-        reloadList(0);
+        reloadList();
     }
 
     private boolean dirty() {
@@ -119,13 +118,13 @@ public final class PowderPricesController {
                 });
     }
 
-    private void reloadList(int start) {
+    private void reloadList() {
         if (disposed) return;
         long epoch = ++listEpoch;
         if (listRead != null) listRead.cancel(false);
         try {
             listRead =
-                    service.page(view.selectedColors(), view.inactive.isSelected(), start)
+                    service.all(view.inactive.isSelected())
                             .whenComplete(
                                     (page, error) ->
                                             Platform.runLater(
@@ -135,10 +134,9 @@ public final class PowderPricesController {
                                                             view.feedback(message(error), true);
                                                             return;
                                                         }
-                                                        offset = start;
                                                         updatingList = true;
                                                         try {
-                                                            view.page(page);
+                                                            showCatalogue(page);
                                                             restoreSelection();
                                                         } finally {
                                                             updatingList = false;
@@ -153,6 +151,22 @@ public final class PowderPricesController {
         } catch (IllegalArgumentException invalid) {
             view.feedback(invalid.getMessage(), true);
         }
+    }
+
+    private void showCatalogue(Page page) {
+        view.suppliers(page.rows().stream().map(r -> r.powder().supplier()).toList());
+        var colors = view.selectedColors();
+        String supplier = view.selectedSupplier();
+        var rows =
+                page.rows().stream()
+                        .filter(
+                                r ->
+                                        !colors.isEmpty()
+                                                && (r.powder().color() == null
+                                                        || colors.contains(r.powder().color())))
+                        .filter(r -> supplier == null || supplier.equals(r.powder().supplier()))
+                        .toList();
+        view.page(new Page(rows, rows.size(), 0));
     }
 
     private void requestValue(Row row, PowderPricesView.InlineField kind) {
@@ -172,8 +186,10 @@ public final class PowderPricesController {
         if (disposed || busy || !canLeave()) {
             view.selectedColors(appliedColors);
             view.inactive.setSelected(appliedInactive);
+            view.selectedSupplier(appliedSupplier);
             return;
         }
+        appliedSupplier = view.selectedSupplier();
         appliedColors = view.selectedColors();
         appliedInactive = view.inactive.isSelected();
         selectionEpoch++;
@@ -185,7 +201,7 @@ public final class PowderPricesController {
         baseline = null;
         view.clear();
         controls();
-        reloadList(0);
+        reloadList();
     }
 
     private void restoreSelection() {
@@ -279,7 +295,7 @@ public final class PowderPricesController {
                                                             + saved.version()
                                                             + ".",
                                                     false);
-                                            reloadList(offset);
+                                            reloadList();
                                         }));
     }
 
@@ -331,9 +347,7 @@ public final class PowderPricesController {
         view.onColorsChanged(() -> {});
         view.onValueRequested((row, field) -> {});
         view.inactive.setOnAction(null);
-        for (Button button :
-                java.util.List.of(
-                        view.home, view.save, view.cancel, view.refresh, view.previous, view.next))
+        for (Button button : java.util.List.of(view.home, view.save, view.cancel, view.refresh))
             button.setOnAction(null);
     }
 }

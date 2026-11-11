@@ -37,7 +37,9 @@ public final class DatabaseSchema {
     private static final SchemaMigration WAREHOUSE_ORDERS = new SchemaMigration(10,
             "Warehouse base totals and expected powder orders", "/database/migrations/V10__warehouse_and_purchase_orders.sql");
     private static final SchemaMigration COST_SCENARIOS = new SchemaMigration(11, "Versioned cost scenarios and frozen bases", "/database/migrations/V11__cost_scenarios.sql");
-    private static final List<SchemaMigration> MIGRATIONS = List.of(BASELINE, DOMAINS, TON_PRODUCTS, TON_DOMAIN, TON_POWDER_COLORS, TON_CATALOGUES, COSTS_POWDER_PRICES, COSTS_PRODUCT_PARAMETERS, COSTS_STOCK, WAREHOUSE_ORDERS, COST_SCENARIOS);
+    private static final SchemaMigration TON_POWDER_SUPPLIER = new SchemaMigration(12,
+            "TON powder supplier", "/database/migrations/V12__ton_powder_supplier.sql");
+    private static final List<SchemaMigration> MIGRATIONS = List.of(BASELINE, DOMAINS, TON_PRODUCTS, TON_DOMAIN, TON_POWDER_COLORS, TON_CATALOGUES, COSTS_POWDER_PRICES, COSTS_PRODUCT_PARAMETERS, COSTS_STOCK, WAREHOUSE_ORDERS, COST_SCENARIOS, TON_POWDER_SUPPLIER);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS = List.of(
             varchar("CODICE_CLIENTE", 50), varchar("CODICE_ISO", 10), varchar("CATEGORIA", 100),

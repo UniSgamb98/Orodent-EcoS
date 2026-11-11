@@ -45,7 +45,12 @@ public final class PowderPrices {
         }
     }
 
-    public record Powder(long id, String code, String name, String color, boolean active) {}
+    public record Powder(
+            long id, String code, String name, String color, boolean active, String supplier) {
+        public Powder(long id, String code, String name, String color, boolean active) {
+            this(id, code, name, color, active, "");
+        }
+    }
 
     public record Lot(String code, BigDecimal quantity, BigDecimal unitPrice) {
         public Lot {

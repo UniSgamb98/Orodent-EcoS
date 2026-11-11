@@ -18,6 +18,29 @@ public final class ProductCostService {
         this.workers = Objects.requireNonNull(workers);
     }
 
+    public record ScreenData(Catalogue catalogue, Map<Long, String> powderColors) {
+        public ScreenData {
+            powderColors = Map.copyOf(powderColors);
+        }
+    }
+
+    /**
+     * Read display metadata and calculations together, without extending persisted scenario JSON.
+     */
+    public CompletableFuture<ScreenData> loadForScreen() {
+        return CompletableFuture.supplyAsync(
+                () ->
+                        connections.withTransaction(
+                                c -> {
+                                    c.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+                                    c.setReadOnly(true);
+                                    var repository = new ProductCostRepository(c);
+                                    return new ScreenData(
+                                            repository.load(), repository.powderColors());
+                                }),
+                workers);
+    }
+
     public CompletableFuture<Catalogue> load() {
         return CompletableFuture.supplyAsync(
                 () ->

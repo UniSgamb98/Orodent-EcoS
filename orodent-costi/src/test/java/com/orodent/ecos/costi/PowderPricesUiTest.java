@@ -52,11 +52,11 @@ class PowderPricesUiTest {
                 c -> {
                     try (var q = c.createStatement()) {
                         q.executeUpdate(
-                                "INSERT INTO TON.POLVERI(codice,nome,colore) VALUES"
-                                        + " ('Z-PEX4M','Polvere bianca 4Y','BIANCA')");
+                                "INSERT INTO TON.POLVERI(codice,nome,colore,fornitore) VALUES"
+                                    + " ('Z-PEX4M','Polvere bianca 4Y','BIANCA','Azienda Uno')");
                         q.executeUpdate(
-                                "INSERT INTO TON.POLVERI(codice,nome,colore) VALUES"
-                                        + " ('PINK4M','Polvere rosa','ROSA')");
+                                "INSERT INTO TON.POLVERI(codice,nome,colore,fornitore) VALUES"
+                                        + " ('PINK4M','Polvere rosa','ROSA','Azienda Due')");
                     }
                     return null;
                 });
@@ -98,8 +98,29 @@ class PowderPricesUiTest {
                             table().getItems().size() == 2
                                     && label("costi-status").equals("Prezzo da compilare")
                                     && field("costi-inline-price-1") != null
-                                    && !field("costi-inline-price-1").isDisabled()
+                                    && enabled("costi-inline-price-1")
                                     && field("costi-inline-price-1").isVisible());
+            fx(
+                    () -> {
+                        view().supplier
+                                .setValue(
+                                        new com.orodent.ecos.costi.view.PowderPricesView.Supplier(
+                                                "Azienda Uno"));
+                        return null;
+                    });
+            await(() -> table().getItems().size() == 1 && editable("costi-inline-price-1"));
+            fx(
+                    () -> {
+                        assertEquals(
+                                "Azienda Uno", table().getItems().getFirst().powder().supplier());
+                        assertNull(stage.getScene().lookup("#costi-previous"));
+                        view().supplier
+                                .setValue(
+                                        new com.orodent.ecos.costi.view.PowderPricesView.Supplier(
+                                                null));
+                        return null;
+                    });
+            await(() -> table().getItems().size() == 2 && editable("costi-inline-price-1"));
             fx(
                     () -> {
                         assertNull(stage.getScene().lookup("#costi-search"));
@@ -202,20 +223,14 @@ class PowderPricesUiTest {
                         table().getSelectionModel().select(1);
                         return null;
                     });
-            await(
-                    () ->
-                            !field("costi-inline-price-1").isDisabled()
-                                    && field("costi-inline-price-2").isEditable());
+            await(() -> enabled("costi-inline-price-1") && editable("costi-inline-price-2"));
             fx(
                     () -> {
                         assertEquals("", view().state().price());
                         field("costi-inline-quantity-1").requestFocus();
                         return null;
                     });
-            await(
-                    () ->
-                            field("costi-lot-0-price") != null
-                                    && !field("costi-lot-0-price").isDisabled());
+            await(() -> field("costi-lot-0-price") != null && enabled("costi-lot-0-price"));
             fx(
                     () -> {
                         assertEquals("80", field("costi-lot-0-price").getText());
@@ -223,7 +238,7 @@ class PowderPricesUiTest {
                         assertEquals("93,5", view().state().price());
                         button("costi-cancel").fire();
                         assertEquals("92,125", field("costi-inline-price-1").getText());
-                        assertTrue(field("costi-inline-quantity-1").isEditable());
+                        assertTrue(editable("costi-inline-quantity-1"));
                         snapshot("target/powders-unified-wide.png");
                         ((CheckBox) stage.getScene().lookup("#costi-color-bianca")).fire();
                         return null;
@@ -232,7 +247,7 @@ class PowderPricesUiTest {
                     () ->
                             table().getItems().size() == 1
                                     && table().getItems().getFirst().powder().id() == 2
-                                    && field("costi-inline-price-2").isEditable());
+                                    && editable("costi-inline-price-2"));
             fx(
                     () -> {
                         ((CheckBox) stage.getScene().lookup("#costi-color-bianca")).fire();
@@ -242,7 +257,7 @@ class PowderPricesUiTest {
                     () ->
                             table().getItems().size() == 2
                                     && field("costi-lot-0-price") != null
-                                    && field("costi-inline-price-1").isEditable());
+                                    && editable("costi-inline-price-1"));
             fx(
                     () -> {
                         stage.setWidth(1100);
@@ -316,6 +331,16 @@ class PowderPricesUiTest {
         field("costi-lot-" + i + "-code").setText(code);
         field("costi-lot-" + i + "-quantity").setText(quantity);
         field("costi-lot-" + i + "-price").setText(price);
+    }
+
+    private boolean enabled(String id) {
+        TextField input = field(id);
+        return input != null && !input.isDisabled();
+    }
+
+    private boolean editable(String id) {
+        TextField input = field(id);
+        return input != null && input.isEditable() && !input.isDisabled();
     }
 
     private TextField field(String id) {

@@ -1,0 +1,29 @@
+#costi-products-module .costs-title { -fx-font-size: 25px; }
+#costi-products-module .costs-card { -fx-padding: 14px; }
+#costi-products-module .button, #costi-products-module .menu-button { -fx-padding: 8px 11px; -fx-background-color: #edf3f7; -fx-background-radius: 6px; -fx-text-fill: #173f5f; -fx-cursor: hand; }
+#costi-products-module .button:hover, #costi-products-module .menu-button:hover { -fx-background-color: #e0edf3; }
+#costi-products-module .primary-button { -fx-background-color: #19758b; -fx-text-fill: white; -fx-font-weight: bold; }
+#costi-products-module .primary-button:hover { -fx-background-color: #155f72; }
+#costi-products-module .costs-nav { -fx-background-color: transparent; -fx-alignment: center-left; -fx-padding: 13px 10px; }
+#costi-products-module .costs-nav-selected { -fx-background-color: #e0eff3; -fx-text-fill: #176d86; }
+#costi-products-module .products-toolbar { -fx-padding: 10px 12px; -fx-background-color: #eaf1f6; -fx-background-radius: 7px; }
+#costi-products-module .tab-pane { -fx-background-color: transparent; }
+#costi-products-module .tab-header-background { -fx-background-color: #edf3f7; }
+#costi-products-module .tab { -fx-padding: 7px 12px; -fx-background-color: transparent; }
+#costi-products-module .tab:selected { -fx-background-color: white; -fx-border-color: transparent transparent #19758b transparent; -fx-border-width: 0 0 2px 0; }
+#costi-products-module .table-cell { -fx-padding: 4px 6px; }
+#costi-products-module .products-number.table-cell { -fx-alignment: center-right; }
+#costi-products-module .products-number.column-header .label { -fx-alignment: center-right; }
+#costi-products-module .products-total-column.table-cell { -fx-font-weight: bold; -fx-text-fill: #176d86; -fx-background-color: #f0f7f8; }
+#costi-products-module .products-summary { -fx-padding: 10px 12px; -fx-background-color: #eff5f8; -fx-background-radius: 7px; }
+#costi-products-module .products-summary-amount { -fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #173f5f; }
+#costi-products-module .products-total { -fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #176d86; }
+#costi-products-module .products-caption { -fx-font-size: 11px; -fx-text-fill: #6a8095; }
+#costi-products-module .products-transformation-edit { -fx-padding: 1px 4px; -fx-background-color: transparent; }
+#costi-products-module .products-powder-badge { -fx-padding: 5px 7px; -fx-background-radius: 5px; -fx-border-radius: 5px; }
+#costi-products-module .products-white { -fx-background-color: #f6f6f0; -fx-border-color: #deded2; }
+#costi-products-module .products-yellow { -fx-background-color: #fff1b8; -fx-border-color: #eddf9e; }
+#costi-products-module .products-pink { -fx-background-color: #fbe1e8; -fx-border-color: #eec6d1; }
+#costi-products-module .products-gray { -fx-background-color: #e3e7ed; -fx-border-color: #cbd1db; }
+#costi-products-module .products-unknown { -fx-background-color: #edf3f7; -fx-border-color: #dce5ed; }
+#costi-products-module .products-warning { -fx-background-color: #fff3cd; -fx-text-fill: #a66a00; }

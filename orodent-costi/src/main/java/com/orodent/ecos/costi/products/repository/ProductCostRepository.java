@@ -30,6 +30,14 @@ public final class ProductCostRepository {
         this.connection = Objects.requireNonNull(connection);
     }
 
+    /** Display metadata; kept outside the frozen calculation/scenario catalogue. */
+    public Map<Long, String> powderColors() throws SQLException {
+        Map<Long, String> colors = new HashMap<>();
+        query("SELECT polvere_id,colore FROM TON.POLVERI WHERE colore IS NOT NULL",
+                r -> colors.put(r.getLong(1), r.getString(2)));
+        return Map.copyOf(colors);
+    }
+
     public Catalogue load() throws SQLException {
         return load(false);
     }

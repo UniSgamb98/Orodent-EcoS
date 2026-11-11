@@ -35,7 +35,8 @@ class ScenarioSchemaTest {
                     q.executeUpdate("DROP TABLE COSTI.SCENARI_REVISIONI");
                     q.executeUpdate("DROP TABLE COSTI.SCENARI");
                     q.executeUpdate("DROP TABLE COSTI.SCENARI_BASI");
-                    q.executeUpdate("DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version=11");
+                    q.executeUpdate("ALTER TABLE TON.POLVERI DROP COLUMN FORNITORE");
+                    q.executeUpdate("DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version>=11");
                     q.executeUpdate(
                             "INSERT INTO TON.POLVERI(codice,nome) VALUES ('KEEP','Conservata')");
                     return null;
@@ -81,7 +82,7 @@ class ScenarioSchemaTest {
                             calls.incrementAndGet();
                             return null;
                         });
-        assertEquals(11, version());
+        assertEquals(DatabaseSchema.CURRENT_VERSION, version());
         new DatabaseSchema(db)
                 .initialize(
                         c -> {

@@ -8,8 +8,10 @@ import com.orodent.ecos.costi.view.PriceFormats;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.geometry.*;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.shape.SVGPath;
 
 import java.util.*;
 import java.util.function.Function;
@@ -83,51 +85,78 @@ public final class ProductCostsView extends CostsShell {
             selected = label("Seleziona un articolo", "costs-code"),
             parameterVersion = label("", "costs-muted"),
             snapshotDate = label("", "costs-muted"),
-            exportNote = label("", "costs-muted"),
             issues = label("", "costs-muted");
-    private final VBox details;
+    private final BorderPane workspace = new BorderPane();
+    private final SplitPane split = new SplitPane();
+    private final TabPane compact = new TabPane();
+    private final Tab catalogueTab = new Tab("Prodotti"), detailTab = new Tab("Articoli e costi");
+    private final VBox catalogue = new VBox(10), detail = new VBox(10);
+    private final FlowPane overrideEditor = new FlowPane(10, 6);
+    private final FlowPane summary = new FlowPane(18, 8);
+    private final Label powderAmount = label("—", "products-summary-amount"),
+            transformationAmount = label("—", "products-summary-amount"),
+            totalAmount = label("—", "products-total"),
+            pending = label("Calcolo in aggiornamento…", "costs-muted");
+    private Map<Long, String> powderColors = Map.of();
+    private boolean compactLayout;
+    private double divider = .26;
+
+    public void powderColors(Map<Long, String> colors) {
+        powderColors = Map.copyOf(colors);
+        materials.refresh();
+    }
 
     public ProductCostsView() {
         super("Costi prodotti");
         setId("costi-products-module");
+        getStylesheets()
+                .add(ProductCostsView.class.getResource("/costi/products.css").toExternalForm());
         Label title = label("Costi prodotti", "costs-title");
-        VBox titleBox =
-                new VBox(
-                        4,
-                        label("Costi e consumi › Costi prodotti", "costs-breadcrumb"),
-                        title,
-                        label(
-                                "Costo di produzione di ogni articolo, con il dettaglio delle"
-                                        + " polveri.",
-                                "costs-muted"));
         exportAll.setTooltip(
                 new Tooltip(
-                        "Intero catalogo, incluse anagrafiche archiviate, con le configurazioni"
-                                + " predefinite. Ignora i filtri di ricerca."));
+                        "Intero catalogo, incluse archiviate, con configurazioni predefinite."
+                                + " Ignora i filtri di ricerca."));
         exportAll.setAccessibleText("Esporta i costi di tutti i prodotti, anche fuori dai filtri");
         export.setId("costs-products-export");
         export.getStyleClass().add("secondary-button");
         export.getItems()
                 .addAll(exportProduct, exportDetail, new SeparatorMenuItem(), exportFiltered);
-        HBox actions = new HBox(8, export, exportAll);
+        Button help = button("ⓘ Criteri", "costs-products-help", false);
+        help.setOnAction(
+                e ->
+                        priceInfo(
+                                "Come leggere i costi",
+                                "Miscela €/kg: costo nominale della ricetta, senza sovramateriali,"
+                                    + " perdite o trasformazione. Può variare fra le configurazioni"
+                                    + " predefinite del prodotto.\n\n"
+                                    + "Polveri €: costo del materiale effettivo dell'articolo,"
+                                    + " inclusi sovramateriali e maggiorazione per perdite (+0,5%,"
+                                    + " fattore 1,005 applicato una volta).\n\n"
+                                    + "Trasformazione: importo comune al prodotto, sostituibile per"
+                                    + " singolo articolo. Un importo zero è valido; un dato"
+                                    + " mancante resta da compilare.\n\n"
+                                    + "Esporta tutti i prezzi: intero catalogo, incluse anagrafiche"
+                                    + " archiviate, con configurazioni predefinite. Le altre"
+                                    + " esportazioni seguono il prodotto o i filtri selezionati."
+                                    + " Nessun movimento automatico di magazzino."));
+        Region gap = new Region();
+        HBox.setHgrow(gap, Priority.ALWAYS);
+        FlowPane actions = new FlowPane(8, 6, help, export, exportAll);
         actions.setAlignment(Pos.CENTER_RIGHT);
-        Region headingGap = new Region();
-        HBox.setHgrow(headingGap, Priority.ALWAYS);
-        HBox headingRow = new HBox(14, titleBox, headingGap, actions);
+        HBox headingRow = new HBox(14, title, gap, actions);
         headingRow.setAlignment(Pos.CENTER_LEFT);
-        VBox top = new VBox(8, headingRow, exportNote);
         search.setId("costs-products-search");
         search.setPromptText("Cerca prodotto, linea o colore");
         line.setId("costs-products-line");
         line.setMaxWidth(Double.MAX_VALUE);
         products.setId("costs-products-list");
-        products.setFixedCellSize(64);
-        column(products, "Linea", 80, p -> Objects.toString(p.lineCode(), "—"));
-        column(products, "Prodotto", 145, p -> p.code() + (p.active() ? "" : " · Archiviato"));
+        products.setFixedCellSize(46);
+        column(products, "Linea", 60, p -> Objects.toString(p.lineCode(), "—"));
+        column(products, "Prodotto", 115, p -> p.code() + (p.active() ? "" : " · Archiviato"));
         column(
                 products,
                 "Miscela €/kg",
-                110,
+                112,
                 p -> {
                     var value = nominalPrices.get(p.id());
                     return value != null && value.variable()
@@ -139,42 +168,47 @@ public final class ProductCostsView extends CostsShell {
                 label("Nessun prodotto. Le anagrafiche si creano in TON.", "costs-muted"));
         HBox paging = new HBox(7, previous, count, next);
         paging.setAlignment(Pos.CENTER_LEFT);
-        VBox catalogue = new VBox(11, search, line, archived, products, paging);
-        catalogue.setMinWidth(245);
-        catalogue.setPrefWidth(285);
+        catalogue.getChildren().addAll(search, line, archived, products, paging);
+        catalogue.setMinWidth(326);
+        catalogue.setPrefWidth(330);
         catalogue.getStyleClass().add("costs-card");
         VBox.setVgrow(products, Priority.ALWAYS);
         commonCost.setId("costs-products-common");
         commonCost.setPromptText("Da compilare");
-        commonCost.setPrefColumnCount(8);
-        commonCost.setMaxWidth(160);
+        commonCost.setPrefWidth(110);
+        commonCost.setMaxWidth(110);
         articleCost.setId("costs-products-override");
         articleCost.setPromptText("€/articolo");
-        articleCost.setMaxWidth(150);
+        articleCost.setPrefWidth(110);
+        articleCost.setMaxWidth(130);
         specific.setId("costs-products-specific");
-        specific.setWrapText(true);
+        specific.setText("Importo specifico");
         HBox input =
                 new HBox(
-                        9,
+                        8,
                         label("Trasformazione comune", "costs-code"),
                         commonCost,
                         new Label("€/articolo"));
         input.setAlignment(Pos.CENTER_LEFT);
-        FlowPane parameters = new FlowPane(10, 8, input, save, cancel);
         alternatives.setId("costs-products-alternatives");
-        alternatives.setWrapText(true);
         alternatives.setTooltip(
                 new Tooltip(
                         "Le configurazioni alternative rimangono righe separate: non vengono"
                                 + " sommate fra loro."));
+        CustomMenuItem showAlternatives = new CustomMenuItem(alternatives, false);
+        MenuButton options = new MenuButton("Vista articoli");
+        options.setId("costs-products-options");
+        options.getStyleClass().add("secondary-button");
+        options.getItems().add(showAlternatives);
+        FlowPane parameters = new FlowPane(12, 6, input, options);
         articles.setId("costs-products-articles");
         articles.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        articles.setFixedCellSize(42);
-        column(articles, "Articolo", 130, r -> r.article() == null ? "—" : r.article().code());
+        articles.setFixedCellSize(54);
+        articleIdentityColumn();
         column(
                 articles,
                 "Formato mm",
-                100,
+                102,
                 r ->
                         r.article() == null
                                 ? "—"
@@ -192,38 +226,52 @@ public final class ProductCostsView extends CostsShell {
                                                         : r.specification().height(),
                                                 0,
                                                 2));
-        column(
-                articles,
-                "Config.",
-                92,
-                r ->
-                        r.specification() == null
-                                ? "Assente"
-                                : "v"
-                                        + r.specification().version()
-                                        + (Objects.equals(
-                                                        r.article().preferredId(),
-                                                        r.specification().id())
-                                                ? " · predef."
-                                                : ""));
-        column(articles, "Miscela g", 92, r -> PriceFormats.number(r.grams(), 1, 3));
-        column(articles, "Miscela €/kg", 110, r -> PriceFormats.number(r.nominalMixPrice(), 2, 4));
-        column(articles, "Polveri €", 90, r -> PriceFormats.number(r.powderCost(), 2, 4));
-        column(articles, "Trasform. €", 98, r -> PriceFormats.number(r.transformation(), 2, 4));
-        column(articles, "Totale €", 95, r -> PriceFormats.number(r.total(), 2, 4));
-        column(articles, "Stato", 105, r -> r.problems().isEmpty() ? "Completo" : "Incompleto");
-        articles.setPrefHeight(190);
-        articles.setMinHeight(130);
-        column(materials, "Strato", 65, m -> String.valueOf(m.layer()));
-        column(
-                materials,
-                "Polvere",
-                145,
-                m -> m.ingredient().code() + " · v" + m.ingredient().technicalVersion());
+        column(articles, "Miscela g", 86, r -> PriceFormats.number(r.grams(), 1, 3));
+        column(articles, "Miscela €/kg", 112, r -> PriceFormats.number(r.nominalMixPrice(), 2, 4));
+        column(articles, "Polveri €", 92, r -> PriceFormats.number(r.powderCost(), 2, 4));
+        transformationColumn();
+        column(articles, "Totale €", 100, r -> PriceFormats.number(r.total(), 2, 4));
+        articles.getColumns().getLast().getStyleClass().add("products-total-column");
+        articles.setMinHeight(80);
+        articles.setPlaceholder(
+                label("Nessun articolo disponibile per questo prodotto.", "costs-muted"));
+        column(materials, "Strato", 60, m -> String.valueOf(m.layer()));
+        TableColumn<Material, Material> powderColumn = new TableColumn<>("Polvere");
+        powderColumn.setPrefWidth(195);
+        powderColumn.setMinWidth(150);
+        powderColumn.setSortable(false);
+        powderColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue()));
+        powderColumn.setCellFactory(
+                c ->
+                        new TableCell<>() {
+                            protected void updateItem(Material material, boolean empty) {
+                                super.updateItem(material, empty);
+                                setText(null);
+                                setGraphic(null);
+                                setTooltip(null);
+                                if (empty || material == null) return;
+                                String text =
+                                        material.ingredient().code()
+                                                + " · v"
+                                                + material.ingredient().technicalVersion();
+                                Label badge = new Label(text);
+                                badge.getStyleClass()
+                                        .addAll(
+                                                "products-powder-badge",
+                                                colorStyle(
+                                                        powderColors.get(
+                                                                material.ingredient().powderId())));
+                                badge.setMaxWidth(Double.MAX_VALUE);
+                                setGraphic(badge);
+                                setTooltip(new Tooltip(text));
+                            }
+                        });
+        materials.getColumns().add(powderColumn);
         column(materials, "Massa %", 85, m -> PriceFormats.number(m.ingredient().percent(), 0, 4));
-        column(materials, "Da pesare g", 105, m -> PriceFormats.number(m.grams(), 1, 4));
+        column(materials, "Da pesare g", 110, m -> PriceFormats.number(m.grams(), 1, 4));
         TableColumn<Material, Material> priceColumn = new TableColumn<>("Prezzo €/kg");
         priceColumn.setPrefWidth(150);
+        priceColumn.getStyleClass().add("products-number");
         priceColumn.setSortable(false);
         priceColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue()));
         priceColumn.setCellFactory(
@@ -286,67 +334,78 @@ public final class ProductCostsView extends CostsShell {
                                         + " · "
                                         + Objects.toString(m.price().date(), "Non compilata"));
         materials.setId("costs-products-materials");
-        materials.setFixedCellSize(38);
-        materials.setPrefHeight(210);
-        materials.setMinHeight(150);
+        materials.setFixedCellSize(44);
+        materials.setMinHeight(80);
         materials.setPlaceholder(
-                label("Nessun dettaglio disponibile per l'articolo selezionato.", "costs-muted"));
-        details = new VBox(9, selected, provenance, new HBox(10, specific, articleCost), issues);
-        details.setPadding(new Insets(10, 0, 0, 0));
-        TabPane tabs = new TabPane();
+                label("Seleziona un articolo nella scheda Articoli e costi.", "costs-muted"));
+        TabPane tabs =
+                new TabPane(
+                        new Tab("Articoli e costi", articles),
+                        new Tab("Dettaglio polveri", materials));
         tabs.setId("costs-products-tabs");
-        VBox rows = new VBox(10, articles);
-        VBox.setVgrow(articles, Priority.ALWAYS);
-        VBox breakdown =
-                new VBox(
-                        9,
-                        label(
-                                "Polveri dell'articolo selezionato · quantità inclusa"
-                                        + " maggiorazione",
-                                "costs-muted"),
-                        materials);
-        VBox.setVgrow(materials, Priority.ALWAYS);
-        for (Tab tab :
-                List.of(
-                        new Tab("Articoli e costi", rows),
-                        new Tab("Dettaglio polveri", breakdown))) {
-            tab.setClosable(false);
-            tabs.getTabs().add(tab);
-        }
-        tabs.setMinHeight(180);
+        tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        tabs.setMinHeight(100);
         VBox.setVgrow(tabs, Priority.ALWAYS);
-        VBox detail =
-                new VBox(
-                        8,
+        selected.setId("costs-products-selected");
+        provenance.setId("costs-products-provenance");
+        provenance.setWrapText(false);
+        provenance.setMaxWidth(Double.MAX_VALUE);
+        provenance.textProperty().addListener((o, b, a) -> provenance.setTooltip(new Tooltip(a)));
+        powderAmount.setId("costs-products-summary-powders");
+        transformationAmount.setId("costs-products-summary-transformation");
+        totalAmount.setId("costs-products-summary-total");
+        pending.setId("costs-products-pending");
+        visible(pending, false);
+        summary.getChildren()
+                .addAll(
+                        amount("Polveri", powderAmount),
+                        label("+", "costs-muted"),
+                        amount("Trasformazione", transformationAmount),
+                        label("=", "costs-muted"),
+                        amount("Totale / articolo", totalAmount),
+                        pending);
+        summary.setAlignment(Pos.CENTER_LEFT);
+        summary.getStyleClass().add("products-summary");
+        overrideEditor
+                .getChildren()
+                .addAll(
+                        label("Trasformazione articolo", "costs-code"),
+                        specific,
+                        articleCost,
+                        new Label("€/articolo"));
+        overrideEditor.setAlignment(Pos.CENTER_LEFT);
+        overrideEditor.setId("costs-products-override-editor");
+        visible(overrideEditor, false);
+        specific.selectedProperty()
+                .addListener(
+                        (o, b, a) -> {
+                            if (a) visible(overrideEditor, true);
+                        });
+        issues.setId("costs-products-issues");
+        parameterVersion.setId("costs-products-parameter-version");
+        // These remain in the scene so errors and revision provenance are always accessible.
+        detail.getChildren()
+                .addAll(
                         heading,
                         productInfo,
                         parameters,
-                        parameterVersion,
-                        label(
-                                "Perdite di lavorazione: +0,5% · Fattore 1,005, applicato una sola"
-                                        + " volta",
-                                "costs-muted"),
-                        alternatives,
                         tabs,
-                        details);
+                        selected,
+                        summary,
+                        overrideEditor,
+                        provenance,
+                        issues);
         detail.getStyleClass().add("costs-card");
-        detail.setMinWidth(400);
-        ScrollPane scroll = new ScrollPane(detail);
-        scroll.setFitToWidth(true);
-        scroll.setFitToHeight(true);
-        scroll.setMinWidth(420);
-        scroll.getStyleClass().add("costs-detail-scroll");
-        SplitPane split = new SplitPane(catalogue, scroll);
-        split.setDividerPositions(.28);
+        detail.setMinWidth(0);
+        catalogueTab.setClosable(false);
+        detailTab.setClosable(false);
+        compact.getTabs().addAll(catalogueTab, detailTab);
+        compact.setId("costs-products-compact-tabs");
+        compact.setMinHeight(0);
         split.getStyleClass().add("costs-split");
-        VBox.setVgrow(split, Priority.ALWAYS);
-        Label nominalNote =
-                new Label(
-                        "Miscela €/kg: costo nominale, senza sovramateriali, perdite o"
-                            + " trasformazione. Più valori: configurazioni predefinite con costi"
-                            + " nominali diversi.");
-        nominalNote.setWrapText(true);
-        nominalNote.getStyleClass().add("costs-muted");
+        split.setMinHeight(0);
+        workspace.widthProperty().addListener((o, b, a) -> layoutWorkspace(a.doubleValue()));
+        VBox.setVgrow(workspace, Priority.ALWAYS);
         pricingMode.getItems().setAll(PowderPricing.Mode.values());
         pricingMode.setValue(PowderPricing.Mode.SEMPLICE);
         pricingMode.setId("costs-pricing-mode");
@@ -369,6 +428,12 @@ public final class ProductCostsView extends CostsShell {
                                 messages.add(m.ingredient().code() + "\n" + m.price().details());
                     priceInfo("Quantità non assegnate ai lotti", String.join("\n\n", messages));
                 });
+        refresh.setText("Ricarica dati");
+        snapshotDate.setWrapText(false);
+        snapshotDate.setTooltip(
+                new Tooltip(
+                        "Prezzi e dati tecnici sono letti insieme. Premi Ricarica dati per"
+                                + " aggiornarli."));
         FlowPane pricingControls =
                 new FlowPane(
                         12,
@@ -376,24 +441,23 @@ public final class ProductCostsView extends CostsShell {
                         new Label("Prezzi polveri"),
                         pricingMode,
                         includeOrders,
+                        refresh,
+                        snapshotDate,
                         valuationWarning);
-        HBox toolbar = new HBox(12, refresh, snapshotDate);
-        toolbar.setAlignment(Pos.CENTER_LEFT);
-        VBox page = new VBox(12, top, toolbar, pricingControls, nominalNote, split, feedback);
-        page.setPadding(new Insets(18, 24, 14, 24));
+        pricingControls.setAlignment(Pos.CENTER_LEFT);
+        pricingControls.getStyleClass().add("products-toolbar");
+        Region footerGap = new Region();
+        HBox.setHgrow(footerGap, Priority.ALWAYS);
+        VBox context = new VBox(3, feedback, parameterVersion);
+        context.setMinWidth(0);
+        HBox footer = new HBox(12, context, footerGap, cancel, save);
+        footer.setAlignment(Pos.CENTER_LEFT);
+        footer.setId("costs-products-footer");
+        VBox page = new VBox(12, headingRow, pricingControls, workspace, footer);
+        page.setPadding(new Insets(18, 20, 14, 20));
         setCenter(page);
-        setBottom(
-                label(
-                        "Valori per un articolo · Configurazioni TON approvate · Nessun movimento"
-                                + " di magazzino",
-                        "costs-footer"));
         feedback.setId("costs-products-feedback");
-        provenance.setId("costs-products-provenance");
-        issues.setId("costs-products-issues");
-        parameterVersion.setId("costs-products-parameter-version");
-        exportNote.setText(
-                "Esporta tutti i prezzi: intero catalogo, incluse archiviate, con configurazioni"
-                        + " predefinite.");
+        layoutWorkspace(1200);
         formEnabled(false);
     }
 
@@ -409,6 +473,7 @@ public final class ProductCostsView extends CostsShell {
                                 + " · Colore "
                                 + Objects.toString(product.color(), "—")
                                 + (product.active() ? "" : " · Archiviato"));
+        visible(overrideEditor, false);
         commonCost.setText(PriceFormats.edit(parameters.commonCost()));
         parameterVersion.setText(
                 "Parametri di trasformazione · "
@@ -444,6 +509,9 @@ public final class ProductCostsView extends CostsShell {
 
     public void article(Result row) {
         materials.getItems().setAll(row == null ? List.of() : row.materials());
+        powderAmount.setText(euros(row == null ? null : row.powderCost()));
+        transformationAmount.setText(euros(row == null ? null : row.transformation()));
+        totalAmount.setText(euros(row == null ? null : row.total()));
         selected.setText(
                 row == null || row.article() == null
                         ? "Nessun articolo selezionato"
@@ -483,12 +551,14 @@ public final class ProductCostsView extends CostsShell {
     }
 
     public void captured(String text) {
-        snapshotDate.setText(text);
+        snapshotDate.setText(text.replace("Prezzi e dati letti il ", "Aggiornati "));
     }
 
     public void costsPending(boolean pending) {
         articles.setOpacity(pending ? .55 : 1);
         materials.setOpacity(pending ? .55 : 1);
+        summary.setOpacity(pending ? .55 : 1);
+        visible(this.pending, pending);
     }
 
     public void revision(String text) {
@@ -504,6 +574,172 @@ public final class ProductCostsView extends CostsShell {
     public void formEnabled(boolean value) {
         for (Control c : List.of(commonCost, articleCost, specific, alternatives, articles))
             c.setDisable(!value);
+    }
+
+    private void layoutWorkspace(double width) {
+        boolean narrow = width < 1100;
+        if (workspace.getCenter() != null && narrow == compactLayout) return;
+        if (workspace.getCenter() == split && !split.getDividers().isEmpty())
+            divider = split.getDividerPositions()[0];
+        split.getItems().clear();
+        catalogueTab.setContent(null);
+        detailTab.setContent(null);
+        workspace.setCenter(null);
+        compactLayout = narrow;
+        if (narrow) {
+            catalogue.setMinWidth(0);
+            catalogueTab.setContent(catalogue);
+            detailTab.setContent(detail);
+            compact.getSelectionModel()
+                    .select(
+                            products.getSelectionModel().getSelectedItem() == null
+                                    ? catalogueTab
+                                    : detailTab);
+            workspace.setCenter(compact);
+        } else {
+            catalogue.setMinWidth(326);
+            split.getItems().setAll(catalogue, detail);
+            split.setDividerPositions(divider);
+            workspace.setCenter(split);
+        }
+    }
+
+    private void articleIdentityColumn() {
+        TableColumn<Result, Result> column = new TableColumn<>("Articolo");
+        column.setMinWidth(170);
+        column.setPrefWidth(180);
+        column.setSortable(false);
+        column.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue()));
+        column.setCellFactory(
+                c ->
+                        new TableCell<>() {
+                            protected void updateItem(Result row, boolean empty) {
+                                super.updateItem(row, empty);
+                                setText(null);
+                                setGraphic(null);
+                                setTooltip(null);
+                                if (empty || row == null) return;
+                                Label code =
+                                        label(
+                                                row.article() == null ? "—" : row.article().code(),
+                                                "costs-code");
+                                code.setWrapText(false);
+                                String config =
+                                        row.specification() == null
+                                                ? "Configurazione assente"
+                                                : "v"
+                                                        + row.specification().version()
+                                                        + (Objects.equals(
+                                                                        row.article().preferredId(),
+                                                                        row.specification().id())
+                                                                ? " · predefinita"
+                                                                : " · alternativa");
+                                Label version = label(config, "products-caption");
+                                HBox identity = new HBox(6, new VBox(2, code, version));
+                                identity.setAlignment(Pos.CENTER_LEFT);
+                                if (!row.problems().isEmpty()) {
+                                    Button warning =
+                                            button("⚠", "costs-products-row-warning", false);
+                                    SVGPath icon = new SVGPath();
+                                    icon.setContent("M11 1 L21 19 H1 Z M11 6 V12 M11 15 V16");
+                                    icon.setStyle(
+                                            "-fx-fill: transparent; -fx-stroke: #9b6400;"
+                                                + " -fx-stroke-width: 1.8px;");
+                                    warning.setText("");
+                                    warning.setGraphic(icon);
+                                    warning.setAccessibleText(
+                                            "Dati da completare per " + code.getText());
+                                    warning.getStyleClass().add("products-warning");
+                                    warning.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+                                    warning.setTooltip(new Tooltip(row.status()));
+                                    warning.setOnAction(
+                                            e -> priceInfo("Dati da completare", row.status()));
+                                    identity.getChildren().add(warning);
+                                }
+                                setGraphic(identity);
+                                setTooltip(
+                                        new Tooltip(
+                                                code.getText()
+                                                        + "\n"
+                                                        + config
+                                                        + "\n"
+                                                        + row.status()));
+                            }
+                        });
+        articles.getColumns().add(column);
+    }
+
+    private void transformationColumn() {
+        TableColumn<Result, Result> column = new TableColumn<>("Trasformazione €");
+        column.setMinWidth(140);
+        column.setPrefWidth(145);
+        column.setSortable(false);
+        column.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue()));
+        column.setCellFactory(
+                c ->
+                        new TableCell<>() {
+                            protected void updateItem(Result row, boolean empty) {
+                                super.updateItem(row, empty);
+                                setText(null);
+                                setGraphic(null);
+                                if (empty || row == null || row.article() == null) return;
+                                boolean custom =
+                                        row.parameters()
+                                                .overrides()
+                                                .containsKey(row.article().id());
+                                Button edit =
+                                        button(
+                                                PriceFormats.number(row.transformation(), 2, 4)
+                                                        + "  ✎",
+                                                "costs-products-edit-transformation",
+                                                false);
+                                edit.getStyleClass().add("products-transformation-edit");
+                                edit.setTooltip(
+                                        new Tooltip(
+                                                (custom
+                                                                ? "Importo specifico"
+                                                                : "Importo comune al prodotto")
+                                                        + " · Clicca per modificare"));
+                                edit.setAccessibleText(
+                                        "Modifica trasformazione di " + row.article().code());
+                                edit.setOnAction(
+                                        e -> {
+                                            articles.getSelectionModel().select(row);
+                                            visible(overrideEditor, true);
+                                            if (specific.isSelected()) articleCost.requestFocus();
+                                            else specific.requestFocus();
+                                        });
+                                Label origin =
+                                        label(custom ? "specifica" : "comune", "products-caption");
+                                VBox content = new VBox(0, edit, origin);
+                                content.setAlignment(Pos.CENTER_RIGHT);
+                                setGraphic(content);
+                            }
+                        });
+        articles.getColumns().add(column);
+    }
+
+    private static VBox amount(String name, Label value) {
+        return new VBox(3, label(name, "products-caption"), value);
+    }
+
+    private static String euros(java.math.BigDecimal value) {
+        return value == null ? "—" : PriceFormats.number(value, 2, 4) + " €";
+    }
+
+    private static void visible(Node node, boolean value) {
+        node.setVisible(value);
+        node.setManaged(value);
+    }
+
+    private static String colorStyle(String color) {
+        return switch (Objects.toString(color, "")) {
+            case "BIANCA" -> "products-white";
+            case "GIALLA" -> "products-yellow";
+            case "ROSA" -> "products-pink";
+            case "GRIGIA" -> "products-gray";
+            default -> "products-unknown";
+        };
     }
 
     private static Label label(String text, String style) {
@@ -524,9 +760,20 @@ public final class ProductCostsView extends CostsShell {
             TableView<T> table, String title, double width, Function<T, String> text) {
         TableColumn<T, String> column = new TableColumn<>(title);
         column.setPrefWidth(width);
-        column.setMinWidth(60);
+        column.setMinWidth(width);
+        if (title.contains("€") || title.endsWith(" g") || title.equals("Massa %"))
+            column.getStyleClass().add("products-number");
         column.setSortable(false);
         column.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(text.apply(c.getValue())));
+        column.setCellFactory(
+                c ->
+                        new TableCell<>() {
+                            protected void updateItem(String value, boolean empty) {
+                                super.updateItem(value, empty);
+                                setText(empty ? null : value);
+                                setTooltip(empty || value == null ? null : new Tooltip(value));
+                            }
+                        });
         table.getColumns().add(column);
     }
 }

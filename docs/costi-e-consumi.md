@@ -13,7 +13,7 @@ si modificano in TON; qui si registrano soltanto dati economici e quantità dich
 
 La pagina ha un'unica vista. I checkbox **Bianche, Gialle, Rosa, Grigie**, tutti
 selezionati inizialmente, filtrano il catalogo per colore TON. I filtri sono
-applicati nel database prima della paginazione. Le polveri senza colore restano
+combinati con il fornitore nell’elenco completo a scorrimento. Le polveri senza colore restano
 visibili con qualsiasi filtro attivo, con una nota; nessun checkbox selezionato
 mostra zero righe. L'opzione Includi archiviate conserva la sua funzione.
 
@@ -45,8 +45,8 @@ il dettaglio e non sceglie la fonte di calcolo in Costi prodotti o Scenari.
   decimale, senza separatori delle migliaia e senza arrotondare gli input.
 
 L'elenco occupa circa un terzo della pagina e il dettaglio usa l'altezza disponibile.
-Nelle finestre strette si passa fra Polveri e Dettaglio e lotti; Salva/Annulla e gli
-esiti rimangono visibili sotto entrambe le schede. Ridimensionare conserva gli input.
+Nelle finestre strette si passa fra Polveri e Dettaglio e lotti; i
+comandi nell’intestazione rimangono visibili sopra entrambe le schede. Ridimensionare conserva gli input.
 
 Il prezzo medio è `somma(kg × €/kg) / somma(kg)`. Gli importi si sommano in
 `BigDecimal`, senza arrotondare ogni riga ai centesimi; il rapporto è conservato
@@ -78,7 +78,14 @@ Aprire **Home → Costi e consumi → Costi prodotti**. A sinistra si cercano i
 prodotti per codice, linea o colore, con filtro di linea, pagine da 40 e opzione
 per includere le anagrafiche archiviate. A destra ogni articolo/configurazione
 mostra formato, grammi di miscela comprensivi delle perdite, costo polveri,
-trasformazione, totale e stato di completezza.
+trasformazione e totale evidenziato. La revisione della configurazione è sotto il codice
+articolo; un avviso apre gli eventuali dati da completare. **Vista articoli** contiene
+l'opzione per mostrare tutte le configurazioni approvate. Il pulsante nella cella
+**Trasformazione €** apre l'importo specifico dell'articolo; togliendo la spunta si
+riprende il valore comune. Il riepilogo sotto la tabella mostra **Polveri +
+Trasformazione = Totale** e segnala i calcoli in aggiornamento. Salva e Annulla
+restano nel fondo della pagina. Le finestre strette usano le schede **Prodotti** /
+**Articoli e costi**, senza comprimere le colonne numeriche.
 
 Il catalogo usa normalmente le **configurazioni predefinite approvate**: non
 sostituisce implicitamente una predefinita assente o ritirata con la versione più
@@ -307,3 +314,24 @@ La sezione [Scenari](scenari.md) conserva una fotografia della base e permette
 ipotesi su prezzi, ricette multistrato, modelli/sovramateriali e trasformazione.
 Confronto per linea/prodotto/articolo, medie esplicite e CSV; nessuna scrittura
 sulle anagrafiche, sui prezzi o sulle giacenze reali.
+
+### Fornitore delle polveri e catalogo a scorrimento
+
+In **TON → Dati tecnici → Polveri → Anagrafica** il campo facoltativo **Fornitore**
+contiene il nome dell'azienda (massimo 150 caratteri). È comune alle revisioni
+tecniche e modificabile con il normale controllo di concorrenza dell'anagrafica.
+L'elenco TON lo mostra e permette di cercarlo.
+
+In **Polveri e prezzi** il filtro fornitore si combina con Bianche/Gialle/Rosa/Grigie;
+**Fornitore da specificare** raccoglie le anagrafiche non ancora compilate. Il
+catalogo carica tutte le polveri e la tabella virtualizzata usa la scrollbar,
+senza pagine. Il dischetto nell'intestazione salva disponibilità, prezzo, data e
+lotti della polvere selezionata; la freccia accanto annulla le modifiche. Nelle
+finestre strette l'intestazione resta sopra entrambe le schede, così il salvataggio
+è raggiungibile anche durante la modifica delle celle nell'elenco.
+
+La migrazione **V12** aggiunge soltanto `TON.POLVERI.FORNITORE` nullable: i dati
+esistenti e le revisioni tecniche restano conservati. Si applica tramite il
+normale aggiornamento dello schema sull'HOST con backup preventivo; i CLIENT
+verificano la compatibilità. Il nome anagrafico non modifica i codici fornitore
+delle righe CSV degli ordini.

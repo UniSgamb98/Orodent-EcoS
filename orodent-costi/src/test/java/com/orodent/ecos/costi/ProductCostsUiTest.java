@@ -160,9 +160,18 @@ class ProductCostsUiTest {
                                 view().products.getColumns().stream()
                                         .map(TableColumn::getText)
                                         .toList());
-                        assertTrue(
+                        assertEquals(
+                                List.of(
+                                        "Articolo",
+                                        "Formato mm",
+                                        "Miscela g",
+                                        "Miscela €/kg",
+                                        "Polveri €",
+                                        "Trasformazione €",
+                                        "Totale €"),
                                 view().articles.getColumns().stream()
-                                        .anyMatch(c -> c.getText().equals("Miscela €/kg")));
+                                        .map(TableColumn::getText)
+                                        .toList());
                         assertNotNull(view().articles.getItems().getFirst().nominalMixPrice());
                         view().commonCost.setText("12");
                         return null;
@@ -181,6 +190,30 @@ class ProductCostsUiTest {
                                             .contains("revisione 1"));
             fx(
                     () -> {
+                        String targetArticle =
+                                view().articles.getItems().getFirst().article().code();
+                        Button edit =
+                                stage
+                                        .getScene()
+                                        .getRoot()
+                                        .lookupAll("#costs-products-edit-transformation")
+                                        .stream()
+                                        .filter(
+                                                n ->
+                                                        n instanceof Button b
+                                                                && ("Modifica trasformazione di "
+                                                                                + targetArticle)
+                                                                        .equals(
+                                                                                b
+                                                                                        .getAccessibleText()))
+                                        .map(n -> (Button) n)
+                                        .findFirst()
+                                        .orElseThrow();
+                        edit.fire();
+                        assertTrue(
+                                stage.getScene()
+                                        .lookup("#costs-products-override-editor")
+                                        .isVisible());
                         view().specific.fire();
                         view().articleCost.setText("");
                         return null;
@@ -224,6 +257,7 @@ class ProductCostsUiTest {
                     () -> {
                         assertTrue(view().save.isDisabled());
                         assertTrue(view().exportAll.isDisabled());
+                        assertTrue(stage.getScene().lookup("#costs-products-pending").isVisible());
                         view().cancel.fire();
                         return null;
                     });
@@ -232,6 +266,17 @@ class ProductCostsUiTest {
                     () -> {
                         assertEquals("12", view().commonCost.getText());
                         assertEquals("0", view().articleCost.getText());
+                        assertEquals("0,00 €", label("costs-products-summary-transformation"));
+                        assertEquals("36,6825 €", label("costs-products-summary-total"));
+                        snapshot("target/products-wide.png");
+                        TabPane tabs = (TabPane) stage.getScene().lookup("#costs-products-tabs");
+                        tabs.getSelectionModel().select(1);
+                        stage.getScene().getRoot().applyCss();
+                        stage.getScene().getRoot().layout();
+                        assertNotNull(stage.getScene().lookup(".products-white"));
+                        assertNotNull(stage.getScene().lookup(".products-yellow"));
+                        snapshot("target/products-materials.png");
+                        tabs.getSelectionModel().selectFirst();
                         view().search.setText("MSTA2");
                         assertEquals(1, view().products.getItems().size());
                         view().exportAll.fire();
@@ -350,6 +395,22 @@ class ProductCostsUiTest {
                         return null;
                     });
             await(() -> stage.getWidth() == 1100 && view().getWidth() <= 1100);
+            fx(
+                    () -> {
+                        stage.getScene().getRoot().applyCss();
+                        stage.getScene().getRoot().layout();
+                        var compact =
+                                (TabPane) stage.getScene().lookup("#costs-products-compact-tabs");
+                        assertNotNull(compact);
+                        assertEquals(
+                                "Articoli e costi",
+                                compact.getSelectionModel().getSelectedItem().getText());
+                        assertTrue(
+                                view().save.localToScene(view().save.getBoundsInLocal()).getMaxY()
+                                        <= stage.getScene().getHeight());
+                        snapshot("target/products-narrow.png");
+                        return null;
+                    });
             assertEquals(
                     2, new ProductCostService(db, workers).load().join().parameters(1).version());
             fx(
@@ -427,6 +488,21 @@ class ProductCostsUiTest {
                 return;
             }
         fail("Dialogo di conferma assente");
+    }
+
+    private void snapshot(String path) throws Exception {
+        stage.getScene().getRoot().applyCss();
+        stage.getScene().getRoot().layout();
+        var image = stage.getScene().snapshot(null);
+        var pixels = image.getPixelReader();
+        var out =
+                new java.awt.image.BufferedImage(
+                        (int) image.getWidth(),
+                        (int) image.getHeight(),
+                        java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < out.getHeight(); y++)
+            for (int x = 0; x < out.getWidth(); x++) out.setRGB(x, y, pixels.getArgb(x, y));
+        javax.imageio.ImageIO.write(out, "png", Path.of(path).toFile());
     }
 
     private <T> T fx(Callable<T> work) throws Exception {

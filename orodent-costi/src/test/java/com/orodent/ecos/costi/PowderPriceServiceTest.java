@@ -230,6 +230,9 @@ class PowderPriceServiceTest {
         var first = service.page("", Filter.TUTTE, false, 0).join();
         var second = service.page("", Filter.TUTTE, false, 40).join();
         assertEquals(47, first.total());
+        var all = service.all(false).join();
+        assertEquals(47, all.rows().size(), "The scrolling price screen must include powders beyond page 1");
+        assertFalse(all.hasNext());
         assertEquals(40, first.rows().size());
         assertTrue(first.hasNext());
         assertEquals(7, second.rows().size());

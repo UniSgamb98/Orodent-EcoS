@@ -8,6 +8,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.shape.SVGPath;
 import javafx.util.StringConverter;
 
 import java.time.LocalDate;
@@ -22,16 +23,27 @@ public final class PowderPricesView extends CostsShell {
         QUANTITY
     }
 
-    public final Button refresh = new Button("Ricarica"),
-            previous = new Button("←"),
-            next = new Button("→");
+    public final Button refresh = new Button("Ricarica");
     public final Button save = new Button("Salva"), cancel = new Button("Annulla");
     public final CheckBox inactive = new CheckBox("Includi archiviate");
     public final TableView<Row> table = new TableView<>();
     public final Button orders = new Button("Ordini in arrivo");
+
+    public record Supplier(String name) {
+        @Override
+        public String toString() {
+            return name == null
+                    ? "Tutti i fornitori"
+                    : name.isEmpty() ? "Fornitore da specificare" : name;
+        }
+    }
+
+    public final ComboBox<Supplier> supplier = new ComboBox<>();
+    private boolean updatingSupplier;
     public final Map<String, CheckBox> colors = new LinkedHashMap<>();
     private final VBox form = new VBox(8), catalogue = new VBox(12), detail = new VBox(12);
     private final SplitPane split = new SplitPane();
+    private HBox detailHeader;
     private final BorderPane workspace = new BorderPane();
     private final TabPane compact = new TabPane();
     private final Tab listTab = new Tab("Polveri"), detailTab = new Tab("Dettaglio e lotti");
@@ -39,9 +51,8 @@ public final class PowderPricesView extends CostsShell {
             name = new Label(),
             status = new Label(),
             feedback = new Label(),
-            count = new Label(),
             unknown = new Label("Le polveri senza colore restano visibili nei filtri attivi.");
-    private final VBox identity = new VBox(4, code, name);
+    private final HBox identity = new HBox(10);
     private final Label available = new Label("—"),
             totalQuantity = new Label("—"),
             totalValue = new Label("—"),
@@ -52,7 +63,6 @@ public final class PowderPricesView extends CostsShell {
             availableQuantity = new SimpleStringProperty("");
     private final DatePicker date = new DatePicker();
     private final LotsEditor lots = new LotsEditor();
-    private final HBox footer = new HBox(10);
     private final Label editContext = new Label("Seleziona una polvere");
     private final LongProperty selectedPowder = new SimpleLongProperty();
     private final BooleanProperty locked = new SimpleBooleanProperty();
@@ -98,28 +108,22 @@ public final class PowderPricesView extends CostsShell {
         }
         refresh.setId("costi-refresh");
         setupTable();
-        previous.setId("costi-previous");
-        next.setId("costi-next");
-        previous.setAccessibleText("Pagina precedente");
-        next.setAccessibleText("Pagina successiva");
-        count.setWrapText(true);
-        HBox paging = new HBox(9, previous, count, next);
-        paging.setAlignment(Pos.CENTER_LEFT);
+        supplier.setId("costi-supplier-filter");
+        supplier.setMaxWidth(Double.MAX_VALUE);
+        supplier.setAccessibleText("Filtra le polveri per fornitore");
+        supplier.getItems().add(new Supplier(null));
+        supplier.getSelectionModel().selectFirst();
+        supplier.setOnAction(
+                e -> {
+                    if (!updatingSupplier) colorsChanged.run();
+                });
         unknown.getStyleClass().add("costs-muted");
         unknown.setWrapText(true);
         unknown.setVisible(false);
         unknown.setManaged(false);
         catalogue
                 .getChildren()
-                .addAll(
-                        colorBar,
-                        new FlowPane(10, 8, inactive, refresh),
-                        table,
-                        paging,
-                        unknown,
-                        label(
-                                "Modifica quantità o prezzo nella cella e premi Salva.",
-                                "costs-muted"));
+                .addAll(colorBar, supplier, new FlowPane(10, 8, inactive, refresh), table, unknown);
         catalogue.getStyleClass().add("costs-card");
         catalogue.setMinSize(0, 0);
         VBox.setVgrow(table, Priority.ALWAYS);
@@ -150,8 +154,27 @@ public final class PowderPricesView extends CostsShell {
                     }
                 });
         date.setTooltip(new Tooltip("Data della fotografia della polvere selezionata."));
-        VBox identityGroup = new VBox(7, identity, status);
-        HBox detailHeader = new HBox(14, identityGroup, new VBox(5, new Label("Dati al"), date));
+        VBox names = new VBox(4, code, name);
+        names.setMinWidth(0);
+        HBox.setHgrow(names, Priority.ALWAYS);
+        identity.getChildren().setAll(names, cancel, save);
+        identity.setAlignment(Pos.CENTER_LEFT);
+        save.setText("");
+        SVGPath disk = new SVGPath();
+        disk.setContent(
+                "M17 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zM12 19c-1.66"
+                    + " 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zM15 9H5V5h10v4z");
+        disk.setStyle("-fx-fill: white;");
+        save.setGraphic(disk);
+        save.setAccessibleText("Salva prezzi e disponibilità della polvere selezionata");
+        save.setTooltip(new Tooltip("Salva prezzi, disponibilità e lotti"));
+        cancel.setText("↶");
+        cancel.setTooltip(new Tooltip("Annulla le modifiche non salvate"));
+        cancel.setAccessibleText("Annulla modifiche alla polvere selezionata");
+        editContext.getStyleClass().add("costs-muted");
+        editContext.setWrapText(true);
+        VBox identityGroup = new VBox(5, identity, status, editContext);
+        detailHeader = new HBox(14, identityGroup, new VBox(5, new Label("Dati al"), date));
         detailHeader.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(identityGroup, Priority.ALWAYS);
         identityGroup.setMinWidth(0);
@@ -183,11 +206,6 @@ public final class PowderPricesView extends CostsShell {
         save.setId("costi-save");
         cancel.setId("costi-cancel");
         save.getStyleClass().add("primary-button");
-        footer.setAlignment(Pos.CENTER_RIGHT);
-        Region footerGap = new Region();
-        HBox.setHgrow(footerGap, Priority.ALWAYS);
-        editContext.getStyleClass().add("costs-muted");
-        footer.getChildren().addAll(editContext, footerGap, cancel, save);
         feedback.setId("costi-feedback");
         feedback.setWrapText(true);
         feedback.setMinHeight(Region.USE_PREF_SIZE);
@@ -207,7 +225,7 @@ public final class PowderPricesView extends CostsShell {
         workspace.setMinSize(0, 0);
         workspace.widthProperty().addListener((o, b, a) -> layoutWorkspace(false));
         VBox.setVgrow(workspace, Priority.ALWAYS);
-        VBox content = new VBox(14, top, workspace, feedback, footer);
+        VBox content = new VBox(14, top, workspace, feedback);
         content.setMinSize(0, 0);
         content.setPadding(new Insets(18, 22, 16, 22));
         setCenter(content);
@@ -307,6 +325,9 @@ public final class PowderPricesView extends CostsShell {
         if (layoutMode.equals("split") && split.getDividerPositions().length > 0)
             divider = split.getDividerPositions()[0];
         workspace.setCenter(null);
+        workspace.setTop(null);
+        detail.getChildren().remove(detailHeader);
+        detailHeader.getStyleClass().remove("costs-card");
         split.getItems().clear();
         listTab.setContent(null);
         detailTab.setContent(null);
@@ -314,12 +335,16 @@ public final class PowderPricesView extends CostsShell {
         catalogue.setMinWidth(0);
         detail.setMinWidth(0);
         if (next.equals("split")) {
+            detail.getChildren().addFirst(detailHeader);
             catalogue.setMinWidth(490);
             detail.setMinWidth(560);
             split.getItems().setAll(catalogue, detail);
             split.setDividerPositions(divider);
             workspace.setCenter(split);
         } else {
+            workspace.setTop(detailHeader);
+            BorderPane.setMargin(detailHeader, new Insets(0, 0, 10, 0));
+            detailHeader.getStyleClass().add("costs-card");
             listTab.setContent(catalogue);
             detailTab.setContent(detail);
             workspace.setCenter(compact);
@@ -436,6 +461,9 @@ public final class PowderPricesView extends CostsShell {
             code.setText(value.powder().code());
             name.setText(
                     value.powder().name()
+                            + (value.powder().supplier().isBlank()
+                                    ? ""
+                                    : " · " + value.powder().supplier())
                             + (value.powder().active() ? "" : " · Archiviata in TON"));
             identity.getStyleClass()
                     .setAll("powder-detail-identity", colorStyle(value.powder().color()));
@@ -495,28 +523,42 @@ public final class PowderPricesView extends CostsShell {
         table.setDisable(busy);
         colors.values().forEach(b -> b.setDisable(busy));
         inactive.setDisable(busy);
+        supplier.setDisable(busy);
+    }
+
+    public String selectedSupplier() {
+        return supplier.getValue() == null ? null : supplier.getValue().name();
+    }
+
+    public void selectedSupplier(String name) {
+        updatingSupplier = true;
+        try {
+            supplier.setValue(new Supplier(name));
+        } finally {
+            updatingSupplier = false;
+        }
+    }
+
+    public void suppliers(Collection<String> names) {
+        String selected = selectedSupplier();
+        updatingSupplier = true;
+        try {
+            var choices = new ArrayList<Supplier>();
+            choices.add(new Supplier(null));
+            names.stream()
+                    .distinct()
+                    .sorted(String.CASE_INSENSITIVE_ORDER)
+                    .map(Supplier::new)
+                    .forEach(choices::add);
+            supplier.getItems().setAll(choices);
+            supplier.setValue(new Supplier(selected));
+        } finally {
+            updatingSupplier = false;
+        }
     }
 
     public void page(Page page) {
         table.getItems().setAll(page.rows());
-        previous.setDisable(page.offset() == 0);
-        next.setDisable(!page.hasNext());
-        long missing = page.rows().stream().filter(r -> r.unitPrice() == null).count();
-        count.setText(
-                page.total() == 0
-                        ? "0 polveri"
-                        : (page.offset() + 1)
-                                + "–"
-                                + (page.offset() + page.rows().size())
-                                + " di "
-                                + page.total()
-                                + (missing == 0
-                                        ? ""
-                                        : " · "
-                                                + missing
-                                                + (missing == 1
-                                                        ? " prezzo da compilare"
-                                                        : " prezzi da compilare")));
         boolean uncolored = page.rows().stream().anyMatch(r -> r.powder().color() == null);
         unknown.setVisible(uncolored);
         unknown.setManaged(uncolored);

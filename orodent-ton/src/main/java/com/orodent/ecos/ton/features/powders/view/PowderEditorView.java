@@ -32,6 +32,8 @@ public final class PowderEditorView extends VBox {
     private final ComboBox<Revision> versions = new ComboBox<>();
     private final TextField code = field("ton-powder-code", "Es. P001");
     private final TextField name = field("ton-powder-name", "Nome della polvere");
+    private final TextField supplier =
+            field("ton-powder-supplier", "Nome dell’azienda, facoltativo");
     private final ComboBox<PowderColor> color = new ComboBox<>();
     private final CheckBox active = new CheckBox("Polvere attiva");
     private final TextField strength = field("ton-powder-strength", "Facoltativa");
@@ -82,10 +84,11 @@ public final class PowderEditorView extends VBox {
                         generalHint,
                         form("Codice *", code),
                         form("Nome *", name),
+                        form("Fornitore", supplier),
                         form("Colore *", color),
                         hint(
                                 "Ordine dell'elenco: bianche, gialle, rosa, grigie. A parità di"
-                                    + " colore, per codice."),
+                                        + " colore, per codice."),
                         active);
         identity.getStyleClass().add("ton-powder-tab");
         technical =
@@ -184,6 +187,7 @@ public final class PowderEditorView extends VBox {
             versions.setDisable(detail == null);
             code.setText(powder == null ? "" : powder.code());
             name.setText(powder == null ? "" : powder.name());
+            supplier.setText(powder == null ? "" : powder.supplier());
             color.setValue(powder == null ? null : powder.color());
             active.setSelected(powder == null || powder.active());
             var data =
@@ -234,7 +238,11 @@ public final class PowderEditorView extends VBox {
     public IdentityDraft identity() {
         var identity =
                 new IdentityDraft(
-                        code.getText(), name.getText(), color.getValue(), active.isSelected());
+                        code.getText(),
+                        name.getText(),
+                        color.getValue(),
+                        active.isSelected(),
+                        supplier.getText());
         identity.requireColor();
         return identity;
     }
@@ -254,6 +262,7 @@ public final class PowderEditorView extends VBox {
                         List.of(
                                 code.getText().strip(),
                                 name.getText().strip(),
+                                supplier.getText().strip(),
                                 color.getValue() == null ? "" : color.getValue().name(),
                                 Boolean.toString(active.isSelected()),
                                 strength.getText().strip(),

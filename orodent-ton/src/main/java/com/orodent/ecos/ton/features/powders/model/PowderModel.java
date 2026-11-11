@@ -50,10 +50,17 @@ public final class PowderModel {
     }
 
     /** Color may be unknown when reading a catalogue record created before V5. */
-    public record IdentityDraft(String code, String name, PowderColor color, boolean active) {
+    public record IdentityDraft(
+            String code, String name, PowderColor color, boolean active, String supplier) {
+        public IdentityDraft(String code, String name, PowderColor color, boolean active) {
+            this(code, name, color, active, "");
+        }
+
         public IdentityDraft {
             code = text(code).toUpperCase(Locale.ROOT);
             name = text(name);
+            supplier = text(supplier);
+            if (supplier.length() > 150) throw invalid("Fornitore: massimo 150 caratteri.");
             if (code.isEmpty() || code.length() > 50)
                 throw invalid("Il codice è obbligatorio, massimo 50 caratteri.");
             if (name.isEmpty() || name.length() > 100)
@@ -122,9 +129,25 @@ public final class PowderModel {
     }
 
     public record Powder(
-            long id, String code, String name, PowderColor color, boolean active, int revision) {
+            long id,
+            String code,
+            String name,
+            PowderColor color,
+            boolean active,
+            int revision,
+            String supplier) {
+        public Powder(
+                long id,
+                String code,
+                String name,
+                PowderColor color,
+                boolean active,
+                int revision) {
+            this(id, code, name, color, active, revision, "");
+        }
+
         public IdentityDraft identity() {
-            return new IdentityDraft(code, name, color, active);
+            return new IdentityDraft(code, name, color, active, supplier);
         }
 
         public String colorLabel() {
