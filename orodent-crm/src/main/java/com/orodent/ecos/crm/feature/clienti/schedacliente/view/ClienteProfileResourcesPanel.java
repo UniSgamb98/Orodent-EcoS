@@ -42,6 +42,12 @@ final class ClienteProfileResourcesPanel extends VBox {
         getChildren().addAll(title, resources);
     }
 
+    void setInline() {
+        forniSection.root().setInline();
+        fresatoriSection.root().setInline();
+        materialiSection.root().setInline();
+    }
+
     void setForniCatalog(List<FornoCatalogItem> values) {
         forniSection.setCatalog(values);
     }

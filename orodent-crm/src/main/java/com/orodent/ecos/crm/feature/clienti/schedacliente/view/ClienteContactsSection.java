@@ -45,11 +45,16 @@ final class ClienteContactsSection extends VBox {
     void renderEditor(List<ContactEditInput> values) {
         getChildren().clear();
         contactEditControls.clear();
-        List<ContactEditInput> safeValues =
-                values.isEmpty()
-                        ? List.of(new ContactEditInput(null, "", List.of(), List.of()))
-                        : values;
-        safeValues.forEach(this::addContactEditor);
+        if (values.isEmpty()) {
+            Button add = new Button("+ Aggiungi contatto");
+            add.getStyleClass().add("clients-filter-button");
+            add.setOnAction(
+                    e -> {
+                        getChildren().clear();
+                        addContactEditor(new ContactEditInput(null, "", List.of(), List.of()));
+                    });
+            getChildren().add(add);
+        } else values.forEach(this::addContactEditor);
     }
 
     List<ContactEditInput> collectContacts() {
@@ -107,10 +112,13 @@ final class ClienteContactsSection extends VBox {
                     getChildren().remove(card);
                     contactEditControls.removeIf(control -> control.container() == card);
                     if (contactEditControls.isEmpty()) {
-                        addContactEditor(new ContactEditInput(null, "", List.of(), List.of()));
+                        renderEditor(List.of());
                     }
                 });
-        actions.getChildren().addAll(addButton, removeButton);
+        actions.getChildren()
+                .add(
+                        ClienteProfileFormControls.rowMenu(
+                                addButton, removeButton, "Aggiungi contatto", "Elimina contatto"));
 
         card.getChildren()
                 .addAll(
@@ -219,14 +227,23 @@ final class ClienteContactsSection extends VBox {
                     }
                 });
         HBox.setHgrow(field, Priority.ALWAYS);
-        row.getChildren().addAll(field, addButton, removeButton);
+        row.getChildren()
+                .addAll(
+                        field,
+                        ClienteProfileFormControls.rowMenu(
+                                addButton, removeButton, "Aggiungi recapito", "Elimina recapito"));
         container.getChildren().add(row);
     }
 
     private void refreshLinkedComboOptions(
             List<ComboBox<String>> comboFields, List<TextField> sourceFields) {
         List<String> options = linkedOptions(sourceFields, linkedValuesForOptions(comboFields));
-        comboFields.forEach(field -> field.getItems().setAll(options));
+        comboFields.forEach(
+                field -> {
+                    String text = field.getEditor().getText();
+                    field.getItems().setAll(options);
+                    field.getEditor().setText(text);
+                });
     }
 
     private List<ValueEditInput> linkedValuesForOptions(List<ComboBox<String>> fields) {
@@ -284,7 +301,7 @@ final class ClienteContactsSection extends VBox {
 
     private String comboValue(ComboBox<String> comboBox) {
         String editorText = comboBox.getEditor().getText();
-        if (editorText != null && !editorText.isBlank()) {
+        if (editorText != null) {
             return editorText.trim();
         }
         String value = comboBox.getValue();

@@ -27,16 +27,34 @@ e richiamo delle attività sono affiancati in righe compatte; un clic espande il
 dettaglio. Su finestre strette l'intera scheda usa uno scorrimento unico: contatti,
 storico e attrezzature crescono secondo il contenuto, senza riquadri con altezze
 riservate o scrollbar interne. I contatti restano richiudibili sopra lo storico.
-I recapiti hanno un comando Copia; dati fiscali/commerciali e attrezzature sono
-richiudibili. Nella vista grande i comandi dello storico restano visibili mentre
+I campi sono modificabili nella scheda; dati fiscali/commerciali, indirizzi e
+attrezzature sono richiudibili. Nella vista grande i comandi dello storico restano visibili mentre
 scorrono le attività. Il passaggio tra le due viste conserva i campi in modifica.
 
 I riepiloghi tecnici importati da CRM2 sono separati dalle conversazioni.
 Nelle chiamate riconoscibili del vecchio formato, il testo originale completo
 resta nei dettagli espandibili, anche per chiamate prive di conversazione;
-nessuna nota viene modificata nel DB. I testi lunghi hanno un'anteprima breve e
+il rendering conserva il testo originale finché non viene modificato. I testi
+lunghi hanno un'anteprima breve e
 possono essere aperti contemporaneamente. Il richiamo dell'ultima chiamata viene
 evidenziato se scaduto; i filtri dello storico non modificano l'intestazione.
+
+La scheda si apre direttamente in modifica: nome, dati commerciali, recapiti,
+contatti, indirizzi, attività e risorse appartengono a una bozza unica. La nuova
+chiamata si compila espandendo la relativa riga. I menu `⋯` ospitano aggiunta ed
+eliminazione delle righe; anche le eliminazioni restano in bozza fino al salvataggio.
+
+L'icona del dischetto e il comando per scartare compaiono solo quando i valori
+sono diversi dalla situazione caricata. Ripristinare i valori iniziali li nasconde.
+Cambio pagina, Home, cambio operatore, ricarica e chiusura chiedono se scartare le
+modifiche. Filtri, espansioni e ridimensionamento non rendono la bozza modificata.
+
+Il salvataggio è una singola transazione, con controllo della revisione cliente.
+Un errore conserva i campi nell'interfaccia e annulla tutte le scritture, anche
+quelle delle risorse. Le sezioni risorse non modificate non vengono riscritte.
+Autori, date di creazione e altri dati storici delle attività esistenti sono
+preservati; modificare l'anagrafica non riassegna le vecchie chiamate all'operatore
+corrente. Le date digitate vengono validate prima del salvataggio.
 
 ## Database e distinzione dal gestionale
 

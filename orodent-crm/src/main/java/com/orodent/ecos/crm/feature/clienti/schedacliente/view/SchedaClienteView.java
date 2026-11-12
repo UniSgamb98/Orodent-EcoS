@@ -17,6 +17,7 @@ import com.orodent.ecos.crm.feature.clienti.schedacliente.dto.SchedaClienteModel
 import com.orodent.ecos.crm.feature.clienti.schedacliente.dto.SchedaClienteModels.MaterialeClienteEditInput;
 import com.orodent.ecos.crm.feature.clienti.schedacliente.dto.SchedaClienteModels.MaterialeClienteItem;
 import com.orodent.ecos.crm.feature.clienti.schedacliente.dto.SchedaClienteModels.TimelineFilter;
+import com.orodent.ecos.crm.feature.clienti.schedacliente.dto.SchedaClienteModels.WorkspaceDraft;
 
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
@@ -43,6 +44,11 @@ public class SchedaClienteView extends BorderPane {
     private static final double RELATED_SECTIONS_TWO_COLUMN_BREAKPOINT = 560;
 
     private final AppSidebar sidebar;
+    private ProfileFormObserver formObserver;
+    private FormState baseline;
+    private boolean inline, rendering, draftFavorite;
+    private final javafx.beans.property.ReadOnlyBooleanWrapper dirty =
+            new javafx.beans.property.ReadOnlyBooleanWrapper(false);
     private final VBox columns = new VBox(16);
     private final BorderPane responsiveHost = new BorderPane();
     private TitledPane resourcesDisclosure;
@@ -189,6 +195,128 @@ public class SchedaClienteView extends BorderPane {
         timelineSection.render(interactions);
     }
 
+    public void renderInlineProfile(ClienteProfile profile) {
+        if (formObserver != null) formObserver.close();
+        rendering = true;
+        inline = true;
+        renderProfile(profile);
+        if (!getStyleClass().contains("crm-inline-page")) getStyleClass().add("crm-inline-page");
+        var draft = EditProfileDraft.from(profile);
+        dataSection.renderInline(draft);
+        relatedSections.setCompanyValueSources(
+                dataSection.phoneEditFields(), dataSection.emailEditFields());
+        relatedSections.renderContactsEditor(draft.contatti());
+        relatedSections.renderAddressesEditor(draft.indirizzi());
+        relatedSections.setInline();
+        timelineSection.renderInline(profile.interazioni());
+        resourcesPanel.renderStandaloneForniEditor(
+                profile.forni().stream().map(FornoClienteEditInput::from).toList());
+        resourcesPanel.renderStandaloneFresatoriEditor(
+                profile.fresatori().stream().map(FresatoreClienteEditInput::from).toList());
+        resourcesPanel.renderStandaloneMaterialiEditor(
+                profile.materiali().stream().map(MaterialeClienteEditInput::from).toList());
+        resourcesPanel.setInline();
+        draftFavorite = profile.favorite();
+        header.setNameEditor(dataSection.nameField());
+        formObserver = new ProfileFormObserver(this, this::refreshDirty);
+        formObserver.prepareInitialDates();
+        baseline = state();
+        rendering = false;
+        refreshDirty();
+    }
+
+    public void disposeInline() {
+        if (formObserver != null) formObserver.close();
+    }
+
+    public void addInlineActivity(InteractionType type) {
+        timelineSection.addInlineActivity(type);
+        if (type == InteractionType.CHIAMATA)
+            timelineSection
+                    .getCallOutcomeChoiceBox()
+                    .valueProperty()
+                    .addListener(
+                            (o, a, value) -> {
+                                if (value != null)
+                                    value.statoTrattativa().ifPresent(dataSection::setDraftStatus);
+                            });
+        formObserver.rebind();
+        refreshDirty();
+    }
+
+    public void filterInline(TimelineFilter filter) {
+        timelineSection.filterInline(filter);
+    }
+
+    public void toggleDraftFavorite() {
+        draftFavorite = !draftFavorite;
+        header.setFavorite(draftFavorite);
+        refreshDirty();
+    }
+
+    public WorkspaceDraft collectWorkspace() {
+        return new WorkspaceDraft(
+                collectEditDraft(),
+                collectForni(),
+                collectFresatori(),
+                collectMateriali(),
+                draftFavorite);
+    }
+
+    public boolean forniChanged() {
+        return !baseline.draft().forni().equals(collectForni());
+    }
+
+    public boolean fresatoriChanged() {
+        return !baseline.draft().fresatori().equals(collectFresatori());
+    }
+
+    public boolean materialiChanged() {
+        return !baseline.draft().materiali().equals(collectMateriali());
+    }
+
+    public WorkspaceDraft captureForSave() {
+        formObserver.commitDates();
+        return collectWorkspace();
+    }
+
+    private record FormState(
+            WorkspaceDraft draft, java.util.Map<DatePicker, String> pendingDates) {}
+
+    private FormState state() {
+        return new FormState(
+                collectWorkspace(),
+                formObserver == null ? java.util.Map.of() : formObserver.pendingDates());
+    }
+
+    private void refreshDirty() {
+        if (rendering || !inline || baseline == null) return;
+        boolean changed = !baseline.equals(state());
+        dirty.set(changed);
+        header.setDirty(changed);
+        header.setSubtitle(
+                java.util.stream.Stream.of(dataSection.tipoCliente(), dataSection.statoTrattativa())
+                        .filter(v -> v != null && !v.isBlank())
+                        .collect(java.util.stream.Collectors.joining(" · ")));
+    }
+
+    public boolean hasUnsavedChanges() {
+        refreshDirty();
+        return dirty.get();
+    }
+
+    public void markInlineClean() {
+        if (inline) {
+            baseline = state();
+            dirty.set(false);
+            header.setDirty(false);
+        }
+    }
+
+    public boolean isInline() {
+        return inline;
+    }
+
     public void renderProfile(ClienteProfile profile) {
         setEditMode(false);
         header.setTitle(profile.ragioneSociale());
@@ -242,7 +370,7 @@ public class SchedaClienteView extends BorderPane {
                 dataSection.ragioneSociale(),
                 dataSection.tipoCliente(),
                 dataSection.statoTrattativa(),
-                dataSection.coinvolgimento(),
+                inline ? header.nullableInvolvement() : dataSection.coinvolgimento(),
                 dataSection.partitaIva(),
                 dataSection.codiceFiscale(),
                 dataSection.acquisizione(),
@@ -251,7 +379,7 @@ public class SchedaClienteView extends BorderPane {
                 dataSection.sitiWeb(),
                 relatedSections.collectAddresses(),
                 relatedSections.collectContacts(),
-                timelineSection.collectInteractions());
+                inline ? timelineSection.collectInline() : timelineSection.collectInteractions());
     }
 
     private void setEditMode(boolean editMode) {
@@ -436,10 +564,6 @@ public class SchedaClienteView extends BorderPane {
 
     public Button getFavoriteButton() {
         return header.getFavoriteButton();
-    }
-
-    public Button getEditProfileButton() {
-        return header.getEditProfileButton();
     }
 
     public Button getSaveProfileEditButton() {

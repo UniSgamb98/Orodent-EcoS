@@ -12,6 +12,7 @@ import java.util.List;
 final class ClienteRelatedSections extends ResponsiveTilePane {
 
     private final ClienteContactsSection contactsSection;
+    private boolean inline;
     private final ClienteAddressesSection addressesSection;
 
     ClienteRelatedSections(double gap, double twoColumnBreakpoint) {
@@ -21,6 +22,21 @@ final class ClienteRelatedSections extends ResponsiveTilePane {
         addressesSection = new ClienteAddressesSection();
         addStretchingTile(ClienteProfileFormControls.createSection("Contatti", contactsSection));
         addStretchingTile(ClienteProfileFormControls.createSection("Indirizzi", addressesSection));
+    }
+
+    void setInline() {
+        if (inline) return;
+        inline = true;
+        var contactWrapper = (javafx.scene.layout.VBox) getChildren().get(0);
+        var addressWrapper = (javafx.scene.layout.VBox) getChildren().get(1);
+        addressWrapper.getChildren().remove(addressesSection);
+        var disclosure = new javafx.scene.control.TitledPane("Indirizzi", addressesSection);
+        disclosure.setExpanded(false);
+        disclosure.setAnimated(false);
+        disclosure.getStyleClass().add("client-profile-disclosure");
+        getChildren().clear();
+        addStretchingTile(contactWrapper);
+        addStretchingTile(disclosure);
     }
 
     void setCompanyValueSources(List<TextField> phoneFields, List<TextField> emailFields) {

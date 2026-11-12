@@ -19,10 +19,11 @@ final class ClienteProfileHeader extends VBox {
     private final Label nextInteractionLabel;
     private final Slider involvementSlider;
     private final Button favoriteButton;
-    private final Button editProfileButton;
     private final Button saveProfileEditButton;
     private final Button cancelProfileEditButton;
     private boolean updatingInvolvementSlider;
+    private boolean involvementUnset;
+    private VBox identityBox;
 
     ClienteProfileHeader() {
         super(12);
@@ -38,13 +39,25 @@ final class ClienteProfileHeader extends VBox {
         lastInteractionLabel = createBadgeLabel();
         nextInteractionLabel = createBadgeLabel();
         involvementSlider = createInvolvementSlider();
+        involvementSlider
+                .valueProperty()
+                .addListener(
+                        (o, a, b) -> {
+                            if (!updatingInvolvementSlider) involvementUnset = false;
+                        });
         favoriteButton = new Button("☆");
         favoriteButton.getStyleClass().add("client-profile-favorite-button");
-        editProfileButton = new Button("Modifica anagrafica");
-        editProfileButton.getStyleClass().add("clients-filter-button");
-        saveProfileEditButton = new Button("Salva modifiche");
+        saveProfileEditButton = new Button("▣");
+        saveProfileEditButton.setGraphic(saveIcon());
+        saveProfileEditButton.setText("");
+        saveProfileEditButton.setAccessibleText("Salva modifiche");
+        saveProfileEditButton.setTooltip(
+                new javafx.scene.control.Tooltip("Salva tutte le modifiche della scheda"));
         saveProfileEditButton.getStyleClass().add("clients-primary-button");
-        cancelProfileEditButton = new Button("Annulla");
+        cancelProfileEditButton = new Button("↶");
+        cancelProfileEditButton.setAccessibleText("Scarta modifiche");
+        cancelProfileEditButton.setTooltip(
+                new javafx.scene.control.Tooltip("Scarta le modifiche della scheda"));
         cancelProfileEditButton.getStyleClass().add("clients-filter-button");
 
         createResponsiveHeader();
@@ -82,8 +95,6 @@ final class ClienteProfileHeader extends VBox {
     }
 
     void setEditMode(boolean editMode) {
-        editProfileButton.setVisible(!editMode);
-        editProfileButton.setManaged(!editMode);
         saveProfileEditButton.setVisible(editMode);
         saveProfileEditButton.setManaged(editMode);
         cancelProfileEditButton.setVisible(editMode);
@@ -116,15 +127,12 @@ final class ClienteProfileHeader extends VBox {
         updatingInvolvementSlider = true;
         int safeValue = value == null || value < 1 || value > 5 ? 1 : value;
         involvementSlider.setValue(safeValue);
+        involvementUnset = value == null;
         updatingInvolvementSlider = false;
     }
 
     Button getFavoriteButton() {
         return favoriteButton;
-    }
-
-    Button getEditProfileButton() {
-        return editProfileButton;
     }
 
     Button getSaveProfileEditButton() {
@@ -137,17 +145,12 @@ final class ClienteProfileHeader extends VBox {
 
     private void createResponsiveHeader() {
         VBox identity = new VBox(4, titleLabel, subtitleLabel);
+        identityBox = identity;
         identity.setMinWidth(0);
         identity.setPrefWidth(260);
         FlowPane summary = createSummaryRow();
         summary.setMinWidth(0);
-        HBox actions =
-                new HBox(
-                        8,
-                        favoriteButton,
-                        editProfileButton,
-                        saveProfileEditButton,
-                        cancelProfileEditButton);
+        HBox actions = new HBox(8, favoriteButton, saveProfileEditButton, cancelProfileEditButton);
         actions.getStyleClass().add("client-profile-header-actions");
         HBox line = new HBox(18);
         line.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
@@ -172,6 +175,35 @@ final class ClienteProfileHeader extends VBox {
                 };
         widthProperty().addListener((o, a, b) -> arrange.run());
         arrange.run();
+    }
+
+    private javafx.scene.Node saveIcon() {
+        var icon = new javafx.scene.shape.SVGPath();
+        icon.setContent("M3 2 H16 L20 6 V20 H2 V2 Z M6 2 V8 H15 V2 M6 20 V12 H16 V20");
+        icon.setFill(javafx.scene.paint.Color.TRANSPARENT);
+        icon.setStroke(javafx.scene.paint.Color.WHITE);
+        icon.setStrokeWidth(1.7);
+        return icon;
+    }
+
+    void setNameEditor(javafx.scene.control.TextField field) {
+        field.setId("crm-profile-name");
+        field.getStyleClass().add("crm-inline-title");
+        identityBox.getChildren().set(0, field);
+        involvementSlider.setDisable(false);
+        favoriteButton.setDisable(false);
+        setDirty(false);
+    }
+
+    Integer nullableInvolvement() {
+        return involvementUnset ? null : involvementSliderValue();
+    }
+
+    void setDirty(boolean dirty) {
+        saveProfileEditButton.setVisible(dirty);
+        saveProfileEditButton.setManaged(dirty);
+        cancelProfileEditButton.setVisible(dirty);
+        cancelProfileEditButton.setManaged(dirty);
     }
 
     private FlowPane createSummaryRow() {

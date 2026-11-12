@@ -41,6 +41,37 @@ final class ClienteProfileFormControls {
         return row;
     }
 
+    static javafx.scene.control.MenuButton rowMenu(
+            Button add, Button remove, String addText, String removeText) {
+        var menu = new javafx.scene.control.MenuButton("⋯");
+        menu.getStyleClass().add("crm-row-menu");
+        menu.setAccessibleText("Azioni sulla riga");
+        if (add != null) {
+            var item = new javafx.scene.control.MenuItem(addText);
+            item.setOnAction(e -> add.fire());
+            menu.getItems().add(item);
+        }
+        if (remove != null) {
+            var item = new javafx.scene.control.MenuItem(removeText);
+            item.setOnAction(e -> remove.fire());
+            menu.getItems().add(item);
+        }
+        return menu;
+    }
+
+    static void compactDeletes(Node node) {
+        if (node instanceof javafx.scene.layout.Pane pane) {
+            for (Node child : java.util.List.copyOf(pane.getChildren())) {
+                if (child instanceof Button button
+                        && button.getStyleClass()
+                                .contains("client-profile-delete-interaction-button")) {
+                    int index = pane.getChildren().indexOf(child);
+                    pane.getChildren().set(index, rowMenu(null, button, "", "Elimina riga"));
+                } else compactDeletes(child);
+            }
+        }
+    }
+
     static TextField createTextField(String value, String prompt) {
         TextField field = new TextField(value == null ? "" : value);
         field.setPromptText(prompt);
@@ -51,8 +82,10 @@ final class ClienteProfileFormControls {
     static HBox createFieldRow(String labelText, Region field) {
         HBox row = new HBox(8);
         row.getStyleClass().add("client-profile-edit-row");
-        row.getChildren().addAll(createEditLabel(labelText), field);
-        HBox.setHgrow(field, Priority.ALWAYS);
+        VBox column = new VBox(4, createEditLabel(labelText), field);
+        field.setMaxWidth(Double.MAX_VALUE);
+        row.getChildren().add(column);
+        HBox.setHgrow(column, Priority.ALWAYS);
         return row;
     }
 

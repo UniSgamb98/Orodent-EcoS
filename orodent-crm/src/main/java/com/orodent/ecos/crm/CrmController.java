@@ -316,6 +316,9 @@ final class CrmController implements ModuleSession, ClientiNav {
                         ButtonType.CANCEL,
                         ButtonType.OK);
         dialog.setHeaderText("Modifiche al CRM");
+        ((Button) dialog.getDialogPane().lookupButton(ButtonType.OK)).setText("Scarta modifiche");
+        ((Button) dialog.getDialogPane().lookupButton(ButtonType.CANCEL))
+                .setText("Resta sulla pagina");
         if (window != null) dialog.initOwner(window);
         boolean leave = dialog.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
         if (leave) guard.clean();

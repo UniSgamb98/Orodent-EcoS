@@ -99,7 +99,13 @@ final class ClienteAddressesSection extends VBox {
                         addAddressEditor(emptyAddressInput());
                     }
                 });
-        actions.getChildren().addAll(addButton, removeButton);
+        actions.getChildren()
+                .add(
+                        ClienteProfileFormControls.rowMenu(
+                                addButton,
+                                removeButton,
+                                "Aggiungi indirizzo",
+                                "Elimina indirizzo"));
 
         card.getChildren()
                 .addAll(

@@ -16,6 +16,13 @@ final class ClienteResourceSection extends VBox {
     private final Button saveButton = new Button("Salva");
     private final Button cancelButton = new Button("Annulla");
     private final VBox list = new VBox(10);
+    private boolean inline;
+
+    void setInline() {
+        inline = true;
+        list.getChildren().forEach(ClienteProfileFormControls::compactDeletes);
+        setActionMode(ActionMode.EDIT);
+    }
 
     ClienteResourceSection(String titleText, String addButtonText) {
         super(10);
@@ -73,6 +80,7 @@ final class ClienteResourceSection extends VBox {
     }
 
     void addCard(Node card) {
+        if (inline) ClienteProfileFormControls.compactDeletes(card);
         list.getChildren().add(card);
     }
 
@@ -81,6 +89,13 @@ final class ClienteResourceSection extends VBox {
     }
 
     private void setActionMode(ActionMode mode) {
+        if (inline) {
+            setVisible(editButton, false);
+            setVisible(addButton, true);
+            setVisible(saveButton, false);
+            setVisible(cancelButton, false);
+            return;
+        }
         setVisible(editButton, mode == ActionMode.VIEW);
         setVisible(addButton, mode == ActionMode.EDIT);
         setVisible(saveButton, mode == ActionMode.EDIT);

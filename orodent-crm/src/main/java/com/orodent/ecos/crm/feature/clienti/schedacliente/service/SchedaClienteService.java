@@ -44,6 +44,7 @@ import com.orodent.ecos.crm.feature.clienti.schedacliente.dto.SchedaClienteModel
 import com.orodent.ecos.crm.feature.clienti.schedacliente.dto.SchedaClienteModels.TimelineFilter;
 import com.orodent.ecos.crm.feature.clienti.schedacliente.dto.SchedaClienteModels.ValueEditInput;
 import com.orodent.ecos.crm.feature.clienti.schedacliente.dto.SchedaClienteModels.ValueItem;
+import com.orodent.ecos.crm.feature.clienti.schedacliente.dto.SchedaClienteModels.WorkspaceDraft;
 import com.orodent.ecos.crm.feature.clienti.schedacliente.repository.ClienteRisorseRepository;
 
 import java.math.BigDecimal;
@@ -373,6 +374,36 @@ public class SchedaClienteService {
         return filteredProfile();
     }
 
+    public ClienteProfile saveWorkspace(WorkspaceDraft draft) {
+        return saveWorkspace(draft, true, true, true);
+    }
+
+    public ClienteProfile saveWorkspace(
+            WorkspaceDraft draft,
+            boolean forniChanged,
+            boolean fresatoriChanged,
+            boolean materialiChanged) {
+        ensureProfileLoaded();
+        if (draft.profile().ragioneSociale().isBlank())
+            throw new IllegalArgumentException("Inserisci la ragione sociale.");
+        var existing =
+                currentProfile.interazioni().stream()
+                        .map(InteractionPreview::interazioneId)
+                        .filter(java.util.Objects::nonNull)
+                        .collect(java.util.stream.Collectors.toSet());
+        for (var activity : draft.profile().interazioni())
+            if (activity.type() == InteractionType.CHIAMATA
+                    && !existing.contains(activity.interazioneId())
+                    && activity.esito() == null)
+                throw new IllegalArgumentException("Seleziona un esito per ogni nuova chiamata.");
+        saveEdit(draft.profile());
+        if (forniChanged) saveForniEdit(draft.forni());
+        if (fresatoriChanged) saveFresatoriEdit(draft.fresatori());
+        if (materialiChanged) saveMaterialiEdit(draft.materiali());
+        if (currentProfile.favorite() != draft.favorite()) toggleFavorite();
+        return loadProfile(currentClienteId);
+    }
+
     public ClienteProfile saveEdit(EditProfileDraft draft) {
         ensureProfileLoaded();
         if (currentClienteId == null) {
@@ -520,9 +551,10 @@ public class SchedaClienteService {
                                         currentClienteId,
                                         currentOperatoreService.currentOperatoreId(),
                                         normalize(interaction.testo()),
-                                        null,
+                                        interaction.createdAt() == null
+                                                ? now
+                                                : interaction.createdAt(),
                                         now))
-                .filter(nota -> !nota.testo().isBlank())
                 .toList();
     }
 
@@ -541,7 +573,9 @@ public class SchedaClienteService {
                                         interaction.prossimoContatto(),
                                         interaction.esito(),
                                         BigDecimal.ZERO,
-                                        null,
+                                        interaction.createdAt() == null
+                                                ? now
+                                                : interaction.createdAt(),
                                         now))
                 .toList();
     }

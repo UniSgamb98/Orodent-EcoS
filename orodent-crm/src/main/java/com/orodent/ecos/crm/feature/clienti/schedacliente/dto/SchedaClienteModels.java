@@ -357,6 +357,19 @@ public final class SchedaClienteModels {
         }
     }
 
+    public record WorkspaceDraft(
+            EditProfileDraft profile,
+            List<FornoClienteEditInput> forni,
+            List<FresatoreClienteEditInput> fresatori,
+            List<MaterialeClienteEditInput> materiali,
+            boolean favorite) {
+        public WorkspaceDraft {
+            forni = List.copyOf(forni);
+            fresatori = List.copyOf(fresatori);
+            materiali = List.copyOf(materiali);
+        }
+    }
+
     public record ValueItem(UUID id, String value) {}
 
     public record AddressItem(

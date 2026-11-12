@@ -111,6 +111,18 @@ class CrmUiTest {
                                     && enabledButton("crm-new-call"));
             fx(
                     () -> {
+                        var initialProfile =
+                                (SchedaClienteView) stage.getScene().lookup("#crm-profile");
+                        assertFalse(initialProfile.hasUnsavedChanges());
+                        assertFalse(button("crm-save-profile").isVisible());
+                        assertNull(button("crm-edit-profile"));
+                        var name = (TextField) stage.getScene().lookup("#crm-profile-name");
+                        name.setText("Laboratorio Rossi modificato");
+                        assertTrue(initialProfile.hasUnsavedChanges());
+                        assertTrue(button("crm-save-profile").isVisible());
+                        name.setText("Laboratorio Rossi");
+                        assertFalse(initialProfile.hasUnsavedChanges());
+                        name.setText("Laboratorio Rossi modificato");
                         button("crm-new-call").fire();
                         var profile = (SchedaClienteView) stage.getScene().lookup("#crm-profile");
                         profile.getNoteTextArea()
@@ -121,13 +133,40 @@ class CrmUiTest {
                         Platform.runLater(() -> answer(ButtonType.CANCEL));
                         button("crm-home").fire();
                         assertEquals(0, homes.get());
-                        button("crm-save-interaction").fire();
+                        button("crm-save-profile").fire();
                         return null;
                     });
             await(() -> button("crm-new-call") != null && enabledButton("crm-new-call"));
             fx(
                     () -> {
+                        var profile = (SchedaClienteView) stage.getScene().lookup("#crm-profile");
+                        assertFalse(profile.hasUnsavedChanges());
+                        assertFalse(button("crm-save-profile").isVisible());
+                        profile.getNotesFilterButton().fire();
+                        assertFalse(profile.hasUnsavedChanges());
+                        profile.getAllFilterButton().fire();
                         snapshot("target/crm-profile.png");
+                        // Reload also protects drafts; accepting discards the pending edit.
+                        ((TextField) stage.getScene().lookup("#crm-profile-name"))
+                                .setText("Da scartare");
+                        Platform.runLater(() -> answer(ButtonType.CANCEL));
+                        button("crm-reload").fire();
+                        assertTrue(profile.hasUnsavedChanges());
+                        Platform.runLater(() -> answer(ButtonType.OK));
+                        button("crm-reload").fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            button("crm-new-call") != null
+                                    && enabledButton("crm-new-call")
+                                    && stage.getScene().lookup("#crm-profile-name") != null);
+            fx(
+                    () -> {
+                        assertEquals(
+                                "Laboratorio Rossi modificato",
+                                ((TextField) stage.getScene().lookup("#crm-profile-name"))
+                                        .getText());
                         button("crm-nav-calendar").fire();
                         return null;
                     });
@@ -515,17 +554,90 @@ class CrmUiTest {
                                                 .getHeight()
                                         >= 200,
                                 "Expanded resources remain usable after returning to the wide"
-                                    + " layout");
+                                        + " layout");
                         assertTrue(stage.getScene().lookup("#crm-contact-scroll").isVisible());
                         assertEquals(
                                 sample[0].ragioneSociale(),
                                 page.collectEditDraft().ragioneSociale());
                         snapshot("target/crm-profile-wide-restored.png");
+                        page.renderInlineProfile(sample[0]);
+                        assertFalse(page.hasUnsavedChanges());
+                        assertFalse(page.getSaveProfileEditButton().isVisible());
+                        var original =
+                                sample[0].interazioni().stream()
+                                        .map(InteractionPreview::testo)
+                                        .toList();
+                        assertEquals(
+                                original,
+                                page.collectWorkspace().profile().interazioni().stream()
+                                        .map(InteractionEditInput::testo)
+                                        .toList());
+                        page.filterInline(TimelineFilter.NOTES);
+                        page.filterInline(TimelineFilter.ALL);
+                        assertFalse(page.hasUnsavedChanges());
+                        var inlineToggle =
+                                stage
+                                        .getScene()
+                                        .getRoot()
+                                        .lookupAll(".crm-activity-toggle")
+                                        .stream()
+                                        .map(n -> (Button) n)
+                                        .filter(n -> n.getAccessibleText().contains("Non trovato"))
+                                        .findFirst()
+                                        .orElseThrow();
+                        var inlineCard =
+                                (javafx.scene.layout.VBox) inlineToggle.getParent().getParent();
+                        inlineToggle.fire();
+                        rootLayout();
+                        var editor = (TextArea) inlineCard.lookup(".crm-inline-conversation");
+                        assertEquals("", editor.getText());
+                        editor.setText("Nuova conversazione");
+                        assertTrue(page.hasUnsavedChanges());
+                        assertTrue(page.getSaveProfileEditButton().isVisible());
+                        assertTrue(
+                                page.captureForSave().profile().interazioni().stream()
+                                        .anyMatch(
+                                                i ->
+                                                        i.testo()
+                                                                .endsWith(
+                                                                        "\n\n"
+                                                                            + "Nuova"
+                                                                            + " conversazione")));
+                        editor.setText("");
+                        assertFalse(page.hasUnsavedChanges());
+                        var date =
+                                inlineCard.lookupAll(".date-picker").stream()
+                                        .map(n -> (DatePicker) n)
+                                        .filter(d -> "Data contatto".equals(d.getPromptText()))
+                                        .findFirst()
+                                        .orElseThrow();
+                        String valid = date.getEditor().getText();
+                        date.getEditor().setText("data non valida");
+                        assertTrue(page.hasUnsavedChanges());
+                        assertThrows(IllegalArgumentException.class, page::captureForSave);
+                        assertEquals("data non valida", date.getEditor().getText());
+                        date.getEditor().setText(valid);
+                        assertFalse(page.hasUnsavedChanges());
+                        snapshot("target/crm-profile-inline.png");
+                        stage.setWidth(1020);
+                        return null;
+                    });
+            await(() -> stage.getScene().getWidth() < 1100);
+            fx(
+                    () -> {
+                        assertFalse(
+                                preview[0].hasUnsavedChanges(),
+                                "Resizing doesn't create unsaved edits");
+                        ((TextField) stage.getScene().lookup("#crm-profile-name"))
+                                .setText("Nome in bozza");
+                        assertTrue(preview[0].hasUnsavedChanges());
+                        snapshot("target/crm-profile-inline-compact.png");
                         return null;
                     });
         } finally {
             fx(
                     () -> {
+                        if (preview[0] != null) preview[0].disposeInline();
                         if (stage != null) stage.hide();
                         return null;
                     });
@@ -570,6 +682,11 @@ class CrmUiTest {
             Thread.sleep(50);
         }
         fail("Timeout CRM");
+    }
+
+    void rootLayout() {
+        stage.getScene().getRoot().applyCss();
+        stage.getScene().getRoot().layout();
     }
 
     void snapshot(String path) throws Exception {

@@ -351,3 +351,29 @@
 .crm-module .client-profile-page .crm-activity-recall-overdue { -fx-text-fill: #976108; }
 .crm-module .client-profile-page .crm-activity-preview { -fx-padding: 0 14 11 14; -fx-font-size: 13px; -fx-font-weight: normal; -fx-text-fill: #4d6578; }
 .crm-module .client-profile-page .crm-activity-details { -fx-padding: 4 14 14 14; }
+
+/* Direct editing: quiet fields at rest, clear focus, row actions in compact menus. */
+.crm-module .crm-inline-page .client-profile-edit-field,
+.crm-module .crm-inline-page .client-profile-linked-combo,
+.crm-module .crm-inline-page .client-profile-edit-choice-box,
+.crm-module .crm-inline-page .date-picker {
+    -fx-background-color: white; -fx-border-color: transparent transparent #d2e0e8 transparent;
+    -fx-background-radius: 4; -fx-border-radius: 0; -fx-padding: 3 5;
+    -fx-font-size: 14px; -fx-font-weight: normal; -fx-text-fill: #253f52;
+}
+.crm-module .crm-inline-page .client-profile-edit-field:focused,
+.crm-module .crm-inline-page .client-profile-linked-combo:focused,
+.crm-module .crm-inline-page .client-profile-edit-choice-box:focused,
+.crm-module .crm-inline-page .date-picker:focused { -fx-border-color: #19758b; -fx-border-radius: 4; -fx-background-color: #f3fafc; }
+.crm-module .crm-inline-page .crm-inline-title { -fx-font-size: 25px; -fx-font-weight: bold; -fx-background-color: transparent; -fx-text-fill: #173f5f; -fx-padding: 2 0; }
+.crm-module .crm-inline-page .client-profile-edit-label { -fx-font-size: 11px; -fx-font-weight: normal; -fx-text-fill: #607d90; }
+.crm-module .crm-inline-page .client-profile-linked-combo .text-field { -fx-background-color: white; -fx-font-size: 14px; -fx-font-weight: normal; }
+.crm-module .crm-inline-page .client-profile-timeline-card { -fx-padding: 10; -fx-border-color: #dbe6ec; -fx-border-width: 1; }
+.crm-module .crm-inline-page .client-profile-details-panel { -fx-spacing: 16; }
+.crm-module .crm-inline-page .crm-inline-conversation { -fx-control-inner-background: white; -fx-background-color: white; -fx-text-fill: #253f52; -fx-font-size: 14px; -fx-font-weight: normal; -fx-border-color: #d2e0e8; -fx-border-radius: 5; }
+.crm-module .crm-inline-page .crm-inline-conversation:focused { -fx-border-color: #19758b; }
+.crm-module .crm-row-menu { -fx-background-color: transparent; -fx-text-fill: #526e80; -fx-padding: 2 5; -fx-font-size: 18px; -fx-cursor: hand; }
+.crm-module .crm-row-menu:hover { -fx-background-color: #e4eef3; }
+.crm-module .crm-row-menu > .arrow-button { -fx-padding: 0; }
+.crm-module .crm-row-menu > .arrow-button > .arrow { -fx-background-color: transparent; -fx-padding: 0; }
+.crm-module .crm-inline-page .crm-activity-toggle { -fx-max-width: infinity; }

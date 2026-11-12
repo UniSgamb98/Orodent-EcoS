@@ -195,9 +195,29 @@ public class ClientePersistenceService {
     }
 
     private void syncNote(UUID clienteId, List<NotaCliente> desired) {
+        var existing = notaRepository.findByClienteId(clienteId);
+        var byId =
+                existing.stream().collect(Collectors.toMap(NotaCliente::id, Function.identity()));
+        var retained =
+                desired.stream()
+                        .map(
+                                n -> {
+                                    var old = byId.get(n.id());
+                                    if (old == null) return n;
+                                    if (java.util.Objects.equals(old.testo(), n.testo()))
+                                        return old;
+                                    return new NotaCliente(
+                                            n.id(),
+                                            n.clienteId(),
+                                            old.operatoreId(),
+                                            n.testo(),
+                                            old.createdAt(),
+                                            n.updatedAt());
+                                })
+                        .toList();
         syncById(
-                notaRepository.findByClienteId(clienteId),
-                desired,
+                existing,
+                retained,
                 NotaCliente::id,
                 notaRepository::insert,
                 notaRepository::update,
@@ -205,9 +225,41 @@ public class ClientePersistenceService {
     }
 
     private void syncInterazioni(UUID clienteId, List<Interazione> desired) {
+        var existing = interazioneRepository.findByClienteId(clienteId);
+        var byId =
+                existing.stream().collect(Collectors.toMap(Interazione::id, Function.identity()));
+        var retained =
+                desired.stream()
+                        .map(
+                                n -> {
+                                    var old = byId.get(n.id());
+                                    if (old == null) return n;
+                                    boolean same =
+                                            java.util.Objects.equals(old.notaId(), n.notaId())
+                                                    && java.util.Objects.equals(
+                                                            old.dataContatto(), n.dataContatto())
+                                                    && java.util.Objects.equals(
+                                                            old.prossimoContatto(),
+                                                            n.prossimoContatto())
+                                                    && old.esito() == n.esito();
+                                    return same
+                                            ? old
+                                            : new Interazione(
+                                                    n.id(),
+                                                    n.clienteId(),
+                                                    old.operatoreId(),
+                                                    n.notaId(),
+                                                    n.dataContatto(),
+                                                    n.prossimoContatto(),
+                                                    n.esito(),
+                                                    old.coinvolgimento(),
+                                                    old.createdAt(),
+                                                    n.updatedAt());
+                                })
+                        .toList();
         syncById(
-                interazioneRepository.findByClienteId(clienteId),
-                desired,
+                existing,
+                retained,
                 Interazione::id,
                 interazioneRepository::insert,
                 interazioneRepository::update,
@@ -228,7 +280,7 @@ public class ClientePersistenceService {
         for (T item : desired) {
             UUID id = idExtractor.apply(item);
             if (existingById.containsKey(id)) {
-                update.accept(item);
+                if (!java.util.Objects.equals(existingById.get(id), item)) update.accept(item);
             } else {
                 insert.accept(item);
             }

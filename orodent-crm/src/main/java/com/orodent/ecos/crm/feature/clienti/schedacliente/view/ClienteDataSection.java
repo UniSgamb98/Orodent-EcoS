@@ -32,6 +32,7 @@ final class ClienteDataSection extends VBox {
             DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final VBox content;
+    private boolean inline;
     private final List<TextField> phoneEditFields = new ArrayList<>();
     private final List<TextField> emailEditFields = new ArrayList<>();
     private final List<TextField> siteEditFields = new ArrayList<>();
@@ -110,11 +111,13 @@ final class ClienteDataSection extends VBox {
         acquisizioneEditPicker.getStyleClass().add("client-profile-call-date-picker");
 
         ResponsiveTilePane grid = createCustomerDataGrid();
-        addCustomerDataNode(grid, createFieldRow("Ragione sociale", ragioneSocialeEditField));
+        if (!inline)
+            addCustomerDataNode(grid, createFieldRow("Ragione sociale", ragioneSocialeEditField));
         addCustomerDataNode(grid, createChoiceRow("Tipo cliente", tipoClienteEditField));
         addCustomerDataNode(grid, createChoiceRow("Stato trattativa", statoTrattativaEditField));
-        addCustomerDataNode(
-                grid, createIntegerChoiceRow("Coinvolgimento", coinvolgimentoEditField));
+        if (!inline)
+            addCustomerDataNode(
+                    grid, createIntegerChoiceRow("Coinvolgimento", coinvolgimentoEditField));
         addCustomerDataNode(grid, createFieldRow("Partita IVA", partitaIvaEditField));
         addCustomerDataNode(grid, createFieldRow("Codice fiscale", codiceFiscaleEditField));
         addCustomerDataNode(grid, createDateRow("Acquisizione", acquisizioneEditPicker));
@@ -131,6 +134,27 @@ final class ClienteDataSection extends VBox {
                                 "Email azienda", emailEditFields, draft.email(), "Email azienda"),
                         createEditableValuesSection(
                                 "Siti web", siteEditFields, draft.sitiWeb(), "Sito web"));
+    }
+
+    void renderInline(EditProfileDraft draft) {
+        inline = true;
+        renderEditor(draft);
+        var grid = content.getChildren().removeFirst();
+        var more = new TitledPane("Dati fiscali e commerciali", grid);
+        more.getStyleClass().add("client-profile-disclosure");
+        more.setExpanded(false);
+        more.setAnimated(false);
+        content.getChildren().add(more);
+    }
+
+    void setDraftStatus(String status) {
+        if (!statoTrattativaEditField.getItems().contains(status))
+            statoTrattativaEditField.getItems().add(status);
+        statoTrattativaEditField.setValue(status);
+    }
+
+    TextField nameField() {
+        return ragioneSocialeEditField;
     }
 
     String ragioneSociale() {
@@ -251,7 +275,11 @@ final class ClienteDataSection extends VBox {
                     linkedOptionsRefresh.run();
                 });
         HBox.setHgrow(field, Priority.ALWAYS);
-        row.getChildren().addAll(field, addButton, removeButton);
+        row.getChildren()
+                .addAll(
+                        field,
+                        ClienteProfileFormControls.rowMenu(
+                                addButton, removeButton, "Aggiungi recapito", "Elimina recapito"));
         container.getChildren().add(row);
     }
 

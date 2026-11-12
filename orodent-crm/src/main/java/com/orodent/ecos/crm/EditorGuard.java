@@ -15,10 +15,20 @@ final class EditorGuard {
     }
 
     void clean() {
+        if (page
+                        instanceof
+                        com.orodent.ecos.crm.feature.clienti.schedacliente.view.SchedaClienteView
+                                        profile
+                && profile.isInline()) profile.markInlineClean();
         baseline = values();
     }
 
     boolean dirty() {
+        if (page
+                        instanceof
+                        com.orodent.ecos.crm.feature.clienti.schedacliente.view.SchedaClienteView
+                                        profile
+                && profile.isInline()) return profile.hasUnsavedChanges();
         return baseline != null && !baseline.equals(values());
     }
 
