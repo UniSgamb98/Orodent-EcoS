@@ -84,6 +84,77 @@ final class ClienteResourceSection extends VBox {
         list.getChildren().add(card);
     }
 
+    void addEditorCard(
+            VBox card,
+            boolean expanded,
+            String kind,
+            java.util.function.Supplier<String> title,
+            java.util.function.Supplier<String> subtitle,
+            Button remove,
+            javafx.beans.Observable... values) {
+        VBox body = new VBox(10);
+        body.getStyleClass().add("crm-resource-body");
+        body.getChildren().setAll(java.util.List.copyOf(card.getChildren()));
+        body.getChildren().remove(remove);
+        Label name = new Label();
+        name.setMinWidth(0);
+        name.setMaxWidth(Double.MAX_VALUE);
+        name.getStyleClass().add("crm-resource-name");
+        Label description = new Label();
+        description.setMinWidth(0);
+        description.setMaxWidth(Double.MAX_VALUE);
+        description.getStyleClass().add("crm-resource-description");
+        Runnable refreshSummary =
+                () -> {
+                    String text = title.get();
+                    name.setText(text.isBlank() ? (expanded ? "Nuovo " : "") + kind : text);
+                    description.setText(
+                            subtitle.get().isBlank() ? "Dati da completare" : subtitle.get());
+                };
+        for (var value : values)
+            value.addListener((javafx.beans.InvalidationListener) o -> refreshSummary.run());
+        refreshSummary.run();
+        VBox info = new VBox(3, name, description);
+        info.setMinWidth(0);
+        Label action = new Label();
+        action.getStyleClass().add("crm-resource-expand-label");
+        javafx.scene.layout.BorderPane graphic = new javafx.scene.layout.BorderPane();
+        graphic.setCenter(info);
+        graphic.setRight(action);
+        javafx.scene.layout.BorderPane.setAlignment(action, javafx.geometry.Pos.CENTER_RIGHT);
+        Button toggle = new Button();
+        toggle.setGraphic(graphic);
+        toggle.setMaxWidth(Double.MAX_VALUE);
+        toggle.setMinWidth(0);
+        toggle.getStyleClass().add("crm-resource-toggle");
+        toggle.setAccessibleText("Apri o chiudi " + kind);
+        graphic.prefWidthProperty().bind(toggle.widthProperty().subtract(20));
+        var menu =
+                ClienteProfileFormControls.rowMenu(
+                        null, remove, "", "Elimina " + kind + " dalla scheda cliente");
+        menu.setAccessibleText("Azioni " + kind);
+        menu.setTooltip(new javafx.scene.control.Tooltip("Azioni " + kind));
+        HBox header = new HBox(4, toggle, menu);
+        header.getStyleClass().add("crm-resource-heading");
+        header.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        HBox.setHgrow(toggle, Priority.ALWAYS);
+        card.getStyleClass().add("crm-resource-card");
+        card.getChildren().setAll(header, body);
+        java.util.function.Consumer<Boolean> show =
+                open -> {
+                    body.setVisible(open);
+                    body.setManaged(open);
+                    action.setText(open ? "Chiudi" : "Apri");
+                    toggle.setAccessibleHelp((open ? "Chiudi " : "Espandi ") + kind);
+                    card.pseudoClassStateChanged(
+                            javafx.css.PseudoClass.getPseudoClass("expanded"), open);
+                };
+        toggle.setOnAction(e -> show.accept(!body.isManaged()));
+        show.accept(expanded);
+        list.getChildren().removeIf(node -> node instanceof Label);
+        addCard(card);
+    }
+
     void removeCard(Node card) {
         list.getChildren().remove(card);
     }

@@ -8,6 +8,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
@@ -64,7 +65,7 @@ final class ClienteMaterialiResourceSection {
         section.showEditActions();
 
         if (materiali == null || materiali.isEmpty()) {
-            addEditorRow(emptyMateriale());
+            section.addCard(createEmptyLabel("Nessun materiale associato"));
             return;
         }
 
@@ -157,9 +158,26 @@ final class ClienteMaterialiResourceSection {
                         createSingleAutocompleteLine("Materiale", materialeField),
                         createEditorLine("Marchio", marchio, "Modello", modello),
                         createConsumptionFrequencyLine(consumo, frequenzaAcquisto),
-                        nota,
+                        ClienteProfileFormControls.resourceField("Note", nota),
                         remove);
-        section.addCard(card);
+        section.addEditorCard(
+                card,
+                materiale.id() == null,
+                "materiale",
+                () ->
+                        ClienteProfileFormControls.summary(
+                                materialeField.textValue(),
+                                marchio.textValue(),
+                                modello.textValue()),
+                () ->
+                        ClienteProfileFormControls.summary(
+                                consumo.getText(), frequenzaAcquisto.getText()),
+                remove,
+                materialeField.getEditor().textProperty(),
+                marchio.getEditor().textProperty(),
+                modello.getEditor().textProperty(),
+                consumo.textProperty(),
+                frequenzaAcquisto.textProperty());
         refreshSuggestions(editorRow);
     }
 
@@ -241,12 +259,12 @@ final class ClienteMaterialiResourceSection {
         return row;
     }
 
-    private HBox createEditorLine(
+    private FlowPane createEditorLine(
             String firstLabel,
             ResourceAutocompleteComboBox firstField,
             String secondLabel,
             ResourceAutocompleteComboBox secondField) {
-        HBox row = new HBox(10);
+        FlowPane row = new FlowPane(10, 8);
         row.getStyleClass().add("client-profile-forno-row");
         row.getChildren()
                 .addAll(
@@ -255,15 +273,17 @@ final class ClienteMaterialiResourceSection {
         return row;
     }
 
-    private HBox createSingleAutocompleteLine(String label, ResourceAutocompleteComboBox field) {
-        HBox row = new HBox(10);
+    private FlowPane createSingleAutocompleteLine(
+            String label, ResourceAutocompleteComboBox field) {
+        FlowPane row = new FlowPane(10, 8);
         row.getStyleClass().add("client-profile-forno-row");
         row.getChildren().add(createEditorField(label, field));
         return row;
     }
 
-    private HBox createConsumptionFrequencyLine(TextField consumo, TextField frequenzaAcquisto) {
-        HBox row = new HBox(10);
+    private FlowPane createConsumptionFrequencyLine(
+            TextField consumo, TextField frequenzaAcquisto) {
+        FlowPane row = new FlowPane(10, 8);
         row.getStyleClass().add("client-profile-forno-row");
         row.getChildren()
                 .addAll(
@@ -272,20 +292,12 @@ final class ClienteMaterialiResourceSection {
         return row;
     }
 
-    private VBox createTextField(String labelText, TextField field) {
-        VBox wrapper = new VBox(4);
-        Label label = new Label(labelText + ":");
-        label.getStyleClass().add("client-profile-resource-field-label");
-        wrapper.getChildren().addAll(label, field);
-        return wrapper;
+    private HBox createTextField(String labelText, TextField field) {
+        return ClienteProfileFormControls.resourceField(labelText, field);
     }
 
-    private VBox createEditorField(String labelText, ResourceAutocompleteComboBox field) {
-        VBox wrapper = new VBox(4);
-        Label label = new Label(labelText + ":");
-        label.getStyleClass().add("client-profile-resource-field-label");
-        wrapper.getChildren().addAll(label, field);
-        return wrapper;
+    private HBox createEditorField(String labelText, ResourceAutocompleteComboBox field) {
+        return ClienteProfileFormControls.resourceField(labelText, field);
     }
 
     private Label createEmptyLabel(String text) {

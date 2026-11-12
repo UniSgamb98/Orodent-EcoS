@@ -11,7 +11,6 @@ import com.orodent.ecos.crm.feature.clienti.schedacliente.dto.SchedaClienteModel
 import com.orodent.ecos.crm.feature.clienti.schedacliente.dto.SchedaClienteModels.MaterialeClienteItem;
 
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
 
@@ -31,15 +30,23 @@ final class ClienteProfileResourcesPanel extends VBox {
         super(12);
         getStyleClass().add("client-profile-resources-panel");
 
-        Label title = new Label("Risorse cliente");
-        title.getStyleClass().add("client-profile-resources-title");
-
         resources.getStyleClass().add("client-profile-resources-flow");
         resources
                 .getChildren()
                 .setAll(forniSection.root(), fresatoriSection.root(), materialiSection.root());
 
-        getChildren().addAll(title, resources);
+        for (var node : resources.getChildren())
+            if (node instanceof javafx.scene.layout.Region group)
+                group.prefWidthProperty()
+                        .bind(
+                                javafx.beans.binding.Bindings.createDoubleBinding(
+                                        () -> {
+                                            double width = resources.getWidth();
+                                            int columns = width >= 1260 ? 3 : width >= 860 ? 2 : 1;
+                                            return (width - 12 * (columns - 1)) / columns;
+                                        },
+                                        resources.widthProperty()));
+        getChildren().add(resources);
     }
 
     void setInline() {

@@ -43,6 +43,9 @@ final class ClienteTimelineSection extends VBox {
     private final Button allFilterButton;
     private final Button notesFilterButton;
     private final Button callsFilterButton;
+    private final Button closeAllButton = new Button("Chiudi tutte");
+    private final java.util.Map<java.util.UUID, Runnable> activityRefresh =
+            new java.util.LinkedHashMap<>();
     private final VBox timelineList;
     private final ScrollPane historyScroll;
     private final VBox scrollContent;
@@ -76,6 +79,16 @@ final class ClienteTimelineSection extends VBox {
         allFilterButton = createTimelineFilterButton("Tutti");
         notesFilterButton = createTimelineFilterButton("Solo note");
         callsFilterButton = createTimelineFilterButton("Solo chiamate");
+        closeAllButton.setId("crm-close-all-activities");
+        closeAllButton.getStyleClass().add("crm-close-all");
+        closeAllButton.setVisible(false);
+        closeAllButton.setManaged(false);
+        closeAllButton.setOnAction(
+                e -> {
+                    expandedActivities.clear();
+                    activityRefresh.values().forEach(Runnable::run);
+                    updateCloseAll();
+                });
         timelineList = new VBox(0);
         timelineList.getStyleClass().add("crm-activity-list");
         importedDisclosure.setExpanded(false);
@@ -135,6 +148,8 @@ final class ClienteTimelineSection extends VBox {
     }
 
     void render(List<InteractionPreview> interactions) {
+        activityRefresh.clear();
+        updateCloseAll();
         timelineList.getChildren().clear();
         importedNotes.getChildren().clear();
         long count = interactions.stream().filter(i -> !isImportedSummary(i)).count();
@@ -255,10 +270,16 @@ final class ClienteTimelineSection extends VBox {
                     boolean showPreview = !expanded && !parsed.body().isBlank();
                     preview.setVisible(showPreview);
                     preview.setManaged(showPreview);
-                    arrow.setText(expanded ? "⌃" : "⌄");
+                    arrow.setText(expanded ? "Chiudi" : "Apri");
+                    VBox.setMargin(
+                            card,
+                            expanded
+                                    ? new javafx.geometry.Insets(7, 0, 7, 0)
+                                    : javafx.geometry.Insets.EMPTY);
                     toggle.setAccessibleHelp(expanded ? "Comprimi attività" : "Espandi attività");
                     card.pseudoClassStateChanged(
                             javafx.css.PseudoClass.getPseudoClass("expanded"), expanded);
+                    updateCloseAll();
                 };
         toggle.setOnAction(
                 e -> {
@@ -266,8 +287,15 @@ final class ClienteTimelineSection extends VBox {
                     refresh.run();
                 });
         card.getChildren().addAll(toggle, preview, details);
+        if (key != null) activityRefresh.put(key, refresh);
         refresh.run();
         return card;
+    }
+
+    private void updateCloseAll() {
+        boolean any = activityRefresh.keySet().stream().anyMatch(expandedActivities::contains);
+        closeAllButton.setVisible(any);
+        closeAllButton.setManaged(any);
     }
 
     private String previewText(String text) {
@@ -305,6 +333,8 @@ final class ClienteTimelineSection extends VBox {
 
     void renderInline(List<InteractionPreview> interactions) {
         inlineEnabled = true;
+        activityRefresh.clear();
+        updateCloseAll();
         inlineFields.clear();
         timelineList.getChildren().clear();
         importedNotes.getChildren().clear();
@@ -374,6 +404,7 @@ final class ClienteTimelineSection extends VBox {
         var menu = new javafx.scene.control.MenuButton("⋯");
         menu.getStyleClass().add("crm-row-menu");
         menu.setAccessibleText("Azioni " + activity.type().label().toLowerCase());
+        menu.setTooltip(new javafx.scene.control.Tooltip(menu.getAccessibleText()));
         var delete =
                 new javafx.scene.control.MenuItem(
                         activity.type() == InteractionType.CHIAMATA
@@ -382,12 +413,20 @@ final class ClienteTimelineSection extends VBox {
         delete.setOnAction(
                 e -> {
                     inlineFields.remove(field);
+                    java.util.UUID removed =
+                            activity.interazioneId() != null
+                                    ? activity.interazioneId()
+                                    : activity.notaId();
+                    expandedActivities.remove(removed);
+                    activityRefresh.remove(removed);
+                    updateCloseAll();
                     timelineList.getChildren().remove(card);
                     importedNotes.getChildren().remove(card);
                     updateInlineCount();
                 });
         menu.getItems().add(delete);
         HBox row = new HBox(toggle, menu);
+        row.getStyleClass().add("crm-activity-heading");
         row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         HBox.setHgrow(toggle, Priority.ALWAYS);
         card.getChildren().addFirst(row);
@@ -522,6 +561,8 @@ final class ClienteTimelineSection extends VBox {
     }
 
     void renderEditor(List<InteractionEditInput> interactions) {
+        activityRefresh.clear();
+        updateCloseAll();
         timelineList.getChildren().clear();
         timelineEditFields.clear();
         importedDisclosure.setVisible(false);
@@ -817,7 +858,10 @@ final class ClienteTimelineSection extends VBox {
     private HBox createFilters() {
         HBox filters = new HBox(6);
         filters.getStyleClass().add("client-profile-timeline-filter-bar");
-        filters.getChildren().addAll(allFilterButton, notesFilterButton, callsFilterButton);
+        Region gap = new Region();
+        HBox.setHgrow(gap, Priority.ALWAYS);
+        filters.getChildren()
+                .addAll(allFilterButton, notesFilterButton, callsFilterButton, gap, closeAllButton);
         return filters;
     }
 

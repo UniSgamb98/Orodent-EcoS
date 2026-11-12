@@ -349,9 +349,32 @@ class CrmUiTest {
                                                         "Adrian · Responsabile laboratorio",
                                                         List.of(phone),
                                                         List.of(mail))),
-                                        List.of(),
-                                        List.of(),
-                                        List.of(),
+                                        List.of(
+                                                new FornoClienteItem(
+                                                        UUID.randomUUID(),
+                                                        UUID.randomUUID(),
+                                                        "Sinterizzazione",
+                                                        "2022",
+                                                        "Marca forno",
+                                                        "Modello forno",
+                                                        "Nota forno")),
+                                        List.of(
+                                                new FresatoreClienteItem(
+                                                        UUID.randomUUID(),
+                                                        UUID.randomUUID(),
+                                                        "Marca fresatore",
+                                                        "Modello fresatore",
+                                                        "Nota fresatore")),
+                                        List.of(
+                                                new MaterialeClienteItem(
+                                                        UUID.randomUUID(),
+                                                        UUID.randomUUID(),
+                                                        "Zirconia",
+                                                        "Marchio",
+                                                        "Modello",
+                                                        "10 kg",
+                                                        "Mensile",
+                                                        "Nota materiale")),
                                         history);
                         var page = new SchedaClienteView();
                         preview[0] = page;
@@ -619,6 +642,23 @@ class CrmUiTest {
                         date.getEditor().setText(valid);
                         assertFalse(page.hasUnsavedChanges());
                         snapshot("target/crm-profile-inline.png");
+                        verifyExpandableResources(page);
+                        var closeAll =
+                                (Button) stage.getScene().lookup("#crm-close-all-activities");
+                        assertTrue(closeAll.isVisible());
+                        closeAll.fire();
+                        assertTrue(
+                                stage.getScene().getRoot().lookupAll(".crm-activity").stream()
+                                        .noneMatch(
+                                                n ->
+                                                        n.getPseudoClassStates()
+                                                                .contains(
+                                                                        javafx.css.PseudoClass
+                                                                                .getPseudoClass(
+                                                                                        "expanded"))));
+                        assertFalse(
+                                page.hasUnsavedChanges(), "Closing activities preserves the draft");
+                        snapshot("target/crm-resources-inline.png");
                         stage.setWidth(1020);
                         return null;
                     });
@@ -642,6 +682,73 @@ class CrmUiTest {
                         return null;
                     });
         }
+    }
+
+    void verifyExpandableResources(SchedaClienteView page) {
+        var baseline = page.collectWorkspace();
+        var toggles = stage.getScene().getRoot().lookupAll(".crm-resource-toggle");
+        assertEquals(3, toggles.size());
+        for (var node : toggles) {
+            var toggle = (Button) node;
+            var card = (javafx.scene.layout.VBox) toggle.getParent().getParent();
+            var body = card.getChildren().get(1);
+            assertFalse(body.isManaged(), "Saved resources start collapsed");
+            toggle.fire();
+            assertTrue(body.isManaged());
+            toggle.fire();
+            assertFalse(body.isManaged());
+        }
+        assertEquals(baseline, page.collectWorkspace());
+        assertFalse(page.hasUnsavedChanges());
+        stage.getScene().getRoot().lookupAll(".button").stream()
+                .filter(n -> n instanceof Button b && "+ Forno".equals(b.getText()))
+                .map(n -> (Button) n)
+                .findFirst()
+                .orElseThrow()
+                .fire();
+        var newToggle =
+                stage.getScene().getRoot().lookupAll(".crm-resource-toggle").stream()
+                        .map(n -> (Button) n)
+                        .filter(n -> "Chiudi forno".equals(n.getAccessibleHelp()))
+                        .findFirst()
+                        .orElseThrow();
+        var card = (javafx.scene.layout.VBox) newToggle.getParent().getParent();
+        assertTrue(card.getChildren().get(1).isManaged(), "New resource starts open");
+        var brand =
+                card.lookupAll(".combo-box").stream()
+                        .map(n -> (ComboBox<?>) n)
+                        .filter(n -> "Marca".equals(n.getPromptText()))
+                        .findFirst()
+                        .orElseThrow();
+        brand.getEditor().setText("Nuova marca");
+        ((TextArea) card.lookup(".text-area")).setText("Bozza forno");
+        assertEquals(
+                "Nuova marca",
+                ((Label) newToggle.getGraphic().lookup(".crm-resource-name")).getText());
+        newToggle.fire();
+        assertFalse(card.getChildren().get(1).isManaged());
+        assertEquals(2, page.collectWorkspace().forni().size());
+        assertEquals("Nuova marca", page.collectWorkspace().forni().getLast().marca());
+        assertEquals("Bozza forno", page.collectWorkspace().forni().getLast().nota());
+        assertTrue(page.hasUnsavedChanges());
+        newToggle.fire();
+        assertEquals("Bozza forno", ((TextArea) card.lookup(".text-area")).getText());
+        var menu = (MenuButton) card.lookup(".crm-row-menu");
+        assertEquals("Azioni forno", menu.getTooltip().getText());
+        assertEquals("Elimina forno dalla scheda cliente", menu.getItems().getFirst().getText());
+        menu.getItems().getFirst().fire();
+        assertEquals(
+                baseline,
+                page.collectWorkspace(),
+                "Removing the new row restores the original draft");
+        assertFalse(page.hasUnsavedChanges());
+        toggles.stream()
+                .map(n -> (Button) n)
+                .filter(n -> n.getAccessibleText().endsWith("forno"))
+                .findFirst()
+                .orElseThrow()
+                .fire();
+        rootLayout();
     }
 
     boolean enabledButton(String id) {

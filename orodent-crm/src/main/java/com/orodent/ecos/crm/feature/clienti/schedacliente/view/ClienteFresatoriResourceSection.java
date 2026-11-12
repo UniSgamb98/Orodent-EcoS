@@ -7,6 +7,7 @@ import com.orodent.ecos.crm.feature.clienti.schedacliente.dto.SchedaClienteModel
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
@@ -63,7 +64,7 @@ final class ClienteFresatoriResourceSection {
         section.showEditActions();
 
         if (fresatori == null || fresatori.isEmpty()) {
-            addEditorRow(emptyFresatore());
+            section.addCard(createEmptyLabel("Nessun fresatore associato"));
             return;
         }
 
@@ -127,8 +128,19 @@ final class ClienteFresatoriResourceSection {
                 });
 
         card.getChildren()
-                .addAll(createEditorLine("Marca", marca, "Modello", modello), nota, remove);
-        section.addCard(card);
+                .addAll(
+                        createEditorLine("Marca", marca, "Modello", modello),
+                        ClienteProfileFormControls.resourceField("Note", nota),
+                        remove);
+        section.addEditorCard(
+                card,
+                fresatore.id() == null,
+                "fresatore",
+                () -> ClienteProfileFormControls.summary(marca.textValue(), modello.textValue()),
+                () -> "Fresatore",
+                remove,
+                marca.getEditor().textProperty(),
+                modello.getEditor().textProperty());
         refreshSuggestions(editorRow);
     }
 
@@ -197,12 +209,12 @@ final class ClienteFresatoriResourceSection {
         return row;
     }
 
-    private HBox createEditorLine(
+    private FlowPane createEditorLine(
             String firstLabel,
             ResourceAutocompleteComboBox firstField,
             String secondLabel,
             ResourceAutocompleteComboBox secondField) {
-        HBox row = new HBox(10);
+        FlowPane row = new FlowPane(10, 8);
         row.getStyleClass().add("client-profile-forno-row");
         row.getChildren()
                 .addAll(
@@ -211,12 +223,8 @@ final class ClienteFresatoriResourceSection {
         return row;
     }
 
-    private VBox createEditorField(String labelText, ResourceAutocompleteComboBox field) {
-        VBox wrapper = new VBox(4);
-        Label label = new Label(labelText + ":");
-        label.getStyleClass().add("client-profile-resource-field-label");
-        wrapper.getChildren().addAll(label, field);
-        return wrapper;
+    private HBox createEditorField(String labelText, ResourceAutocompleteComboBox field) {
+        return ClienteProfileFormControls.resourceField(labelText, field);
     }
 
     private boolean matches(

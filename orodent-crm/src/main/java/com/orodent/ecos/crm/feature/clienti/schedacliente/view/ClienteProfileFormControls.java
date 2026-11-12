@@ -46,6 +46,7 @@ final class ClienteProfileFormControls {
         var menu = new javafx.scene.control.MenuButton("⋯");
         menu.getStyleClass().add("crm-row-menu");
         menu.setAccessibleText("Azioni sulla riga");
+        menu.setTooltip(new javafx.scene.control.Tooltip("Azioni sulla riga"));
         if (add != null) {
             var item = new javafx.scene.control.MenuItem(addText);
             item.setOnAction(e -> add.fire());
@@ -70,6 +71,30 @@ final class ClienteProfileFormControls {
                 } else compactDeletes(child);
             }
         }
+    }
+
+    static HBox resourceField(String text, Region field) {
+        Label label = new Label(text);
+        label.getStyleClass().add("client-profile-resource-field-label");
+        label.setMinWidth(76);
+        label.setPrefWidth(76);
+        label.setWrapText(true);
+        field.setMinWidth(80);
+        field.setMaxWidth(Double.MAX_VALUE);
+        HBox row = new HBox(8, label, field);
+        row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        row.getStyleClass().add("crm-resource-field-row");
+        row.setPrefWidth(208);
+        row.setMinWidth(180);
+        HBox.setHgrow(field, Priority.ALWAYS);
+        return row;
+    }
+
+    static String summary(String... values) {
+        return java.util.Arrays.stream(values)
+                .filter(v -> v != null && !v.isBlank())
+                .map(String::trim)
+                .collect(java.util.stream.Collectors.joining(" · "));
     }
 
     static TextField createTextField(String value, String prompt) {

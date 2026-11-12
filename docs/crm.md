@@ -43,6 +43,11 @@ La scheda si apre direttamente in modifica: nome, dati commerciali, recapiti,
 contatti, indirizzi, attività e risorse appartengono a una bozza unica. La nuova
 chiamata si compila espandendo la relativa riga. I menu `⋯` ospitano aggiunta ed
 eliminazione delle righe; anche le eliminazioni restano in bozza fino al salvataggio.
+Le chiamate aperte hanno bordo e intestazione evidenziati; “Chiudi tutte” le
+richiude conservando i campi modificati. Forni, fresatori e materiali già salvati
+partono compatti, con un riepilogo espandibile. Le nuove risorse si aprono subito;
+le etichette sono affiancate ai campi e il menu della singola scheda resta in alto
+a destra, anche da chiusa.
 
 L'icona del dischetto e il comando per scartare compaiono solo quando i valori
 sono diversi dalla situazione caricata. Ripristinare i valori iniziali li nasconde.
