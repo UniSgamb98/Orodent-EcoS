@@ -315,7 +315,24 @@
 .crm-module .client-profile-page .client-profile-copy { -fx-background-color: transparent; -fx-text-fill: #19758b; -fx-font-size: 12px; -fx-padding: 3 5; -fx-cursor: hand; }
 .crm-module .client-profile-page .client-profile-copy:hover { -fx-background-color: #e6f1f4; -fx-background-radius: 4; }
 .crm-module .client-profile-page .client-profile-disclosure { -fx-text-fill: #526e80; -fx-font-size: 13px; }
-.crm-module .client-profile-page .client-profile-disclosure > .title { -fx-background-color: #f2f6f9; -fx-padding: 10 12; -fx-background-radius: 6; }
+.crm-module .client-profile-page .client-profile-disclosure > .title {
+    -fx-background-color: #edf5f9;
+    -fx-background-insets: 0;
+    -fx-border-color: #cbdfe9;
+    -fx-border-width: 1;
+    -fx-padding: 8 10;
+    -fx-background-radius: 7;
+    -fx-border-radius: 7;
+    -fx-cursor: hand;
+}
+.crm-module .client-profile-page .client-profile-disclosure > .title:hover { -fx-background-color: #dfedf5; -fx-border-color: #9fbfce; }
+.crm-module .client-profile-page .client-profile-disclosure:expanded > .title { -fx-background-color: #e5f0f6; -fx-border-color: #a7c6d6; }
+.crm-module .client-profile-page .client-profile-disclosure:focused > .title { -fx-border-color: #19758b; }
+.crm-module .client-profile-page .client-profile-disclosure > .title > .arrow-button { -fx-padding: 0; -fx-min-width: 0; -fx-pref-width: 0; -fx-max-width: 0; -fx-opacity: 0; }
+.crm-module .client-profile-page .client-profile-disclosure > .title > .arrow-button > .arrow { -fx-padding: 0; -fx-background-color: transparent; }
+.crm-module .client-profile-page .client-profile-disclosure .crm-disclosure-title { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #294d64; }
+.crm-module .client-profile-page .client-profile-disclosure .crm-disclosure-action { -fx-font-size: 12px; -fx-font-weight: normal; -fx-text-fill: #19758b; }
+.crm-module .client-profile-page .client-profile-disclosure .crm-disclosure-chevron { -fx-fill: transparent; -fx-stroke: #19758b; -fx-stroke-width: 1.5; -fx-stroke-line-cap: round; -fx-stroke-line-join: round; }
 .crm-module .client-profile-page .client-profile-disclosure > .content { -fx-background-color: white; -fx-border-color: #e2eaf0; -fx-padding: 12; }
 .crm-module .client-profile-page .client-profile-resources-panel { -fx-border-color: transparent; -fx-padding: 0; }
 .crm-module .client-profile-page .client-profile-info-label,

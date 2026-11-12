@@ -204,6 +204,8 @@ final class ClienteContactsSection extends VBox {
             String prompt,
             List<String> options) {
         ComboBox<String> field = new ComboBox<>();
+        field.setMinWidth(0);
+        field.setMaxWidth(Double.MAX_VALUE);
         field.setEditable(true);
         field.setPromptText(prompt);
         field.getStyleClass().add("client-profile-linked-combo");

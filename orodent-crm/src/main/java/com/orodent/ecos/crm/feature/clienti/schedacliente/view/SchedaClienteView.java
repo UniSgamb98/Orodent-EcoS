@@ -89,7 +89,7 @@ public class SchedaClienteView extends BorderPane {
         resourcesDisclosure = new TitledPane("Attrezzature e materiali", resourcesPanel);
         resourcesDisclosure.setExpanded(false);
         resourcesDisclosure.setAnimated(false);
-        resourcesDisclosure.getStyleClass().add("client-profile-disclosure");
+        ClienteProfileFormControls.styleDisclosure(resourcesDisclosure);
         contactScroll = new ScrollPane(detailsPanel);
         contactScroll.setId("crm-contact-scroll");
         contactScroll.setFitToWidth(true);
@@ -98,7 +98,7 @@ public class SchedaClienteView extends BorderPane {
         contactScroll.getStyleClass().add("client-profile-contact-scroll");
         compactContacts = new TitledPane("Contatti e dati azienda", null);
         compactContacts.setAnimated(false);
-        compactContacts.getStyleClass().add("client-profile-disclosure");
+        ClienteProfileFormControls.styleDisclosure(compactContacts);
         VBox.setVgrow(columns, Priority.ALWAYS);
         columns.setMinHeight(0);
         columns.setPrefHeight(500);

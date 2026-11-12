@@ -33,7 +33,7 @@ final class ClienteRelatedSections extends ResponsiveTilePane {
         var disclosure = new javafx.scene.control.TitledPane("Indirizzi", addressesSection);
         disclosure.setExpanded(false);
         disclosure.setAnimated(false);
-        disclosure.getStyleClass().add("client-profile-disclosure");
+        ClienteProfileFormControls.styleDisclosure(disclosure);
         getChildren().clear();
         addStretchingTile(contactWrapper);
         addStretchingTile(disclosure);

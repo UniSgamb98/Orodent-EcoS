@@ -73,7 +73,7 @@ final class ClienteDataSection extends VBox {
         TitledPane disclosure = new TitledPane("Dati fiscali e commerciali", commercial);
         disclosure.setExpanded(false);
         disclosure.setAnimated(false);
-        disclosure.getStyleClass().add("client-profile-disclosure");
+        ClienteProfileFormControls.styleDisclosure(disclosure);
         content.getChildren()
                 .addAll(
                         valueGroup("Telefono aziendale", profile.telefoni()),
@@ -141,7 +141,7 @@ final class ClienteDataSection extends VBox {
         renderEditor(draft);
         var grid = content.getChildren().removeFirst();
         var more = new TitledPane("Dati fiscali e commerciali", grid);
-        more.getStyleClass().add("client-profile-disclosure");
+        ClienteProfileFormControls.styleDisclosure(more);
         more.setExpanded(false);
         more.setAnimated(false);
         content.getChildren().add(more);

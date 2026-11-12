@@ -93,7 +93,7 @@ final class ClienteTimelineSection extends VBox {
         timelineList.getStyleClass().add("crm-activity-list");
         importedDisclosure.setExpanded(false);
         importedDisclosure.setAnimated(false);
-        importedDisclosure.getStyleClass().add("client-profile-disclosure");
+        ClienteProfileFormControls.styleDisclosure(importedDisclosure);
         noteEditor = createNoteEditor();
         nextCallDatePicker = new DatePicker();
         nextCallDatePicker.setPromptText("Prossima chiamata");
@@ -255,7 +255,7 @@ final class ClienteTimelineSection extends VBox {
                     new TitledPane("Dettagli originali CRM2", createInfoLabel(original));
             source.setExpanded(parsed.body().isBlank());
             source.setAnimated(false);
-            source.getStyleClass().add("client-profile-disclosure");
+            ClienteProfileFormControls.styleDisclosure(source);
             details.getChildren().add(source);
         }
         java.util.UUID key =

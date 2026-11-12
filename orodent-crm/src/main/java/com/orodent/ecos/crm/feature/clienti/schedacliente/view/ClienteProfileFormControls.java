@@ -41,6 +41,45 @@ final class ClienteProfileFormControls {
         return row;
     }
 
+    static void styleDisclosure(javafx.scene.control.TitledPane pane) {
+        pane.setMinWidth(0);
+        pane.getStyleClass().add("client-profile-disclosure");
+        Label title = new Label();
+        title.textProperty().bind(pane.textProperty());
+        title.getStyleClass().add("crm-disclosure-title");
+        title.setMinWidth(0);
+        title.setMaxWidth(Double.MAX_VALUE);
+        title.setWrapText(true);
+        Label action = new Label();
+        action.textProperty()
+                .bind(
+                        javafx.beans.binding.Bindings.when(pane.expandedProperty())
+                                .then("Riduci")
+                                .otherwise("Espandi"));
+        action.getStyleClass().add("crm-disclosure-action");
+        var chevron = new javafx.scene.shape.SVGPath();
+        chevron.setContent("M0 0 L4 4 L8 0");
+        chevron.getStyleClass().add("crm-disclosure-chevron");
+        chevron.rotateProperty()
+                .bind(
+                        javafx.beans.binding.Bindings.when(pane.expandedProperty())
+                                .then(180)
+                                .otherwise(0));
+        HBox command = new HBox(6, action, chevron);
+        command.setAlignment(javafx.geometry.Pos.CENTER);
+        command.setMinWidth(Region.USE_PREF_SIZE);
+        HBox header = new HBox(10, title, command);
+        header.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        header.setMinWidth(0);
+        header.prefWidthProperty()
+                .bind(javafx.beans.binding.Bindings.max(0, pane.widthProperty().subtract(26)));
+        header.setMouseTransparent(true);
+        HBox.setHgrow(title, Priority.ALWAYS);
+        pane.setGraphic(header);
+        pane.setContentDisplay(javafx.scene.control.ContentDisplay.GRAPHIC_ONLY);
+        pane.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+    }
+
     static javafx.scene.control.MenuButton actionMenu(String description) {
         var dots = new javafx.scene.shape.SVGPath();
         dots.setContent(
