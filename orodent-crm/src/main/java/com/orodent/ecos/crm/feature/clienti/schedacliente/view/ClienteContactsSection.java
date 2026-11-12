@@ -154,11 +154,8 @@ final class ClienteContactsSection extends VBox {
                 .filter(value -> value != null && !value.isBlank())
                 .forEach(
                         value -> {
-                            Label valueLabel = new Label(value);
-                            valueLabel.setWrapText(true);
-                            valueLabel.setMaxWidth(Double.MAX_VALUE);
-                            valueLabel.getStyleClass().add("client-profile-contact-value");
-                            group.getChildren().add(valueLabel);
+                            group.getChildren()
+                                    .add(ClienteProfileFormControls.copyableValue(value));
                         });
         return group;
     }

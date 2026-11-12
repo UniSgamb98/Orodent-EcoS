@@ -14,6 +14,6 @@ final class ClienteProfileDetailsPanel extends VBox {
         for (Node section : relatedSections.getChildren()) {
             section.getStyleClass().remove("new-client-section");
         }
-        getChildren().addAll(dataSection, relatedSections);
+        getChildren().addAll(relatedSections, dataSection);
     }
 }

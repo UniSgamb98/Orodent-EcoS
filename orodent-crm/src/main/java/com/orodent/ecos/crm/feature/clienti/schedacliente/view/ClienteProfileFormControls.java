@@ -22,6 +22,25 @@ final class ClienteProfileFormControls {
         return section;
     }
 
+    static HBox copyableValue(String value) {
+        Label text = createInfoLabel(value);
+        text.setMinWidth(0);
+        text.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(text, Priority.ALWAYS);
+        Button copy = new Button("Copia");
+        copy.getStyleClass().add("client-profile-copy");
+        copy.setAccessibleText("Copia " + value);
+        copy.setOnAction(
+                e -> {
+                    var clipboard = new javafx.scene.input.ClipboardContent();
+                    clipboard.putString(value);
+                    javafx.scene.input.Clipboard.getSystemClipboard().setContent(clipboard);
+                });
+        HBox row = new HBox(8, text, copy);
+        row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        return row;
+    }
+
     static TextField createTextField(String value, String prompt) {
         TextField field = new TextField(value == null ? "" : value);
         field.setPromptText(prompt);

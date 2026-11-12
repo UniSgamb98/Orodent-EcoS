@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.orodent.ecos.core.ConnectionProvider;
 import com.orodent.ecos.crm.core.database.model.CallOutcome;
 import com.orodent.ecos.crm.feature.clienti.nuovocliente.view.NuovoClienteView;
+import com.orodent.ecos.crm.feature.clienti.schedacliente.dto.SchedaClienteModels.*;
 import com.orodent.ecos.crm.feature.clienti.schedacliente.view.SchedaClienteView;
 import com.orodent.ecos.database.DatabaseSchema;
 import com.orodent.ecos.database.service.*;
@@ -186,6 +187,225 @@ class CrmUiTest {
             } catch (SQLException e) {
                 assertEquals("08006", e.getSQLState());
             }
+        }
+    }
+
+    @Test
+    void profileKeepsImportedHistoryReadableAndAdaptsWithoutLosingEditFields() throws Exception {
+        try {
+            Platform.startup(() -> {});
+        } catch (IllegalStateException alreadyStarted) {
+        }
+        Platform.setImplicitExit(false);
+        var preview = new SchedaClienteView[1];
+        var sample = new ClienteProfile[1];
+        try {
+            fx(
+                    () -> {
+                        var today = java.time.LocalDate.now();
+                        var phone = new ValueItem(UUID.randomUUID(), "+39 0123 456789");
+                        var mail = new ValueItem(UUID.randomUUID(), "adrian@example.test");
+                        var calls =
+                                List.of(
+                                        new InteractionPreview(
+                                                UUID.randomUUID(),
+                                                null,
+                                                today,
+                                                today.atTime(9, 30),
+                                                InteractionType.NOTA,
+                                                null,
+                                                null,
+                                                "Riepilogo originale CRM2\n"
+                                                        + "note_id: identificativo originale\n"
+                                                        + "volte_contattati: 2\n"
+                                                        + "checkpoint: 0"),
+                                        new InteractionPreview(
+                                                UUID.randomUUID(),
+                                                UUID.randomUUID(),
+                                                today.minusDays(20),
+                                                today.minusDays(20).atStartOfDay(),
+                                                InteractionType.CHIAMATA,
+                                                today.minusDays(2),
+                                                CallOutcome.LISTINO,
+                                                "[Chiamata #2]\n"
+                                                    + "Stato precedente: LISTINO\n"
+                                                    + "Durata: 5\n"
+                                                    + "Messaggio: false\n\n"
+                                                    + "Parlato con il referente. Il laboratorio sta"
+                                                    + " valutando la nuova zirconia; inviare la"
+                                                    + " documentazione tecnica e ricontattare dopo"
+                                                    + " le prove."),
+                                        new InteractionPreview(
+                                                UUID.randomUUID(),
+                                                UUID.randomUUID(),
+                                                today.minusMonths(3),
+                                                today.minusMonths(3).atStartOfDay(),
+                                                InteractionType.CHIAMATA,
+                                                null,
+                                                CallOutcome.PRESENTAZIONE,
+                                                "Presentazione dell’azienda e dei prodotti. "
+                                                        .repeat(35)));
+                        var model =
+                                new ClienteProfile(
+                                        UUID.randomUUID(),
+                                        "Laboratorio Rossi",
+                                        "Laboratorio",
+                                        "Listino",
+                                        4,
+                                        "IT12345678901",
+                                        "",
+                                        today.minusYears(1),
+                                        false,
+                                        List.of(phone),
+                                        List.of(mail),
+                                        List.of(
+                                                new ValueItem(
+                                                        UUID.randomUUID(), "https://example.test")),
+                                        List.of(
+                                                new AddressItem(
+                                                        UUID.randomUUID(),
+                                                        "Italia",
+                                                        "Veneto",
+                                                        "VR",
+                                                        "Verona",
+                                                        "Via del Laboratorio",
+                                                        "12",
+                                                        "37100",
+                                                        true)),
+                                        List.of(
+                                                new ContactItem(
+                                                        UUID.randomUUID(),
+                                                        "Adrian · Responsabile laboratorio",
+                                                        List.of(phone),
+                                                        List.of(mail))),
+                                        List.of(),
+                                        List.of(),
+                                        List.of(),
+                                        calls);
+                        var page = new SchedaClienteView();
+                        preview[0] = page;
+                        sample[0] = model;
+                        page.getSidebar()
+                                .getChildren()
+                                .setAll(
+                                        page.getSidebar().getClientsButton(),
+                                        page.getSidebar().getCalendarButton(),
+                                        page.getSidebar().getSettingsButton());
+                        page.renderProfile(model);
+                        var root = new javafx.scene.layout.BorderPane(page);
+                        root.getStyleClass().add("crm-module");
+                        root.setId("crm-module");
+                        for (String css :
+                                List.of(
+                                        "global.css",
+                                        "ecos.css",
+                                        "features/clienti.css",
+                                        "features/scheda-cliente.css"))
+                            root.getStylesheets()
+                                    .add(
+                                            getClass()
+                                                    .getResource("/crm/css/" + css)
+                                                    .toExternalForm());
+                        stage = new Stage();
+                        stage.setScene(new Scene(root, 1440, 900));
+                        stage.show();
+                        return null;
+                    });
+            await(
+                    () ->
+                            stage.getScene().getWidth() > 1300
+                                    && ((javafx.scene.layout.Region)
+                                                            stage.getScene()
+                                                                    .lookup(
+                                                                            ".client-profile-details-panel"))
+                                                    .getWidth()
+                                            >= 340);
+            fx(
+                    () -> {
+                        var page = preview[0];
+                        var root = stage.getScene().getRoot();
+                        root.applyCss();
+                        root.layout();
+                        var imported =
+                                root.lookupAll(".titled-pane").stream()
+                                        .map(n -> (TitledPane) n)
+                                        .filter(
+                                                n ->
+                                                        n.getText()
+                                                                .startsWith(
+                                                                        "Informazioni importate"))
+                                        .findFirst()
+                                        .orElseThrow();
+                        assertFalse(imported.isExpanded());
+                        assertNotNull(root.lookup(".client-profile-overdue"));
+                        snapshot("target/crm-profile-redesign.png");
+                        var disclosure =
+                                root.lookupAll(".titled-pane").stream()
+                                        .map(n -> (TitledPane) n)
+                                        .filter(n -> n.getText().equals("Dettagli originali CRM2"))
+                                        .findFirst()
+                                        .orElseThrow();
+                        disclosure.setExpanded(true);
+                        assertTrue(
+                                ((Label) disclosure.getContent()).getText().contains("Durata: 5"));
+                        // The complete source remains available even when long text is collapsed.
+                        var more =
+                                root.lookupAll(".button").stream()
+                                        .map(n -> (Button) n)
+                                        .filter(n -> n.getText().equals("Mostra tutto"))
+                                        .findFirst()
+                                        .orElseThrow();
+                        more.fire();
+                        assertEquals("Mostra meno", more.getText());
+                        page.getNewNoteButton().fire();
+                        page.showNoteEditor();
+                        page.getNoteTextArea().setText("Appunto non ancora salvato");
+                        stage.setWidth(1020);
+                        return null;
+                    });
+            await(() -> stage.getScene().getWidth() < 1100);
+            fx(
+                    () -> {
+                        var page = preview[0];
+                        var model = sample[0];
+                        var phone = model.telefoni().getFirst();
+                        var mail = model.email().getFirst();
+                        var root = stage.getScene().getRoot();
+                        root.applyCss();
+                        root.layout();
+                        assertEquals(
+                                "Appunto non ancora salvato", page.getNoteTextArea().getText());
+                        snapshot("target/crm-profile-compact.png");
+                        page.hideNoteEditor();
+                        page.renderEditableProfile(
+                                new EditProfileDraft(
+                                        model.ragioneSociale(),
+                                        model.tipoCliente(),
+                                        model.statoTrattativa(),
+                                        model.coinvolgimento(),
+                                        model.partitaIva(),
+                                        model.codiceFiscale(),
+                                        model.acquisizione(),
+                                        List.of(new ValueEditInput(phone.id(), phone.value())),
+                                        List.of(new ValueEditInput(mail.id(), mail.value())),
+                                        List.of(),
+                                        List.of(),
+                                        List.of(),
+                                        List.of()));
+                        root.applyCss();
+                        root.layout();
+                        var draft = page.collectEditDraft();
+                        assertEquals(model.ragioneSociale(), draft.ragioneSociale());
+                        assertEquals(phone.value(), draft.telefoni().getFirst().value());
+                        snapshot("target/crm-profile-editor.png");
+                        return null;
+                    });
+        } finally {
+            fx(
+                    () -> {
+                        if (stage != null) stage.hide();
+                        return null;
+                    });
         }
     }
 

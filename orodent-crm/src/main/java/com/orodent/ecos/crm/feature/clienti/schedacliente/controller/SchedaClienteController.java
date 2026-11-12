@@ -201,7 +201,7 @@ public final class SchedaClienteController {
                 () -> service.setTimelineFilter(filter),
                 p -> {
                     view.setActiveTimelineFilter(filter);
-                    view.renderProfile(p);
+                    view.renderTimeline(p.interazioni());
                 },
                 this::error);
     }

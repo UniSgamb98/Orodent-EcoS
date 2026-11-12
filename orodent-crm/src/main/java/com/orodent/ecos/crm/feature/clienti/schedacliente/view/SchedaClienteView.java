@@ -25,6 +25,7 @@ import javafx.scene.control.DatePicker;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TitledPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -38,13 +39,14 @@ public class SchedaClienteView extends BorderPane {
 
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private static final double SIDE_COLUMN_MIN_WIDTH = 330;
-    private static final double SIDE_COLUMN_PREF_WIDTH = 560;
-    private static final double SIDE_COLUMN_MAX_WIDTH = 620;
     private static final double RELATED_SECTIONS_GAP = 12;
     private static final double RELATED_SECTIONS_TWO_COLUMN_BREAKPOINT = 560;
 
     private final AppSidebar sidebar;
+    private final VBox body = new VBox(16);
+    private final VBox columns = new VBox(16);
+    private TitledPane resourcesDisclosure;
+    private boolean editing;
     private final ClienteProfileHeader header;
     private final ClienteDataSection dataSection;
     private final ClienteRelatedSections relatedSections;
@@ -70,47 +72,88 @@ public class SchedaClienteView extends BorderPane {
     }
 
     private VBox createContent() {
-        VBox content = new VBox(18);
-        content.setPadding(new Insets(20));
-        content.getStyleClass().add("clients-content");
-
-        VBox body = new VBox(18);
-        body.getChildren().addAll(header, createMainColumns(), resourcesPanel);
-
+        VBox content = new VBox(14);
+        content.setPadding(new Insets(18, 22, 18, 22));
+        content.getStyleClass().addAll("clients-content", "client-profile-page");
+        Button back = new Button("← Contatti e lead");
+        back.getStyleClass().add("client-profile-back");
+        back.setOnAction(e -> sidebar.getClientsButton().fire());
+        createMainColumns();
+        resourcesDisclosure = new TitledPane("Attrezzature e materiali", resourcesPanel);
+        resourcesDisclosure.setExpanded(false);
+        resourcesDisclosure.setAnimated(false);
+        resourcesDisclosure.getStyleClass().add("client-profile-disclosure");
+        body.getChildren().addAll(columns, resourcesDisclosure);
         ScrollPane scrollPane = new ScrollPane(body);
         scrollPane.setFitToWidth(true);
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scrollPane.getStyleClass().add("new-client-scroll");
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
-        content.getChildren().add(scrollPane);
+        content.getChildren().addAll(back, header, scrollPane);
         return content;
     }
 
-    private HBox createMainColumns() {
-        HBox columns = new HBox(18);
-        VBox leftColumn = new VBox(14);
-        VBox rightColumn = new VBox(14);
-        leftColumn.getStyleClass().addAll("client-profile-column", "client-profile-side-column");
-        rightColumn.getStyleClass().addAll("client-profile-column", "client-profile-main-column");
-        leftColumn.setMinWidth(SIDE_COLUMN_MIN_WIDTH);
-        leftColumn.setPrefWidth(SIDE_COLUMN_PREF_WIDTH);
-        leftColumn.setMaxWidth(SIDE_COLUMN_MAX_WIDTH);
-        rightColumn.setMaxWidth(Double.MAX_VALUE);
-        leftColumn.getChildren().add(detailsPanel);
-        rightColumn.getChildren().add(timelineSection);
-        HBox.setHgrow(leftColumn, Priority.ALWAYS);
-        HBox.setHgrow(rightColumn, Priority.ALWAYS);
-        columns.getChildren().addAll(leftColumn, rightColumn);
-        return columns;
+    private void createMainColumns() {
+        // A single responsive row; unlike TilePane, each column keeps its own height.
+        HBox wide = new HBox(16);
+        wide.setFillHeight(false);
+        Boolean[] lastCompact = {null};
+        VBox stacked = new VBox(16);
+        columns.setMinWidth(0);
+        columns.setMaxWidth(Double.MAX_VALUE);
+        Runnable layout =
+                () -> {
+                    boolean compact = columns.getWidth() < (editing ? 1120 : 900);
+                    detailsPanel.setMinWidth(compact ? 0 : (editing ? 530 : 350));
+                    detailsPanel.setPrefWidth(compact ? 580 : (editing ? 530 : 350));
+                    detailsPanel.setMaxWidth(compact ? Double.MAX_VALUE : (editing ? 530 : 350));
+                    timelineSection.setMinWidth(0);
+                    timelineSection.setPrefWidth(600);
+                    timelineSection.setMaxWidth(Double.MAX_VALUE);
+                    if (java.util.Objects.equals(lastCompact[0], compact)) return;
+                    lastCompact[0] = compact;
+                    wide.getChildren().clear();
+                    stacked.getChildren().clear();
+                    if (compact) {
+                        stacked.getChildren().setAll(detailsPanel, timelineSection);
+                        columns.getChildren().setAll(stacked);
+                    } else {
+                        wide.getChildren().setAll(detailsPanel, timelineSection);
+                        HBox.setHgrow(timelineSection, Priority.ALWAYS);
+                        wide.setAlignment(javafx.geometry.Pos.TOP_LEFT);
+                        columns.getChildren().setAll(wide);
+                    }
+                };
+        columns.widthProperty().addListener((o, a, b) -> layout.run());
+        editingPropertyRefresh = layout;
+        layout.run();
+    }
+
+    private Runnable editingPropertyRefresh = () -> {};
+
+    public void renderTimeline(List<InteractionPreview> interactions) {
+        timelineSection.render(interactions);
     }
 
     public void renderProfile(ClienteProfile profile) {
         setEditMode(false);
         header.setTitle(profile.ragioneSociale());
-        header.setSubtitle(profile.tipoCliente() + " · " + profile.statoTrattativa());
+        header.setSubtitle(
+                java.util.stream.Stream.of(profile.tipoCliente(), profile.statoTrattativa())
+                        .filter(v -> v != null && !v.isBlank())
+                        .collect(java.util.stream.Collectors.joining(" · ")));
         header.setAcquisitionText("Acquisito " + formatDate(profile.acquisizione()));
         header.setLastInteractionText("Ultima chiamata " + lastCallText(profile.interazioni()));
-        header.setNextInteractionText("Prossima chiamata " + nextCallText(profile.interazioni()));
+        header.setNextInteractionText(nextCallText(profile.interazioni()));
+        header.setNextDate(latestNextCall(profile.interazioni()));
+        resourcesDisclosure.setText(
+                "Attrezzature e materiali · "
+                        + profile.forni().size()
+                        + " forni · "
+                        + profile.fresatori().size()
+                        + " fresatori · "
+                        + profile.materiali().size()
+                        + " materiali");
         setFavorite(profile.favorite());
         setInvolvementSliderValue(profile.coinvolgimento());
         dataSection.render(profile);
@@ -158,6 +201,8 @@ public class SchedaClienteView extends BorderPane {
     }
 
     private void setEditMode(boolean editMode) {
+        editing = editMode;
+        editingPropertyRefresh.run();
         header.setEditMode(editMode);
         timelineSection.setEditMode(editMode);
     }
@@ -270,24 +315,27 @@ public class SchedaClienteView extends BorderPane {
         return interactions.stream()
                 .filter(interaction -> interaction.type() == InteractionType.CHIAMATA)
                 .findFirst()
-                .map(interaction -> DATE_FORMATTER.format(interaction.data()))
+                .map(interaction -> formatDate(interaction.data()))
                 .orElse("-");
     }
 
-    private String nextCallText(List<InteractionPreview> interactions) {
+    private LocalDate latestNextCall(List<InteractionPreview> interactions) {
         return interactions.stream()
-                .map(InteractionPreview::prossimoContatto)
-                .filter(nextContact -> nextContact != null)
+                .filter(i -> i.type() == InteractionType.CHIAMATA)
                 .findFirst()
-                .map(DATE_FORMATTER::format)
-                .orElse("-");
+                .map(InteractionPreview::prossimoContatto)
+                .orElse(null);
+    }
+
+    private String nextCallText(List<InteractionPreview> interactions) {
+        return "Prossimo richiamo " + formatDate(latestNextCall(interactions));
     }
 
     private String lastEditableCallText(List<InteractionEditInput> interactions) {
         return interactions.stream()
                 .filter(interaction -> interaction.type() == InteractionType.CHIAMATA)
                 .findFirst()
-                .map(interaction -> DATE_FORMATTER.format(interaction.data()))
+                .map(interaction -> formatDate(interaction.data()))
                 .orElse("-");
     }
 

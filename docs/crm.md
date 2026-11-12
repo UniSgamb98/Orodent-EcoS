@@ -19,6 +19,19 @@ passando dalla Home agli altri moduli e riaprendo il CRM. Viene verificato che
 l'operatore sia ancora attivo. Non è necessario selezionarlo per usare Statistiche,
 TON o Costi. Preferiti e viste salvate rimangono separati per UUID dell'operatore.
 
+## Scheda cliente
+
+L'intestazione resta visibile durante lo scorrimento. Contatti e recapiti sono
+nella colonna laterale; la cronologia occupa l'area principale. Su finestre più
+strette le due sezioni si dispongono in verticale. I recapiti hanno un comando
+Copia; dati fiscali/commerciali e attrezzature sono richiudibili.
+
+I riepiloghi tecnici importati da CRM2 sono separati dalle conversazioni.
+Nelle chiamate riconoscibili del vecchio formato, il testo originale completo
+resta nei dettagli espandibili; nessuna nota viene modificata nel DB. I testi
+lunghi hanno Mostra tutto / Mostra meno. Il richiamo dell'ultima chiamata viene
+evidenziato se scaduto; i filtri dello storico non modificano l'intestazione.
+
 ## Database e distinzione dal gestionale
 
 La migrazione immutabile **V13** crea lo schema `CRM` e `ECOS.OPERATORI`. Le altre

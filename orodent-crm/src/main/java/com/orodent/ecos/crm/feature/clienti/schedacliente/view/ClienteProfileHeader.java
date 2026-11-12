@@ -3,9 +3,12 @@ package com.orodent.ecos.crm.feature.clienti.schedacliente.view;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+
+import java.time.LocalDate;
 
 final class ClienteProfileHeader extends VBox {
 
@@ -27,6 +30,8 @@ final class ClienteProfileHeader extends VBox {
 
         titleLabel = new Label("Cliente");
         titleLabel.getStyleClass().add("clients-title");
+        titleLabel.setWrapText(true);
+        titleLabel.setMinWidth(0);
         subtitleLabel = new Label("Profilo cliente e storico comunicazioni");
         subtitleLabel.getStyleClass().add("clients-subtitle");
         acquisitionLabel = createBadgeLabel();
@@ -35,7 +40,7 @@ final class ClienteProfileHeader extends VBox {
         involvementSlider = createInvolvementSlider();
         favoriteButton = new Button("☆");
         favoriteButton.getStyleClass().add("client-profile-favorite-button");
-        editProfileButton = new Button("Modifica");
+        editProfileButton = new Button("Modifica anagrafica");
         editProfileButton.getStyleClass().add("clients-filter-button");
         saveProfileEditButton = new Button("Salva modifiche");
         saveProfileEditButton.getStyleClass().add("clients-primary-button");
@@ -63,6 +68,17 @@ final class ClienteProfileHeader extends VBox {
 
     void setNextInteractionText(String text) {
         nextInteractionLabel.setText(text);
+    }
+
+    void setNextDate(LocalDate date) {
+        nextInteractionLabel.getStyleClass().remove("client-profile-overdue");
+        if (date != null && date.isBefore(LocalDate.now())) {
+            nextInteractionLabel.getStyleClass().add("client-profile-overdue");
+            nextInteractionLabel.setText(
+                    "Richiamo scaduto · "
+                            + date.format(
+                                    java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        }
     }
 
     void setEditMode(boolean editMode) {
@@ -123,6 +139,8 @@ final class ClienteProfileHeader extends VBox {
         HBox titleRow = new HBox(12);
         titleRow.getStyleClass().add("clients-title-bar");
         VBox titleBox = new VBox(4);
+        titleBox.setMinWidth(0);
+        HBox.setHgrow(titleBox, Priority.ALWAYS);
         titleBox.getChildren().addAll(titleLabel, subtitleLabel);
         HBox spacer = new HBox();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -138,24 +156,22 @@ final class ClienteProfileHeader extends VBox {
         return titleRow;
     }
 
-    private HBox createSummaryRow() {
-        HBox summaryRow = new HBox(12);
-        summaryRow.getStyleClass().add("client-profile-summary-row");
-        HBox callBadges = new HBox(10);
-        callBadges.getStyleClass().add("client-profile-badges");
-        callBadges
-                .getChildren()
-                .addAll(acquisitionLabel, lastInteractionLabel, nextInteractionLabel);
-        HBox summarySpacer = new HBox();
-        HBox.setHgrow(summarySpacer, Priority.ALWAYS);
-        summaryRow.getChildren().addAll(callBadges, summarySpacer, createInvolvementSliderBox());
-        return summaryRow;
+    private FlowPane createSummaryRow() {
+        FlowPane summary = new FlowPane(10, 10);
+        summary.getStyleClass().add("client-profile-summary-row");
+        summary.getChildren()
+                .addAll(
+                        acquisitionLabel,
+                        lastInteractionLabel,
+                        nextInteractionLabel,
+                        createInvolvementSliderBox());
+        return summary;
     }
 
     private HBox createInvolvementSliderBox() {
         HBox box = new HBox(8);
         box.getStyleClass().add("client-profile-involvement-box");
-        box.getChildren().add(involvementSlider);
+        box.getChildren().addAll(new Label("Coinvolgimento"), involvementSlider);
         return box;
     }
 

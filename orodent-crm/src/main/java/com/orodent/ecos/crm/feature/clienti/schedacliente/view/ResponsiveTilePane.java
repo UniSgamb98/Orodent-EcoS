@@ -1,21 +1,44 @@
 package com.orodent.ecos.crm.feature.clienti.schedacliente.view;
 
 import javafx.scene.Node;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.TilePane;
 
-/** TilePane with a fixed two-column layout for the client profile. */
-class ResponsiveTilePane extends TilePane {
-
-    private static final int FIXED_COLUMNS = 2;
-    private static final double FIXED_TILE_WIDTH = 260;
+/** Responsive grid with independent row heights, so short sections don't leave empty tiles. */
+class ResponsiveTilePane extends GridPane {
+    private final double breakpoint;
+    private int columns;
 
     ResponsiveTilePane(double gap, double twoColumnBreakpoint) {
-        super(gap, gap);
+        breakpoint = twoColumnBreakpoint;
         getStyleClass().add("client-profile-responsive-tile-pane");
+        setHgap(gap);
+        setVgap(gap);
+        setMinWidth(0);
         setMaxWidth(Double.MAX_VALUE);
-        setPrefColumns(FIXED_COLUMNS);
-        setPrefTileWidth(FIXED_TILE_WIDTH);
+        widthProperty().addListener((o, before, width) -> updateColumns());
+        updateColumns();
+    }
+
+    private void updateColumns() {
+        int count = getWidth() >= breakpoint ? 2 : 1;
+        if (columns != count) {
+            columns = count;
+            getColumnConstraints().clear();
+            for (int i = 0; i < columns; i++) {
+                ColumnConstraints column = new ColumnConstraints();
+                column.setPercentWidth(100.0 / columns);
+                column.setFillWidth(true);
+                getColumnConstraints().add(column);
+            }
+        }
+        for (int i = 0; i < getChildren().size(); i++) {
+            Node child = getChildren().get(i);
+            setColumnIndex(child, i % columns);
+            setRowIndex(child, i / columns);
+        }
     }
 
     void addStretchingTile(Node node) {
@@ -23,6 +46,8 @@ class ResponsiveTilePane extends TilePane {
             region.setMinWidth(0);
             region.setMaxWidth(Double.MAX_VALUE);
         }
+        setHgrow(node, Priority.ALWAYS);
         getChildren().add(node);
+        updateColumns();
     }
 }

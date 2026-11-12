@@ -287,3 +287,42 @@
     -fx-pref-row-count: 2;
     -fx-max-height: 72;
 }
+
+/* Customer workspace: persistent header, readable conversations, compact contact column. */
+.crm-module .client-profile-page { -fx-font-size: 14px; }
+.crm-module .client-profile-page .clients-title { -fx-font-size: 27px; -fx-text-fill: #173f5f; }
+.crm-module .client-profile-page .clients-subtitle { -fx-font-size: 14px; -fx-text-fill: #607587; }
+.crm-module .client-profile-page .client-profile-hero { -fx-padding: 18 20; -fx-border-color: #dce6ed; }
+.crm-module .client-profile-page .client-profile-back { -fx-background-color: transparent; -fx-text-fill: #19758b; -fx-padding: 0; -fx-cursor: hand; -fx-font-size: 13px; }
+.crm-module .client-profile-page .client-profile-info-label { -fx-font-size: 14px; -fx-text-fill: #344e61; }
+.crm-module .client-profile-page .new-client-section-title { -fx-font-size: 16px; -fx-text-fill: #173f5f; }
+.crm-module .client-profile-page .client-profile-details-panel { -fx-padding: 18; -fx-spacing: 22; -fx-border-color: #dce6ed; }
+.crm-module .client-profile-page .client-profile-contact-card { -fx-background-color: #f5f8fa; -fx-border-color: transparent; -fx-padding: 12; }
+.crm-module .client-profile-page .client-profile-contact-name { -fx-font-size: 15px; }
+.crm-module .client-profile-page .client-profile-contact-value-title { -fx-font-size: 12px; -fx-text-fill: #657d8e; -fx-font-weight: normal; }
+.crm-module .client-profile-page .client-profile-badge { -fx-font-size: 12px; -fx-text-fill: #4e697c; -fx-padding: 6 10; }
+.crm-module .client-profile-page .client-profile-overdue { -fx-background-color: #fff1dc; -fx-text-fill: #8d5709; }
+.crm-module .client-profile-page .client-profile-involvement-box { -fx-padding: 0 0 0 8; }
+.crm-module .client-profile-page .client-profile-involvement-box .label { -fx-font-size: 12px; -fx-text-fill: #607587; }
+.crm-module .client-profile-page .client-profile-timeline-card { -fx-padding: 16 18; -fx-border-color: #dce6ed; -fx-border-width: 1 1 1 3; -fx-border-radius: 8; }
+.crm-module .client-profile-page .client-profile-conversation { -fx-font-size: 14px; -fx-text-fill: #253f52; -fx-line-spacing: 3px; }
+.crm-module .client-profile-page .client-profile-timeline-title { -fx-font-size: 13px; -fx-text-fill: #526e80; }
+.crm-module .client-profile-page .client-profile-small-filter-button { -fx-font-size: 12px; -fx-padding: 6 12; -fx-border-color: transparent; }
+.crm-module .client-profile-page .client-profile-small-filter-active { -fx-background-color: #19758b; -fx-text-fill: white; }
+.crm-module .client-profile-page .client-profile-timeline-type-badge,
+.crm-module .client-profile-page .client-profile-timeline-outcome-badge { -fx-font-size: 11px; -fx-padding: 4 9; }
+.crm-module .client-profile-page .client-profile-followup { -fx-font-size: 12px; -fx-text-fill: #19758b; -fx-padding: 6 0 0 0; }
+.crm-module .client-profile-page .client-profile-copy { -fx-background-color: transparent; -fx-text-fill: #19758b; -fx-font-size: 12px; -fx-padding: 3 5; -fx-cursor: hand; }
+.crm-module .client-profile-page .client-profile-copy:hover { -fx-background-color: #e6f1f4; -fx-background-radius: 4; }
+.crm-module .client-profile-page .client-profile-disclosure { -fx-text-fill: #526e80; -fx-font-size: 13px; }
+.crm-module .client-profile-page .client-profile-disclosure > .title { -fx-background-color: #f2f6f9; -fx-padding: 10 12; -fx-background-radius: 6; }
+.crm-module .client-profile-page .client-profile-disclosure > .content { -fx-background-color: white; -fx-border-color: #e2eaf0; -fx-padding: 12; }
+.crm-module .client-profile-page .client-profile-resources-panel { -fx-border-color: transparent; -fx-padding: 0; }
+.crm-module .client-profile-page .client-profile-info-label,
+.crm-module .client-profile-page .client-profile-conversation,
+.crm-module .client-profile-page .clients-subtitle,
+.crm-module .client-profile-page .client-profile-badge { -fx-font-weight: normal; }
+.crm-module .client-profile-page .client-profile-disclosure > .title { -fx-font-size: 13px; -fx-font-weight: normal; }
+.crm-module .client-profile-page .client-profile-small-filter-button:hover { -fx-background-color: #dcecf0; -fx-text-fill: #155f72; }
+.crm-module .client-profile-page .client-profile-small-filter-active:hover { -fx-background-color: #155f72; -fx-text-fill: white; }
+.crm-module .client-profile-page .client-profile-back:hover { -fx-background-color: transparent; -fx-underline: true; }

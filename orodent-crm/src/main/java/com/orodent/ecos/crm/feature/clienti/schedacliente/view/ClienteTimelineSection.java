@@ -10,8 +10,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TitledPane;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -34,7 +35,6 @@ final class ClienteTimelineSection extends VBox {
     private static final double EDIT_INTERACTION_TEXT_AREA_MAX_WIDTH = 760;
     private static final double EDIT_INTERACTION_TEXT_AREA_MIN_HEIGHT = 160;
     private static final int EDIT_INTERACTION_TEXT_AREA_PREF_ROWS = 5;
-    private static final double TIMELINE_SCROLL_MAX_HEIGHT = 500;
 
     private final Button newNoteButton;
     private final Button newCallButton;
@@ -42,6 +42,9 @@ final class ClienteTimelineSection extends VBox {
     private final Button notesFilterButton;
     private final Button callsFilterButton;
     private final VBox timelineList;
+    private final VBox importedNotes = new VBox(10);
+    private final TitledPane importedDisclosure =
+            new TitledPane("Informazioni importate CRM2", importedNotes);
     private final VBox noteEditor;
     private final DatePicker nextCallDatePicker;
     private final ChoiceBox<CallOutcome> callOutcomeChoiceBox;
@@ -53,24 +56,27 @@ final class ClienteTimelineSection extends VBox {
     ClienteTimelineSection() {
         super(12);
         getStyleClass().add("new-client-section");
-        Label title = new Label("Interazioni");
+        Label title = new Label("Attività e conversazioni");
         title.getStyleClass().add("new-client-section-title");
 
-        newNoteButton = new Button("+ Nuova nota");
+        newNoteButton = new Button("+ Scrivi nota");
         newNoteButton.getStyleClass().add("clients-filter-button");
-        newCallButton = new Button("+ Nuova chiamata");
+        newCallButton = new Button("+ Registra chiamata");
         newCallButton.getStyleClass().add("clients-primary-button");
         allFilterButton = createTimelineFilterButton("Tutti");
         notesFilterButton = createTimelineFilterButton("Solo note");
         callsFilterButton = createTimelineFilterButton("Solo chiamate");
         timelineList = new VBox(10);
-        ScrollPane timelineScrollPane = createTimelineScrollPane();
+        importedDisclosure.setExpanded(false);
+        importedDisclosure.setAnimated(false);
+        importedDisclosure.getStyleClass().add("client-profile-disclosure");
         noteEditor = createNoteEditor();
         nextCallDatePicker = new DatePicker();
         nextCallDatePicker.setPromptText("Prossima chiamata");
         nextCallDatePicker.getStyleClass().add("client-profile-call-date-picker");
         callOutcomeChoiceBox = createCallOutcomeChoiceBox(null);
         noteTextArea = new TextArea();
+        noteTextArea.setWrapText(true);
         noteTextArea.setPromptText("Scrivi una nota sulla comunicazione con il cliente...");
         noteTextArea.getStyleClass().add("client-profile-note-area");
         saveNoteButton = new Button("Salva");
@@ -84,45 +90,101 @@ final class ClienteTimelineSection extends VBox {
         hideNoteEditor();
 
         getChildren()
-                .addAll(title, createActions(), createFilters(), noteEditor, timelineScrollPane);
-    }
-
-    private ScrollPane createTimelineScrollPane() {
-        ScrollPane scrollPane = new ScrollPane(timelineList);
-        scrollPane.getStyleClass().add("client-profile-timeline-scroll");
-        scrollPane.setFitToWidth(true);
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        scrollPane.setMaxHeight(TIMELINE_SCROLL_MAX_HEIGHT);
-        scrollPane.setPrefViewportHeight(TIMELINE_SCROLL_MAX_HEIGHT);
-        return scrollPane;
+                .addAll(
+                        title,
+                        createActions(),
+                        createFilters(),
+                        noteEditor,
+                        timelineList,
+                        importedDisclosure);
     }
 
     void render(List<InteractionPreview> interactions) {
         timelineList.getChildren().clear();
+        importedNotes.getChildren().clear();
+        importedDisclosure.setVisible(false);
+        importedDisclosure.setManaged(false);
         if (interactions.isEmpty()) {
-            timelineList.getChildren().add(createInfoLabel("Nessuna interazione registrata"));
+            timelineList.getChildren().add(createInfoLabel("Nessuna attività in questa vista."));
             return;
         }
         for (InteractionPreview interaction : interactions) {
-            VBox card = new VBox(4);
+            VBox card = new VBox(12);
+            card.setMinWidth(0);
             card.getStyleClass().add("client-profile-timeline-card");
-            HBox header =
-                    createTimelineHeader(
-                            interaction.data(),
-                            interaction.createdAt(),
-                            interaction.type(),
-                            interaction.prossimoContatto() != null,
-                            interaction.esito());
-            Label text = createInfoLabel(timelineText(interaction));
-            card.getChildren().addAll(header, text);
-            timelineList.getChildren().add(card);
+            card.getChildren()
+                    .add(
+                            createTimelineHeader(
+                                    interaction.data(),
+                                    interaction.createdAt(),
+                                    interaction.type(),
+                                    false,
+                                    interaction.esito()));
+            String original = interaction.testo() == null ? "" : interaction.testo();
+            boolean summary =
+                    interaction.type() == InteractionType.NOTA
+                            && original.startsWith("Riepilogo originale CRM2\n");
+            int split = original.indexOf("\n\n");
+            boolean legacy =
+                    interaction.type() == InteractionType.CHIAMATA
+                            && split >= 0
+                            && (original.startsWith("[Chiamata #")
+                                    || original.startsWith("Data originale non valida:"));
+            String body = legacy ? original.substring(split + 2) : original;
+            card.getChildren().add(readableText(body));
+            if (interaction.prossimoContatto() != null) {
+                Label followup =
+                        new Label(
+                                "Prossimo richiamo · "
+                                        + DATE_FORMATTER.format(interaction.prossimoContatto()));
+                followup.getStyleClass().add("client-profile-followup");
+                card.getChildren().add(followup);
+            }
+            if (legacy) {
+                TitledPane source =
+                        new TitledPane("Dettagli originali CRM2", createInfoLabel(original));
+                source.setExpanded(false);
+                source.setAnimated(false);
+                source.getStyleClass().add("client-profile-disclosure");
+                card.getChildren().add(source);
+            }
+            if (summary) importedNotes.getChildren().add(card);
+            else timelineList.getChildren().add(card);
         }
+        boolean hasImported = !importedNotes.getChildren().isEmpty();
+        importedDisclosure.setText(
+                "Informazioni importate CRM2 · " + importedNotes.getChildren().size());
+        importedDisclosure.setVisible(hasImported);
+        importedDisclosure.setManaged(hasImported);
+    }
+
+    private VBox readableText(String text) {
+        VBox content = new VBox(6);
+        Label label = createInfoLabel(text);
+        label.getStyleClass().add("client-profile-conversation");
+        content.getChildren().add(label);
+        if (text.length() > 700 || text.lines().count() > 9) {
+            int end = Math.min(text.length(), 650);
+            String preview = text.substring(0, end) + "…";
+            label.setText(preview);
+            Button expand = new Button("Mostra tutto");
+            expand.getStyleClass().add("client-profile-copy");
+            expand.setOnAction(
+                    e -> {
+                        boolean collapsed = expand.getText().equals("Mostra tutto");
+                        label.setText(collapsed ? text : preview);
+                        expand.setText(collapsed ? "Mostra meno" : "Mostra tutto");
+                    });
+            content.getChildren().add(expand);
+        }
+        return content;
     }
 
     void renderEditor(List<InteractionEditInput> interactions) {
         timelineList.getChildren().clear();
         timelineEditFields.clear();
+        importedDisclosure.setVisible(false);
+        importedDisclosure.setManaged(false);
         if (interactions.isEmpty()) {
             timelineList.getChildren().add(createInfoLabel("Nessuna interazione registrata"));
             return;
@@ -131,7 +193,7 @@ final class ClienteTimelineSection extends VBox {
             VBox card = new VBox(8);
             card.setMaxWidth(Double.MAX_VALUE);
             card.getStyleClass().add("client-profile-timeline-card");
-            HBox header =
+            FlowPane header =
                     createTimelineHeader(
                             interaction.data(),
                             interaction.createdAt(),
@@ -290,13 +352,13 @@ final class ClienteTimelineSection extends VBox {
         return cancelNoteButton;
     }
 
-    private HBox createTimelineHeader(
+    private FlowPane createTimelineHeader(
             LocalDate date,
             LocalDateTime createdAt,
             InteractionType type,
             boolean hasNextContact,
             CallOutcome outcome) {
-        HBox header = new HBox(8);
+        FlowPane header = new FlowPane(8, 6);
         header.getStyleClass().add("client-profile-timeline-card-header");
         Label typeBadge = new Label(type.label());
         typeBadge
@@ -306,8 +368,10 @@ final class ClienteTimelineSection extends VBox {
                         type == InteractionType.CHIAMATA
                                 ? "client-profile-timeline-call-badge"
                                 : "client-profile-timeline-note-badge");
-        String dateAndTime = DATE_FORMATTER.format(date);
-        if (createdAt != null && createdAt.toLocalDate().equals(date)) {
+        String dateAndTime = date == null ? "Data non indicata" : DATE_FORMATTER.format(date);
+        if (createdAt != null
+                && createdAt.toLocalDate().equals(date)
+                && (createdAt.getHour() != 0 || createdAt.getMinute() != 0)) {
             dateAndTime += " " + TIME_FORMATTER.format(createdAt);
         }
         Label title = createInfoLabel(dateAndTime);
@@ -356,7 +420,7 @@ final class ClienteTimelineSection extends VBox {
         return choiceBox;
     }
 
-    private void addDeleteActionToHeader(HBox header, Button deleteButton) {
+    private void addDeleteActionToHeader(FlowPane header, Button deleteButton) {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         header.getChildren().addAll(spacer, deleteButton);
@@ -425,15 +489,6 @@ final class ClienteTimelineSection extends VBox {
         label.getStyleClass().add("client-profile-info-label");
         label.setWrapText(true);
         return label;
-    }
-
-    private String timelineText(InteractionPreview interaction) {
-        if (interaction.prossimoContatto() == null) {
-            return interaction.testo();
-        }
-        return interaction.testo()
-                + "\nProssima chiamata: "
-                + DATE_FORMATTER.format(interaction.prossimoContatto());
     }
 
     private record TimelineEditField(

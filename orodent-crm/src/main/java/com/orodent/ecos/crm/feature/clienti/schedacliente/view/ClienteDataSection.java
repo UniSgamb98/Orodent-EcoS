@@ -11,6 +11,7 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TitledPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -48,7 +49,7 @@ final class ClienteDataSection extends VBox {
     ClienteDataSection() {
         super(12);
         getStyleClass().add("new-client-section");
-        Label title = new Label("Dati cliente");
+        Label title = new Label("Azienda");
         title.getStyleClass().add("new-client-section-title");
         content = new VBox(8);
         getChildren().addAll(title, content);
@@ -56,31 +57,42 @@ final class ClienteDataSection extends VBox {
 
     void render(ClienteProfile profile) {
         content.getChildren().clear();
-        ResponsiveTilePane grid = createCustomerDataGrid();
-        addCustomerDataNode(
-                grid,
-                createInfoLabel("Ragione sociale: " + emptyFallback(profile.ragioneSociale())));
-        addCustomerDataNode(
-                grid, createInfoLabel("Tipo cliente: " + emptyFallback(profile.tipoCliente())));
-        addCustomerDataNode(
-                grid,
-                createInfoLabel("Stato trattativa: " + emptyFallback(profile.statoTrattativa())));
-        addCustomerDataNode(
-                grid,
-                createInfoLabel("Coinvolgimento: " + emptyFallback(profile.coinvolgimento())));
-        addCustomerDataNode(
-                grid, createInfoLabel("Partita IVA: " + emptyFallback(profile.partitaIva())));
-        addCustomerDataNode(
-                grid, createInfoLabel("Codice fiscale: " + emptyFallback(profile.codiceFiscale())));
-        addCustomerDataNode(
-                grid, createInfoLabel("Acquisizione: " + formatDate(profile.acquisizione())));
+        VBox commercial =
+                new VBox(
+                        10,
+                        createInfoLabel("Tipo cliente: " + emptyFallback(profile.tipoCliente())),
+                        createInfoLabel(
+                                "Stato trattativa: " + emptyFallback(profile.statoTrattativa())),
+                        createInfoLabel(
+                                "Coinvolgimento: " + emptyFallback(profile.coinvolgimento())),
+                        createInfoLabel("Partita IVA: " + emptyFallback(profile.partitaIva())),
+                        createInfoLabel(
+                                "Codice fiscale: " + emptyFallback(profile.codiceFiscale())),
+                        createInfoLabel("Acquisizione: " + formatDate(profile.acquisizione())));
+        TitledPane disclosure = new TitledPane("Dati fiscali e commerciali", commercial);
+        disclosure.setExpanded(false);
+        disclosure.setAnimated(false);
+        disclosure.getStyleClass().add("client-profile-disclosure");
         content.getChildren()
                 .addAll(
-                        grid,
-                        createInfoLabel(
-                                "Telefoni azienda: " + joinProfileValues(profile.telefoni())),
-                        createInfoLabel("Email azienda: " + joinProfileValues(profile.email())),
-                        createInfoLabel("Siti web: " + joinProfileValues(profile.sitiWeb())));
+                        valueGroup("Telefono aziendale", profile.telefoni()),
+                        valueGroup("Email aziendale", profile.email()),
+                        valueGroup("Sito web", profile.sitiWeb()),
+                        disclosure);
+    }
+
+    private VBox valueGroup(String name, List<ValueItem> values) {
+        VBox group = new VBox(5);
+        Label label = new Label(name);
+        label.getStyleClass().add("client-profile-contact-value-title");
+        group.getChildren().add(label);
+        if (values.isEmpty()) group.getChildren().add(createInfoLabel("Non indicato"));
+        else
+            values.forEach(
+                    value ->
+                            group.getChildren()
+                                    .add(ClienteProfileFormControls.copyableValue(value.value())));
+        return group;
     }
 
     void renderEditor(EditProfileDraft draft) {
