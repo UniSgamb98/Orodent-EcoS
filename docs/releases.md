@@ -35,6 +35,21 @@ Le migrazioni supportate sono eseguite dall’HOST con backup, senza cambiare il
 config: vedere il [passaggio allo schema corrente](database-schema.md).
 Il nuovo updater non modifica lo schema e non ripete i salvataggi applicativi.
 
+## Consumo di GitHub Actions
+
+GitHub Actions si usa soltanto su richiesta esplicita dell'utente per una release.
+I workflow sono esclusivamente manuali (`workflow_dispatch`): push, PR e creazione
+di tag non devono avviare runner. Durante lo sviluppo eseguire build e test
+nell'ambiente di lavoro. Non avviare né rilanciare workflow per verifiche ordinarie.
+Il workflow `Windows tests` resta disponibile manualmente per eventuali controlli
+Windows autorizzati nell'ambito di un rilascio.
+
+Questa configurazione deve essere integrata anche nel ramo principale. I rami
+vecchi possono ancora contenere trigger automatici: per disabilitare il vecchio
+workflow sull'intero repository, usare **Actions → Windows tests → ⋯ → Disable
+workflow**. Modificare i file non annulla job già in coda o in corso; questi si
+interrompono dalla relativa esecuzione con **Cancel workflow**.
+
 ## 1. Creare la chiave una sola volta, sul proprio PC
 
 Dalla radice del progetto, con JDK 21 standard:
@@ -81,8 +96,17 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Il workflow `.github/workflows/release.yml` usa un runner Windows con Temurin 21,
-imposta la versione Maven dal tag, abilita gli aggiornamenti nella sola build CI,
+Il push del tag non avvia Actions. Solo quando l'utente richiede esplicitamente
+il rilascio, aprire **Actions → Windows release → Run workflow**, selezionare il
+ramo principale aggiornato e indicare il tag appena creato nel campo `release_tag`.
+In alternativa, sempre dopo richiesta esplicita:
+
+```powershell
+gh workflow run release.yml --ref master -f release_tag=v0.1.0
+```
+
+Il workflow `.github/workflows/release.yml` esegue il checkout del tag indicato e
+usa un runner Windows con Temurin 21, imposta la versione Maven dal tag, abilita gli aggiornamenti nella sola build CI,
 esegue test e packaging, firma il catalogo di componenti e runtime e crea una **bozza** in GitHub Releases.
 Non modifica o sposta tag esistenti; per correzioni pubblicare una nuova versione.
 Se manca il secret o la chiave non corrisponde, non viene pubblicata una release utilizzabile.
@@ -181,8 +205,8 @@ potrebbe essere incompatibile con un DB già migrato.
 
 ## Se il primo tag fallisce nei test
 
-I workflow sono associati al commit del tag: rilanciare lo stesso job non usa le
-correzioni successive. Correggere il codice su un branch, attendere il workflow
-Windows tests e integrare la PR, poi creare un nuovo tag (ad esempio `v0.1.1`
+Il codice rilasciato è quello del tag indicato: rilanciare lo stesso job non usa
+le correzioni successive. Correggere il codice su un branch, verificare localmente
+e integrare la PR, poi creare un nuovo tag (ad esempio `v0.1.1`
 se `v0.1.0` e fallito). Non spostare il tag precedente. I report di errore sono
 scaricabili negli artifact `windows-test-reports` o `release-test-reports`.

@@ -1,8 +1,6 @@
 name: Windows tests
 on:
-  push:
-    branches: [master, 'codex/**']
-  pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
