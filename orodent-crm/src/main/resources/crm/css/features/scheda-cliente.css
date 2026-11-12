@@ -362,13 +362,13 @@
     -fx-border-color: #cbdce6;
     -fx-border-radius: 6;
     -fx-background-radius: 6;
-    -fx-min-height: 34;
-    -fx-pref-height: 34;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
     -fx-font-size: 13px;
     -fx-font-weight: normal;
     -fx-text-fill: #253f52;
 }
-.crm-module .crm-inline-page .text-field { -fx-padding: 6 9; }
+.crm-module .crm-inline-page .text-field { -fx-padding: 4 9; }
 .crm-module .crm-inline-page .combo-box,
 .crm-module .crm-inline-page .choice-box,
 .crm-module .crm-inline-page .date-picker { -fx-padding: 0; }
@@ -385,17 +385,17 @@
     -fx-border-color: transparent;
     -fx-border-width: 0;
     -fx-background-radius: 6 0 0 6;
-    -fx-min-height: 32;
-    -fx-pref-height: 32;
-    -fx-padding: 6 9;
+    -fx-min-height: 28;
+    -fx-pref-height: 28;
+    -fx-padding: 4 9;
 }
-.crm-module .crm-inline-page .choice-box > .label { -fx-padding: 6 9; -fx-font-size: 13px; -fx-font-weight: normal; -fx-text-fill: #253f52; }
+.crm-module .crm-inline-page .choice-box > .label { -fx-padding: 4 9; -fx-font-size: 13px; -fx-font-weight: normal; -fx-text-fill: #253f52; }
 .crm-module .crm-inline-page .combo-box > .arrow-button,
 .crm-module .crm-inline-page .date-picker > .arrow-button {
     -fx-background-color: #edf4f8;
     -fx-background-insets: 0;
     -fx-background-radius: 0 6 6 0;
-    -fx-min-height: 32;
+    -fx-min-height: 28;
     -fx-padding: 0 10;
 }
 .crm-module .crm-inline-page .date-picker > .arrow-button > .arrow,
@@ -419,7 +419,8 @@
     -fx-min-height: 32; -fx-pref-height: 32; -fx-max-height: 32;
     -fx-padding: 0; -fx-alignment: center; -fx-cursor: hand;
 }
-.crm-module .crm-inline-page .crm-row-menu > .label { -fx-font-family: "Arial"; -fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #385d74; -fx-padding: 0; }
+.crm-module .crm-inline-page .crm-row-menu > .label { -fx-alignment: center; -fx-content-display: graphic-only; -fx-graphic-text-gap: 0; -fx-padding: 0; }
+.crm-module .crm-inline-page .crm-row-menu-icon { -fx-fill: #385d74; }
 .crm-module .crm-inline-page .crm-row-menu:hover { -fx-background-color: #dcecf2; -fx-border-color: #9dbbc9; }
 .crm-module .crm-inline-page .crm-row-menu > .arrow-button { -fx-padding: 0; -fx-min-width: 0; -fx-pref-width: 0; -fx-max-width: 0; }
 .crm-module .crm-inline-page .crm-row-menu > .arrow-button > .arrow { -fx-background-color: transparent; -fx-padding: 0; }

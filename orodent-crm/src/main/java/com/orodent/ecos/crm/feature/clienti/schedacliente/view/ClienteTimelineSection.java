@@ -401,10 +401,9 @@ final class ClienteTimelineSection extends VBox {
                             new VBox(4, new Label("Prossimo richiamo"), next));
         details.getChildren().set(0, new VBox(10, fields, text));
         var toggle = (Button) card.getChildren().removeFirst();
-        var menu = new javafx.scene.control.MenuButton("⋯");
-        menu.getStyleClass().add("crm-row-menu");
-        menu.setAccessibleText("Azioni " + activity.type().label().toLowerCase());
-        menu.setTooltip(new javafx.scene.control.Tooltip(menu.getAccessibleText()));
+        var menu =
+                ClienteProfileFormControls.actionMenu(
+                        "Azioni " + activity.type().label().toLowerCase());
         var delete =
                 new javafx.scene.control.MenuItem(
                         activity.type() == InteractionType.CHIAMATA

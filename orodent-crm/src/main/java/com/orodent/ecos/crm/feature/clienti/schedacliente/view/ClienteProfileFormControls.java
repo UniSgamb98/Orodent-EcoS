@@ -41,12 +41,26 @@ final class ClienteProfileFormControls {
         return row;
     }
 
+    static javafx.scene.control.MenuButton actionMenu(String description) {
+        var dots = new javafx.scene.shape.SVGPath();
+        dots.setContent(
+                "M1.5 0a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3Z"
+                        + "M7.5 0a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3Z"
+                        + "M13.5 0a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3Z");
+        dots.getStyleClass().add("crm-row-menu-icon");
+        var menu = new javafx.scene.control.MenuButton();
+        menu.setGraphic(dots);
+        menu.setContentDisplay(javafx.scene.control.ContentDisplay.GRAPHIC_ONLY);
+        menu.setAlignment(javafx.geometry.Pos.CENTER);
+        menu.getStyleClass().add("crm-row-menu");
+        menu.setAccessibleText(description);
+        menu.setTooltip(new javafx.scene.control.Tooltip(description));
+        return menu;
+    }
+
     static javafx.scene.control.MenuButton rowMenu(
             Button add, Button remove, String addText, String removeText) {
-        var menu = new javafx.scene.control.MenuButton("⋯");
-        menu.getStyleClass().add("crm-row-menu");
-        menu.setAccessibleText("Azioni sulla riga");
-        menu.setTooltip(new javafx.scene.control.Tooltip("Azioni sulla riga"));
+        var menu = actionMenu("Azioni sulla riga");
         if (add != null) {
             var item = new javafx.scene.control.MenuItem(addText);
             item.setOnAction(e -> add.fire());
