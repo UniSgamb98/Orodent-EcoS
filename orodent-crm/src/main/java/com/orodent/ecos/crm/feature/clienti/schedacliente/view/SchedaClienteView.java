@@ -43,10 +43,11 @@ public class SchedaClienteView extends BorderPane {
     private static final double RELATED_SECTIONS_TWO_COLUMN_BREAKPOINT = 560;
 
     private final AppSidebar sidebar;
-    private final VBox body = new VBox(16);
     private final VBox columns = new VBox(16);
     private TitledPane resourcesDisclosure;
     private boolean editing;
+    private ScrollPane contactScroll;
+    private TitledPane compactContacts;
     private final ClienteProfileHeader header;
     private final ClienteDataSection dataSection;
     private final ClienteRelatedSections relatedSections;
@@ -78,50 +79,72 @@ public class SchedaClienteView extends BorderPane {
         Button back = new Button("← Contatti e lead");
         back.getStyleClass().add("client-profile-back");
         back.setOnAction(e -> sidebar.getClientsButton().fire());
-        createMainColumns();
         resourcesDisclosure = new TitledPane("Attrezzature e materiali", resourcesPanel);
         resourcesDisclosure.setExpanded(false);
         resourcesDisclosure.setAnimated(false);
         resourcesDisclosure.getStyleClass().add("client-profile-disclosure");
-        body.getChildren().addAll(columns, resourcesDisclosure);
-        ScrollPane scrollPane = new ScrollPane(body);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scrollPane.getStyleClass().add("new-client-scroll");
-        VBox.setVgrow(scrollPane, Priority.ALWAYS);
-        content.getChildren().addAll(back, header, scrollPane);
+        contactScroll = new ScrollPane(detailsPanel);
+        contactScroll.setId("crm-contact-scroll");
+        contactScroll.setFitToWidth(true);
+        contactScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        contactScroll.setMinHeight(0);
+        contactScroll.getStyleClass().add("client-profile-contact-scroll");
+        compactContacts = new TitledPane("Contatti e dati azienda", null);
+        compactContacts.setAnimated(false);
+        compactContacts.getStyleClass().add("client-profile-disclosure");
+        createMainColumns();
+        VBox.setVgrow(columns, Priority.ALWAYS);
+        columns.setMinHeight(0);
+        // Resource editors keep their full width and remain reachable without scrolling the
+        // history.
+        ScrollPane resourceScroll = new ScrollPane(resourcesPanel);
+        resourceScroll.setFitToWidth(true);
+        resourceScroll.setPrefViewportHeight(250);
+        resourceScroll.getStyleClass().add("new-client-scroll");
+        resourcesDisclosure.setContent(resourceScroll);
+        content.getChildren().addAll(back, header, columns, resourcesDisclosure);
         return content;
     }
 
     private void createMainColumns() {
-        // A single responsive row; unlike TilePane, each column keeps its own height.
         HBox wide = new HBox(16);
-        wide.setFillHeight(false);
+        VBox compact = new VBox(10);
         Boolean[] lastCompact = {null};
-        VBox stacked = new VBox(16);
-        columns.setMinWidth(0);
-        columns.setMaxWidth(Double.MAX_VALUE);
         Runnable layout =
                 () -> {
-                    boolean compact = columns.getWidth() < (editing ? 1120 : 900);
-                    detailsPanel.setMinWidth(compact ? 0 : (editing ? 530 : 350));
-                    detailsPanel.setPrefWidth(compact ? 580 : (editing ? 530 : 350));
-                    detailsPanel.setMaxWidth(compact ? Double.MAX_VALUE : (editing ? 530 : 350));
-                    timelineSection.setMinWidth(0);
+                    boolean small = columns.getWidth() < (editing ? 1120 : 900);
+                    double sideWidth = editing ? 530 : 350;
+                    detailsPanel.setMinWidth(0);
+                    detailsPanel.setMaxWidth(Double.MAX_VALUE);
+                    contactScroll.setMinWidth(small ? 0 : sideWidth);
+                    contactScroll.setPrefWidth(small ? 580 : sideWidth);
+                    contactScroll.setMaxWidth(small ? Double.MAX_VALUE : sideWidth);
+                    contactScroll.setMaxHeight(small ? (editing ? 300 : 240) : Double.MAX_VALUE);
+                    timelineSection.setMinSize(0, 0);
                     timelineSection.setPrefWidth(600);
-                    timelineSection.setMaxWidth(Double.MAX_VALUE);
-                    if (java.util.Objects.equals(lastCompact[0], compact)) return;
-                    lastCompact[0] = compact;
+                    timelineSection.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+                    if (java.util.Objects.equals(lastCompact[0], small)) {
+                        if (small && editing) compactContacts.setExpanded(true);
+                        return;
+                    }
+                    lastCompact[0] = small;
                     wide.getChildren().clear();
-                    stacked.getChildren().clear();
-                    if (compact) {
-                        stacked.getChildren().setAll(detailsPanel, timelineSection);
-                        columns.getChildren().setAll(stacked);
+                    compact.getChildren().clear();
+                    compactContacts.setContent(null);
+                    if (small) {
+                        compactContacts.setContent(contactScroll);
+                        compactContacts.setExpanded(editing);
+                        compact.getChildren().setAll(compactContacts, timelineSection);
+                        VBox.setVgrow(timelineSection, Priority.ALWAYS);
+                        columns.getChildren().setAll(compact);
+                        VBox.setVgrow(compact, Priority.ALWAYS);
                     } else {
-                        wide.getChildren().setAll(detailsPanel, timelineSection);
+                        // TitledPane hides its content when collapsed; restore it after detaching.
+                        contactScroll.setVisible(true);
+                        wide.getChildren().setAll(contactScroll, timelineSection);
                         HBox.setHgrow(timelineSection, Priority.ALWAYS);
-                        wide.setAlignment(javafx.geometry.Pos.TOP_LEFT);
                         columns.getChildren().setAll(wide);
+                        VBox.setVgrow(wide, Priority.ALWAYS);
                     }
                 };
         columns.widthProperty().addListener((o, a, b) -> layout.run());

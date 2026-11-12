@@ -326,3 +326,28 @@
 .crm-module .client-profile-page .client-profile-small-filter-button:hover { -fx-background-color: #dcecf0; -fx-text-fill: #155f72; }
 .crm-module .client-profile-page .client-profile-small-filter-active:hover { -fx-background-color: #155f72; -fx-text-fill: white; }
 .crm-module .client-profile-page .client-profile-back:hover { -fx-background-color: transparent; -fx-underline: true; }
+
+/* Compact activity ledger with independently scrolling customer details. */
+.crm-module .client-profile-page .client-profile-hero { -fx-padding: 12 18; -fx-spacing: 8; }
+.crm-module .client-profile-page .clients-title { -fx-font-size: 25px; }
+.crm-module .client-profile-page .client-profile-details-panel { -fx-background-color: #edf4f7; -fx-padding: 16; -fx-spacing: 18; }
+.crm-module .client-profile-page .client-profile-contact-card { -fx-background-color: white; }
+.crm-module .client-profile-page .client-profile-contact-scroll,
+.crm-module .client-profile-page .client-profile-contact-scroll > .viewport { -fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0; }
+.crm-module .client-profile-page .crm-activity-panel { -fx-padding: 14 16 10 16; -fx-spacing: 10; }
+.crm-module .client-profile-page .crm-activity-toolbar { -fx-padding: 0 0 3 0; }
+.crm-module .client-profile-page .crm-activity-count { -fx-font-size: 12px; -fx-text-fill: #687f8f; -fx-font-weight: normal; }
+.crm-module .client-profile-page .crm-activity-list { -fx-background-color: white; -fx-border-color: #e0e8ee; -fx-border-radius: 6; }
+.crm-module .client-profile-page .crm-activity { -fx-border-color: transparent transparent #e3eaf0 transparent; -fx-background-color: white; }
+.crm-module .client-profile-page .crm-activity-note { -fx-border-color: transparent transparent #e3eaf0 #d7c4e8; -fx-border-width: 0 0 1 3; -fx-background-color: #fcfaff; }
+.crm-module .client-profile-page .crm-activity:expanded { -fx-background-color: #f6fafc; }
+.crm-module .client-profile-page .crm-activity-toggle { -fx-background-color: transparent; -fx-padding: 11 12; -fx-background-radius: 0; -fx-cursor: hand; }
+.crm-module .client-profile-page .crm-activity-toggle:hover { -fx-background-color: #eef5f8; }
+.crm-module .client-profile-page .crm-activity-toggle:focused { -fx-border-color: #19758b; -fx-border-width: 1; -fx-border-radius: 3; }
+.crm-module .client-profile-page .crm-activity-toggle .client-profile-timeline-title { -fx-font-size: 13px; -fx-font-weight: bold; -fx-min-width: 125; }
+.crm-module .client-profile-page .crm-activity-unanswered .client-profile-timeline-outcome-badge { -fx-background-color: #edf1f4; -fx-text-fill: #5d7180; }
+.crm-module .client-profile-page .crm-activity-arrow { -fx-font-size: 18px; -fx-text-fill: #607d90; }
+.crm-module .client-profile-page .crm-activity-recall { -fx-font-size: 12px; -fx-text-fill: #19758b; -fx-font-weight: normal; }
+.crm-module .client-profile-page .crm-activity-recall-overdue { -fx-text-fill: #976108; }
+.crm-module .client-profile-page .crm-activity-preview { -fx-padding: 0 14 11 14; -fx-font-size: 13px; -fx-font-weight: normal; -fx-text-fill: #4d6578; }
+.crm-module .client-profile-page .crm-activity-details { -fx-padding: 4 14 14 14; }

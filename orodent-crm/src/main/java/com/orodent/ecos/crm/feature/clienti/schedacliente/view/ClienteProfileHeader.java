@@ -47,7 +47,7 @@ final class ClienteProfileHeader extends VBox {
         cancelProfileEditButton = new Button("Annulla");
         cancelProfileEditButton.getStyleClass().add("clients-filter-button");
 
-        getChildren().addAll(createTitleRow(), createSummaryRow());
+        createResponsiveHeader();
     }
 
     void setTitle(String title) {
@@ -135,25 +135,43 @@ final class ClienteProfileHeader extends VBox {
         return cancelProfileEditButton;
     }
 
-    private HBox createTitleRow() {
-        HBox titleRow = new HBox(12);
-        titleRow.getStyleClass().add("clients-title-bar");
-        VBox titleBox = new VBox(4);
-        titleBox.setMinWidth(0);
-        HBox.setHgrow(titleBox, Priority.ALWAYS);
-        titleBox.getChildren().addAll(titleLabel, subtitleLabel);
-        HBox spacer = new HBox();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox actions = new HBox(8);
-        actions.getStyleClass().add("client-profile-header-actions");
-        actions.getChildren()
-                .addAll(
+    private void createResponsiveHeader() {
+        VBox identity = new VBox(4, titleLabel, subtitleLabel);
+        identity.setMinWidth(0);
+        identity.setPrefWidth(260);
+        FlowPane summary = createSummaryRow();
+        summary.setMinWidth(0);
+        HBox actions =
+                new HBox(
+                        8,
                         favoriteButton,
                         editProfileButton,
                         saveProfileEditButton,
                         cancelProfileEditButton);
-        titleRow.getChildren().addAll(titleBox, spacer, actions);
-        return titleRow;
+        actions.getStyleClass().add("client-profile-header-actions");
+        HBox line = new HBox(18);
+        line.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        Boolean[] previous = {null};
+        Runnable arrange =
+                () -> {
+                    boolean compact = getWidth() < 1250;
+                    if (java.util.Objects.equals(previous[0], compact)) return;
+                    previous[0] = compact;
+                    line.getChildren().clear();
+                    getChildren().clear();
+                    if (compact) {
+                        HBox.setHgrow(identity, Priority.ALWAYS);
+                        line.getChildren().setAll(identity, actions);
+                        getChildren().setAll(line, summary);
+                    } else {
+                        HBox.setHgrow(identity, Priority.NEVER);
+                        HBox.setHgrow(summary, Priority.ALWAYS);
+                        line.getChildren().setAll(identity, summary, actions);
+                        getChildren().setAll(line);
+                    }
+                };
+        widthProperty().addListener((o, a, b) -> arrange.run());
+        arrange.run();
     }
 
     private FlowPane createSummaryRow() {

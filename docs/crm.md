@@ -22,14 +22,18 @@ TON o Costi. Preferiti e viste salvate rimangono separati per UUID dell'operator
 ## Scheda cliente
 
 L'intestazione resta visibile durante lo scorrimento. Contatti e recapiti sono
-nella colonna laterale; la cronologia occupa l'area principale. Su finestre più
-strette le due sezioni si dispongono in verticale. I recapiti hanno un comando
-Copia; dati fiscali/commerciali e attrezzature sono richiudibili.
+nella colonna laterale, con scorrimento indipendente dallo storico. Data, esito
+e richiamo delle attività sono affiancati in righe compatte; un clic espande il
+dettaglio. Su finestre strette i contatti diventano un pannello richiudibile sopra
+lo storico. I recapiti hanno un comando Copia; dati fiscali/commerciali e
+attrezzature sono richiudibili. I comandi dello storico restano visibili mentre
+scorrono le attività.
 
 I riepiloghi tecnici importati da CRM2 sono separati dalle conversazioni.
 Nelle chiamate riconoscibili del vecchio formato, il testo originale completo
-resta nei dettagli espandibili; nessuna nota viene modificata nel DB. I testi
-lunghi hanno Mostra tutto / Mostra meno. Il richiamo dell'ultima chiamata viene
+resta nei dettagli espandibili, anche per chiamate prive di conversazione;
+nessuna nota viene modificata nel DB. I testi lunghi hanno un'anteprima breve e
+possono essere aperti contemporaneamente. Il richiamo dell'ultima chiamata viene
 evidenziato se scaduto; i filtri dello storico non modificano l'intestazione.
 
 ## Database e distinzione dal gestionale

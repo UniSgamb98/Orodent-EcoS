@@ -245,6 +245,38 @@ class CrmUiTest {
                                                 CallOutcome.PRESENTAZIONE,
                                                 "Presentazione dell’azienda e dei prodotti. "
                                                         .repeat(35)));
+                        var history = new ArrayList<>(calls);
+                        for (int i = 0; i < 6; i++) {
+                            var day = today.minusDays(i + 1);
+                            history.add(
+                                    i + 1,
+                                    new InteractionPreview(
+                                            UUID.randomUUID(),
+                                            UUID.randomUUID(),
+                                            day,
+                                            day.atStartOfDay(),
+                                            InteractionType.CHIAMATA,
+                                            i == 0 ? today.minusDays(1) : null,
+                                            CallOutcome.NON_TROVATO,
+                                            "[Chiamata #"
+                                                    + (8 - i)
+                                                    + "]\r\n"
+                                                    + "Stato precedente: LISTINO\r\n"
+                                                    + "Nuovo stato: NON_TROVATO\r\n"
+                                                    + "Checkpoint: 0\r\n"
+                                                    + "Durata: 0\r\n"
+                                                    + "Messaggio: false"));
+                        }
+                        history.add(
+                                new InteractionPreview(
+                                        UUID.randomUUID(),
+                                        null,
+                                        today.minusDays(10),
+                                        today.minusDays(10).atTime(10, 0),
+                                        InteractionType.NOTA,
+                                        null,
+                                        null,
+                                        "Inviata la scheda tecnica richiesta dal laboratorio."));
                         var model =
                                 new ClienteProfile(
                                         UUID.randomUUID(),
@@ -281,7 +313,7 @@ class CrmUiTest {
                                         List.of(),
                                         List.of(),
                                         List.of(),
-                                        calls);
+                                        history);
                         var page = new SchedaClienteView();
                         preview[0] = page;
                         sample[0] = model;
@@ -307,7 +339,7 @@ class CrmUiTest {
                                                     .getResource("/crm/css/" + css)
                                                     .toExternalForm());
                         stage = new Stage();
-                        stage.setScene(new Scene(root, 1440, 900));
+                        stage.setScene(new Scene(root, 1740, 900));
                         stage.show();
                         return null;
                     });
@@ -339,24 +371,54 @@ class CrmUiTest {
                         assertFalse(imported.isExpanded());
                         assertNotNull(root.lookup(".client-profile-overdue"));
                         snapshot("target/crm-profile-redesign.png");
-                        var disclosure =
-                                root.lookupAll(".titled-pane").stream()
-                                        .map(n -> (TitledPane) n)
-                                        .filter(n -> n.getText().equals("Dettagli originali CRM2"))
-                                        .findFirst()
-                                        .orElseThrow();
-                        disclosure.setExpanded(true);
-                        assertTrue(
-                                ((Label) disclosure.getContent()).getText().contains("Durata: 5"));
-                        // The complete source remains available even when long text is collapsed.
-                        var more =
-                                root.lookupAll(".button").stream()
+                        var toggles =
+                                root.lookupAll(".crm-activity-toggle").stream()
                                         .map(n -> (Button) n)
-                                        .filter(n -> n.getText().equals("Mostra tutto"))
+                                        .toList();
+                        var unanswered =
+                                toggles.stream()
+                                        .filter(n -> n.getAccessibleText().contains("Non trovato"))
                                         .findFirst()
                                         .orElseThrow();
-                        more.fire();
-                        assertEquals("Mostra meno", more.getText());
+                        var compactRow = (javafx.scene.layout.VBox) unanswered.getParent();
+                        assertTrue(root.lookup("#crm-contact-scroll").isVisible());
+                        assertTrue(
+                                compactRow.getHeight() < 70, "Metadata-only calls occupy one row");
+                        assertFalse(
+                                compactRow.getChildren().get(1).isManaged(),
+                                "No metadata in the conversation preview");
+                        unanswered.fire();
+                        root.applyCss();
+                        root.layout();
+                        assertTrue(compactRow.getChildren().get(2).isManaged());
+                        var raw = (TitledPane) compactRow.lookup(".titled-pane");
+                        assertTrue(
+                                ((Label) raw.getContent()).getText().contains("Messaggio: false"));
+                        unanswered.fire();
+                        var longCall =
+                                toggles.stream()
+                                        .filter(
+                                                n ->
+                                                        n.getAccessibleText()
+                                                                .contains("Presentazione"))
+                                        .findFirst()
+                                        .orElseThrow();
+                        longCall.fire();
+                        assertTrue(longCall.getAccessibleHelp().contains("Comprimi"));
+                        // Scrolling the history doesn't move company contacts.
+                        var contact = root.lookup(".client-profile-contact-card");
+                        double contactY =
+                                contact.localToScene(contact.getBoundsInLocal()).getMinY();
+                        var scroll = (ScrollPane) root.lookup("#crm-history-scroll");
+                        scroll.setVvalue(1);
+                        root.applyCss();
+                        root.layout();
+                        assertEquals(
+                                contactY,
+                                contact.localToScene(contact.getBoundsInLocal()).getMinY(),
+                                0.5);
+                        snapshot("target/crm-profile-history-scrolled.png");
+                        scroll.setVvalue(0);
                         page.getNewNoteButton().fire();
                         page.showNoteEditor();
                         page.getNoteTextArea().setText("Appunto non ancora salvato");
