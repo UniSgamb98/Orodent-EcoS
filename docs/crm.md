@@ -24,10 +24,12 @@ TON o Costi. Preferiti e viste salvate rimangono separati per UUID dell'operator
 L'intestazione resta visibile durante lo scorrimento. Contatti e recapiti sono
 nella colonna laterale, con scorrimento indipendente dallo storico. Data, esito
 e richiamo delle attività sono affiancati in righe compatte; un clic espande il
-dettaglio. Su finestre strette i contatti diventano un pannello richiudibile sopra
-lo storico. I recapiti hanno un comando Copia; dati fiscali/commerciali e
-attrezzature sono richiudibili. I comandi dello storico restano visibili mentre
-scorrono le attività.
+dettaglio. Su finestre strette l'intera scheda usa uno scorrimento unico: contatti,
+storico e attrezzature crescono secondo il contenuto, senza riquadri con altezze
+riservate o scrollbar interne. I contatti restano richiudibili sopra lo storico.
+I recapiti hanno un comando Copia; dati fiscali/commerciali e attrezzature sono
+richiudibili. Nella vista grande i comandi dello storico restano visibili mentre
+scorrono le attività. Il passaggio tra le due viste conserva i campi in modifica.
 
 I riepiloghi tecnici importati da CRM2 sono separati dalle conversazioni.
 Nelle chiamate riconoscibili del vecchio formato, il testo originale completo

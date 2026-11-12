@@ -45,6 +45,7 @@ final class ClienteTimelineSection extends VBox {
     private final Button callsFilterButton;
     private final VBox timelineList;
     private final ScrollPane historyScroll;
+    private final VBox scrollContent;
     private final Label activityCount = new Label();
     private final java.util.Set<java.util.UUID> expandedActivities = new java.util.HashSet<>();
     private final VBox importedNotes = new VBox(10);
@@ -100,7 +101,7 @@ final class ClienteTimelineSection extends VBox {
         toolbar.setCenter(new VBox(3, title, activityCount));
         toolbar.setRight(createActions());
         toolbar.getStyleClass().add("crm-activity-toolbar");
-        VBox scrollContent = new VBox(10, noteEditor, timelineList, importedDisclosure);
+        scrollContent = new VBox(10, noteEditor, timelineList, importedDisclosure);
         historyScroll = new ScrollPane(scrollContent);
         historyScroll.setId("crm-history-scroll");
         historyScroll.setFitToWidth(true);
@@ -111,6 +112,22 @@ final class ClienteTimelineSection extends VBox {
         getChildren().addAll(toolbar, createFilters(), historyScroll);
         setMinHeight(0);
         getStyleClass().add("crm-activity-panel");
+    }
+
+    /** In a narrow window the outer page owns scrolling, so this panel uses its natural height. */
+    void setPageScrolling(boolean pageScrolling) {
+        getChildren().removeAll(historyScroll, scrollContent);
+        historyScroll.setContent(null);
+        if (pageScrolling) {
+            getChildren().add(scrollContent);
+            setMinHeight(Region.USE_PREF_SIZE);
+            setMaxHeight(Region.USE_PREF_SIZE);
+        } else {
+            historyScroll.setContent(scrollContent);
+            getChildren().add(historyScroll);
+            setMinHeight(0);
+            setMaxHeight(Double.MAX_VALUE);
+        }
     }
 
     void render(List<InteractionPreview> interactions) {

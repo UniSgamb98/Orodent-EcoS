@@ -44,6 +44,7 @@ public class SchedaClienteView extends BorderPane {
 
     private final AppSidebar sidebar;
     private final VBox columns = new VBox(16);
+    private final BorderPane responsiveHost = new BorderPane();
     private TitledPane resourcesDisclosure;
     private boolean editing;
     private ScrollPane contactScroll;
@@ -72,10 +73,10 @@ public class SchedaClienteView extends BorderPane {
         setCenter(createContent());
     }
 
-    private VBox createContent() {
+    private BorderPane createContent() {
         VBox content = new VBox(14);
         content.setPadding(new Insets(18, 22, 18, 22));
-        content.getStyleClass().addAll("clients-content", "client-profile-page");
+        responsiveHost.getStyleClass().addAll("clients-content", "client-profile-page");
         Button back = new Button("← Contatti e lead");
         back.getStyleClass().add("client-profile-back");
         back.setOnAction(e -> sidebar.getClientsButton().fire());
@@ -92,62 +93,92 @@ public class SchedaClienteView extends BorderPane {
         compactContacts = new TitledPane("Contatti e dati azienda", null);
         compactContacts.setAnimated(false);
         compactContacts.getStyleClass().add("client-profile-disclosure");
-        createMainColumns();
         VBox.setVgrow(columns, Priority.ALWAYS);
         columns.setMinHeight(0);
+        columns.setPrefHeight(500);
         // Resource editors keep their full width and remain reachable without scrolling the
         // history.
         ScrollPane resourceScroll = new ScrollPane(resourcesPanel);
+        resourceScroll.setId("crm-resource-scroll");
         resourceScroll.setFitToWidth(true);
         resourceScroll.setPrefViewportHeight(250);
         resourceScroll.getStyleClass().add("new-client-scroll");
         resourcesDisclosure.setContent(resourceScroll);
-        content.getChildren().addAll(back, header, columns, resourcesDisclosure);
-        return content;
+        createMainColumns(content, back, resourceScroll);
+        return responsiveHost;
     }
 
-    private void createMainColumns() {
+    private void createMainColumns(VBox widePage, Button back, ScrollPane resourceScroll) {
         HBox wide = new HBox(16);
-        VBox compact = new VBox(10);
+        VBox compactPage = new VBox(14);
+        compactPage.setPadding(new Insets(18, 22, 18, 22));
+        ScrollPane pageScroll = new ScrollPane(compactPage);
+        pageScroll.setId("crm-page-scroll");
+        pageScroll.setFitToWidth(true);
+        pageScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        pageScroll.getStyleClass().add("new-client-scroll");
         Boolean[] lastCompact = {null};
         Runnable layout =
                 () -> {
-                    boolean small = columns.getWidth() < (editing ? 1120 : 900);
+                    boolean small = responsiveHost.getWidth() - 44 < (editing ? 1120 : 900);
                     double sideWidth = editing ? 530 : 350;
                     detailsPanel.setMinWidth(0);
                     detailsPanel.setMaxWidth(Double.MAX_VALUE);
                     contactScroll.setMinWidth(small ? 0 : sideWidth);
                     contactScroll.setPrefWidth(small ? 580 : sideWidth);
                     contactScroll.setMaxWidth(small ? Double.MAX_VALUE : sideWidth);
-                    contactScroll.setMaxHeight(small ? (editing ? 300 : 240) : Double.MAX_VALUE);
-                    timelineSection.setMinSize(0, 0);
+                    contactScroll.setMaxHeight(Double.MAX_VALUE);
                     timelineSection.setPrefWidth(600);
-                    timelineSection.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+                    timelineSection.setMaxWidth(Double.MAX_VALUE);
                     if (java.util.Objects.equals(lastCompact[0], small)) {
                         if (small && editing) compactContacts.setExpanded(true);
                         return;
                     }
                     lastCompact[0] = small;
                     wide.getChildren().clear();
-                    compact.getChildren().clear();
+                    columns.getChildren().clear();
+                    widePage.getChildren().clear();
+                    compactPage.getChildren().clear();
                     compactContacts.setContent(null);
+                    contactScroll.setContent(null);
+                    resourcesDisclosure.setContent(null);
+                    resourceScroll.setContent(null);
+                    detailsPanel.setVisible(true);
+                    resourcesPanel.setVisible(true);
+                    timelineSection.setPageScrolling(small);
                     if (small) {
-                        compactContacts.setContent(contactScroll);
-                        compactContacts.setExpanded(editing);
-                        compact.getChildren().setAll(compactContacts, timelineSection);
-                        VBox.setVgrow(timelineSection, Priority.ALWAYS);
-                        columns.getChildren().setAll(compact);
-                        VBox.setVgrow(compact, Priority.ALWAYS);
+                        compactContacts.setContent(detailsPanel);
+                        compactContacts.setExpanded(true);
+                        compactContacts.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+                        resourcesDisclosure.setContent(resourcesPanel);
+                        resourcesDisclosure.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+                        VBox.setVgrow(timelineSection, Priority.NEVER);
+                        compactPage
+                                .getChildren()
+                                .setAll(
+                                        back,
+                                        header,
+                                        compactContacts,
+                                        timelineSection,
+                                        resourcesDisclosure);
+                        responsiveHost.setCenter(pageScroll);
                     } else {
-                        // TitledPane hides its content when collapsed; restore it after detaching.
+                        contactScroll.setContent(detailsPanel);
                         contactScroll.setVisible(true);
+                        detailsPanel.setVisible(true);
+                        resourceScroll.setContent(resourcesPanel);
+                        resourcesPanel.setVisible(true);
+                        resourcesDisclosure.setContent(resourceScroll);
+                        resourcesDisclosure.setMinHeight(0);
                         wide.getChildren().setAll(contactScroll, timelineSection);
                         HBox.setHgrow(timelineSection, Priority.ALWAYS);
                         columns.getChildren().setAll(wide);
                         VBox.setVgrow(wide, Priority.ALWAYS);
+                        widePage.getChildren().setAll(back, header, columns, resourcesDisclosure);
+                        responsiveHost.setCenter(widePage);
                     }
                 };
-        columns.widthProperty().addListener((o, a, b) -> layout.run());
+        responsiveHost.widthProperty().addListener((o, a, b) -> layout.run());
         editingPropertyRefresh = layout;
         layout.run();
     }

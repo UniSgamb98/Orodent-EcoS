@@ -346,6 +346,8 @@ class CrmUiTest {
             await(
                     () ->
                             stage.getScene().getWidth() > 1300
+                                    && stage.getScene().lookup(".client-profile-details-panel")
+                                            != null
                                     && ((javafx.scene.layout.Region)
                                                             stage.getScene()
                                                                     .lookup(
@@ -437,7 +439,41 @@ class CrmUiTest {
                         root.layout();
                         assertEquals(
                                 "Appunto non ancora salvato", page.getNoteTextArea().getText());
+                        assertNull(root.lookup("#crm-contact-scroll"));
+                        assertNull(root.lookup("#crm-history-scroll"));
+                        assertNull(root.lookup("#crm-resource-scroll"));
+                        var pageScroll = (ScrollPane) root.lookup("#crm-page-scroll");
+                        assertNotNull(pageScroll);
+                        var resources =
+                                root.lookupAll(".titled-pane").stream()
+                                        .map(n -> (TitledPane) n)
+                                        .filter(
+                                                n ->
+                                                        n.getText()
+                                                                .startsWith(
+                                                                        "Attrezzature e materiali"))
+                                        .findFirst()
+                                        .orElseThrow();
+                        resources.setExpanded(true);
+                        root.applyCss();
+                        root.layout();
                         snapshot("target/crm-profile-compact.png");
+                        var details =
+                                (javafx.scene.layout.Region)
+                                        root.lookup(".client-profile-details-panel");
+                        assertEquals(
+                                details.prefHeight(details.getWidth()),
+                                details.getHeight(),
+                                2,
+                                "Compact contacts use their full natural height");
+                        assertTrue(
+                                pageScroll.getContent().getLayoutBounds().getHeight()
+                                        > pageScroll.getViewportBounds().getHeight() + 100);
+                        pageScroll.setVvalue(1);
+                        root.applyCss();
+                        root.layout();
+                        snapshot("target/crm-profile-compact-bottom.png");
+                        pageScroll.setVvalue(0);
                         page.hideNoteEditor();
                         page.renderEditableProfile(
                                 new EditProfileDraft(
@@ -460,6 +496,31 @@ class CrmUiTest {
                         assertEquals(model.ragioneSociale(), draft.ragioneSociale());
                         assertEquals(phone.value(), draft.telefoni().getFirst().value());
                         snapshot("target/crm-profile-editor.png");
+                        stage.setWidth(1740);
+                        return null;
+                    });
+            await(
+                    () ->
+                            stage.getScene().getWidth() > 1300
+                                    && stage.getScene().lookup("#crm-contact-scroll") != null);
+            fx(
+                    () -> {
+                        var page = preview[0];
+                        assertNotNull(stage.getScene().lookup("#crm-history-scroll"));
+                        assertNull(stage.getScene().lookup("#crm-page-scroll"));
+                        stage.getScene().getRoot().applyCss();
+                        stage.getScene().getRoot().layout();
+                        assertTrue(
+                                ((ScrollPane) stage.getScene().lookup("#crm-resource-scroll"))
+                                                .getHeight()
+                                        >= 200,
+                                "Expanded resources remain usable after returning to the wide"
+                                    + " layout");
+                        assertTrue(stage.getScene().lookup("#crm-contact-scroll").isVisible());
+                        assertEquals(
+                                sample[0].ragioneSociale(),
+                                page.collectEditDraft().ragioneSociale());
+                        snapshot("target/crm-profile-wide-restored.png");
                         return null;
                     });
         } finally {
