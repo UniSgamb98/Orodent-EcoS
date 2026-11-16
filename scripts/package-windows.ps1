@@ -58,11 +58,42 @@ I moduli JavaFX dell'applicazione sono gia forniti da Maven.
 '@
 }
 
+function Show-TestFailureReports {
+    param([datetime]$Since = [datetime]::MinValue)
+    $found = $false
+    foreach ($module in Get-ChildItem -LiteralPath $projectRoot -Directory -Filter 'orodent-*') {
+        $reports = Join-Path $module.FullName 'target\surefire-reports'
+        if (-not (Test-Path -LiteralPath $reports -PathType Container)) { continue }
+        foreach ($report in Get-ChildItem -LiteralPath $reports -File -Filter '*.txt' | Where-Object { $_.LastWriteTime -ge $Since }) {
+            $content = Get-Content -LiteralPath $report.FullName -Raw -Encoding UTF8
+            if ($content -match '<<< (FAILURE|ERROR)!') {
+                $found = $true
+                Write-Host "`nDettaglio test falliti: $($report.FullName)"
+                Write-Host $content
+            }
+        }
+        foreach ($dump in Get-ChildItem -LiteralPath $reports -File | Where-Object { $_.Name -like '*.dump*' -and $_.LastWriteTime -ge $Since }) {
+            $found = $true
+            Write-Host "`nDiagnostica JVM (ultime 60 righe): $($dump.FullName)"
+            Get-Content -LiteralPath $dump.FullName -Encoding UTF8 -Tail 60 | ForEach-Object { Write-Host $_ }
+        }
+    }
+    if (-not $found) {
+        Write-Host 'Nessun report di test fallito disponibile. Consultare il primo errore Maven riportato sopra.'
+    }
+}
+
 function Invoke-CheckedTool {
     param([string]$FilePath, [string[]]$ToolArguments)
+    $toolStartedAt = Get-Date
     & $FilePath @ToolArguments
-    if ($LASTEXITCODE -ne 0) {
-        throw "Comando fallito (codice $LASTEXITCODE): $FilePath"
+    $toolExitCode = $LASTEXITCODE
+    if ($toolExitCode -ne 0) {
+        if ([System.IO.Path]::GetFileName($FilePath) -eq 'mvnw.cmd') {
+            try { Show-TestFailureReports -Since $toolStartedAt }
+            catch { Write-Warning "Impossibile leggere i report: $($_.Exception.Message)" }
+        }
+        throw "Comando fallito (codice $toolExitCode): $FilePath"
     }
 }
 

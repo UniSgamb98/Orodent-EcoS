@@ -250,7 +250,9 @@ L'opzione di esecuzione vale per il solo processo PowerShell avviato.
 Lo script seleziona quel JDK anche per Maven, esegue `clean package` con i test
 headless, verifica la presenza delle librerie JavaFX Windows e risolve il grafo
 dei moduli dell’app con il runtime incorporato tramite `--dry-run`, prima di creare
-lo ZIP. Questa verifica non avvia il database. Produce:
+lo ZIP. Questa verifica non avvia il database. Se Maven fallisce, lo script
+mostra direttamente i report dei test falliti e le ultime righe degli eventuali
+dump JVM, conservando il codice di errore originale. Produce:
 
 ```text
 target/

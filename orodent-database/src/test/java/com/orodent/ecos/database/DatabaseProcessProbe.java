@@ -10,6 +10,11 @@ import java.io.InputStreamReader;
 /** Runs Derby in a separate JVM, matching independent application instances. */
 public final class DatabaseProcessProbe {
     public static void main(String[] args) throws Exception {
+        if (args.length > 3 && args[3].equals("diagnostics")) {
+            System.err.println("Diagnostica: città, già occupato, € e 日本語");
+            System.out.println("READY DIAGNOSTICS");
+            return;
+        }
         if (args.length > 3 && args[3].equals("legacy")) {
             java.nio.file.Files.createDirectories(Path.of(args[0]));
             System.setProperty("derby.system.home", args[0]);

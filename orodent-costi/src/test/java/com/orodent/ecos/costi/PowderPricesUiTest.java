@@ -209,13 +209,24 @@ class PowderPricesUiTest {
                         assertTrue(stage.isShowing());
                         return null;
                     });
+            var rejectedSwitch = new CompletableFuture<Void>();
             fx(
                     () -> {
-                        Platform.runLater(() -> Platform.runLater(() -> answer(ButtonType.CANCEL)));
+                        Platform.runLater(() -> Platform.runLater(() -> {
+                            try {
+                                answer(ButtonType.CANCEL);
+                                rejectedSwitch.complete(null);
+                            } catch (Throwable error) {
+                                rejectedSwitch.completeExceptionally(error);
+                            }
+                        }));
+                        table().requestFocus();
                         field("costi-inline-quantity-2").requestFocus();
                         return null;
                     });
-            await(() -> table().getSelectionModel().getSelectedIndex() == 0);
+            rejectedSwitch.get(15, TimeUnit.SECONDS);
+            await(() -> table().getSelectionModel().getSelectedIndex() == 0
+                    && field("costi-inline-quantity-1").isFocused());
             fx(
                     () -> {
                         button("costi-cancel").fire();
@@ -227,6 +238,8 @@ class PowderPricesUiTest {
             fx(
                     () -> {
                         assertEquals("", view().state().price());
+                        // Selecting a row in code leaves the old field focused; a user click does not.
+                        table().requestFocus();
                         field("costi-inline-quantity-1").requestFocus();
                         return null;
                     });
@@ -264,7 +277,8 @@ class PowderPricesUiTest {
                         stage.setHeight(780);
                         return null;
                     });
-            await(() -> stage.getWidth() == 1100);
+            await(() -> stage.getWidth() == 1100
+                    && stage.getScene().lookup("#costi-compact-tabs") instanceof TabPane);
             fx(
                     () -> {
                         stage.getScene().getRoot().applyCss();
@@ -415,6 +429,13 @@ class PowderPricesUiTest {
             if (fx(condition)) return;
             Thread.sleep(40);
         }
-        fail("Timeout dell'interfaccia");
+        fail("Timeout dell'interfaccia: " + fx(() ->
+                "selezione=" + table().getSelectionModel().getSelectedIndex()
+                + ", stato=" + view().state()
+                + ", feedback=" + feedback()
+                + ", focus=" + stage.getScene().getFocusOwner()
+                + ", prezzo 1 editabile=" + editable("costi-inline-price-1")
+                + ", prezzo 2 editabile=" + editable("costi-inline-price-2")
+                + ", errori=" + asyncErrors));
     }
 }

@@ -268,6 +268,18 @@ class DatabaseDiscoveryIntegrationTest {
     }
 
     @Test
+    void processDiagnosticsPreserveUnicodeAndLeaveTheLogDeletable() throws Exception {
+        Path errorLog;
+        try (var instance = start(temporary.resolve("diagnostics"), tcpPort(), udpPort(), "diagnostics")) {
+            errorLog = instance.errorLog;
+            assertEquals("READY DIAGNOSTICS", instance.line());
+        }
+        assertTrue(Files.readString(errorLog, StandardCharsets.UTF_8).lines()
+                .anyMatch("Diagnostica: città, già occupato, € e 日本語"::equals));
+        Files.delete(errorLog);
+    }
+
+    @Test
     void filesystemFailureIsNotReportedAsAnOccupiedDatabase() throws Exception {
         Path home = temporary.resolve("not-a-directory");
         Files.writeString(home, "test");
@@ -286,6 +298,7 @@ class DatabaseDiscoveryIntegrationTest {
                 + separator + System.getProperty("jdk.module.path", "");
         Path errorLog = temporary.resolve("stderr-" + home.getFileName() + "-" + System.nanoTime() + ".log");
         Process process = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-Dfile.encoding=UTF-8", "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8",
                 "-cp", classpath, DatabaseProcessProbe.class.getName(), home.toString(), "" + tcp, "" + udp, mode.length == 0 ? "normal" : mode[0])
                 .start();
         return new Probe(process, errorLog);
@@ -311,7 +324,7 @@ class DatabaseDiscoveryIntegrationTest {
         Probe(Process process, Path errorLog) {
             this.process = process;
             this.errorLog = errorLog;
-            output = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            output = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
             input = new PrintWriter(process.getOutputStream(), true);
             // Drain stderr without handing the child a file handle that can delay Windows cleanup.
             errorReader = Thread.ofPlatform().daemon().name("database-probe-stderr").start(() -> {
