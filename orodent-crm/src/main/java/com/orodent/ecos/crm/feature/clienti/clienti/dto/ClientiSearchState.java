@@ -9,7 +9,9 @@ public record ClientiSearchState(
         TextFilter stato,
         TextFilter paese,
         SortColumn sortColumn,
-        boolean ascending) {
+        boolean ascending,
+        boolean myFavoritesOnly,
+        boolean overdueOnly) {
     public ClientiSearchState {
         offset = Math.max(0, offset);
         pageSize = Math.max(1, pageSize);
@@ -37,7 +39,9 @@ public record ClientiSearchState(
                 TextFilter.empty("Tutti"),
                 TextFilter.empty("Tutti i paesi"),
                 SortColumn.NAME,
-                true);
+                true,
+                false,
+                false);
     }
 
     public ClientiSearchState withOffset(int offset) {
@@ -50,37 +54,114 @@ public record ClientiSearchState(
                 stato,
                 paese,
                 sortColumn,
-                ascending);
+                ascending,
+                myFavoritesOnly,
+                overdueOnly);
     }
 
     public ClientiSearchState withPageSize(int pageSize) {
         return new ClientiSearchState(
-                0, pageSize, searchText, operatore, tipologia, stato, paese, sortColumn, ascending);
+                0,
+                pageSize,
+                searchText,
+                operatore,
+                tipologia,
+                stato,
+                paese,
+                sortColumn,
+                ascending,
+                myFavoritesOnly,
+                overdueOnly);
     }
 
     public ClientiSearchState withSearchText(String searchText) {
         return new ClientiSearchState(
-                0, pageSize, searchText, operatore, tipologia, stato, paese, sortColumn, ascending);
+                0,
+                pageSize,
+                searchText,
+                operatore,
+                tipologia,
+                stato,
+                paese,
+                sortColumn,
+                ascending,
+                myFavoritesOnly,
+                overdueOnly);
     }
 
     public ClientiSearchState withOperatore(OperatoreFilter operatore) {
         return new ClientiSearchState(
-                0, pageSize, searchText, operatore, tipologia, stato, paese, sortColumn, ascending);
+                0,
+                pageSize,
+                searchText,
+                operatore,
+                tipologia,
+                stato,
+                paese,
+                sortColumn,
+                ascending,
+                myFavoritesOnly,
+                overdueOnly);
     }
 
     public ClientiSearchState withTipologia(TextFilter tipologia) {
         return new ClientiSearchState(
-                0, pageSize, searchText, operatore, tipologia, stato, paese, sortColumn, ascending);
+                0,
+                pageSize,
+                searchText,
+                operatore,
+                tipologia,
+                stato,
+                paese,
+                sortColumn,
+                ascending,
+                myFavoritesOnly,
+                overdueOnly);
     }
 
     public ClientiSearchState withStato(TextFilter stato) {
         return new ClientiSearchState(
-                0, pageSize, searchText, operatore, tipologia, stato, paese, sortColumn, ascending);
+                0,
+                pageSize,
+                searchText,
+                operatore,
+                tipologia,
+                stato,
+                paese,
+                sortColumn,
+                ascending,
+                myFavoritesOnly,
+                overdueOnly);
     }
 
     public ClientiSearchState withPaese(TextFilter paese) {
         return new ClientiSearchState(
-                0, pageSize, searchText, operatore, tipologia, stato, paese, sortColumn, ascending);
+                0,
+                pageSize,
+                searchText,
+                operatore,
+                tipologia,
+                stato,
+                paese,
+                sortColumn,
+                ascending,
+                myFavoritesOnly,
+                overdueOnly);
+    }
+
+    public ClientiSearchState withQuickFilters(boolean myFavoritesOnly, boolean overdueOnly) {
+        return new ClientiSearchState(
+                0,
+                pageSize,
+                searchText,
+                operatore,
+                tipologia,
+                stato,
+                paese,
+                sortColumn,
+                ascending,
+                myFavoritesOnly,
+                overdueOnly);
     }
 
     public ClientiSearchState togglingSort(SortColumn column) {
@@ -93,7 +174,9 @@ public record ClientiSearchState(
                 stato,
                 paese,
                 column,
-                column == sortColumn ? !ascending : true);
+                column == sortColumn ? !ascending : true,
+                myFavoritesOnly,
+                overdueOnly);
     }
 
     public ClientiSearchRequest toRequest() {
@@ -106,7 +189,9 @@ public record ClientiSearchState(
                 value(stato),
                 value(paese),
                 sortColumn,
-                ascending);
+                ascending,
+                myFavoritesOnly,
+                overdueOnly);
     }
 
     private String value(TextFilter filter) {

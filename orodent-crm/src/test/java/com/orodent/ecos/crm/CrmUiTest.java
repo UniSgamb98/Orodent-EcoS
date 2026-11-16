@@ -781,6 +781,32 @@ class CrmUiTest {
                                                 com.orodent.ecos.crm.feature.clienti.clienti.dto
                                                         .TextFilter>)
                                         scene.lookup("#crm-country-filter");
+                        var favorites = (CheckBox) scene.lookup("#crm-my-favorites-filter");
+                        var overdue = (CheckBox) scene.lookup("#crm-overdue-filter");
+                        assertSame(
+                                country.getParent().getParent(),
+                                favorites.getParent().getParent(),
+                                "Quick filters belong beside the main filters");
+                        assertSame(favorites.getParent(), overdue.getParent());
+                        var saved =
+                                com.orodent.ecos.crm.feature.clienti.clienti.dto.ClientiViewState
+                                        .from(
+                                                com.orodent.ecos.crm.feature.clienti.clienti.dto
+                                                        .ClientiSearchState.initial(30)
+                                                        .withQuickFilters(true, true));
+                        view.applySearchState(saved);
+                        assertTrue(favorites.isSelected());
+                        assertTrue(overdue.isSelected());
+                        view.clearFilters();
+                        assertFalse(favorites.isSelected());
+                        assertFalse(overdue.isSelected());
+                        var choices =
+                                new java.util.concurrent.atomic.AtomicReference<
+                                        java.util.List<Boolean>>();
+                        view.onQuickFiltersChanged((a, b) -> choices.set(java.util.List.of(a, b)));
+                        favorites.fire();
+                        overdue.fire();
+                        assertEquals(java.util.List.of(true, true), choices.get());
                         country.getSelectionModel().select(2);
                         assertEquals("RO", country.getValue().value());
                         assertTrue(
@@ -869,6 +895,19 @@ class CrmUiTest {
             fx(
                     () -> {
                         rootLayout();
+                        var countryControl =
+                                stage.getScene().lookup("#crm-country-filter").getParent();
+                        var quickControl =
+                                stage.getScene().lookup("#crm-my-favorites-filter").getParent();
+                        assertEquals(
+                                countryControl
+                                        .localToScene(countryControl.getBoundsInLocal())
+                                        .getCenterY(),
+                                quickControl
+                                        .localToScene(quickControl.getBoundsInLocal())
+                                        .getCenterY(),
+                                2.0,
+                                "Quick filters stay beside the menus in compact windows");
                         assertNotNull(stage.getScene().lookup(".clients-preview-overlay"));
                         var scroll =
                                 (javafx.scene.layout.Region)

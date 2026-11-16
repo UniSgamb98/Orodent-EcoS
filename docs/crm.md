@@ -28,6 +28,18 @@ raccolte in un menu; anche il Paese viene conservato, con lettura delle preceden
 configurazioni prive del filtro. Una ricerca salvata su un paese non più presente
 continua a cercare quel paese e restituisce zero risultati.
 
+Nella stessa fascia dei menu ci sono le spunte “I miei preferiti” e “Richiami
+scaduti”. Da spente non limitano i risultati; entrambe attive cercano
+l'intersezione. I preferiti appartengono all'operatore con cui si è entrati,
+indipendentemente dal filtro sull'operatore assegnato. Gli scaduti hanno la data
+di richiamo dell'ultima chiamata precedente a oggi: richiami di oggi, futuri,
+senza data o superati da una chiamata più recente restano esclusi. Il conteggio
+e il caricamento delle pagine applicano gli stessi criteri.
+
+Le ricerche salvate conservano entrambe le spunte: i preferiti vengono cercati
+per l'operatore attuale e gli scaduti sono ricalcolati rispetto a oggi. Le ricerche
+precedenti considerano le spunte disattivate. “Pulisci filtri” le azzera entrambe.
+
 L'elenco riporta tipo e paesi sotto l'azienda e l'ultimo contatto e prossimo
 richiamo nelle rispettive colonne. Il richiamo appartiene all'ultima chiamata,
 ordinata per data contatto, creazione e ID; gli appuntamenti delle chiamate più

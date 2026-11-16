@@ -88,6 +88,7 @@ public class ClientiController {
         view.onTipologiaFilterChanged(this::filterByTipoCliente);
         view.onStatoFilterChanged(this::filterByStatoTrattativa);
         view.onPaeseFilterChanged(this::filterByPaese);
+        view.onQuickFiltersChanged(this::filterByQuickFilters);
         view.onClearFilters(this::clearFilters);
         view.onSaveSearch(this::saveCurrentSearch);
         view.onApplySavedSearch(this::applySavedSearch);
@@ -187,6 +188,14 @@ public class ClientiController {
     private void filterByPaese(TextFilter filter) {
         if (clearingFilters || restoringFilters) return;
         searchState = searchState.withPaese(filter);
+        rememberSearchState();
+        updateUnsavedChangesIndicator();
+        reloadClients();
+    }
+
+    private void filterByQuickFilters(boolean myFavoritesOnly, boolean overdueOnly) {
+        if (clearingFilters || restoringFilters) return;
+        searchState = searchState.withQuickFilters(myFavoritesOnly, overdueOnly);
         rememberSearchState();
         updateUnsavedChangesIndicator();
         reloadClients();

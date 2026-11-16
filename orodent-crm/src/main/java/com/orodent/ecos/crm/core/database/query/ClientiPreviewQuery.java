@@ -14,7 +14,9 @@ public interface ClientiPreviewQuery {
             String statoTrattativa,
             String paese,
             String orderByColumn,
-            boolean ascending);
+            boolean ascending,
+            boolean myFavoritesOnly,
+            boolean overdueOnly);
 
     record ClientePreviewPage(
             List<ClientePreviewRecord> records, int offset, int pageSize, long totalRows) {

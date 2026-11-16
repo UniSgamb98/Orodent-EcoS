@@ -7,7 +7,9 @@ public record ClientiViewState(
         TextFilter stato,
         TextFilter paese,
         SortColumn sortColumn,
-        boolean ascending) {
+        boolean ascending,
+        boolean myFavoritesOnly,
+        boolean overdueOnly) {
     public ClientiViewState {
         searchText = searchText == null ? "" : searchText.trim();
         operatore = operatore == null ? OperatoreFilter.empty() : operatore;
@@ -31,7 +33,9 @@ public record ClientiViewState(
                 TextFilter.empty("Tutti"),
                 TextFilter.empty("Tutti i paesi"),
                 SortColumn.NAME,
-                true);
+                true,
+                false,
+                false);
     }
 
     public static ClientiViewState from(ClientiSearchState state) {
@@ -42,11 +46,23 @@ public record ClientiViewState(
                 state.stato(),
                 state.paese(),
                 state.sortColumn(),
-                state.ascending());
+                state.ascending(),
+                state.myFavoritesOnly(),
+                state.overdueOnly());
     }
 
     public ClientiSearchState toSearchState(int pageSize) {
         return new ClientiSearchState(
-                0, pageSize, searchText, operatore, tipologia, stato, paese, sortColumn, ascending);
+                0,
+                pageSize,
+                searchText,
+                operatore,
+                tipologia,
+                stato,
+                paese,
+                sortColumn,
+                ascending,
+                myFavoritesOnly,
+                overdueOnly);
     }
 }

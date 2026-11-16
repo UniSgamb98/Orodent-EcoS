@@ -14,7 +14,7 @@ import java.util.UUID;
 
 public final class ClientiViewStateCodec {
 
-    private static final int CURRENT_VERSION = 2;
+    private static final int CURRENT_VERSION = 3;
 
     public VersionedViewPayload encode(ClientiViewState state) {
         Properties properties = new Properties();
@@ -26,6 +26,8 @@ public final class ClientiViewStateCodec {
         properties.setProperty("paese", state.paese().value());
         properties.setProperty("sortColumn", state.sortColumn().name());
         properties.setProperty("ascending", Boolean.toString(state.ascending()));
+        properties.setProperty("myFavoritesOnly", Boolean.toString(state.myFavoritesOnly()));
+        properties.setProperty("overdueOnly", Boolean.toString(state.overdueOnly()));
 
         try (StringWriter writer = new StringWriter()) {
             properties.store(writer, null);
@@ -64,7 +66,9 @@ public final class ClientiViewStateCodec {
                         com.orodent.ecos.crm.core.country.Countries.filterLabel(
                                 properties.getProperty("paese", ""))),
                 sortColumn(properties.getProperty("sortColumn"), defaults.sortColumn()),
-                booleanValue(properties.getProperty("ascending"), defaults.ascending()));
+                booleanValue(properties.getProperty("ascending"), defaults.ascending()),
+                booleanValue(properties.getProperty("myFavoritesOnly"), false),
+                booleanValue(properties.getProperty("overdueOnly"), false));
     }
 
     private String value(UUID id) {

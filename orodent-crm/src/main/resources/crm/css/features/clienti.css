@@ -150,3 +150,10 @@
 .crm-module .crm-country-picker { -fx-background-color: white; -fx-border-color: #cbdce6; -fx-border-radius: 6; -fx-background-radius: 6; -fx-min-height: 30; -fx-padding: 0; }
 .crm-module .crm-country-picker > .text-field { -fx-background-color: transparent; -fx-border-color: transparent; -fx-font-weight: normal; -fx-font-size: 13px; -fx-padding: 4 9; }
 .crm-module .crm-country-picker:unverified { -fx-border-color: #d5a545; -fx-background-color: #fffaf0; }
+
+.crm-module .clients-list-page .clients-quick-filters { -fx-alignment: center-left; -fx-padding: 6 8; -fx-background-color: #f4f8fb; -fx-background-radius: 6; }
+.crm-module .clients-list-page .clients-quick-filters .check-box { -fx-font-size: 12px; -fx-font-weight: normal; -fx-text-fill: #294d65; -fx-cursor: hand; }
+.crm-module .clients-list-page .clients-quick-filters .check-box > .box { -fx-background-color: white; -fx-border-color: #b4c9d8; -fx-border-radius: 3; -fx-background-radius: 3; -fx-padding: 3; }
+.crm-module .clients-list-page .clients-quick-filters .check-box:selected > .box { -fx-background-color: #19758b; -fx-border-color: #19758b; }
+.crm-module .clients-list-page .clients-quick-filters .check-box:selected > .box > .mark { -fx-background-color: white; }
+.crm-module .clients-list-page .clients-quick-filters .check-box:focused > .box { -fx-border-color: #19758b; }

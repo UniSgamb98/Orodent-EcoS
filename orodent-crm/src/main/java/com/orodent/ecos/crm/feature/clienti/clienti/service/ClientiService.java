@@ -45,7 +45,9 @@ public class ClientiService {
                         request.statoTrattativa(),
                         request.paese(),
                         request.sortColumn().sqlColumn(),
-                        request.ascending());
+                        request.ascending(),
+                        request.myFavoritesOnly(),
+                        request.overdueOnly());
         return new ClientiPage(
                 page.records().stream().map(this::toPreviewRow).toList(),
                 page.offset(),

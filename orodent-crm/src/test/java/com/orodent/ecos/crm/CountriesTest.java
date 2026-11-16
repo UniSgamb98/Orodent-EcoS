@@ -11,6 +11,35 @@ import org.junit.jupiter.api.Test;
 
 class CountriesTest {
     @Test
+    void savedQuickFiltersRoundTripAndRemainDynamicAcrossPaging() {
+        var codec = new ClientiViewStateCodec();
+        var search = ClientiSearchState.initial(30).withQuickFilters(true, true);
+        var saved = ClientiViewState.from(search);
+        assertEquals(saved, codec.decode(codec.encode(saved)));
+        var restored =
+                codec.decode(codec.encode(saved))
+                        .toSearchState(30)
+                        .withPageSize(1)
+                        .withOffset(1)
+                        .withSearchText("Dental")
+                        .withOperatore(OperatoreFilter.empty())
+                        .withTipologia(TextFilter.empty("Tutti"))
+                        .withStato(TextFilter.empty("Tutti"))
+                        .withPaese(new TextFilter("IT", "Italia"))
+                        .togglingSort(SortColumn.NEXT_CONTACT);
+        assertTrue(restored.toRequest().myFavoritesOnly());
+        assertTrue(restored.toRequest().overdueOnly());
+        for (int version : new int[] {1, 2}) {
+            var legacy = codec.decode(new VersionedViewPayload(version, "searchText=Dental\n"));
+            assertFalse(legacy.myFavoritesOnly());
+            assertFalse(legacy.overdueOnly());
+        }
+        var cleared = restored.withQuickFilters(false, false);
+        assertFalse(cleared.toRequest().myFavoritesOnly());
+        assertFalse(cleared.toRequest().overdueOnly());
+    }
+
+    @Test
     void catalogueRecognizesImportedNamesAndKeepsAmbiguousValuesForReview() {
         assertTrue(Countries.names().size() >= 249);
         for (var value : new String[] {"IT", "ita", "Italy", "ITALIA", " Italia "})

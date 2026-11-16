@@ -11,7 +11,33 @@ public record ClientiSearchRequest(
         String statoTrattativa,
         String paese,
         SortColumn sortColumn,
-        boolean ascending) {
+        boolean ascending,
+        boolean myFavoritesOnly,
+        boolean overdueOnly) {
+    public ClientiSearchRequest(
+            int offset,
+            int pageSize,
+            String searchText,
+            UUID operatoreId,
+            String tipoCliente,
+            String statoTrattativa,
+            String paese,
+            SortColumn sortColumn,
+            boolean ascending) {
+        this(
+                offset,
+                pageSize,
+                searchText,
+                operatoreId,
+                tipoCliente,
+                statoTrattativa,
+                paese,
+                sortColumn,
+                ascending,
+                false,
+                false);
+    }
+
     public ClientiSearchRequest {
         offset = Math.max(0, offset);
         pageSize = Math.max(1, pageSize);

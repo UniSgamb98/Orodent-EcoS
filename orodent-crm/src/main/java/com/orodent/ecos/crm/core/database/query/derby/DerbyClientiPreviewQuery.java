@@ -34,7 +34,9 @@ public final class DerbyClientiPreviewQuery implements ClientiPreviewQuery {
             String statoTrattativa,
             String paese,
             String orderByColumn,
-            boolean ascending) {
+            boolean ascending,
+            boolean myFavoritesOnly,
+            boolean overdueOnly) {
         int start = Math.max(0, offset), size = Math.max(1, pageSize);
         List<String> conditions = new ArrayList<>();
         List<String> parameters = new ArrayList<>();
@@ -45,6 +47,20 @@ public final class DerbyClientiPreviewQuery implements ClientiPreviewQuery {
         addFilter(conditions, parameters, "C.TIPO_CLIENTE", tipoCliente);
         addFilter(conditions, parameters, "C.STATO_TRATTATIVA", statoTrattativa);
         addCountry(conditions, parameters, paese);
+        if (myFavoritesOnly) {
+            conditions.add(
+                    "EXISTS (SELECT 1 FROM CLIENTI_PREFERITI F WHERE F.CLIENTE_ID=C.ID AND"
+                        + " F.OPERATORE_ID=?)");
+            parameters.add(database.operators().currentOperatoreId().toString());
+        }
+        if (overdueOnly) {
+            conditions.add(
+                    "EXISTS (SELECT 1 FROM INTERAZIONI D WHERE D.CLIENTE_ID=C.ID"
+                            + " AND D.PROSSIMO_CONTATTO < CAST(? AS DATE) AND "
+                            + latestCall("D")
+                            + ")");
+            parameters.add(LocalDate.now().toString());
+        }
         if (searchText != null && !searchText.isBlank()) {
             conditions.add(
                     "(LOWER(C.RAGIONE_SOCIALE) LIKE ? OR LOWER(C.TIPO_CLIENTE) LIKE ? OR"
@@ -89,18 +105,9 @@ public final class DerbyClientiPreviewQuery implements ClientiPreviewQuery {
                         + " BY CLIENTE_ID) A ON A.CLIENTE_ID=C.ID LEFT JOIN ECOS.OPERATORI O ON"
                         + " O.ID=C.OPERATORE_ID LEFT JOIN (SELECT CLIENTE_ID, MAX(DATA_CONTATTO) AS"
                         + " ULTIMO_CONTATTO FROM INTERAZIONI GROUP BY CLIENTE_ID) I ON"
-                        + " I.CLIENTE_ID=C.ID LEFT JOIN INTERAZIONI L ON L.CLIENTE_ID=C.ID AND NOT"
-                        + " EXISTS (SELECT 1 FROM INTERAZIONI X WHERE X.CLIENTE_ID=L.CLIENTE_ID AND"
-                        + " ("
-                            + callDate("X")
-                            + ">"
-                            + callDate("L")
-                            + " OR ("
-                            + callDate("X")
-                            + "="
-                            + callDate("L")
-                            + " AND (X.CREATED_AT>L.CREATED_AT OR (X.CREATED_AT=L.CREATED_AT AND"
-                            + " X.ID>L.ID))))) "
+                        + " I.CLIENTE_ID=C.ID LEFT JOIN INTERAZIONI L ON L.CLIENTE_ID=C.ID AND "
+                            + latestCall("L")
+                            + " "
                             + contactJoin("TELEFONI_CLIENTE", "T")
                             + contactJoin("EMAIL_CLIENTE", "E")
                             + where
@@ -157,13 +164,33 @@ public final class DerbyClientiPreviewQuery implements ClientiPreviewQuery {
         }
     }
 
+    private static String latestCall(String alias) {
+        return "NOT EXISTS (SELECT 1 FROM INTERAZIONI X WHERE X.CLIENTE_ID="
+                + alias
+                + ".CLIENTE_ID AND ("
+                + callDate("X")
+                + ">"
+                + callDate(alias)
+                + " OR ("
+                + callDate("X")
+                + "="
+                + callDate(alias)
+                + " AND (X.CREATED_AT>"
+                + alias
+                + ".CREATED_AT OR (X.CREATED_AT="
+                + alias
+                + ".CREATED_AT AND X.ID>"
+                + alias
+                + ".ID)))))";
+    }
+
     private static String callDate(String alias) {
         return "COALESCE(" + alias + ".DATA_CONTATTO, DATE(" + alias + ".CREATED_AT))";
     }
 
     private static String contactJoin(String table, String alias) {
         return "LEFT JOIN (SELECT CLIENTE_ID, COALESCE(MIN(CASE WHEN CONTATTO_ID IS NULL THEN"
-                   + " DESCRIZIONE END), MIN(DESCRIZIONE)) AS RECAPITO FROM "
+                + " DESCRIZIONE END), MIN(DESCRIZIONE)) AS RECAPITO FROM "
                 + table
                 + " GROUP BY CLIENTE_ID) "
                 + alias
@@ -185,7 +212,7 @@ public final class DerbyClientiPreviewQuery implements ClientiPreviewQuery {
         if (Countries.MISSING.equals(country)) {
             conditions.add(
                     "NOT EXISTS (SELECT 1 FROM INDIRIZZI_CLIENTE P WHERE P.CLIENTE_ID=C.ID AND"
-                        + " TRIM(COALESCE(P.PAESE,''))<>'')");
+                            + " TRIM(COALESCE(P.PAESE,''))<>'')");
             return;
         }
         String code = Countries.code(country).orElse(country);
@@ -209,7 +236,7 @@ public final class DerbyClientiPreviewQuery implements ClientiPreviewQuery {
         }
         conditions.add(
                 "EXISTS (SELECT 1 FROM INDIRIZZI_CLIENTE P WHERE P.CLIENTE_ID=C.ID AND"
-                    + " TRIM(P.PAESE) IN ("
+                        + " TRIM(P.PAESE) IN ("
                         + String.join(",", Collections.nCopies(values.size(), "?"))
                         + "))");
         params.addAll(values);

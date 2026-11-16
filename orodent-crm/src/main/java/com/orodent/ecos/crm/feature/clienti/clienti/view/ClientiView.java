@@ -20,6 +20,8 @@ public class ClientiView extends BorderPane {
     private final ChoiceBox<TextFilter> typeFilterChoiceBox = textChoice("Tutti");
     private final ChoiceBox<TextFilter> statusFilterChoiceBox = textChoice("Tutti");
     private final ChoiceBox<TextFilter> countryFilterChoiceBox = textChoice("Tutti i paesi");
+    private final CheckBox myFavoritesFilter = new CheckBox("I miei preferiti");
+    private final CheckBox overdueFilter = new CheckBox("Richiami scaduti");
     private final Button clearFiltersButton = new Button("Pulisci filtri");
     private final Button saveSearchButton = new Button("Salva ricerca");
     private final MenuButton savedSearchMenu = new MenuButton("Ricerche salvate");
@@ -52,6 +54,12 @@ public class ClientiView extends BorderPane {
         operatorFilterChoiceBox.getItems().add(OperatoreFilter.empty());
         operatorFilterChoiceBox.getSelectionModel().selectFirst();
         countryFilterChoiceBox.setId("crm-country-filter");
+        myFavoritesFilter.setId("crm-my-favorites-filter");
+        overdueFilter.setId("crm-overdue-filter");
+        myFavoritesFilter.setTooltip(
+                new Tooltip("Solo i preferiti dell'operatore con cui sei entrato"));
+        overdueFilter.setTooltip(
+                new Tooltip("Richiamo dell'ultima chiamata precedente a oggi; senza data esclusi"));
         clearFiltersButton.getStyleClass().add("clients-clear-filters-button");
         saveSearchButton.getStyleClass().add("clients-save-search-button");
         savedSearchMenu.getStyleClass().add("clients-manage-search-button");
@@ -101,7 +109,10 @@ public class ClientiView extends BorderPane {
         var operator = filter("Operatore", operatorFilterChoiceBox);
         var type = filter("Tipologia", typeFilterChoiceBox);
         var country = filter("Paese", countryFilterChoiceBox);
-        filters.getChildren().addAll(search, status, operator, type, country);
+        VBox quickFilters = new VBox(8, myFavoritesFilter, overdueFilter);
+        quickFilters.getStyleClass().add("clients-quick-filters");
+        quickFilters.setPrefWidth(176);
+        filters.getChildren().addAll(search, status, operator, type, country, quickFilters);
         filters.widthProperty()
                 .addListener(
                         (o, a, b) -> {
@@ -110,11 +121,10 @@ public class ClientiView extends BorderPane {
                             double smallWidth =
                                     single
                                             ? 160
-                                            : (width - (width >= 680 ? 30 : 10))
-                                                    / (width >= 680 ? 4 : 2);
+                                            : width >= 680 ? (width - 224) / 4 : (width - 10) / 2;
                             for (var item : List.of(status, operator, type, country))
                                 item.setPrefWidth(Math.max(0, smallWidth));
-                            search.setPrefWidth(single ? width - 680 : width);
+                            search.setPrefWidth(single ? width - 870 : width);
                         });
         VBox filterCard = new VBox(10, filters, activeFilters);
         filterCard.getStyleClass().add("clients-filter-bar");
@@ -222,6 +232,8 @@ public class ClientiView extends BorderPane {
 
     public void clearFilters() {
         searchField.clear();
+        myFavoritesFilter.setSelected(false);
+        overdueFilter.setSelected(false);
         for (ChoiceBox<?> box :
                 List.of(
                         operatorFilterChoiceBox,
@@ -241,6 +253,8 @@ public class ClientiView extends BorderPane {
         select(typeFilterChoiceBox, state.tipologia(), false);
         select(statusFilterChoiceBox, state.stato(), false);
         select(countryFilterChoiceBox, state.paese(), true);
+        myFavoritesFilter.setSelected(state.myFavoritesOnly());
+        overdueFilter.setSelected(state.overdueOnly());
         setSort(state.sortColumn(), state.ascending());
         return new ClientiViewState(
                 searchField.getText(),
@@ -249,7 +263,9 @@ public class ClientiView extends BorderPane {
                 statusFilterChoiceBox.getValue(),
                 countryFilterChoiceBox.getValue(),
                 state.sortColumn(),
-                state.ascending());
+                state.ascending(),
+                myFavoritesFilter.isSelected(),
+                overdueFilter.isSelected());
     }
 
     private void select(ChoiceBox<TextFilter> box, TextFilter value, boolean retainMissing) {
@@ -344,6 +360,23 @@ public class ClientiView extends BorderPane {
 
     public void onPaeseFilterChanged(Consumer<TextFilter> action) {
         countryFilterChoiceBox.valueProperty().addListener((o, a, b) -> action.accept(b));
+    }
+
+    public void onQuickFiltersChanged(java.util.function.BiConsumer<Boolean, Boolean> action) {
+        myFavoritesFilter
+                .selectedProperty()
+                .addListener(
+                        (o, a, b) ->
+                                action.accept(
+                                        myFavoritesFilter.isSelected(),
+                                        overdueFilter.isSelected()));
+        overdueFilter
+                .selectedProperty()
+                .addListener(
+                        (o, a, b) ->
+                                action.accept(
+                                        myFavoritesFilter.isSelected(),
+                                        overdueFilter.isSelected()));
     }
 
     public void onClearFilters(Runnable action) {

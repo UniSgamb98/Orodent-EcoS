@@ -92,6 +92,104 @@ class CrmIntegrationTest {
     }
 
     @Test
+    void quickFiltersUseCurrentOperatorLatestRecallAndConsistentPaging() {
+        UUID favoriteOverdue = lead(), otherFavoriteOverdue = lead(), favoriteFuture = lead();
+        UUID today = lead(), missing = lead(), superseded = lead(), cleared = lead();
+        UUID operator = db.operators().currentOperatoreId();
+        UUID other = UUID.randomUUID();
+        connections.withTransaction(
+                c -> {
+                    try (var q =
+                            c.prepareStatement(
+                                    "INSERT INTO ECOS.OPERATORI(ID,USERNAME) VALUES (?,?)")) {
+                        q.setString(1, other.toString());
+                        q.setString(2, "altro");
+                        q.executeUpdate();
+                    }
+                    try (var q =
+                            c.prepareStatement(
+                                    "UPDATE CRM.CLIENTI SET OPERATORE_ID=? WHERE ID=?")) {
+                        q.setString(1, other.toString());
+                        q.setString(2, favoriteOverdue.toString());
+                        q.executeUpdate();
+                    }
+                    return null;
+                });
+        db.transaction(
+                () -> {
+                    var favorites =
+                            new com.orodent.ecos.crm.core.database.repository.derby
+                                    .DerbyClientePreferitoRepository(db);
+                    for (UUID id : List.of(favoriteOverdue, favoriteFuture, missing, superseded))
+                        favorites.add(operator, id);
+                    favorites.add(other, otherFavoriteOverdue);
+                    return null;
+                });
+        java.util.function.BiConsumer<UUID, LocalDate> call =
+                (id, recall) -> {
+                    var sheet = new SchedaClienteService(db);
+                    db.transaction(() -> sheet.loadProfile(id));
+                    db.transaction(
+                            () ->
+                                    sheet.addChiamata(
+                                            "Chiamata di prova", recall, CallOutcome.LISTINO));
+                };
+        call.accept(favoriteOverdue, LocalDate.now().minusDays(1));
+        call.accept(otherFavoriteOverdue, LocalDate.now().minusDays(2));
+        call.accept(favoriteFuture, LocalDate.now().plusDays(4));
+        call.accept(today, LocalDate.now());
+        call.accept(superseded, LocalDate.now().minusDays(10));
+        call.accept(superseded, LocalDate.now().plusDays(5));
+        call.accept(cleared, LocalDate.now().minusDays(10));
+        call.accept(cleared, null);
+        var service = new com.orodent.ecos.crm.feature.clienti.clienti.service.ClientiService(db);
+        var initial =
+                com.orodent.ecos.crm.feature.clienti.clienti.dto.ClientiSearchState.initial(30);
+        java.util.function.Function<
+                        com.orodent.ecos.crm.feature.clienti.clienti.dto.ClientiSearchState,
+                        com.orodent.ecos.crm.feature.clienti.clienti.dto.ClientiPage>
+                search =
+                        state -> db.transaction(() -> service.getClientiPreview(state.toRequest()));
+        var favorites = initial.withQuickFilters(true, false);
+        var overdue = initial.withQuickFilters(false, true);
+        var both = initial.withQuickFilters(true, true);
+        assertEquals(7, search.apply(initial).totalRows());
+        assertEquals(
+                Set.of(favoriteOverdue, favoriteFuture, missing, superseded),
+                search.apply(favorites).rows().stream()
+                        .map(r -> r.clienteId())
+                        .collect(java.util.stream.Collectors.toSet()));
+        assertEquals(
+                Set.of(favoriteOverdue, otherFavoriteOverdue),
+                search.apply(overdue).rows().stream()
+                        .map(r -> r.clienteId())
+                        .collect(java.util.stream.Collectors.toSet()));
+        assertEquals(
+                List.of(favoriteOverdue),
+                search.apply(both).rows().stream().map(r -> r.clienteId()).toList());
+        assertEquals(
+                1,
+                search.apply(
+                                both.withOperatore(
+                                        new com.orodent.ecos.crm.feature.clienti.clienti.dto
+                                                .OperatoreFilter(other, "Altro")))
+                        .totalRows(),
+                "Personal favorites do not depend on the assigned operator filter");
+        var page1 = search.apply(overdue.withPageSize(1));
+        var page2 = search.apply(overdue.withPageSize(1).withOffset(1));
+        assertEquals(2, page1.totalRows());
+        assertEquals(2, page2.totalRows());
+        assertEquals(1, page1.rows().size());
+        assertEquals(1, page2.rows().size());
+        assertNotEquals(page1.rows().getFirst().clienteId(), page2.rows().getFirst().clienteId());
+        session.select(other, "Altro");
+        assertEquals(
+                List.of(otherFavoriteOverdue),
+                search.apply(both).rows().stream().map(r -> r.clienteId()).toList());
+        assertEquals(1, search.apply(favorites).totalRows());
+    }
+
+    @Test
     void countryFiltersMatchAnyAddressWithoutDuplicatesAndExposeOnlyPresentCountries() {
         var create = new NuovoClienteService(new ClientePersistenceService(db), db.operators());
         java.util.function.Function<List<IndirizzoClienteInput>, UUID> newLead =
@@ -136,12 +234,12 @@ class CrmIntegrationTest {
                     try (var q = c.createStatement()) {
                         q.executeUpdate(
                                 "UPDATE CRM.INDIRIZZI_CLIENTE SET PAESE=' ITALY ' WHERE"
-                                    + " CLIENTE_ID='"
+                                        + " CLIENTE_ID='"
                                         + a
                                         + "' AND PAESE='Italia'");
                         q.executeUpdate(
                                 "UPDATE CRM.INDIRIZZI_CLIENTE SET PAESE='Romnaia' WHERE"
-                                    + " CLIENTE_ID='"
+                                        + " CLIENTE_ID='"
                                         + review
                                         + "'");
                     }
