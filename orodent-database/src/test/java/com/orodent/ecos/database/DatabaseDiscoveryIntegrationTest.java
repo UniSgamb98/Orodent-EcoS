@@ -3,11 +3,14 @@ package com.orodent.ecos.database;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.File;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
@@ -238,12 +241,16 @@ class DatabaseDiscoveryIntegrationTest {
 
     @Test
     void occupiedPortWithoutCompatibleHostFailsWithoutCreatingDatabase() throws Exception {
+        Path errorLog;
         try (var occupied = new ServerSocket(0);
              var instance = start(temporary.resolve("blocked"), occupied.getLocalPort(), udpPort())) {
+            errorLog = instance.errorLog;
             assertTrue(instance.line().startsWith("FAILED Database o porte occupati"));
             assertFalse(Files.exists(temporary.resolve("blocked/OrodentEcoS")));
             assertFalse(occupied.isClosed());
         }
+        assertTrue(Files.readString(errorLog).contains("Database o porte occupati"));
+        Files.delete(errorLog);
     }
 
     @Test
@@ -264,19 +271,24 @@ class DatabaseDiscoveryIntegrationTest {
     void filesystemFailureIsNotReportedAsAnOccupiedDatabase() throws Exception {
         Path home = temporary.resolve("not-a-directory");
         Files.writeString(home, "test");
+        Path errorLog;
         try (var instance = start(home, tcpPort(), udpPort())) {
+            errorLog = instance.errorLog;
             assertEquals("FAILED Impossibile avviare il database.", instance.line());
         }
+        assertTrue(Files.readString(errorLog).contains("Impossibile avviare il database."));
+        Files.delete(errorLog);
     }
 
     private Probe start(Path home, int tcp, int udp, String... mode) throws Exception {
         String separator = File.pathSeparator;
         String classpath = System.getProperty("surefire.test.class.path", System.getProperty("java.class.path"))
                 + separator + System.getProperty("jdk.module.path", "");
+        Path errorLog = temporary.resolve("stderr-" + home.getFileName() + "-" + System.nanoTime() + ".log");
         Process process = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", "java").toString(),
                 "-cp", classpath, DatabaseProcessProbe.class.getName(), home.toString(), "" + tcp, "" + udp, mode.length == 0 ? "normal" : mode[0])
-                .redirectError(temporary.resolve("stderr-" + home.getFileName() + "-" + System.nanoTime() + ".log").toFile()).start();
-        return new Probe(process);
+                .start();
+        return new Probe(process, errorLog);
     }
 
     private static int tcpPort() throws Exception {
@@ -291,17 +303,32 @@ class DatabaseDiscoveryIntegrationTest {
         final Process process;
         final BufferedReader output;
         final PrintWriter input;
-        Probe(Process process) {
+        final Path errorLog;
+        final ByteArrayOutputStream errors = new ByteArrayOutputStream();
+        final Thread errorReader;
+        private IOException errorReadFailure;
+
+        Probe(Process process, Path errorLog) {
             this.process = process;
+            this.errorLog = errorLog;
             output = new BufferedReader(new InputStreamReader(process.getInputStream()));
             input = new PrintWriter(process.getOutputStream(), true);
+            // Drain stderr without handing the child a file handle that can delay Windows cleanup.
+            errorReader = Thread.ofPlatform().daemon().name("database-probe-stderr").start(() -> {
+                try (var stream = process.getErrorStream()) {
+                    stream.transferTo(errors);
+                } catch (IOException failure) {
+                    errorReadFailure = failure;
+                }
+            });
         }
         String line() throws Exception {
             long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(35);
             while (System.nanoTime() < deadline) {
                 if (output.ready() || !process.isAlive()) {
                     String line = output.readLine();
-                    if (line == null) fail("Database process exited: " + process.exitValue());
+                    if (line == null) fail("Database process exited: " + process.exitValue()
+                            + "\n" + errors.toString(StandardCharsets.UTF_8));
                     if (line.equals("STARTING HOST") || line.startsWith("READY ") || line.startsWith("FAILED ") || line.startsWith("COUNT ")
                             || line.equals("INSERTED") || line.equals("STOPPED") || line.equals("INDEPENDENT OK")
                             || line.equals("SCHEMA FUTURE")) return line;
@@ -311,16 +338,25 @@ class DatabaseDiscoveryIntegrationTest {
                 }
                 Thread.sleep(20);
             }
-            throw new AssertionError("Database process response timeout");
+            throw new AssertionError("Database process response timeout\n"
+                    + errors.toString(StandardCharsets.UTF_8));
         }
         String command(String command) throws Exception { input.println(command); return line(); }
         public void close() throws Exception {
-            input.close();
-            if (!process.waitFor(5, TimeUnit.SECONDS)) {
-                process.destroyForcibly();
-                process.waitFor(5, TimeUnit.SECONDS);
+            try (output; var errorStream = process.getErrorStream()) {
+                input.close();
+                if (!process.waitFor(5, TimeUnit.SECONDS)) {
+                    process.destroyForcibly();
+                    assertTrue(process.waitFor(10, TimeUnit.SECONDS), "Database probe did not stop");
+                }
+                errorReader.join(5000);
+                assertFalse(errorReader.isAlive(), "Database probe stderr reader did not stop");
+                if (errorReadFailure != null) throw errorReadFailure;
+            } finally {
+                if (process.isAlive()) process.destroyForcibly();
+                // Only the test JVM opens this file, and closes it before JUnit removes @TempDir.
+                Files.write(errorLog, errors.toByteArray());
             }
-            output.close();
         }
     }
 }
