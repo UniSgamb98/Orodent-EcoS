@@ -10,6 +10,7 @@ import com.orodent.ecos.database.service.ClientiImportReport;
 import com.orodent.ecos.database.service.VenditeCsvImportService;
 import com.orodent.ecos.database.service.VenditeImportReport;
 import javafx.application.Platform;
+import javafx.event.Event;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -22,6 +23,8 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TableView;
 import javafx.stage.Stage;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -104,11 +107,31 @@ class ApplicationSmokeTest {
                 assertTrue(stage.isShowing());
                 assertHome(stage);
                 assertAdditionalModuleAppearsAutomatically();
+                assertHiddenModulesVisibility(stage, false);
+                assertTrue(stage.getScene().lookup("#module-crm").isVisible());
+                assertTrue(stage.getScene().lookup("#module-statistiche").isVisible());
+                visibilityShortcut(stage, KeyEvent.KEY_PRESSED);
+                assertHiddenModulesVisibility(stage, true);
+                // Holding the keys must not repeatedly toggle the cards.
+                visibilityShortcut(stage, KeyEvent.KEY_PRESSED);
+                assertHiddenModulesVisibility(stage, true);
+                visibilityShortcut(stage, KeyEvent.KEY_RELEASED);
+                toggleHiddenModules(stage);
+                assertHiddenModulesVisibility(stage, false);
+                toggleHiddenModules(stage);
                 button(stage, "open-ton-button").fire();
                 assertEquals("Orodent-EcoS - Ton", stage.getTitle());
-                assertNotNull(stage.getScene().lookup("#ton-view"));
+                Node ton = stage.getScene().lookup("#ton-view");
+                assertNotNull(ton);
+                toggleHiddenModules(stage);
+                assertEquals("Orodent-EcoS - Ton", stage.getTitle());
+                assertTrue(ton == stage.getScene().lookup("#ton-view"),
+                        "La scorciatoia non deve ricreare o chiudere la pagina attiva");
                 button(stage, "ton-home-button").fire();
                 assertHome(stage);
+                assertHiddenModulesVisibility(stage, false);
+                toggleHiddenModules(stage);
+                assertHiddenModulesVisibility(stage, true);
             });
 
             navigatesTonAreasAndProtectsAnUnsavedProduct(stage);
@@ -329,9 +352,12 @@ class ApplicationSmokeTest {
                 "L'elenco deve conservare la scheda approvata e la nuova bozza");
         runFx(() -> {
             TableView<?> table=(TableView<?>)stage.getScene().lookup("#ton-powders-table");
-            assertEquals("Gialla",table.getColumns().get(2).getCellData(0));
-            assertTrue(table.getColumns().get(4).getCellData(0).toString().contains("v1 approvata"));
-            assertTrue(table.getColumns().get(4).getCellData(0).toString().contains("bozza v2"));
+            assertEquals("Gialla", table.getColumns().stream()
+                    .filter(column -> "Colore".equals(column.getText())).findFirst().orElseThrow().getCellData(0));
+            assertTrue(table.getColumns().stream().filter(column -> "Schede tecniche".equals(column.getText()))
+                    .findFirst().orElseThrow().getCellData(0).toString().contains("v1 approvata"));
+            assertTrue(table.getColumns().stream().filter(column -> "Schede tecniche".equals(column.getText()))
+                    .findFirst().orElseThrow().getCellData(0).toString().contains("bozza v2"));
             button(stage,"ton-home-button").fire();assertHome(stage);
             button(stage,"open-ton-button").fire();button(stage,"ton-powders-button").fire();
         });
@@ -1234,6 +1260,27 @@ class ApplicationSmokeTest {
                 .anyMatch(point -> category.equals(point.getXValue())
                         && point.getYValue() instanceof Number value
                         && expectedValue.compareTo(new BigDecimal(value.toString())) == 0);
+    }
+
+    private static void toggleHiddenModules(Stage stage) {
+        visibilityShortcut(stage, KeyEvent.KEY_PRESSED);
+        visibilityShortcut(stage, KeyEvent.KEY_RELEASED);
+    }
+
+    private static void visibilityShortcut(Stage stage, javafx.event.EventType<KeyEvent> type) {
+        Node target = stage.getScene().getFocusOwner();
+        if (target == null || target.getScene() != stage.getScene())
+            target = stage.getScene().getRoot();
+        Event.fireEvent(target, new KeyEvent(type, "", "", KeyCode.L, false, true, false, false));
+    }
+
+    private static void assertHiddenModulesVisibility(Stage stage, boolean expected) {
+        for (String id : List.of("ton", "costi")) {
+            Node card = stage.getScene().lookup("#module-" + id);
+            assertNotNull(card);
+            assertEquals(expected, card.isVisible(), id);
+            assertEquals(expected, card.isManaged(), id + " non deve lasciare spazi vuoti");
+        }
     }
 
     private static void assertHome(Stage stage) {

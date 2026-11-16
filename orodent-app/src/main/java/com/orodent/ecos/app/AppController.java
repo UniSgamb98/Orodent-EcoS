@@ -11,6 +11,10 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.application.Platform;
 import javafx.scene.control.Label;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
@@ -30,6 +34,8 @@ public final class AppController implements AppNavigator {
     private final Label connectionBanner = new Label();
     private final Runnable unsubscribeStatus;
     private boolean closed;
+    private boolean hiddenModulesVisible;
+    private boolean visibilityShortcutPressed;
     private Runnable activePageCleanup = () -> { };
 
     public AppController(Stage stage, AppContainer app, String globalCss) {
@@ -51,6 +57,7 @@ public final class AppController implements AppNavigator {
     @Override
     public void showHome() {
         HomeView view = new HomeView(app.databaseMode(), app.modules().descriptors(), this::showModule);
+        view.showHiddenModules(hiddenModulesVisible);
         view.homeButton().setOnAction(event -> showHome());
         showView(view, () -> { });
         stage.setTitle("Orodent-EcoS - Home");
@@ -71,6 +78,25 @@ public final class AppController implements AppNavigator {
         activePageCleanup = cleanup;
         if (scene == null) {
             scene = new Scene(shell, INITIAL_WIDTH, INITIAL_HEIGHT);
+            KeyCodeCombination shortcut = new KeyCodeCombination(KeyCode.L, KeyCombination.CONTROL_DOWN);
+            scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+                if (!shortcut.match(event)) return;
+                if (!visibilityShortcutPressed) {
+                    visibilityShortcutPressed = true;
+                    hiddenModulesVisible = !hiddenModulesVisible;
+                    if (!page.getChildren().isEmpty()
+                            && page.getChildren().getFirst() instanceof HomeView home) {
+                        home.showHiddenModules(hiddenModulesVisible);
+                    }
+                }
+                event.consume();
+            });
+            scene.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
+                if (event.getCode() == KeyCode.L) visibilityShortcutPressed = false;
+            });
+            stage.focusedProperty().addListener((observable, previous, focused) -> {
+                if (!focused) visibilityShortcutPressed = false;
+            });
             stage.setScene(scene);
         }
         page.getChildren().setAll(root);

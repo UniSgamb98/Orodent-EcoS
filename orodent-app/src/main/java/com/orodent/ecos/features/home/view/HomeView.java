@@ -15,10 +15,16 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.SVGPath;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public final class HomeView extends BorderPane {
+    private static final Set<String> HIDDEN_MODULE_IDS = Set.of("ton", "costi");
+    private final FlowPane catalog = new FlowPane(20, 20);
+    private final List<VBox> hiddenModuleCards = new ArrayList<>();
+    private final Label emptyCatalog = new Label("Nessuna applicazione disponibile.");
     private final Button homeButton = new Button("Home");
     private final Label databaseStatus = new Label();
 
@@ -47,13 +53,14 @@ public final class HomeView extends BorderPane {
         Label version = new Label("Versione " + System.getProperty("orodent.ecos.version", "sviluppo"));
         version.setId("app-version");
         version.getStyleClass().add("muted-label");
-        FlowPane catalog = new FlowPane(20, 20);
         catalog.setId("module-catalog");
         for (ModuleDescriptor module : modules) {
-            catalog.getChildren().add(moduleCard(module, openModule));
+            VBox card = moduleCard(module, openModule);
+            catalog.getChildren().add(card);
+            if (HIDDEN_MODULE_IDS.contains(module.id())) hiddenModuleCards.add(card);
         }
-        VBox content = new VBox(18, welcome, introduction, databaseStatus, version, catalog);
-        if (modules.isEmpty()) content.getChildren().add(new Label("Nessuna applicazione disponibile."));
+        showHiddenModules(false);
+        VBox content = new VBox(18, welcome, introduction, databaseStatus, version, catalog, emptyCatalog);
         content.setPadding(new Insets(28, 34, 36, 34));
         ScrollPane scroll = new ScrollPane(content);
         scroll.setFitToWidth(true);
@@ -91,6 +98,16 @@ public final class HomeView extends BorderPane {
         card.getStyleClass().add("info-card");
         card.setPrefWidth(330);
         return card;
+    }
+
+    public void showHiddenModules(boolean show) {
+        for (VBox card : hiddenModuleCards) {
+            card.setVisible(show);
+            card.setManaged(show);
+        }
+        boolean empty = catalog.getChildren().stream().noneMatch(javafx.scene.Node::isVisible);
+        emptyCatalog.setVisible(empty);
+        emptyCatalog.setManaged(empty);
     }
 
     public Button homeButton() { return homeButton; }
