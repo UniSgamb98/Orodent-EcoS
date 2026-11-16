@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-    [string]$JdkHome = $env:JAVA_HOME
+    [string]$JdkHome = $env:JAVA_HOME,
+    [switch]$SkipTests
 )
 
 Set-StrictMode -Version Latest
@@ -31,6 +32,10 @@ foreach ($tool in @('java.exe', 'javac.exe', 'jlink.exe', 'jpackage.exe')) {
 if (-not (Test-Path -LiteralPath (Join-Path $JdkHome 'jmods') -PathType Container)) {
     throw 'Il JDK selezionato non contiene jmods. Installare un JDK 21 o successivo completo.'
 }
+$runtimeModulesFile = Join-Path $projectRoot 'packaging\java-runtime-modules.txt'
+$runtimeRoots = @(Get-Content -LiteralPath $runtimeModulesFile -Encoding UTF8 |
+    ForEach-Object { $_.Trim() } | Where-Object { $_ -and -not $_.StartsWith('#') })
+if ($runtimeRoots.Count -eq 0) { throw 'Elenco dei moduli del runtime Java vuoto.' }
 $javaExecutable = Join-Path $JdkHome 'bin\java.exe'
 $javaVersion = (& $javaExecutable --version | Out-String)
 if ($LASTEXITCODE -ne 0 -or $javaVersion -notmatch '(?m)^(openjdk|java) (\d+)([.\s]|$)' -or [int]$Matches[2] -lt 21) {
@@ -103,8 +108,14 @@ Push-Location $projectRoot
 try {
     $env:JAVA_HOME = $JdkHome
     $env:PATH = (Join-Path $JdkHome 'bin') + ';' + $originalPath
-    Write-Host '1/3 - Build e test Maven. Chiudere prima eventuali copie avviate da target.'
-    Invoke-CheckedTool -FilePath (Join-Path $projectRoot 'mvnw.cmd') -ToolArguments @('clean', 'package')
+    $mavenArguments = @('clean', 'package')
+    if ($SkipTests) {
+        $mavenArguments += '-DskipTests'
+        Write-Host '1/3 - Build Maven (test saltati su richiesta). Chiudere prima eventuali copie avviate da target.'
+    } else {
+        Write-Host '1/3 - Build e test Maven. Chiudere prima eventuali copie avviate da target.'
+    }
+    Invoke-CheckedTool -FilePath (Join-Path $projectRoot 'mvnw.cmd') -ToolArguments $mavenArguments
 
     $distribution = Join-Path $projectRoot 'orodent-launcher\target\distribution'
     if (-not (Test-Path -LiteralPath (Join-Path $distribution 'orodent-launcher.jar') -PathType Leaf)) {
@@ -132,7 +143,7 @@ try {
         '--main-jar', 'orodent-launcher.jar',
         '--main-class', 'com.orodent.ecos.launcher.EcosLauncher',
         '--dest', $destination,
-        '--add-modules', 'java.se,jdk.unsupported,jdk.crypto.ec,jdk.charsets,jdk.localedata,jdk.zipfs,jdk.jsobject',
+        '--add-modules', ($runtimeRoots -join ','),
         '--jlink-options', '--strip-debug --no-header-files --no-man-pages',
         '--java-options', '-Dorodent.ecos.packaged=true',
         '--java-options', '-Dorodent.ecos.config=$APPDIR/../config/application.properties'

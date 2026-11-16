@@ -238,6 +238,17 @@ Dal terminale PowerShell nella radice del progetto:
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-windows.ps1 -JdkHome "C:\Java\jdk-21"
 ```
 
+Per rigenerare il pacchetto saltando l'esecuzione dei test già verificati, aggiungere
+`-SkipTests` allo stesso comando:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-windows.ps1 -JdkHome "C:\Java\jdk-21" -SkipTests
+```
+
+L'opzione passa `-DskipTests` a Maven. Compilazione, creazione dell'EXE e verifica
+del runtime incorporato rimangono attive. Senza l'opzione, i test vengono eseguiti.
+Per il solo pacchetto Maven: `.\mvnw.cmd clean package -DskipTests`.
+
 Il percorso `C:\Java\jdk-21` è un esempio: sostituirlo con quello del proprio JDK
 **Eclipse Temurin 21** o **Liberica Standard 21**. Non usare **Liberica Full**:
 include JavaFX e può causare `Hash of javafx.base differs ... recorded in java.base`
@@ -252,7 +263,11 @@ headless, verifica la presenza delle librerie JavaFX Windows e risolve il grafo
 dei moduli dell’app con il runtime incorporato tramite `--dry-run`, prima di creare
 lo ZIP. Questa verifica non avvia il database. Se Maven fallisce, lo script
 mostra direttamente i report dei test falliti e le ultime righe degli eventuali
-dump JVM, conservando il codice di errore originale. Produce:
+dump JVM, conservando il codice di errore originale.
+I moduli JDK del runtime sono definiti in `packaging/java-runtime-modules.txt`;
+comprendono `jdk.jsobject` e `jdk.xml.dom`, richiesti dall'editor JavaFX Web.
+`PackagedRuntimeCompatibilityTest` genera un runtime con lo stesso elenco e verifica
+il grafo completo dell'applicazione anche nelle build di test su Linux. Produce:
 
 ```text
 target/

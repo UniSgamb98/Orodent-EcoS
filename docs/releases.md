@@ -23,7 +23,9 @@ manuale del pacchetto sulle postazioni che hanno questo launcher.
 Il primo passaggio dai vecchi launcher di protocollo 1 richiede ancora lo **ZIP
 completo una volta**, mantenendo il config personale e la cartella DB. Il vecchio
 launcher non comprende il protocollo 2 e lo rifiuta prima di attivare componenti
-incompatibili. Lo ZIP nuovo include già `jdk.jsobject` per l’editor e l’updater 2.
+incompatibili. Lo ZIP nuovo include `jdk.jsobject` e `jdk.xml.dom` per l’editor e l’updater 2.
+L'elenco dei moduli JDK è condiviso tra packaging e test in
+`packaging/java-runtime-modules.txt`.
 Modifiche future al bootstrap/EXE, alla chiave fidata o alla piattaforma possono
 ancora richiedere una distribuzione iniziale aggiornata: il runtime applicativo
 è distinto dal runtime che ospita il bootstrap.

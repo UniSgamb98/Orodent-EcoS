@@ -1,0 +1,9 @@
+# JDK modules included in the portable runtime. JavaFX is supplied by app/lib.
+java.se
+jdk.unsupported
+jdk.crypto.ec
+jdk.charsets
+jdk.localedata
+jdk.zipfs
+jdk.jsobject
+jdk.xml.dom
