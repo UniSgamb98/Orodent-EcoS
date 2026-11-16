@@ -94,7 +94,7 @@ public class ClientePersistenceService {
         try {
 
             clienteRepository.insert(draft.cliente());
-            indirizzoRepository.insertAll(draft.indirizzi());
+            indirizzoRepository.insertAll(normalizeCountries(draft.indirizzi(), List.of()));
             sitoWebRepository.insertAll(draft.sitiWeb());
             contattoRepository.insertAll(draft.contatti());
             telefonoRepository.insertAll(draft.telefoni());
@@ -185,13 +185,42 @@ public class ClientePersistenceService {
     }
 
     private void syncIndirizzi(UUID clienteId, List<IndirizzoCliente> desired) {
+        var existing = indirizzoRepository.findByClienteId(clienteId);
         syncById(
-                indirizzoRepository.findByClienteId(clienteId),
-                desired,
+                existing,
+                normalizeCountries(desired, existing),
                 IndirizzoCliente::id,
                 indirizzoRepository::insert,
                 indirizzoRepository::update,
                 indirizzoRepository::deleteById);
+    }
+
+    private List<IndirizzoCliente> normalizeCountries(
+            List<IndirizzoCliente> desired, List<IndirizzoCliente> existing) {
+        var old =
+                existing.stream()
+                        .collect(Collectors.toMap(IndirizzoCliente::id, Function.identity()));
+        return desired.stream()
+                .map(
+                        a ->
+                                new IndirizzoCliente(
+                                        a.id(),
+                                        a.clienteId(),
+                                        com.orodent.ecos.crm.core.country.Countries.forWrite(
+                                                a.paese(),
+                                                old.containsKey(a.id())
+                                                        ? old.get(a.id()).paese()
+                                                        : null),
+                                        a.regione(),
+                                        a.provincia(),
+                                        a.citta(),
+                                        a.indirizzo(),
+                                        a.numeroCivico(),
+                                        a.cap(),
+                                        a.principale(),
+                                        a.createdAt(),
+                                        a.updatedAt()))
+                .toList();
     }
 
     private void syncNote(UUID clienteId, List<NotaCliente> desired) {

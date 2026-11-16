@@ -12,6 +12,7 @@ public interface ClientiPreviewQuery {
             UUID operatoreId,
             String tipoCliente,
             String statoTrattativa,
+            String paese,
             String orderByColumn,
             boolean ascending);
 
@@ -30,5 +31,9 @@ public interface ClientiPreviewQuery {
             String indirizzo,
             String operatore,
             String statoTrattativa,
-            LocalDate ultimoContatto) {}
+            LocalDate ultimoContatto,
+            List<String> paesi,
+            String telefono,
+            String email,
+            LocalDate prossimoContatto) {}
 }

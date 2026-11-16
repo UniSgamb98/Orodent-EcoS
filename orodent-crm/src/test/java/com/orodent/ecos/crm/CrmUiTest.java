@@ -684,6 +684,219 @@ class CrmUiTest {
         }
     }
 
+    @Test
+    void directoryKeepsItsTableReadableAndSearchesCountriesWithoutFreeTextMistakes()
+            throws Exception {
+        try {
+            Platform.startup(() -> {});
+        } catch (IllegalStateException alreadyStarted) {
+        }
+        Platform.setImplicitExit(false);
+        var opened = new AtomicInteger();
+        try {
+            fx(
+                    () -> {
+                        var view =
+                                new com.orodent.ecos.crm.feature.clienti.clienti.view.ClientiView();
+                        view.getSidebar().getClientsButton().setText("Contatti e lead");
+                        view.getSidebar()
+                                .getChildren()
+                                .setAll(
+                                        view.getSidebar().getClientsButton(),
+                                        view.getSidebar().getCalendarButton(),
+                                        view.getSidebar().getSettingsButton());
+                        view.setPaeseFilters(
+                                List.of(
+                                        new com.orodent.ecos.crm.feature.clienti.clienti.dto
+                                                .TextFilter("IT", "Italia"),
+                                        new com.orodent.ecos.crm.feature.clienti.clienti.dto
+                                                .TextFilter("RO", "Romania")));
+                        view.setStatusFilters(
+                                List.of(
+                                        new com.orodent.ecos.crm.feature.clienti.clienti.dto
+                                                .TextFilter("LISTINO", "Listino")));
+                        view.setResultsCount(24);
+                        view.clearClientRows();
+                        for (int i = 0; i < 24; i++)
+                            view.addClientRow(
+                                    new com.orodent.ecos.crm.feature.clienti.clienti.dto
+                                            .ClientePreview(
+                                            i == 0
+                                                    ? "3D Smart Dental"
+                                                    : "Laboratorio odontotecnico " + (i + 1),
+                                            i % 3 == 0 ? "Rivenditore" : "Laboratorio",
+                                            "Adrian Luntrasu",
+                                            "Via Roma 12 · Verona",
+                                            i % 2 == 0 ? "Hugo" : "Victoria",
+                                            i % 3 == 0 ? "LISTINO" : "CLIENTE",
+                                            "10/11/2026",
+                                            i % 2 == 0 ? "Romania" : "Italia",
+                                            "+39 045 123456",
+                                            "info@example.test",
+                                            i % 3 == 0 ? "01/11/2026" : "28/11/2026"),
+                                    opened::incrementAndGet);
+                        var root = new javafx.scene.layout.BorderPane(view);
+                        root.setId("crm-module");
+                        root.getStyleClass().add("crm-module");
+                        stage = new Stage();
+                        var scene = new Scene(root, 1740, 950);
+                        for (String css :
+                                List.of(
+                                        "../orodent-app/src/main/resources/css/global.css",
+                                        "src/main/resources/crm/css/global.css",
+                                        "src/main/resources/crm/css/ecos.css",
+                                        "src/main/resources/crm/css/features/clienti.css",
+                                        "src/main/resources/crm/css/features/lista-clienti.css"))
+                            scene.getStylesheets().add(Path.of(css).toUri().toString());
+                        stage.setScene(scene);
+                        stage.show();
+                        rootLayout();
+                        var picker = new com.orodent.ecos.crm.core.ui.CountryPicker("");
+                        root.setBottom(picker);
+                        rootLayout();
+                        picker.getEditor().setText("ita");
+                        picker.getEditor()
+                                .fireEvent(
+                                        new javafx.scene.input.KeyEvent(
+                                                javafx.scene.input.KeyEvent.KEY_RELEASED,
+                                                "a",
+                                                "a",
+                                                javafx.scene.input.KeyCode.A,
+                                                false,
+                                                false,
+                                                false,
+                                                false));
+                        assertTrue(picker.getItems().contains("Italia"));
+                        assertFalse(picker.getItems().contains("Germania"));
+                        picker.setValue("Italia");
+                        assertEquals("Italia", picker.validatedValue());
+                        picker.getEditor().setText("Romnaia");
+                        assertThrows(IllegalArgumentException.class, picker::validatedValue);
+                        picker.getEditor().setText("");
+                        assertEquals("", picker.validatedValue());
+                        root.setBottom(null);
+                        var country =
+                                (ChoiceBox<
+                                                com.orodent.ecos.crm.feature.clienti.clienti.dto
+                                                        .TextFilter>)
+                                        scene.lookup("#crm-country-filter");
+                        country.getSelectionModel().select(2);
+                        assertEquals("RO", country.getValue().value());
+                        assertTrue(
+                                scene.getRoot().lookupAll(".clients-filter-chip").stream()
+                                        .anyMatch(n -> ((Button) n).getText().contains("Romania")));
+                        var row =
+                                scene.getRoot().lookupAll(".clients-data-row").stream()
+                                        .filter(
+                                                n ->
+                                                        "3D Smart Dental"
+                                                                .equals(n.getAccessibleText()))
+                                        .findFirst()
+                                        .orElseThrow();
+                        row.fireEvent(
+                                new javafx.scene.input.MouseEvent(
+                                        javafx.scene.input.MouseEvent.MOUSE_CLICKED,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        javafx.scene.input.MouseButton.PRIMARY,
+                                        1,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        true,
+                                        false,
+                                        false,
+                                        true,
+                                        false,
+                                        false,
+                                        null));
+                        rootLayout();
+                        assertNotNull(scene.lookup("#crm-client-preview"));
+                        assertNull(scene.lookup(".clients-preview-overlay"));
+                        return null;
+                    });
+            await(
+                    () -> {
+                        rootLayout();
+                        var scene = stage.getScene();
+                        var operatorHeader =
+                                scene.getRoot().lookupAll(".clients-table-header-button").stream()
+                                        .filter(n -> ((Button) n).getText().startsWith("Operatore"))
+                                        .findFirst()
+                                        .orElseThrow();
+                        var row =
+                                (javafx.scene.layout.HBox)
+                                        scene.getRoot().lookupAll(".clients-data-row").stream()
+                                                .filter(
+                                                        n ->
+                                                                "3D Smart Dental"
+                                                                        .equals(
+                                                                                n
+                                                                                        .getAccessibleText()))
+                                                .findFirst()
+                                                .orElseThrow();
+                        var operatorCell = row.getChildren().get(2);
+                        return Math.abs(
+                                        operatorHeader
+                                                        .localToScene(
+                                                                operatorHeader.getBoundsInLocal())
+                                                        .getMinX()
+                                                - operatorCell
+                                                        .localToScene(
+                                                                operatorCell.getBoundsInLocal())
+                                                        .getMinX())
+                                <= 1;
+                    });
+            fx(
+                    () -> {
+                        var scene = stage.getScene();
+                        var openButton = (Button) scene.lookup("#crm-preview-open");
+                        assertTrue(
+                                openButton.localToScene(openButton.getBoundsInLocal()).getMaxY()
+                                        <= scene.getHeight(),
+                                "Open profile remains visible while preview fields scroll");
+                        ((Button) scene.lookup("#crm-preview-open")).fire();
+                        assertEquals(1, opened.get());
+                        snapshot("target/crm-directory-wide.png");
+                        stage.setWidth(1040);
+                        return null;
+                    });
+            await(() -> stage.getScene().getWidth() < 1100);
+            fx(
+                    () -> {
+                        rootLayout();
+                        assertNotNull(stage.getScene().lookup(".clients-preview-overlay"));
+                        var scroll =
+                                (javafx.scene.layout.Region)
+                                        stage.getScene().lookup("#crm-client-preview");
+                        assertTrue(scroll.getWidth() <= 340);
+                        snapshot("target/crm-directory-compact-preview.png");
+                        stage.getScene().getRoot().lookupAll(".button").stream()
+                                .filter(
+                                        n ->
+                                                n instanceof Button b
+                                                        && "Chiudi anteprima"
+                                                                .equals(b.getAccessibleText()))
+                                .map(n -> (Button) n)
+                                .findFirst()
+                                .orElseThrow()
+                                .fire();
+                        assertNull(stage.getScene().lookup("#crm-client-preview"));
+                        snapshot("target/crm-directory-compact.png");
+                        return null;
+                    });
+        } finally {
+            fx(
+                    () -> {
+                        if (stage != null) stage.hide();
+                        return null;
+                    });
+        }
+    }
+
     void verifyExpandableResources(SchedaClienteView page) {
         var baseline = page.collectWorkspace();
         var toggles = stage.getScene().getRoot().lookupAll(".crm-resource-toggle");

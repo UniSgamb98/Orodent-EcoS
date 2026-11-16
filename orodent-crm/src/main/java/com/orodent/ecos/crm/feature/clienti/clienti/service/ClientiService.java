@@ -43,6 +43,7 @@ public class ClientiService {
                         request.operatoreId(),
                         request.tipoCliente(),
                         request.statoTrattativa(),
+                        request.paese(),
                         request.sortColumn().sqlColumn(),
                         request.ascending());
         return new ClientiPage(
@@ -68,6 +69,42 @@ public class ClientiService {
         return clientiFilterQuery.findStatiTrattativa().stream()
                 .map(value -> new TextFilter(value, value))
                 .toList();
+    }
+
+    public List<TextFilter> getPaeseFilters() {
+        var raw = clientiFilterQuery.findPaesiCliente();
+        var codes =
+                raw.stream()
+                        .filter(v -> v != null && !v.isBlank())
+                        .map(com.orodent.ecos.crm.core.country.Countries::code)
+                        .flatMap(java.util.Optional::stream)
+                        .distinct()
+                        .sorted(
+                                java.util.Comparator.comparing(
+                                        com.orodent.ecos.crm.core.country.Countries::name,
+                                        java.text.Collator.getInstance(java.util.Locale.ITALIAN)))
+                        .toList();
+        var filters = new java.util.ArrayList<TextFilter>();
+        for (var code : codes)
+            filters.add(
+                    new TextFilter(code, com.orodent.ecos.crm.core.country.Countries.name(code)));
+        if (raw.stream().anyMatch(v -> v == null || v.isBlank()))
+            filters.add(
+                    new TextFilter(
+                            com.orodent.ecos.crm.core.country.Countries.MISSING,
+                            "Paese non indicato"));
+        if (raw.stream()
+                .anyMatch(
+                        v ->
+                                v != null
+                                        && !v.isBlank()
+                                        && com.orodent.ecos.crm.core.country.Countries.code(v)
+                                                .isEmpty()))
+            filters.add(
+                    new TextFilter(
+                            com.orodent.ecos.crm.core.country.Countries.REVIEW,
+                            "Paesi da verificare"));
+        return filters;
     }
 
     private OperatoreFilter toOperatoreFilter(OperatoreClienteFilterResult result) {
@@ -100,6 +137,12 @@ public class ClientiService {
                         record.statoTrattativa(),
                         record.ultimoContatto() == null
                                 ? "—"
-                                : DATE_FORMATTER.format(record.ultimoContatto())));
+                                : DATE_FORMATTER.format(record.ultimoContatto()),
+                        com.orodent.ecos.crm.core.country.Countries.displayAll(record.paesi()),
+                        record.telefono(),
+                        record.email(),
+                        record.prossimoContatto() == null
+                                ? "—"
+                                : DATE_FORMATTER.format(record.prossimoContatto())));
     }
 }

@@ -7,4 +7,8 @@ public record ClientePreview(
         String address,
         String operator,
         String status,
-        String lastContact) {}
+        String lastContact,
+        String country,
+        String phone,
+        String email,
+        String nextContact) {}

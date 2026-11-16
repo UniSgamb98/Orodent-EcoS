@@ -10,4 +10,6 @@ public interface ClientiFilterQuery {
     List<String> findTipiCliente();
 
     List<String> findStatiTrattativa();
+
+    List<String> findPaesiCliente();
 }

@@ -7,6 +7,7 @@ public record ClientiSearchState(
         OperatoreFilter operatore,
         TextFilter tipologia,
         TextFilter stato,
+        TextFilter paese,
         SortColumn sortColumn,
         boolean ascending) {
     public ClientiSearchState {
@@ -16,6 +17,13 @@ public record ClientiSearchState(
         operatore = operatore == null ? OperatoreFilter.empty() : operatore;
         tipologia = tipologia == null ? TextFilter.empty("Tutti") : tipologia;
         stato = stato == null ? TextFilter.empty("Tutti") : stato;
+        paese =
+                paese == null
+                        ? TextFilter.empty("Tutti i paesi")
+                        : new TextFilter(
+                                paese.value(),
+                                com.orodent.ecos.crm.core.country.Countries.filterLabel(
+                                        paese.value()));
         sortColumn = sortColumn == null ? SortColumn.NAME : sortColumn;
     }
 
@@ -27,38 +35,52 @@ public record ClientiSearchState(
                 OperatoreFilter.empty(),
                 TextFilter.empty("Tutti"),
                 TextFilter.empty("Tutti"),
+                TextFilter.empty("Tutti i paesi"),
                 SortColumn.NAME,
                 true);
     }
 
     public ClientiSearchState withOffset(int offset) {
         return new ClientiSearchState(
-                offset, pageSize, searchText, operatore, tipologia, stato, sortColumn, ascending);
+                offset,
+                pageSize,
+                searchText,
+                operatore,
+                tipologia,
+                stato,
+                paese,
+                sortColumn,
+                ascending);
     }
 
     public ClientiSearchState withPageSize(int pageSize) {
         return new ClientiSearchState(
-                0, pageSize, searchText, operatore, tipologia, stato, sortColumn, ascending);
+                0, pageSize, searchText, operatore, tipologia, stato, paese, sortColumn, ascending);
     }
 
     public ClientiSearchState withSearchText(String searchText) {
         return new ClientiSearchState(
-                0, pageSize, searchText, operatore, tipologia, stato, sortColumn, ascending);
+                0, pageSize, searchText, operatore, tipologia, stato, paese, sortColumn, ascending);
     }
 
     public ClientiSearchState withOperatore(OperatoreFilter operatore) {
         return new ClientiSearchState(
-                0, pageSize, searchText, operatore, tipologia, stato, sortColumn, ascending);
+                0, pageSize, searchText, operatore, tipologia, stato, paese, sortColumn, ascending);
     }
 
     public ClientiSearchState withTipologia(TextFilter tipologia) {
         return new ClientiSearchState(
-                0, pageSize, searchText, operatore, tipologia, stato, sortColumn, ascending);
+                0, pageSize, searchText, operatore, tipologia, stato, paese, sortColumn, ascending);
     }
 
     public ClientiSearchState withStato(TextFilter stato) {
         return new ClientiSearchState(
-                0, pageSize, searchText, operatore, tipologia, stato, sortColumn, ascending);
+                0, pageSize, searchText, operatore, tipologia, stato, paese, sortColumn, ascending);
+    }
+
+    public ClientiSearchState withPaese(TextFilter paese) {
+        return new ClientiSearchState(
+                0, pageSize, searchText, operatore, tipologia, stato, paese, sortColumn, ascending);
     }
 
     public ClientiSearchState togglingSort(SortColumn column) {
@@ -69,6 +91,7 @@ public record ClientiSearchState(
                 operatore,
                 tipologia,
                 stato,
+                paese,
                 column,
                 column == sortColumn ? !ascending : true);
     }
@@ -81,6 +104,7 @@ public record ClientiSearchState(
                 operatore.id(),
                 value(tipologia),
                 value(stato),
+                value(paese),
                 sortColumn,
                 ascending);
     }

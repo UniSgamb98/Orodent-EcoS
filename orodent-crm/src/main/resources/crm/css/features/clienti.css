@@ -130,3 +130,23 @@
     -fx-font-size: 15px;
     -fx-font-weight: 700;
 }
+
+/* Compact, wrapping search controls for the CRM directory. */
+.crm-module .clients-list-page .clients-filter-bar { -fx-padding: 12; -fx-alignment: top-left; }
+.crm-module .clients-list-page .clients-filter-control { -fx-min-width: 0; }
+.crm-module .clients-list-page .clients-filter-label { -fx-font-size: 11px; -fx-font-weight: normal; -fx-text-fill: #607b90; }
+.crm-module .clients-list-page .clients-search-field { -fx-border-color: #bfd4e1; -fx-border-radius: 6; -fx-background-radius: 6; -fx-background-color: white; -fx-padding: 7 10; -fx-min-height: 34; -fx-font-size: 13px; -fx-font-weight: normal; -fx-text-fill: #294d65; }
+.crm-module .clients-list-page .clients-search-field:focused { -fx-border-color: #19758b; }
+.crm-module .clients-list-page .clients-filter-control .choice-box { -fx-min-height: 34; -fx-pref-height: 34; -fx-background-color: #f6fafc; -fx-border-color: #cbdce6; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 0 6; }
+.crm-module .clients-list-page .clients-filter-control .choice-box > .label { -fx-font-size: 12px; -fx-font-weight: normal; -fx-text-fill: #294d65; }
+.crm-module .clients-list-page .clients-filter-actions { -fx-padding: 0; -fx-alignment: center-left; }
+.crm-module .clients-list-page .clients-results-count { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #34566d; -fx-padding: 0 8 0 0; }
+.crm-module .clients-list-page .clients-filter-chip { -fx-background-color: #e5f1f5; -fx-background-radius: 12; -fx-padding: 4 9; -fx-text-fill: #19758b; -fx-font-size: 11px; -fx-font-weight: normal; -fx-cursor: hand; }
+.crm-module .clients-list-page .clients-filter-chip:hover { -fx-background-color: #cfe5ed; }
+.crm-module .clients-list-page .clients-manage-search-button,
+.crm-module .clients-list-page .clients-save-search-button,
+.crm-module .clients-list-page .clients-clear-filters-button { -fx-padding: 6 10; -fx-min-height: 30; -fx-font-size: 12px; -fx-font-weight: normal; }
+.crm-module .clients-list-page .clients-manage-search-button { -fx-border-color: #d2e1ea; -fx-background-color: white; }
+.crm-module .crm-country-picker { -fx-background-color: white; -fx-border-color: #cbdce6; -fx-border-radius: 6; -fx-background-radius: 6; -fx-min-height: 30; -fx-padding: 0; }
+.crm-module .crm-country-picker > .text-field { -fx-background-color: transparent; -fx-border-color: transparent; -fx-font-weight: normal; -fx-font-size: 13px; -fx-padding: 4 9; }
+.crm-module .crm-country-picker:unverified { -fx-border-color: #d5a545; -fx-background-color: #fffaf0; }

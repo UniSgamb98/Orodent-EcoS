@@ -142,7 +142,7 @@ public class NuovoClienteController {
         List<IndirizzoClienteInput> indirizzi = new ArrayList<>();
         indirizzi.add(
                 new IndirizzoClienteInput(
-                        text(view.getCountryField()),
+                        view.getCountryField().validatedValue(),
                         text(view.getRegionField()),
                         text(view.getProvinceField()),
                         text(view.getCityField()),

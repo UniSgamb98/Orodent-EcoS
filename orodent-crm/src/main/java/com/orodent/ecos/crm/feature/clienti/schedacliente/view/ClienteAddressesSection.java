@@ -49,7 +49,7 @@ final class ClienteAddressesSection extends VBox {
                         control ->
                                 new AddressEditInput(
                                         control.id(),
-                                        valueOf(control.countryField()),
+                                        control.countryField().draftValue(),
                                         valueOf(control.regionField()),
                                         valueOf(control.provinceField()),
                                         valueOf(control.cityField()),
@@ -60,11 +60,15 @@ final class ClienteAddressesSection extends VBox {
                 .toList();
     }
 
+    void validateCountries() {
+        addressEditControls.forEach(control -> control.countryField().validatedValue());
+    }
+
     private void addAddressEditor(AddressEditInput value) {
         VBox card = new VBox(8);
         card.setMaxWidth(Double.MAX_VALUE);
         card.getStyleClass().add("client-profile-timeline-card");
-        TextField countryField = ClienteProfileFormControls.createTextField(value.paese(), "Paese");
+        var countryField = new com.orodent.ecos.crm.core.ui.CountryPicker(value.paese());
         TextField regionField =
                 ClienteProfileFormControls.createTextField(value.regione(), "Regione");
         TextField provinceField =
@@ -175,7 +179,7 @@ final class ClienteAddressesSection extends VBox {
 
     private record AddressEditControls(
             java.util.UUID id,
-            TextField countryField,
+            com.orodent.ecos.crm.core.ui.CountryPicker countryField,
             TextField regionField,
             TextField provinceField,
             TextField cityField,

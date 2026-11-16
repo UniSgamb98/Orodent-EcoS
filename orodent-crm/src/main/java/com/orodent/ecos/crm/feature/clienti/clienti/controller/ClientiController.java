@@ -87,6 +87,7 @@ public class ClientiController {
         view.onOperatoreFilterChanged(this::filterByOperatore);
         view.onTipologiaFilterChanged(this::filterByTipoCliente);
         view.onStatoFilterChanged(this::filterByStatoTrattativa);
+        view.onPaeseFilterChanged(this::filterByPaese);
         view.onClearFilters(this::clearFilters);
         view.onSaveSearch(this::saveCurrentSearch);
         view.onApplySavedSearch(this::applySavedSearch);
@@ -111,7 +112,7 @@ public class ClientiController {
         searchState = savedState.toSearchState(INITIAL_LOAD_SIZE);
         savedBaseline = sessionState.map(ClientiSessionState::savedBaseline).orElse(null);
         restoringFilters = true;
-        pendingFilterLoads = 3;
+        pendingFilterLoads = 4;
         loadFiltersAsync();
         loadSavedSearchesAsync();
     }
@@ -125,6 +126,10 @@ public class ClientiController {
                 service::getTipoClienteFilters,
                 types -> completeFilterLoad(() -> view.setTypeFilters(types)),
                 error -> completeFilterLoad(() -> view.setTypeFilters(List.of())));
+        tasks.run(
+                service::getPaeseFilters,
+                countries -> completeFilterLoad(() -> view.setPaeseFilters(countries)),
+                error -> completeFilterLoad(() -> view.setPaeseFilters(List.of())));
         tasks.run(
                 service::getStatoTrattativaFilters,
                 statuses -> completeFilterLoad(() -> view.setStatusFilters(statuses)),
@@ -174,6 +179,14 @@ public class ClientiController {
             return;
         }
         searchState = searchState.withStato(filter);
+        rememberSearchState();
+        updateUnsavedChangesIndicator();
+        reloadClients();
+    }
+
+    private void filterByPaese(TextFilter filter) {
+        if (clearingFilters || restoringFilters) return;
+        searchState = searchState.withPaese(filter);
         rememberSearchState();
         updateUnsavedChangesIndicator();
         reloadClients();
@@ -434,6 +447,7 @@ public class ClientiController {
 
     private void sortClienti(SortColumn sortColumn) {
         searchState = searchState.togglingSort(sortColumn);
+        view.setSort(searchState.sortColumn(), searchState.ascending());
         rememberSearchState();
         updateUnsavedChangesIndicator();
         reloadClients();
@@ -509,26 +523,7 @@ public class ClientiController {
 
         for (ClientePreviewRow cliente : page.rows()) {
             ClientePreview preview = cliente.preview();
-            var row =
-                    view.addClientRow(
-                            preview.name(),
-                            preview.type(),
-                            preview.contact(),
-                            preview.operator(),
-                            preview.status(),
-                            preview.lastContact(),
-                            this::showRowActionsUnavailable);
-            row.setOnMouseClicked(
-                    event -> {
-                        if (event.getClickCount() == 2) {
-                            clientiNav.showSchedaCliente(cliente.clienteId());
-                            return;
-                        }
-                        view.openClientDetails(
-                                preview,
-                                row,
-                                () -> clientiNav.showSchedaCliente(cliente.clienteId()));
-                    });
+            view.addClientRow(preview, () -> clientiNav.showSchedaCliente(cliente.clienteId()));
         }
         loadedRows += page.rows().size();
 
@@ -537,10 +532,6 @@ public class ClientiController {
         } else {
             view.showAllResultsLoaded();
         }
-    }
-
-    private void showRowActionsUnavailable() {
-        feedback.showFeatureInDevelopment("Azioni cliente");
     }
 
     public void dispose() {

@@ -92,6 +92,149 @@ class CrmIntegrationTest {
     }
 
     @Test
+    void countryFiltersMatchAnyAddressWithoutDuplicatesAndExposeOnlyPresentCountries() {
+        var create = new NuovoClienteService(new ClientePersistenceService(db), db.operators());
+        java.util.function.Function<List<IndirizzoClienteInput>, UUID> newLead =
+                addresses ->
+                        db.transaction(
+                                () ->
+                                        create.saveCliente(
+                                                        new NuovoClienteRequest(
+                                                                new ClienteInput(
+                                                                        "Laboratorio test",
+                                                                        "Laboratorio",
+                                                                        "Listino",
+                                                                        3,
+                                                                        "",
+                                                                        "",
+                                                                        LocalDate.now(),
+                                                                        ""),
+                                                                addresses,
+                                                                List.of(
+                                                                        new TelefonoClienteInput(
+                                                                                "12345")),
+                                                                List.of(
+                                                                        new EmailClienteInput(
+                                                                                "test@example.test")),
+                                                                List.of(),
+                                                                List.of()))
+                                                .cliente()
+                                                .id());
+        var italy = new IndirizzoClienteInput("Italy", "", "", "Verona", "Via Roma", "1", "", true);
+        var romania = new IndirizzoClienteInput("RO", "", "", "Bucarest", "", "", "", false);
+        UUID a = newLead.apply(List.of(italy, romania));
+        UUID b = newLead.apply(List.of(romania));
+        UUID missing = newLead.apply(List.of());
+        UUID review =
+                newLead.apply(
+                        List.of(
+                                new IndirizzoClienteInput(
+                                        "Francia", "", "", "", "", "", "", true)));
+        assertEquals(1, scalar("SELECT COUNT(*) FROM CRM.INDIRIZZI_CLIENTE WHERE PAESE='Italia'"));
+        connections.withTransaction(
+                c -> {
+                    try (var q = c.createStatement()) {
+                        q.executeUpdate(
+                                "UPDATE CRM.INDIRIZZI_CLIENTE SET PAESE=' ITALY ' WHERE"
+                                    + " CLIENTE_ID='"
+                                        + a
+                                        + "' AND PAESE='Italia'");
+                        q.executeUpdate(
+                                "UPDATE CRM.INDIRIZZI_CLIENTE SET PAESE='Romnaia' WHERE"
+                                    + " CLIENTE_ID='"
+                                        + review
+                                        + "'");
+                    }
+                    return null;
+                });
+        var service = new com.orodent.ecos.crm.feature.clienti.clienti.service.ClientiService(db);
+        var countries = db.transaction(service::getPaeseFilters);
+        assertEquals(
+                List.of(
+                        "IT",
+                        "RO",
+                        com.orodent.ecos.crm.core.country.Countries.MISSING,
+                        com.orodent.ecos.crm.core.country.Countries.REVIEW),
+                countries.stream()
+                        .map(com.orodent.ecos.crm.feature.clienti.clienti.dto.TextFilter::value)
+                        .toList());
+        java.util.function.Function<
+                        String, com.orodent.ecos.crm.feature.clienti.clienti.dto.ClientiPage>
+                search =
+                        country ->
+                                db.transaction(
+                                        () ->
+                                                service.getClientiPreview(
+                                                        new com.orodent.ecos.crm.feature.clienti
+                                                                .clienti.dto.ClientiSearchRequest(
+                                                                0,
+                                                                30,
+                                                                "",
+                                                                null,
+                                                                "",
+                                                                "",
+                                                                country,
+                                                                com.orodent.ecos.crm.feature.clienti
+                                                                        .clienti.dto.SortColumn
+                                                                        .NAME,
+                                                                true)));
+        var ro = search.apply("RO");
+        assertEquals(2, ro.totalRows());
+        assertEquals(
+                Set.of(a, b),
+                ro.rows().stream()
+                        .map(r -> r.clienteId())
+                        .collect(java.util.stream.Collectors.toSet()));
+        assertEquals(
+                List.of(missing),
+                search.apply(com.orodent.ecos.crm.core.country.Countries.MISSING).rows().stream()
+                        .map(r -> r.clienteId())
+                        .toList());
+        assertEquals(
+                List.of(review),
+                search.apply(com.orodent.ecos.crm.core.country.Countries.REVIEW).rows().stream()
+                        .map(r -> r.clienteId())
+                        .toList());
+        assertEquals(0, search.apply("DE").totalRows());
+        var single = search.apply("IT").rows().getFirst().preview();
+        assertTrue(single.country().contains("Italia"));
+        assertTrue(single.country().contains("Romania"));
+        assertEquals("12345", single.phone());
+        assertEquals("test@example.test", single.email());
+        var sheet = new SchedaClienteService(db);
+        db.transaction(() -> sheet.loadProfile(a));
+        db.transaction(
+                () ->
+                        sheet.addChiamata(
+                                "Primo richiamo",
+                                LocalDate.now().plusDays(5),
+                                CallOutcome.LISTINO));
+        db.transaction(
+                () ->
+                        sheet.addChiamata(
+                                "Richiamo aggiornato",
+                                LocalDate.now().plusDays(12),
+                                CallOutcome.CAMPIONE));
+        assertEquals(
+                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                        .format(LocalDate.now().plusDays(12)),
+                search.apply("IT").rows().getFirst().preview().nextContact());
+        var sheetReview = new SchedaClienteService(db);
+        var profile = db.transaction(() -> sheetReview.loadProfile(review));
+        db.transaction(() -> sheetReview.saveEdit(EditProfileDraft.from(profile)));
+        assertEquals(
+                1, search.apply(com.orodent.ecos.crm.core.country.Countries.REVIEW).totalRows());
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        newLead.apply(
+                                List.of(
+                                        new IndirizzoClienteInput(
+                                                "Romnaia", "", "", "", "", "", "", true))));
+        assertEquals(4, scalar("SELECT COUNT(*) FROM CRM.CLIENTI"));
+    }
+
+    @Test
     void createsIndependentLeadAndConnectsCallsToCalendar() {
         UUID id = lead();
         assertEquals(1, scalar("SELECT COUNT(*) FROM CRM.CLIENTI"));

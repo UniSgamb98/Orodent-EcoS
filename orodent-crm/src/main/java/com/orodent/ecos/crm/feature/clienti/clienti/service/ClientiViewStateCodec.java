@@ -14,7 +14,7 @@ import java.util.UUID;
 
 public final class ClientiViewStateCodec {
 
-    private static final int CURRENT_VERSION = 1;
+    private static final int CURRENT_VERSION = 2;
 
     public VersionedViewPayload encode(ClientiViewState state) {
         Properties properties = new Properties();
@@ -23,6 +23,7 @@ public final class ClientiViewStateCodec {
         properties.setProperty("operatoreLabel", state.operatore().label());
         properties.setProperty("tipologia", state.tipologia().value());
         properties.setProperty("stato", state.stato().value());
+        properties.setProperty("paese", state.paese().value());
         properties.setProperty("sortColumn", state.sortColumn().name());
         properties.setProperty("ascending", Boolean.toString(state.ascending()));
 
@@ -58,6 +59,10 @@ public final class ClientiViewStateCodec {
                         ? TextFilter.empty("Tutti")
                         : new TextFilter(tipologia, tipologia),
                 stato.isBlank() ? TextFilter.empty("Tutti") : new TextFilter(stato, stato),
+                new TextFilter(
+                        properties.getProperty("paese", ""),
+                        com.orodent.ecos.crm.core.country.Countries.filterLabel(
+                                properties.getProperty("paese", ""))),
                 sortColumn(properties.getProperty("sortColumn"), defaults.sortColumn()),
                 booleanValue(properties.getProperty("ascending"), defaults.ascending()));
     }

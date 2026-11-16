@@ -9,6 +9,7 @@ public record ClientiSearchRequest(
         UUID operatoreId,
         String tipoCliente,
         String statoTrattativa,
+        String paese,
         SortColumn sortColumn,
         boolean ascending) {
     public ClientiSearchRequest {
@@ -17,6 +18,7 @@ public record ClientiSearchRequest(
         searchText = searchText == null ? "" : searchText.trim();
         tipoCliente = tipoCliente == null ? "" : tipoCliente.trim();
         statoTrattativa = statoTrattativa == null ? "" : statoTrattativa.trim();
+        paese = paese == null ? "" : paese.trim();
         sortColumn = sortColumn == null ? SortColumn.NAME : sortColumn;
     }
 }

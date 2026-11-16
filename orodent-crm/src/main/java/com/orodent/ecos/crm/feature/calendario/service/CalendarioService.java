@@ -172,6 +172,11 @@ public class CalendarioService {
 
     private static final class EmptyClientiFilterQuery implements ClientiFilterQuery {
         @Override
+        public List<String> findPaesiCliente() {
+            return List.of();
+        }
+
+        @Override
         public List<OperatoreClienteFilterResult> findOperatoriConClienti() {
             return List.of();
         }

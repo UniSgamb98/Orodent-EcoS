@@ -6,7 +6,8 @@ public enum SortColumn {
     CONTACT("REFERENTE"),
     OPERATOR("OPERATORE"),
     STATUS("C.STATO_TRATTATIVA"),
-    LAST_CONTACT("ULTIMO_CONTATTO");
+    LAST_CONTACT("ULTIMO_CONTATTO"),
+    NEXT_CONTACT("L.PROSSIMO_CONTATTO");
 
     private final String sqlColumn;
 

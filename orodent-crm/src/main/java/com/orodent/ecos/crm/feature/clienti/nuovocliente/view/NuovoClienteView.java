@@ -37,7 +37,7 @@ public class NuovoClienteView extends BorderPane {
     private final TextField phoneField;
     private final ComboBox<String> contactPhoneField;
     private final ComboBox<String> contactEmailField;
-    private final TextField countryField;
+    private final com.orodent.ecos.crm.core.ui.CountryPicker countryField;
     private final TextField regionField;
     private final TextField provinceField;
     private final TextField cityField;
@@ -82,7 +82,7 @@ public class NuovoClienteView extends BorderPane {
         phoneField = createTextField("Telefono cliente");
         contactPhoneField = createLinkedComboBox("Telefono referente");
         contactEmailField = createLinkedComboBox("Email referente");
-        countryField = createTextField("Paese");
+        countryField = new com.orodent.ecos.crm.core.ui.CountryPicker("");
         regionField = createTextField("Regione");
         provinceField = createTextField("Provincia");
         cityField = createTextField("Città");
@@ -257,7 +257,7 @@ public class NuovoClienteView extends BorderPane {
         return section;
     }
 
-    private VBox createFieldGroup(String labelText, TextField field) {
+    private VBox createFieldGroup(String labelText, Region field) {
         VBox group = new VBox(6);
         Label label = new Label(labelText);
         label.getStyleClass().add("new-client-field-label");
@@ -531,7 +531,7 @@ public class NuovoClienteView extends BorderPane {
         return operatorField;
     }
 
-    public TextField getCountryField() {
+    public com.orodent.ecos.crm.core.ui.CountryPicker getCountryField() {
         return countryField;
     }
 

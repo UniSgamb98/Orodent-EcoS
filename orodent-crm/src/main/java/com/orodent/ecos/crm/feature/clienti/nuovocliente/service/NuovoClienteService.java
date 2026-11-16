@@ -180,7 +180,8 @@ public class NuovoClienteService {
                                 new IndirizzoCliente(
                                         UUID.randomUUID(),
                                         clienteId,
-                                        clean(indirizzo.paese()),
+                                        com.orodent.ecos.crm.core.country.Countries.forWrite(
+                                                indirizzo.paese(), null),
                                         clean(indirizzo.regione()),
                                         clean(indirizzo.provincia()),
                                         clean(indirizzo.citta()),

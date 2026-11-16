@@ -276,6 +276,7 @@ public class SchedaClienteView extends BorderPane {
     }
 
     public WorkspaceDraft captureForSave() {
+        relatedSections.validateCountries();
         formObserver.commitDates();
         return collectWorkspace();
     }

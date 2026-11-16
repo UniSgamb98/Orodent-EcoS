@@ -19,6 +19,36 @@ passando dalla Home agli altri moduli e riaprendo il CRM. Viene verificato che
 l'operatore sia ancora attivo. Non è necessario selezionarlo per usare Statistiche,
 TON o Costi. Preferiti e viste salvate rimangono separati per UUID dell'operatore.
 
+## Elenco e paesi
+
+La ricerca per azienda, referente, telefono o email e i filtri Stato, Operatore,
+Tipologia e Paese si dispongono su più righe nelle finestre strette. Le etichette
+sotto i campi permettono di rimuovere un singolo filtro. Le ricerche salvate sono
+raccolte in un menu; anche il Paese viene conservato, con lettura delle precedenti
+configurazioni prive del filtro. Una ricerca salvata su un paese non più presente
+continua a cercare quel paese e restituisce zero risultati.
+
+L'elenco riporta tipo e paesi sotto l'azienda e l'ultimo contatto e prossimo
+richiamo nelle rispettive colonne. Il richiamo appartiene all'ultima chiamata,
+ordinata per data contatto, creazione e ID; gli appuntamenti delle chiamate più
+vecchie non riemergono. Il referente è disponibile nell'anteprima anche quando la
+finestra non permette di mantenere la relativa colonna. Clic o menu aprono
+l'anteprima, doppio clic o Invio aprono la scheda. Su finestre strette l'anteprima
+è un pannello sovrapposto; nelle finestre ampie si affianca all'elenco.
+
+Il selettore Paese usa un catalogo locale di paesi ISO, con Kosovo, nomi italiani
+e ricerca digitando. Creazione e modifica validano i nuovi valori anche al
+salvataggio. I nomi riconoscibili in altre lingue e i codici (ad esempio Italia,
+Italy, IT e ITA) sono visualizzati e filtrati come lo stesso paese e salvati con
+il nome italiano. I valori importati ambigui o sconosciuti restano disponibili,
+evidenziati come da verificare, finché vengono corretti nella scheda.
+
+Il filtro elenca solo i paesi presenti nel CRM e, quando necessario, le voci
+“Paese non indicato” e “Paesi da verificare”. Corrisponde ad almeno un indirizzo
+dell'anagrafica e non duplica i risultati quando gli indirizzi corrispondenti sono
+più di uno. “Paese non indicato” include anagrafiche senza indirizzi o con tutti
+i paesi vuoti. L'elenco dei paesi non cambia applicando gli altri filtri.
+
 ## Scheda cliente
 
 L'intestazione resta visibile durante lo scorrimento. Contatti e recapiti sono

@@ -53,6 +53,23 @@ public final class DerbyClientiFilterQuery implements ClientiFilterQuery {
         return findDistinctClientValues("STATO_TRATTATIVA");
     }
 
+    @Override
+    public List<String> findPaesiCliente() {
+        String sql =
+                "SELECT DISTINCT A.PAESE FROM INDIRIZZI_CLIENTE A JOIN CLIENTI C ON"
+                    + " C.ID=A.CLIENTE_ID WHERE TRIM(COALESCE(A.PAESE,''))<>'' UNION SELECT '' FROM"
+                    + " CLIENTI C WHERE NOT EXISTS (SELECT 1 FROM INDIRIZZI_CLIENTE A WHERE"
+                    + " A.CLIENTE_ID=C.ID AND TRIM(COALESCE(A.PAESE,''))<>'')";
+        try (var statement = database.getConnection().prepareStatement(sql);
+                var rs = statement.executeQuery()) {
+            List<String> values = new ArrayList<>();
+            while (rs.next()) values.add(rs.getString(1));
+            return values;
+        } catch (SQLException e) {
+            throw new RuntimeException("Errore caricamento paesi clienti.", e);
+        }
+    }
+
     private List<String> findDistinctClientValues(String columnName) {
         String sql =
                 "SELECT DISTINCT "

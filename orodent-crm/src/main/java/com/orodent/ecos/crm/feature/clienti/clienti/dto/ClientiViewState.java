@@ -5,6 +5,7 @@ public record ClientiViewState(
         OperatoreFilter operatore,
         TextFilter tipologia,
         TextFilter stato,
+        TextFilter paese,
         SortColumn sortColumn,
         boolean ascending) {
     public ClientiViewState {
@@ -12,6 +13,13 @@ public record ClientiViewState(
         operatore = operatore == null ? OperatoreFilter.empty() : operatore;
         tipologia = tipologia == null ? TextFilter.empty("Tutti") : tipologia;
         stato = stato == null ? TextFilter.empty("Tutti") : stato;
+        paese =
+                paese == null
+                        ? TextFilter.empty("Tutti i paesi")
+                        : new TextFilter(
+                                paese.value(),
+                                com.orodent.ecos.crm.core.country.Countries.filterLabel(
+                                        paese.value()));
         sortColumn = sortColumn == null ? SortColumn.NAME : sortColumn;
     }
 
@@ -21,6 +29,7 @@ public record ClientiViewState(
                 OperatoreFilter.empty(),
                 TextFilter.empty("Tutti"),
                 TextFilter.empty("Tutti"),
+                TextFilter.empty("Tutti i paesi"),
                 SortColumn.NAME,
                 true);
     }
@@ -31,12 +40,13 @@ public record ClientiViewState(
                 state.operatore(),
                 state.tipologia(),
                 state.stato(),
+                state.paese(),
                 state.sortColumn(),
                 state.ascending());
     }
 
     public ClientiSearchState toSearchState(int pageSize) {
         return new ClientiSearchState(
-                0, pageSize, searchText, operatore, tipologia, stato, sortColumn, ascending);
+                0, pageSize, searchText, operatore, tipologia, stato, paese, sortColumn, ascending);
     }
 }

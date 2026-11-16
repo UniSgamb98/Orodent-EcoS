@@ -67,6 +67,10 @@ final class ClienteRelatedSections extends ResponsiveTilePane {
         return addressesSection.collectAddresses();
     }
 
+    void validateCountries() {
+        addressesSection.validateCountries();
+    }
+
     void refreshLinkedContactOptions() {
         contactsSection.refreshLinkedContactOptions();
     }
