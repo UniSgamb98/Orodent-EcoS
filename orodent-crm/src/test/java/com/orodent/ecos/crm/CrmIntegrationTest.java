@@ -91,6 +91,28 @@ class CrmIntegrationTest {
                 });
     }
 
+    private void insertCall(UUID client, UUID id, LocalDateTime createdAt, LocalDate recall) {
+        db.transaction(
+                () -> {
+                    var repository =
+                            new com.orodent.ecos.crm.core.database.repository.derby
+                                    .DerbyInterazioneRepository(db);
+                    repository.insert(
+                            new Interazione(
+                                    id,
+                                    client,
+                                    db.operators().currentOperatoreId(),
+                                    null,
+                                    createdAt.toLocalDate(),
+                                    recall,
+                                    CallOutcome.LISTINO,
+                                    java.math.BigDecimal.ZERO,
+                                    createdAt,
+                                    null));
+                    return null;
+                });
+    }
+
     @Test
     void quickFiltersUseCurrentOperatorLatestRecallAndConsistentPaging() {
         UUID favoriteOverdue = lead(), otherFavoriteOverdue = lead(), favoriteFuture = lead();
@@ -125,14 +147,18 @@ class CrmIntegrationTest {
                     favorites.add(other, otherFavoriteOverdue);
                     return null;
                 });
+        // Explicit chronology: rapid service calls can share a clock tick on Windows.
+        // Descending IDs ensure that creation time, rather than UUID order, selects the last call.
+        LocalDateTime firstCall = LocalDate.now().atTime(12, 0);
+        int[] callSequence = {0};
         java.util.function.BiConsumer<UUID, LocalDate> call =
                 (id, recall) -> {
-                    var sheet = new SchedaClienteService(db);
-                    db.transaction(() -> sheet.loadProfile(id));
-                    db.transaction(
-                            () ->
-                                    sheet.addChiamata(
-                                            "Chiamata di prova", recall, CallOutcome.LISTINO));
+                    int sequence = callSequence[0]++;
+                    insertCall(
+                            id,
+                            new UUID(0, 100 - sequence),
+                            firstCall.plusSeconds(sequence),
+                            recall);
                 };
         call.accept(favoriteOverdue, LocalDate.now().minusDays(1));
         call.accept(otherFavoriteOverdue, LocalDate.now().minusDays(2));
@@ -299,20 +325,9 @@ class CrmIntegrationTest {
         assertTrue(single.country().contains("Romania"));
         assertEquals("12345", single.phone());
         assertEquals("test@example.test", single.email());
-        var sheet = new SchedaClienteService(db);
-        db.transaction(() -> sheet.loadProfile(a));
-        db.transaction(
-                () ->
-                        sheet.addChiamata(
-                                "Primo richiamo",
-                                LocalDate.now().plusDays(5),
-                                CallOutcome.LISTINO));
-        db.transaction(
-                () ->
-                        sheet.addChiamata(
-                                "Richiamo aggiornato",
-                                LocalDate.now().plusDays(12),
-                                CallOutcome.CAMPIONE));
+        LocalDateTime firstCall = LocalDate.now().atTime(12, 0);
+        insertCall(a, new UUID(0, 2), firstCall, LocalDate.now().plusDays(5));
+        insertCall(a, new UUID(0, 1), firstCall.plusSeconds(1), LocalDate.now().plusDays(12));
         assertEquals(
                 java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
                         .format(LocalDate.now().plusDays(12)),
