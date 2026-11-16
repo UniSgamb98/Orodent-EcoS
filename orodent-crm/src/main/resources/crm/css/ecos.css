@@ -31,3 +31,19 @@
 #crm-module .client-profile-small-filter-active, #crm-module .calendar-primary-button,
 #crm-module .calendar-toggle-selected, #crm-module .calendar-toggle-button:hover,
 #crm-module .clients-saved-search-button:selected { -fx-text-fill:white; }
+
+/* Operator selection: consistent actions and readable light-theme controls. */
+.crm-module .login-root { -fx-background-color: linear-gradient(to bottom right, #edf3f7, #dce7ef); }
+.crm-module .login-root .login-card { -fx-background-color: white; -fx-border-color: #bfceda; -fx-effect: dropshadow(gaussian, rgba(23,63,95,0.16), 22, 0.12, 0, 5); }
+.crm-module .login-root .login-subtitle { -fx-text-fill: #4c6578; -fx-font-size: 14px; -fx-font-weight: normal; }
+.crm-module .login-root .login-field-label { -fx-text-fill: #294d64; -fx-font-size: 13px; -fx-font-weight: bold; }
+.crm-module .login-root .login-field { -fx-background-color: #f8fbfd; -fx-border-color: #bdcfdd; -fx-padding: 0 10; -fx-min-height: 44; -fx-pref-height: 44; }
+.crm-module .login-root .login-field > .label { -fx-text-fill: #173f5f; -fx-font-size: 13px; -fx-font-weight: normal; }
+.crm-module .login-root .login-field:focused { -fx-border-color: #19758b; }
+.crm-module .login-root .login-actions { -fx-padding: 4 0 0 0; }
+.crm-module .login-root .login-actions .button { -fx-min-height: 42; -fx-pref-height: 42; -fx-max-height: 42; -fx-padding: 0 10; -fx-font-size: 13px; -fx-font-weight: bold; -fx-alignment: center; -fx-background-radius: 7; -fx-border-radius: 7; -fx-cursor: hand; }
+.crm-module .login-root .login-primary-button { -fx-background-color: #19758b; -fx-text-fill: white; -fx-border-color: #19758b; }
+.crm-module .login-root .login-primary-button:hover { -fx-background-color: #155f72; -fx-border-color: #155f72; }
+.crm-module .login-root .login-secondary-button { -fx-background-color: white; -fx-text-fill: #173f5f; -fx-border-color: #bdcfdd; }
+.crm-module .login-root .login-secondary-button:hover { -fx-background-color: #edf4f8; -fx-border-color: #8aaabd; }
+.crm-module .login-root .login-actions .button:focused { -fx-border-color: #19758b; -fx-border-width: 2; }

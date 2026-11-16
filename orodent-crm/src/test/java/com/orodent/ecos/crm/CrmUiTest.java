@@ -83,6 +83,7 @@ class CrmUiTest {
                                     && enabledButton("crm-select-operator"));
             fx(
                     () -> {
+                        snapshot("target/crm-login.png");
                         button("crm-select-operator").fire();
                         return null;
                     });

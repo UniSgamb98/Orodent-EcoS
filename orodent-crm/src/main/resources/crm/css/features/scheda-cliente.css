@@ -289,7 +289,9 @@
 }
 
 /* Customer workspace: persistent header, readable conversations, compact contact column. */
-.crm-module .client-profile-page { -fx-font-size: 14px; }
+.crm-module .client-profile-page { -fx-font-size: 14px; -fx-background-color: #d6e1eb; }
+.crm-module .client-profile-page #crm-page-scroll,
+.crm-module .client-profile-page #crm-page-scroll > .viewport { -fx-background-color: #d6e1eb; -fx-background: #d6e1eb; }
 .crm-module .client-profile-page .clients-title { -fx-font-size: 27px; -fx-text-fill: #173f5f; }
 .crm-module .client-profile-page .clients-subtitle { -fx-font-size: 14px; -fx-text-fill: #607587; }
 .crm-module .client-profile-page .client-profile-hero { -fx-padding: 18 20; -fx-border-color: #dce6ed; }

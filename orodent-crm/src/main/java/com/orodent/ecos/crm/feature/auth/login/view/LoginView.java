@@ -35,9 +35,11 @@ public class LoginView extends BorderPane {
         loginButton = new Button("Accedi");
         loginButton.getStyleClass().add("login-primary-button");
         loginButton.setDefaultButton(true);
+        createOperator.getStyleClass().add("login-secondary-button");
 
         errorLabel = new Label();
         errorLabel.getStyleClass().add("login-error");
+        errorLabel.setWrapText(true);
         errorLabel.setVisible(false);
         errorLabel.setManaged(false);
 
@@ -52,7 +54,7 @@ public class LoginView extends BorderPane {
         wrapper.getStyleClass().add("login-wrapper");
 
         VBox card = new VBox(18);
-        card.setMaxWidth(420);
+        card.setMaxWidth(460);
         card.getStyleClass().add("login-card");
 
         VBox heading = new VBox(6);
@@ -87,9 +89,15 @@ public class LoginView extends BorderPane {
     }
 
     private HBox createActions() {
-        HBox actions = new HBox();
-        actions.setAlignment(Pos.CENTER_RIGHT);
-        HBox.setHgrow(loginButton, Priority.NEVER);
+        HBox actions = new HBox(12);
+        actions.getStyleClass().add("login-actions");
+        actions.setAlignment(Pos.CENTER);
+        for (Button button : List.of(createOperator, loginButton)) {
+            button.setMinWidth(0);
+            button.setPrefWidth(0);
+            button.setMaxWidth(Double.MAX_VALUE);
+            HBox.setHgrow(button, Priority.ALWAYS);
+        }
         actions.getChildren().addAll(createOperator, loginButton);
         return actions;
     }
