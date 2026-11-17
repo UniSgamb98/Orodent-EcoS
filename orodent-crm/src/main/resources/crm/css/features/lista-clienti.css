@@ -55,3 +55,26 @@
 .crm-module .clients-list-page .clients-preview-overlay { -fx-background-color: rgba(30,58,79,0.18); -fx-padding: 8; }
 .crm-module .clients-list-page .clients-detail-fields-scroll { -fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0; -fx-border-color: transparent; }
 .crm-module .clients-list-page .clients-detail-fields-scroll > .viewport { -fx-background-color: white; }
+
+#crm-assignment-dialog {
+    -fx-background-color: white;
+    -fx-padding: 20;
+}
+#crm-assignment-dialog .content {
+    -fx-padding: 12 0 20 0;
+}
+#crm-assignment-dialog .label {
+    -fx-text-fill: #23465e;
+}
+#crm-assignment-dialog .combo-box {
+    -fx-background-color: #f4f8fb;
+    -fx-border-color: #bbd1df;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 4;
+}
+#crm-assignment-confirm {
+    -fx-background-color: #18788d;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}

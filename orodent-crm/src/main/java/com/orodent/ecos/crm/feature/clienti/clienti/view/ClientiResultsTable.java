@@ -109,7 +109,8 @@ public class ClientiResultsTable extends StackPane {
         tableScrollPane.setVvalue(0);
     }
 
-    public void addClientRow(ClientePreview preview, Runnable openProfile) {
+    public void addClientRow(
+            ClientePreview preview, Runnable openProfile, Runnable assignOperator) {
         tableRows.getChildren().remove(loadStateLabel);
         HBox row = new HBox(8);
         row.setAlignment(Pos.CENTER_LEFT);
@@ -154,6 +155,12 @@ public class ClientiResultsTable extends StackPane {
         var open = new MenuItem("Apri scheda");
         open.setOnAction(e -> openProfile.run());
         actions.getItems().addAll(show, open);
+        if (assignOperator != null) {
+            var assign = new MenuItem("Assegna operatore…");
+            assign.setId("crm-client-assign-operator");
+            assign.setOnAction(e -> assignOperator.run());
+            actions.getItems().addAll(new SeparatorMenuItem(), assign);
+        }
         actions.setAccessibleText("Azioni per " + preview.name());
         HBox actionCell = new HBox(actions);
         actionCell.setAlignment(Pos.CENTER);

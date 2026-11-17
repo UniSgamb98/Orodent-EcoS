@@ -47,6 +47,8 @@ public class ClientiView extends BorderPane {
 
     public ClientiView() {
         searchField.setId("crm-clients-search");
+        operatorFilterChoiceBox.setId("crm-operator-filter");
+        resultsCountLabel.setId("crm-clients-count");
         searchField.setPromptText("Cerca azienda, referente, telefono o email");
         searchField.getStyleClass().add("clients-search-field");
         newClientButton.getStyleClass().add("clients-primary-button");
@@ -285,7 +287,11 @@ public class ClientiView extends BorderPane {
     }
 
     public void addClientRow(ClientePreview preview, Runnable open) {
-        resultsTable.addClientRow(preview, open);
+        resultsTable.addClientRow(preview, open, null);
+    }
+
+    public void addClientRow(ClientePreview preview, Runnable open, Runnable assignOperator) {
+        resultsTable.addClientRow(preview, open, assignOperator);
     }
 
     public void closeClientDetails() {

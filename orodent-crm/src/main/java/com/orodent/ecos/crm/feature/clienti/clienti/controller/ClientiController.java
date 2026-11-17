@@ -15,8 +15,10 @@ import com.orodent.ecos.crm.feature.clienti.clienti.dto.ClientiViewState;
 import com.orodent.ecos.crm.feature.clienti.clienti.dto.OperatoreFilter;
 import com.orodent.ecos.crm.feature.clienti.clienti.dto.SortColumn;
 import com.orodent.ecos.crm.feature.clienti.clienti.dto.TextFilter;
+import com.orodent.ecos.crm.feature.clienti.clienti.service.ClienteAssignmentService;
 import com.orodent.ecos.crm.feature.clienti.clienti.service.ClientiService;
 import com.orodent.ecos.crm.feature.clienti.clienti.service.ClientiViewStateCodec;
+import com.orodent.ecos.crm.feature.clienti.clienti.view.ClienteAssignmentDialog;
 import com.orodent.ecos.crm.feature.clienti.clienti.view.ClientiFeedback;
 import com.orodent.ecos.crm.feature.clienti.clienti.view.ClientiView;
 import com.orodent.ecos.crm.feature.clienti.navigator.ClientiNav;
@@ -38,6 +40,7 @@ public class ClientiController {
     private final ClientiView view;
     private final ClientiNav clientiNav;
     private final ClientiService service;
+    private final ClienteAssignmentService assignments;
     private final ClientiFeedback feedback;
     private final FeatureSessionStateStore sessionStateStore;
     private final CurrentOperatoreService currentOperatoreService;
@@ -64,6 +67,7 @@ public class ClientiController {
             com.orodent.ecos.crm.core.async.AsyncLoader tasks,
             ClientiNav clientiNav,
             ClientiService service,
+            ClienteAssignmentService assignments,
             FeatureSessionStateStore sessionStateStore,
             CurrentOperatoreService currentOperatoreService,
             VistaSalvataService vistaSalvataService,
@@ -72,6 +76,7 @@ public class ClientiController {
         this.tasks = tasks;
         this.clientiNav = clientiNav;
         this.service = service;
+        this.assignments = assignments;
         this.sessionStateStore = sessionStateStore;
         this.currentOperatoreService = currentOperatoreService;
         this.vistaSalvataService = vistaSalvataService;
@@ -532,7 +537,10 @@ public class ClientiController {
 
         for (ClientePreviewRow cliente : page.rows()) {
             ClientePreview preview = cliente.preview();
-            view.addClientRow(preview, () -> clientiNav.showSchedaCliente(cliente.clienteId()));
+            view.addClientRow(
+                    preview,
+                    () -> clientiNav.showSchedaCliente(cliente.clienteId()),
+                    () -> assignOperator(cliente.clienteId()));
         }
         loadedRows += page.rows().size();
 
@@ -541,6 +549,39 @@ public class ClientiController {
         } else {
             view.showAllResultsLoaded();
         }
+    }
+
+    private void assignOperator(UUID clientId) {
+        tasks.run(
+                () -> assignments.load(clientId),
+                original ->
+                        ClienteAssignmentDialog.show(view, original)
+                                .ifPresent(operatorId -> saveAssignment(original, operatorId)),
+                error -> ClienteAssignmentDialog.showError(view, error));
+    }
+
+    private void saveAssignment(ClienteAssignmentService.Assignment original, UUID operatorId) {
+        tasks.run(
+                () -> {
+                    assignments.assign(original, operatorId);
+                    return service.getOperatorFilters();
+                },
+                operators -> {
+                    var options = new java.util.ArrayList<>(operators);
+                    var selected = searchState.operatore();
+                    // Keep the active filter even when its last client has been reassigned.
+                    if (selected.id() != null
+                            && options.stream().noneMatch(o -> o.id().equals(selected.id())))
+                        options.add(selected);
+                    restoringFilters = true;
+                    try {
+                        view.setOperatorFilters(options);
+                    } finally {
+                        restoringFilters = false;
+                    }
+                    reloadClients();
+                },
+                error -> ClienteAssignmentDialog.showError(view, error));
     }
 
     public void dispose() {

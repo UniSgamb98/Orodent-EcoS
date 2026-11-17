@@ -223,7 +223,7 @@ class CrmUiTest {
                                         var r =
                                                 q.executeQuery(
                                                         "SELECT ID FROM ECOS.OPERATORI WHERE"
-                                                            + " USERNAME='Lucia'")) {
+                                                                + " USERNAME='Lucia'")) {
                                     assertTrue(r.next());
                                     return UUID.fromString(r.getString(1));
                                 }
@@ -280,6 +280,127 @@ class CrmUiTest {
                             ((Label) stage.getScene().lookup("#crm-operator-state-" + otherId))
                                             .getText()
                                             .equals("Attivo")
+                                    && !stage.getScene().lookup("#crm-settings").isDisabled());
+            fx(
+                    () -> {
+                        button("crm-nav-leads").fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            stage.getScene().lookup("#crm-operator-filter") != null
+                                    && !stage.getScene()
+                                            .lookup("#crm-operator-filter")
+                                            .isDisabled());
+            fx(
+                    () -> {
+                        var filter =
+                                (ChoiceBox<
+                                                com.orodent.ecos.crm.feature.clienti.clienti.dto
+                                                        .OperatoreFilter>)
+                                        stage.getScene().lookup("#crm-operator-filter");
+                        filter.setValue(
+                                filter.getItems().stream()
+                                        .filter(o -> currentId.equals(o.id()))
+                                        .findFirst()
+                                        .orElseThrow());
+                        return null;
+                    });
+            await(
+                    () ->
+                            enabledButton("crm-create-lead")
+                                    && stage.getScene().lookup(".clients-data-row") != null);
+            fx(
+                    () -> {
+                        operatorAction("crm-client-assign-operator").fire();
+                        return null;
+                    });
+            await(() -> assignmentPane() != null);
+            fx(
+                    () -> {
+                        var pane = assignmentPane();
+                        assertTrue(
+                                pane.lookup("#crm-assignment-confirm").isDisabled(),
+                                "Cannot confirm unchanged assignment");
+                        ((Button) pane.lookupButton(ButtonType.CANCEL)).fire();
+                        return null;
+                    });
+            assertEquals(currentId, assignedOperator(db));
+            fx(
+                    () -> {
+                        operatorAction("crm-client-assign-operator").fire();
+                        return null;
+                    });
+            await(() -> assignmentPane() != null);
+            fx(
+                    () -> {
+                        chooseAssignedOperator(otherId);
+                        snapshotDialog("target/crm-assignment.png");
+                        ((Button) assignmentPane().lookup("#crm-assignment-confirm")).fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            enabledButton("crm-create-lead")
+                                    && ((Label) stage.getScene().lookup("#crm-clients-count"))
+                                            .getText()
+                                            .startsWith("0 "));
+            assertEquals(otherId, assignedOperator(db));
+            fx(
+                    () -> {
+                        var filter =
+                                (ChoiceBox<
+                                                com.orodent.ecos.crm.feature.clienti.clienti.dto
+                                                        .OperatoreFilter>)
+                                        stage.getScene().lookup("#crm-operator-filter");
+                        assertEquals(
+                                currentId,
+                                filter.getValue().id(),
+                                "Keep the active operator filter when its last client moves");
+                        filter.getSelectionModel().selectFirst();
+                        return null;
+                    });
+            await(
+                    () ->
+                            enabledButton("crm-create-lead")
+                                    && stage.getScene().lookup(".clients-data-row") != null);
+            fx(
+                    () -> {
+                        assertTrue(
+                                stage
+                                        .getScene()
+                                        .lookup(".clients-data-row")
+                                        .lookupAll(".label")
+                                        .stream()
+                                        .anyMatch(
+                                                n ->
+                                                        n instanceof Label l
+                                                                && l.getText()
+                                                                        .equals("Lucia Bianchi")));
+                        operatorAction("crm-client-assign-operator").fire();
+                        return null;
+                    });
+            await(() -> assignmentPane() != null);
+            fx(
+                    () -> {
+                        chooseAssignedOperator(currentId);
+                        ((Button) assignmentPane().lookup("#crm-assignment-confirm")).fire();
+                        return null;
+                    });
+            await(() -> enabledButton("crm-create-lead") && assignmentPane() == null);
+            assertEquals(currentId, assignedOperator(db));
+            assertEquals(
+                    currentId,
+                    operator.current().orElseThrow().id(),
+                    "Assigning a client must not switch the logged-in operator");
+            fx(
+                    () -> {
+                        button("crm-nav-settings").fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            stage.getScene().lookup("#crm-operator-name-" + otherId) != null
                                     && !stage.getScene().lookup("#crm-settings").isDisabled());
             fx(
                     () -> {
@@ -1127,6 +1248,54 @@ class CrmUiTest {
                 .filter(item -> id.equals(item.getId()))
                 .findFirst()
                 .orElseThrow();
+    }
+
+    UUID assignedOperator(ConnectionProvider connections) {
+        return connections.withConnection(
+                c -> {
+                    try (var q = c.createStatement();
+                            var r = q.executeQuery("SELECT OPERATORE_ID FROM CRM.CLIENTI")) {
+                        assertTrue(r.next());
+                        return UUID.fromString(r.getString(1));
+                    }
+                });
+    }
+
+    DialogPane assignmentPane() {
+        return Window.getWindows().stream()
+                .filter(Window::isShowing)
+                .map(w -> w.getScene().getRoot())
+                .filter(n -> n instanceof DialogPane && "crm-assignment-dialog".equals(n.getId()))
+                .map(DialogPane.class::cast)
+                .findFirst()
+                .orElse(null);
+    }
+
+    void chooseAssignedOperator(UUID id) {
+        var operators =
+                (ComboBox<com.orodent.ecos.crm.feature.auth.login.service.LoginService.LoginUser>)
+                        assignmentPane().lookup("#crm-assignment-operator");
+        operators.setValue(
+                operators.getItems().stream()
+                        .filter(o -> o.id().equals(id))
+                        .findFirst()
+                        .orElseThrow());
+    }
+
+    void snapshotDialog(String path) throws Exception {
+        var pane = assignmentPane();
+        pane.applyCss();
+        pane.layout();
+        var image = pane.snapshot(null, null);
+        var out =
+                new java.awt.image.BufferedImage(
+                        (int) image.getWidth(),
+                        (int) image.getHeight(),
+                        java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < out.getHeight(); y++)
+            for (int x = 0; x < out.getWidth(); x++)
+                out.setRGB(x, y, image.getPixelReader().getArgb(x, y));
+        javax.imageio.ImageIO.write(out, "png", Path.of(path).toFile());
     }
 
     void fillOperatorName(String name) {

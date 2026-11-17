@@ -174,6 +174,18 @@ controlla che non ci siano accessi JDBC sul thread grafico. Gli screenshot sono
 in `orodent-crm/target/crm-*.png`.
 
 
+## Cambiare l'operatore assegnato a un cliente
+
+Nel menu **⋯** della riga dell'elenco, **Assegna operatore…** apre un popup con
+il cliente, l'assegnazione attuale e i soli operatori attivi. **Assegna** conferma
+la scelta; **Annulla** chiude senza modificare dati. L'operatore della sessione
+rimane lo stesso, così come gli autori delle chiamate e delle note storiche.
+
+Dopo il salvataggio elenco, conteggio e opzioni del filtro Operatore si aggiornano.
+Il filtro corrente viene mantenuto anche se non ha più anagrafiche. Se nel frattempo
+un'altra postazione modifica il cliente o disattiva l'operatore scelto, il
+salvataggio viene rifiutato e occorre riaprire la scelta con i dati aggiornati.
+
 ## Operatori e importazione CRM2
 
 Le impostazioni CRM includono il riquadro **Operatori**, con tutti i nomi attivi e

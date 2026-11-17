@@ -8,6 +8,7 @@ import com.orodent.ecos.crm.core.database.model.*;
 import com.orodent.ecos.crm.core.database.service.*;
 import com.orodent.ecos.crm.core.session.FeatureKey;
 import com.orodent.ecos.crm.feature.calendario.service.CalendarioService;
+import com.orodent.ecos.crm.feature.clienti.clienti.service.ClienteAssignmentService;
 import com.orodent.ecos.crm.feature.clienti.nuovocliente.dto.*;
 import com.orodent.ecos.crm.feature.clienti.nuovocliente.service.NuovoClienteService;
 import com.orodent.ecos.crm.feature.clienti.schedacliente.dto.SchedaClienteModels.*;
@@ -47,7 +48,7 @@ class CrmIntegrationTest {
                     try (var q = c.createStatement()) {
                         q.executeUpdate(
                                 "INSERT INTO ECOS.OPERATORI(ID,USERNAME) VALUES"
-                                    + " ('00000000-0000-0000-0000-000000000001','utente')");
+                                        + " ('00000000-0000-0000-0000-000000000001','utente')");
                     }
                     return null;
                 });
@@ -120,6 +121,150 @@ class CrmIntegrationTest {
                                     null));
                     return null;
                 });
+    }
+
+    @Test
+    void assignmentChangesOnlyClientAndKeepsHistoricalAuthorsAndSession() {
+        UUID id = lead();
+        UUID current = db.operators().currentOperatoreId();
+        UUID other = db.transaction(() -> new OperatorManagementService(db).create("Lucia"));
+        var sheet = new SchedaClienteService(db);
+        db.transaction(() -> sheet.loadProfile(id));
+        db.transaction(
+                () ->
+                        sheet.addChiamata(
+                                "Storico", LocalDate.now().plusDays(2), CallOutcome.LISTINO));
+        var assignments = new ClienteAssignmentService(db);
+        var original = db.transaction(() -> assignments.load(id));
+        db.transaction(
+                () -> {
+                    assignments.assign(original, other);
+                    return null;
+                });
+        assertEquals(other, db.transaction(() -> assignments.load(id)).operatorId());
+        assertEquals(current, db.operators().currentOperatoreId());
+        assertEquals(
+                1,
+                scalar(
+                        "SELECT COUNT(*) FROM CRM.NOTE_CLIENTE WHERE OPERATORE_ID='"
+                                + current
+                                + "'"));
+        assertEquals(
+                1,
+                scalar(
+                        "SELECT COUNT(*) FROM CRM.INTERAZIONI WHERE OPERATORE_ID='"
+                                + current
+                                + "'"));
+        assertEquals(original.revision() + 1, scalar("SELECT VERSIONE_MODIFICA FROM CRM.CLIENTI"));
+    }
+
+    @Test
+    void assignmentRejectsInactiveOrDeletedOperatorEvenAfterPopupWasLoaded() {
+        UUID id = lead();
+        var operators = new OperatorManagementService(db);
+        UUID other = db.transaction(() -> operators.create("Lucia"));
+        var assignments = new ClienteAssignmentService(db);
+        var original = db.transaction(() -> assignments.load(id));
+        assertEquals(2, original.activeOperators().size());
+        db.transaction(
+                () -> {
+                    operators.active(other, false);
+                    return null;
+                });
+        assertEquals(1, db.transaction(() -> assignments.load(id)).activeOperators().size());
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        db.transaction(
+                                () -> {
+                                    assignments.assign(original, other);
+                                    return null;
+                                }));
+        db.transaction(
+                () -> {
+                    operators.remove(other);
+                    return null;
+                });
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        db.transaction(
+                                () -> {
+                                    assignments.assign(original, other);
+                                    return null;
+                                }));
+        assertEquals(
+                original.operatorId(), db.transaction(() -> assignments.load(id)).operatorId());
+        assertEquals(original.revision(), scalar("SELECT VERSIONE_MODIFICA FROM CRM.CLIENTI"));
+    }
+
+    @Test
+    void assignmentSupportsInactivePreviousOperatorAndUnassignedClient() {
+        UUID id = lead();
+        UUID other = db.transaction(() -> new OperatorManagementService(db).create("Lucia"));
+        connections.withTransaction(
+                c -> {
+                    try (var q = c.createStatement()) {
+                        q.executeUpdate(
+                                "UPDATE ECOS.OPERATORI SET NOME='Operatore ufficio',ATTIVO=0 WHERE"
+                                    + " USERNAME='utente'");
+                    }
+                    return null;
+                });
+        var assignments = new ClienteAssignmentService(db);
+        var previous = db.transaction(() -> assignments.load(id));
+        assertEquals("Operatore ufficio (utente)", previous.operatorName());
+        assertEquals(List.of(other), previous.activeOperators().stream().map(o -> o.id()).toList());
+        db.transaction(
+                () -> {
+                    assignments.assign(previous, other);
+                    return null;
+                });
+        connections.withTransaction(
+                c -> {
+                    try (var q = c.createStatement()) {
+                        q.executeUpdate(
+                                "UPDATE CRM.CLIENTI SET"
+                                    + " OPERATORE_ID=NULL,VERSIONE_MODIFICA=VERSIONE_MODIFICA+1");
+                    }
+                    return null;
+                });
+        var unassigned = db.transaction(() -> assignments.load(id));
+        assertNull(unassigned.operatorId());
+        assertNull(unassigned.operatorName());
+        db.transaction(
+                () -> {
+                    assignments.assign(unassigned, other);
+                    return null;
+                });
+        assertEquals(other, db.transaction(() -> assignments.load(id)).operatorId());
+    }
+
+    @Test
+    void assignmentRejectsStalePopupEvenAfterAnotherReadRefreshesRevisionCache() {
+        UUID id = lead();
+        var operators = new OperatorManagementService(db);
+        UUID other = db.transaction(() -> operators.create("Lucia"));
+        var assignments = new ClienteAssignmentService(db);
+        var original = db.transaction(() -> assignments.load(id));
+        var otherDb = new Database(connections, session);
+        var remote = new ClienteAssignmentService(otherDb);
+        otherDb.transaction(
+                () -> {
+                    remote.assign(original, other);
+                    return null;
+                });
+        db.transaction(() -> new SchedaClienteService(db).loadProfile(id));
+        assertThrows(
+                Database.Conflict.class,
+                () ->
+                        db.transaction(
+                                () -> {
+                                    assignments.assign(original, original.operatorId());
+                                    return null;
+                                }));
+        assertEquals(other, db.transaction(() -> assignments.load(id)).operatorId());
+        assertEquals(original.revision() + 1, scalar("SELECT VERSIONE_MODIFICA FROM CRM.CLIENTI"));
     }
 
     @Test

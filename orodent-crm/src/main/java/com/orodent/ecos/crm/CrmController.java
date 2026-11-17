@@ -181,6 +181,7 @@ final class CrmController implements ModuleSession, ClientiNav {
                         tasks,
                         this,
                         new ClientiService(database),
+                        new ClienteAssignmentService(database),
                         states,
                         current,
                         new VistaSalvataService(database, current),
