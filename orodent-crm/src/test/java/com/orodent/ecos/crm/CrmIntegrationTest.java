@@ -42,6 +42,15 @@ class CrmIntegrationTest {
                     }
                 };
         new DatabaseSchema(connections).initialize();
+        connections.withTransaction(
+                c -> {
+                    try (var q = c.createStatement()) {
+                        q.executeUpdate(
+                                "INSERT INTO ECOS.OPERATORI(ID,USERNAME) VALUES"
+                                    + " ('00000000-0000-0000-0000-000000000001','utente')");
+                    }
+                    return null;
+                });
         session = new OperatorSession();
         session.select(UUID.fromString("00000000-0000-0000-0000-000000000001"), "utente");
         db = new Database(connections, session);

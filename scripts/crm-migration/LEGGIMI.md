@@ -7,7 +7,7 @@ Gli identificativi UUID5 mantengono lo stesso namespace del generatore originale
 ## Uso rapido su Windows
 
 1. Aggiorna EcoS a una versione che includa questo strumento e avvialo almeno una
-   volta sull'HOST, così viene preparato lo schema CRM (V13 o successivo).
+   volta sull'HOST, così viene preparato lo schema CRM aggiornato (V14 o successivo).
 2. Nella cartella di questo strumento crea `input`, metti il backup chiamato
    `clients.txt` e copia gli XML originali in `input\note`.
 3. Doppio clic su **1-Prepara-importazione.bat**. Serve Python 3.10 o successivo,
@@ -18,7 +18,7 @@ Gli identificativi UUID5 mantengono lo stesso namespace del generatore originale
    modificano il CRM, esegui **2-Importa-in-EcoS.bat**. Prima mostra la destinazione
    e i conteggi; poi chiede conferma, crea il backup Derby e importa tutto insieme.
 6. Riapri il CRM o premi **Ricarica pagina**. Gli operatori del vecchio CRM saranno
-   disponibili con i loro nomi originali normalizzati in maiuscolo.
+   disponibili con la grafia presente in `clients.txt`.
 
 Lo strumento è in `scripts\crm-migration` nel progetto e in
 `tools\crm-migration` nello ZIP Java. Nel pacchetto Windows con EXE può trovarsi in
@@ -78,8 +78,22 @@ checkpoint e numero contatti) sono riportati in una nota riepilogativa.
 Per le chiamate prive di data, la data di contatto resta sconosciuta; la data di
 creazione registra l'importazione. Piccoli scarti nei secondi conservano l'ordine
 delle chiamate quando il backup non specifica un orario.
-Un operatore mancante usa il segnaposto esplicito `NON SPECIFICATO CRM2`:
-le anagrafiche non scompaiono così dal calendario per un operatore nullo.
+Gli operatori vengono creati **solo dai nomi non vuoti di `clients.txt`**.
+Le varianti di maiuscole/minuscole condividono la stessa identità; la prima grafia
+incontrata nelle anagrafiche viene conservata. Un nome operatore mancante resta
+non assegnato, senza creare utenti segnaposto.
+
+Gli XML non aggiungono operatori. Un autore XML viene collegato solo quando il
+suo nome corrisponde a uno degli operatori di `clients.txt`, ignorando le maiuscole.
+Il nome originale dell'autore resta sempre nel testo storico della chiamata,
+anche quando non esiste un operatore corrispondente. Il report elenca gli autori
+presenti solo negli XML.
+
+Dopo l'aggiornamento **rigenerare `output` con `1-Prepara-importazione.bat`**:
+l'esecutore rifiuta le vecchie preparazioni senza il marcatore
+`operators.source=clients.txt`. Questo non modifica i file originali.
+Un'importazione già effettuata non deve essere ripetuta: gli operatori esistenti
+si gestiscono dal riquadro **Operatori** nelle impostazioni CRM.
 
 ## Destinazione, backup ed errori
 

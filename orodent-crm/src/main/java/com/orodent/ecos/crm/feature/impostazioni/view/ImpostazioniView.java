@@ -26,6 +26,17 @@ public class ImpostazioniView extends BorderPane {
         "Materiale di Consumo", "Canali di acquisto", "Parco Fresatori", "Forni"
     };
 
+    private final OperatorSettingsSection operators = new OperatorSettingsSection();
+
+    public OperatorSettingsSection operators() {
+        return operators;
+    }
+
+    public boolean hasPending() {
+        return operators.hasPending()
+                || editors.values().stream().anyMatch(ImpostazioniEditorSection::hasPending);
+    }
+
     private final AppSidebar sidebar = new AppSidebar();
     private final VBox forniRows = new VBox(8);
     private final CheckBox modificaForni = new CheckBox("Modifica");
@@ -34,7 +45,10 @@ public class ImpostazioniView extends BorderPane {
 
     public ImpostazioniView() {
         setLeft(sidebar);
-        setCenter(createContent());
+        var scroll = new javafx.scene.control.ScrollPane(createContent());
+        scroll.setFitToWidth(true);
+        scroll.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER);
+        setCenter(scroll);
     }
 
     public AppSidebar getSidebar() {
@@ -114,6 +128,7 @@ public class ImpostazioniView extends BorderPane {
             sections.add(createSection(SETTINGS_AREAS[index]), index % 3, index / 3);
         }
 
+        sections.add(operators, 1, 1, 2, 1);
         content.getChildren().addAll(title, subtitle, sections);
         return content;
     }

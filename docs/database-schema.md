@@ -234,3 +234,17 @@ una nuova politica nella stessa transazione, proteggendo le scritture concorrent
 Non si introducono movimenti di magazzino o dati di consumo inventati.
 Backup e migrazione sono eseguiti dall'HOST; i CLIENT verificano il contratto in
 sola lettura. [Uso e ipotesi di calcolo](consumi-e-fabbisogni.md).
+
+
+## Migrazione dalla versione 13 alla 14
+
+`V14__crm_operators.sql` registra il catalogo revisionato `OPERATORI` e ritira
+l'utente provvisorio con UUID `00000000-0000-0000-0000-000000000001`, nome
+`Operatore ufficio` e username `utente`. Viene eliminato solo se non ha clienti,
+note, interazioni, preferiti o ricerche salvate; altrimenti viene disattivato.
+Gli account rinominati non vengono toccati. V13 resta immutata.
+
+L'HOST esegue il normale backup prima della migrazione. Un database nuovo termina
+senza account predefiniti: il login consente la creazione del primo operatore.
+Rinomine e attivazioni usano gli UUID esistenti e la revisione del catalogo per
+rilevare le modifiche concorrenti. Aggiornare prima l'HOST e poi i CLIENT.

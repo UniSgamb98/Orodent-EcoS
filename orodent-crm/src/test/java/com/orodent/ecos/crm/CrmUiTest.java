@@ -79,12 +79,26 @@ class CrmUiTest {
                     });
             await(
                     () ->
-                            button("crm-select-operator") != null
-                                    && enabledButton("crm-select-operator"));
+                            button("crm-create-operator") != null
+                                    && enabledButton("crm-create-operator"));
             fx(
                     () -> {
                         snapshot("target/crm-login.png");
-                        button("crm-select-operator").fire();
+                        Platform.runLater(
+                                () -> {
+                                    for (var window : List.copyOf(Window.getWindows())) {
+                                        if (window != stage
+                                                && window.getScene().getRoot()
+                                                        instanceof DialogPane pane) {
+                                            ((TextField) pane.lookup(".text-field"))
+                                                    .setText("Mario Rossi");
+                                            ((Button) pane.lookupButton(ButtonType.OK)).fire();
+                                            return;
+                                        }
+                                    }
+                                    fail("Dialogo nuovo operatore non presente");
+                                });
+                        button("crm-create-operator").fire();
                         return null;
                     });
             await(() -> button("crm-create-lead") != null && enabledButton("crm-create-lead"));
@@ -184,6 +198,98 @@ class CrmUiTest {
             await(
                     () ->
                             stage.getScene().lookup("#crm-settings") != null
+                                    && !stage.getScene().lookup("#crm-settings").isDisabled());
+            UUID currentId = operator.current().orElseThrow().id();
+            fx(
+                    () -> {
+                        assertTrue(operatorAction("crm-operator-remove-" + currentId).isDisable());
+                        Platform.runLater(() -> fillOperatorName("Lucia"));
+                        button("crm-settings-operator-add").fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            stage.getScene()
+                                                    .getRoot()
+                                                    .lookupAll(
+                                                            "#crm-settings-operators .text-field")
+                                                    .size()
+                                            == 2
+                                    && !stage.getScene().lookup("#crm-settings").isDisabled());
+            UUID otherId =
+                    db.withConnection(
+                            c -> {
+                                try (var q = c.createStatement();
+                                        var r =
+                                                q.executeQuery(
+                                                        "SELECT ID FROM ECOS.OPERATORI WHERE"
+                                                            + " USERNAME='Lucia'")) {
+                                    assertTrue(r.next());
+                                    return UUID.fromString(r.getString(1));
+                                }
+                            });
+            fx(
+                    () -> {
+                        ((TextField) stage.getScene().lookup("#crm-operator-name-" + otherId))
+                                .setText("Lucia Bianchi");
+                        ((TextField) stage.getScene().lookup("#crm-operator-name-" + currentId))
+                                .setText("Mario Verdi");
+                        button("crm-operator-save-" + currentId).fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            operator.current().orElseThrow().username().equals("Mario Verdi")
+                                    && !stage.getScene().lookup("#crm-settings").isDisabled());
+            fx(
+                    () -> {
+                        assertEquals(
+                                "Lucia Bianchi",
+                                ((TextField)
+                                                stage.getScene()
+                                                        .lookup("#crm-operator-name-" + otherId))
+                                        .getText());
+                        Platform.runLater(() -> answer(ButtonType.CANCEL));
+                        button("crm-home").fire();
+                        assertEquals(0, homes.get());
+                        button("crm-operator-save-" + otherId).fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            !stage.getScene().lookup("#crm-settings").isDisabled()
+                                    && button("crm-operator-save-" + otherId).isDisabled());
+            fx(
+                    () -> {
+                        operatorAction("crm-operator-active-" + otherId).fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            ((Label) stage.getScene().lookup("#crm-operator-state-" + otherId))
+                                            .getText()
+                                            .equals("Disattivato")
+                                    && !stage.getScene().lookup("#crm-settings").isDisabled());
+            fx(
+                    () -> {
+                        operatorAction("crm-operator-active-" + otherId).fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            ((Label) stage.getScene().lookup("#crm-operator-state-" + otherId))
+                                            .getText()
+                                            .equals("Attivo")
+                                    && !stage.getScene().lookup("#crm-settings").isDisabled());
+            fx(
+                    () -> {
+                        Platform.runLater(() -> answer(ButtonType.OK));
+                        operatorAction("crm-operator-remove-" + otherId).fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            stage.getScene().lookup("#crm-operator-name-" + otherId) == null
                                     && !stage.getScene().lookup("#crm-settings").isDisabled());
             fx(
                     () -> {
@@ -1011,6 +1117,27 @@ class CrmUiTest {
 
     Button button(String id) {
         return (Button) stage.getScene().lookup("#" + id);
+    }
+
+    MenuItem operatorAction(String id) {
+        return stage.getScene().getRoot().lookupAll(".menu-button").stream()
+                .filter(MenuButton.class::isInstance)
+                .map(MenuButton.class::cast)
+                .flatMap(button -> button.getItems().stream())
+                .filter(item -> id.equals(item.getId()))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    void fillOperatorName(String name) {
+        for (var window : List.copyOf(Window.getWindows())) {
+            if (window != stage && window.getScene().getRoot() instanceof DialogPane pane) {
+                ((TextField) pane.lookup(".text-field")).setText(name);
+                ((Button) pane.lookupButton(ButtonType.OK)).fire();
+                return;
+            }
+        }
+        fail("Dialogo nuovo operatore non presente");
     }
 
     void answer(ButtonType type) {

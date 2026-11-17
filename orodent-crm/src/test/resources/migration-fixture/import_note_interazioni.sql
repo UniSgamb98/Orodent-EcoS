@@ -1,11 +1,13 @@
 -- Auto-generato da scripts/generate_import_sql.py; eseguire nell'ordine indicato nel report.
 INSERT INTO CRM.NOTE_CLIENTE (ID, CLIENTE_ID, OPERATORE_ID, TESTO, CREATED_AT) VALUES ('c508e021-c9ab-50e8-bada-4a6677cad2f1', 'fc6cc49b-dadc-5965-b8e4-ccff5ee4c1d5', (SELECT ID FROM ECOS.OPERATORI WHERE UPPER(TRIM(USERNAME)) = 'MARIO'), CAST('[Chiamata #1]
+Operatore originale CRM2: Mario
 Nuovo stato: Presentazione
 
 Prima chiamata; testo su più righe.
 -- Questo è testo, non SQL.' AS CLOB), TIMESTAMP('2021-02-03 00:00:00'));
 INSERT INTO CRM.INTERAZIONI (ID, CLIENTE_ID, OPERATORE_ID, NOTA_ID, DATA_CONTATTO, PROSSIMO_CONTATTO, ESITO, CREATED_AT) VALUES ('58ae1719-f558-5e87-a247-294f31f5f854', 'fc6cc49b-dadc-5965-b8e4-ccff5ee4c1d5', (SELECT ID FROM ECOS.OPERATORI WHERE UPPER(TRIM(USERNAME)) = 'MARIO'), 'c508e021-c9ab-50e8-bada-4a6677cad2f1', DATE('2021-02-03'), NULL, 'PRESENTAZIONE', TIMESTAMP('2021-02-03 00:00:00'));
 INSERT INTO CRM.NOTE_CLIENTE (ID, CLIENTE_ID, OPERATORE_ID, TESTO, CREATED_AT) VALUES ('65161a5a-9691-5935-b620-ec09a8823b58', 'fc6cc49b-dadc-5965-b8e4-ccff5ee4c1d5', (SELECT ID FROM ECOS.OPERATORI WHERE UPPER(TRIM(USERNAME)) = 'MARIO'), CAST('[Chiamata #2]
+Operatore originale CRM2: Mario
 Nuovo stato: Listino
 
 Nota con apici l''ufficio; seconda chiamata.' AS CLOB), TIMESTAMP('2021-02-03 00:00:01'));

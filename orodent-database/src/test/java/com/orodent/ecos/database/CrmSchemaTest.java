@@ -32,7 +32,7 @@ class CrmSchemaTest {
                         c.createStatement()
                                 .executeUpdate(
                                         "INSERT INTO TON.POLVERI(codice,nome) VALUES"
-                                            + " ('KEEP','Conservata')");
+                                                + " ('KEEP','Conservata')");
                         return null;
                     });
             AtomicInteger backups = new AtomicInteger();
@@ -61,7 +61,7 @@ class CrmSchemaTest {
                         try (var q = c.createStatement();
                                 var r = q.executeQuery("SELECT COUNT(*) FROM ECOS.OPERATORI")) {
                             r.next();
-                            assertEquals(1, r.getInt(1));
+                            assertEquals(0, r.getInt(1));
                         }
                         return null;
                     });

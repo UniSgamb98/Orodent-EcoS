@@ -97,7 +97,8 @@ class LegacyCrmImportTest {
         p.setProperty("schema.minimum", "13");
         p.setProperty("blocked", "false");
         p.setProperty("clients", "1");
-        p.setProperty("operators.count", "1");
+        p.setProperty("operators.count", files.get("import_operatori.sql").isBlank() ? "0" : "1");
+        p.setProperty("operators.source", "clients.txt");
         p.setProperty("operator.1.username", "MARIO");
         p.setProperty("files.count", Integer.toString(LegacyCrmImport.FILES.size()));
         int i = 0;
@@ -214,7 +215,7 @@ class LegacyCrmImportTest {
                             var r =
                                     q.executeQuery(
                                             "SELECT DATA_CONTATTO,CREATED_AT FROM CRM.INTERAZIONI"
-                                                + " ORDER BY CREATED_AT")) {
+                                                    + " ORDER BY CREATED_AT")) {
                         assertTrue(r.next());
                         assertNull(r.getDate(1));
                         var first = r.getTimestamp(2);
@@ -267,7 +268,42 @@ class LegacyCrmImportTest {
         assertEquals(0, count("CRM.CLIENTI"));
         assertEquals(0, count("CRM.NOTE_CLIENTE"));
         assertEquals(0, count("CRM.INTERAZIONI"));
-        assertEquals(1, count("ECOS.OPERATORI"));
+        assertEquals(0, count("ECOS.OPERATORI"));
+    }
+
+    @Test
+    void acceptsUnassignedClientsWithoutInventingAnOperatorAndRejectsOldPreparations()
+            throws Exception {
+        var source = files(false);
+        source.put("import_operatori.sql", "");
+        source.put(
+                "import_clienti.sql",
+                "INSERT INTO CRM.CLIENTI(ID,RAGIONE_SOCIALE) VALUES ('"
+                        + CLIENT
+                        + "','Non assegnato');");
+        source.put(
+                "import_note_interazioni.sql",
+                "INSERT INTO CRM.NOTE_CLIENTE(ID,CLIENTE_ID,TESTO) VALUES ('"
+                        + NOTE
+                        + "','"
+                        + CLIENT
+                        + "',CAST('Operatore originale CRM2: Autore XML' AS CLOB));");
+        var data = dataset(source);
+        try (Connection c = db.openConnection()) {
+            LegacyCrmImport.apply(c, data, temp.resolve("no-operators-backup"));
+        }
+        assertEquals(0, count("ECOS.OPERATORI"));
+        assertEquals(1, count("CRM.CLIENTI"));
+        var properties = new Properties();
+        Path manifest = data.directory().resolve("migration.properties");
+        try (var reader = Files.newBufferedReader(manifest, StandardCharsets.UTF_8)) {
+            properties.load(reader);
+        }
+        properties.remove("operators.source");
+        try (var writer = Files.newBufferedWriter(manifest, StandardCharsets.UTF_8)) {
+            properties.store(writer, "");
+        }
+        assertThrows(IOException.class, () -> LegacyCrmImport.Dataset.load(data.directory()));
     }
 
     @Test
@@ -309,7 +345,7 @@ class LegacyCrmImportTest {
             assertEquals(1, LegacyCrmImport.inspect(c, data).existingOperators());
             LegacyCrmImport.apply(c, data, temp.resolve("backup"));
         }
-        assertEquals(2, count("ECOS.OPERATORI"));
+        assertEquals(1, count("ECOS.OPERATORI"));
         db.withConnection(
                 c -> {
                     try (var q = c.createStatement();
@@ -330,7 +366,7 @@ class LegacyCrmImportTest {
             assertThrows(SQLException.class, () -> LegacyCrmImport.apply(c, data, file));
         }
         assertEquals(0, count("CRM.CLIENTI"));
-        assertEquals(1, count("ECOS.OPERATORI"));
+        assertEquals(0, count("ECOS.OPERATORI"));
     }
 
     @Test

@@ -25,6 +25,9 @@ final class EditorGuard {
 
     boolean dirty() {
         if (page
+                instanceof com.orodent.ecos.crm.feature.impostazioni.view.ImpostazioniView settings)
+            return settings.hasPending();
+        if (page
                         instanceof
                         com.orodent.ecos.crm.feature.clienti.schedacliente.view.SchedaClienteView
                                         profile

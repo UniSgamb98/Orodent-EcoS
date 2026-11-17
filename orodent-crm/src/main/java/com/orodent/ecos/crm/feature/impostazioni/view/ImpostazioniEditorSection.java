@@ -15,6 +15,11 @@ import java.util.function.Consumer;
 
 public class ImpostazioniEditorSection extends VBox {
     private boolean resuming;
+    private List<ImpostazioneVoce> baseline = List.of();
+
+    public boolean hasPending() {
+        return !baseline.equals(getVoci());
+    }
 
     public void resumeEditing() {
         resuming = true;
@@ -57,6 +62,7 @@ public class ImpostazioniEditorSection extends VBox {
     }
 
     public void setVoci(List<ImpostazioneVoce> voci) {
+        baseline = List.copyOf(voci);
         rows.getChildren().clear();
         voci.forEach(this::addRow);
         setEditable(edit.isSelected());

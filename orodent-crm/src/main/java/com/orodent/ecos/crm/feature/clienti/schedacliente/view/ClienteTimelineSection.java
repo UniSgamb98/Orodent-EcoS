@@ -308,7 +308,8 @@ final class ClienteTimelineSection extends VBox {
         String text = original.replace("\r\n", "\n");
         if (type != InteractionType.CHIAMATA
                 || !(text.startsWith("[Chiamata #")
-                        || text.startsWith("Data originale non valida:")))
+                        || text.startsWith("Data originale non valida:")
+                        || text.startsWith("Operatore originale CRM2:")))
             return new CallText(original, false);
         int offset = 0;
         for (String line : text.split("\n", -1)) {
@@ -317,6 +318,7 @@ final class ClienteTimelineSection extends VBox {
                     line.matches("\\[Chiamata #[^\\]]+\\]")
                             || java.util.stream.Stream.of(
                                             "Data originale non valida:",
+                                            "Operatore originale CRM2:",
                                             "Stato precedente:",
                                             "Nuovo stato:",
                                             "Checkpoint:",

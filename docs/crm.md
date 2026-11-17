@@ -10,8 +10,8 @@ Le voci prive di una funzione collegata nel progetto originale sono nascoste.
 ## Accesso e operatori
 
 Aprire **Home → CRM**, scegliere l'operatore e premere **Usa questo operatore**.
-Il database nuovo contiene `utente` (Operatore ufficio); **Nuovo operatore**
-permette di aggiungere un nome. È una selezione dell'autore delle attività,
+Un database nuovo parte senza operatori: **Nuovo operatore** permette di creare
+il primo nome, conservando la grafia inserita. È una selezione dell'autore delle attività,
 non un'autenticazione con password. **Cambia operatore** permette una nuova scelta.
 
 `OperatorSession` appartiene all'AppController di EcoS: la scelta resta valida
@@ -172,3 +172,29 @@ l'evoluzione da V12 con backup singolo e il controllo in sola lettura.
 protezione delle modifiche, calendario, impostazioni e riapertura dalla Home;
 controlla che non ci siano accessi JDBC sul thread grafico. Gli screenshot sono
 in `orodent-crm/target/crm-*.png`.
+
+
+## Operatori e importazione CRM2
+
+Le impostazioni CRM includono il riquadro **Operatori**, con tutti i nomi attivi e
+disattivati. Si possono creare operatori, rinominarli conservando la grafia,
+disattivarli e riattivarli. I nomi sono univoci anche con maiuscole diverse.
+La rinomina mantiene l'UUID: assegnazioni, note, chiamate, preferiti e ricerche
+salvate rimangono collegati. Una modifica concorrente da un altro PC richiede di
+ricaricare la pagina, senza sovrascrivere il cambiamento precedente.
+
+La rimozione elimina fisicamente soltanto operatori senza collegamenti; quelli
+usati nei dati CRM vengono disattivati. L'operatore della sessione corrente va
+cambiato prima di disattivarlo o rimuoverlo. La rinomina del proprio operatore
+aggiorna anche il nome mostrato nella sessione.
+
+La migrazione V14 rimuove l'utente provvisorio `Operatore ufficio (utente)` se
+inutilizzato. Se ha dati collegati lo disattiva conservando lo storico; un account
+che era già stato rinominato resta invariato. Nei database nuovi non appare un
+utente predefinito: il primo operatore si crea dalla schermata di accesso.
+
+Il generatore CRM2 crea operatori soltanto dalle anagrafiche in `clients.txt`,
+conservando la prima grafia incontrata. Gli autori presenti soltanto negli XML
+restano nel testo storico e non creano utenti. Le preparazioni precedenti devono
+essere rigenerate; un CRM già importato si gestisce dalle impostazioni, senza
+ripetere l'importazione iniziale.

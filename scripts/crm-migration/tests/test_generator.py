@@ -103,10 +103,30 @@ class GeneratorTest(unittest.TestCase):
         self.assertEqual(2,result.returncode)
         self.assertFalse((self.output/'migration.properties').exists())
 
-    def test_no_operator_uses_explicit_unknown_identity(self):
+    def test_missing_operator_does_not_create_a_placeholder(self):
         self.prepare(row=self.row(operatore='NULL'),xml='<note><chiamata data="2020-01-01">Test</chiamata></note>')
-        self.assertIn(g.UNKNOWN_OPERATOR,(self.output/'import_operatori.sql').read_text())
-        self.assertIn(g.UNKNOWN_OPERATOR,(self.output/'import_clienti.sql').read_text())
+        self.assertNotIn('INSERT INTO ECOS.OPERATORI', (self.output/'import_operatori.sql').read_text())
+        self.assertIn('operators.count=0', (self.output/'migration.properties').read_text())
+        self.assertNotIn('SELECT ID FROM ECOS.OPERATORI', (self.output/'import_clienti.sql').read_text())
+
+    def test_only_clients_create_operators_and_xml_authors_keep_their_original_spelling(self):
+        self.prepare(row=self.row(operatore='Mario Rossi'),
+                     xml='<note><chiamata data="2020-01-01" operatore="Solo XML">Una nota</chiamata></note>')
+        operators=(self.output/'import_operatori.sql').read_text()
+        self.assertIn("'Mario Rossi'", operators)
+        self.assertNotIn('Solo XML',operators)
+        self.assertIn("UPPER(TRIM(USERNAME)) = 'MARIO ROSSI'",operators)
+        self.assertIn('Operatore originale CRM2: Solo XML', (self.output/'import_note_interazioni.sql').read_text())
+        self.assertIn('Autori solo XML', (self.output/'import_report.txt').read_text())
+
+    def test_case_variants_share_one_identity_with_the_first_clients_spelling(self):
+        rows=self.row(operatore='Mario Rossi')+'\n'+self.row(operatore='mARIO rOSSI',note_id='note2')
+        self.prepare(row=rows, xml='<note><chiamata data="2020-01-01" operatore="MARIO ROSSI">Test</chiamata></note>')
+        operators=(self.output/'import_operatori.sql').read_text()
+        self.assertEqual(1,operators.count('INSERT INTO ECOS.OPERATORI'))
+        self.assertIn("'Mario Rossi'",operators)
+        self.assertIn(g.uid('operatore','MARIO ROSSI'),operators)
+        self.assertIn("UPPER(TRIM(USERNAME)) = 'MARIO ROSSI'",(self.output/'import_note_interazioni.sql').read_text())
 
     def test_long_values_rejected_without_truncation(self):
         with self.assertRaisesRegex(ValueError,'255'):self.prepare(row=self.row(ragione_sociale='x'*256))

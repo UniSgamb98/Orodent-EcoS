@@ -110,8 +110,12 @@ final class CrmController implements ModuleSession, ClientiNav {
         tasks.run(
                 login::loadUsers,
                 users -> {
-                    if (users.stream().anyMatch(u -> u.id().equals(selected.id()))) showClienti();
-                    else {
+                    var current =
+                            users.stream().filter(u -> u.id().equals(selected.id())).findFirst();
+                    if (current.isPresent()) {
+                        context.operators().select(current.get().id(), current.get().username());
+                        showClienti();
+                    } else {
                         context.operators().clear();
                         showLogin();
                     }
@@ -237,7 +241,34 @@ final class CrmController implements ModuleSession, ClientiNav {
         page.setId("crm-settings");
         install(page, true, this::showSettings, "features/impostazioni.css");
         configure(page.getSidebar());
-        new ImpostazioniController(page, new ImpostazioniService(database), tasks);
+        var controller = new ImpostazioniController(page, new ImpostazioniService(database), tasks);
+        controller.operators(
+                page,
+                new OperatorManagementService(database),
+                tasks,
+                rows ->
+                        context.operators()
+                                .current()
+                                .ifPresent(
+                                        current ->
+                                                rows.stream()
+                                                        .filter(
+                                                                row ->
+                                                                        row.id()
+                                                                                .equals(
+                                                                                        current
+                                                                                                .id()))
+                                                        .findFirst()
+                                                        .ifPresent(
+                                                                row -> {
+                                                                    context.operators()
+                                                                            .select(
+                                                                                    row.id(),
+                                                                                    row.name());
+                                                                    operator.setText(
+                                                                            "Operatore: "
+                                                                                    + row.name());
+                                                                })));
     }
 
     private void configure(AppSidebar sidebar) {

@@ -1,6 +1,7 @@
 package com.orodent.ecos.crm.feature.auth.login.service;
 
 import com.orodent.ecos.crm.core.database.Database;
+import com.orodent.ecos.crm.core.database.service.OperatorManagementService;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -39,26 +40,9 @@ public class LoginService {
     }
 
     public LoginUser createUser(String username) {
-        String name = username == null ? "" : username.strip();
-        if (name.isBlank() || name.length() > 80)
-            throw new IllegalArgumentException(
-                    "Il nome operatore è obbligatorio, massimo 80 caratteri.");
-        UUID id = UUID.randomUUID();
-        try (var q =
-                database.getConnection()
-                        .prepareStatement(
-                                "INSERT INTO ECOS.OPERATORI(ID,NOME,USERNAME) VALUES (?,?,?)")) {
-            q.setString(1, id.toString());
-            q.setString(2, name);
-            q.setString(3, name);
-            q.executeUpdate();
-            return new LoginUser(id, name, name, "");
-        } catch (SQLException error) {
-            throw new IllegalArgumentException(
-                    "Creazione operatore non riuscita. Verifica che il nome non sia già"
-                        + " utilizzato.",
-                    error);
-        }
+        String name = OperatorManagementService.name(username);
+        UUID id = new OperatorManagementService(database).create(name);
+        return new LoginUser(id, name, name, "");
     }
 
     public LoginSession login(LoginUser user) {
@@ -76,7 +60,9 @@ public class LoginService {
     public record LoginUser(UUID id, String username, String nome, String cognome) {
         public String displayName() {
             String fullName = String.join(" ", nome, cognome).trim();
-            return fullName.isBlank() ? username : fullName + " (" + username + ")";
+            return fullName.isBlank() || fullName.equalsIgnoreCase(username)
+                    ? username
+                    : fullName + " (" + username + ")";
         }
 
         @Override

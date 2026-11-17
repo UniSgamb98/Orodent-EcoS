@@ -72,15 +72,19 @@ public final class LegacyCrmImport {
                     || !"13".equals(p.getProperty("schema.minimum")))
                 throw new IOException(
                         "Pacchetto non riconosciuto: rigenera gli script con il generatore per"
-                            + " EcoS.");
+                                + " EcoS.");
+            if (!"clients.txt".equals(p.getProperty("operators.source")))
+                throw new IOException(
+                        "Rigenera il pacchetto con 1-Prepara-importazione.bat: gli operatori devono"
+                            + " provenire solo da clients.txt.");
             if (!"false".equals(p.getProperty("blocked")))
                 throw new IOException(
                         "Preparazione bloccata da anomalie: consulta import_report.txt e correggi i"
-                            + " dati prima dell'importazione.");
+                                + " dati prima dell'importazione.");
             if (!Integer.toString(FILES.size()).equals(p.getProperty("files.count")))
                 throw new IOException("Elenco file incompleto.");
             int clients = number(p, "clients", 1, MAX_STATEMENTS);
-            int operators = number(p, "operators.count", 1, MAX_STATEMENTS);
+            int operators = number(p, "operators.count", 0, MAX_STATEMENTS);
             var names = new ArrayList<String>();
             for (int i = 1; i <= operators; i++) {
                 String name = p.getProperty("operator." + i + ".username");
@@ -230,7 +234,7 @@ public final class LegacyCrmImport {
                 var r =
                         q.executeQuery(
                                 "SELECT ID,VERSIONE_MODIFICA,CODICE_GESTIONALE FROM CRM.CLIENTI"
-                                    + " WHERE 1=0")) {}
+                                        + " WHERE 1=0")) {}
     }
 
     private static void emptyCrm(Connection c) throws SQLException {
@@ -253,7 +257,7 @@ public final class LegacyCrmImport {
                 c.prepareStatement(
                         "SELECT ID,ATTIVO FROM ECOS.OPERATORI WHERE UPPER(TRIM(USERNAME))=?")) {
             for (String name : data.operators()) {
-                q.setString(1, name);
+                q.setString(1, name.toUpperCase(java.util.Locale.ROOT));
                 try (var r = q.executeQuery()) {
                     if (r.next()) {
                         if (r.getInt("ATTIVO") != 1)
@@ -292,6 +296,10 @@ public final class LegacyCrmImport {
         int executed = 0;
         try {
             try (var q = c.createStatement()) {
+                // Same catalogue/row order used by the operator editor.
+                q.executeUpdate(
+                        "UPDATE CRM.CATALOGHI_VERSIONI SET VERSIONE=VERSIONE+1 WHERE"
+                            + " NOME='OPERATORI'");
                 // Same order on every importer; prevents two preparations from importing
                 // concurrently.
                 q.executeUpdate("LOCK TABLE ECOS.OPERATORI IN EXCLUSIVE MODE");
@@ -369,7 +377,7 @@ public final class LegacyCrmImport {
                     "jdbc:derby://(localhost|127\\.0\\.0\\.1|\\[::1\\]):[0-9]{1,5}/OrodentEcoS"))
                 throw new IOException(
                         "Eseguire sul PC HOST di EcoS con URL locale"
-                            + " jdbc:derby://localhost:PORTA/OrodentEcoS, senza create=true.");
+                                + " jdbc:derby://localhost:PORTA/OrodentEcoS, senza create=true.");
             String user = System.getenv().getOrDefault("ECOS_DB_USER", "APP"),
                     password = System.getenv().getOrDefault("ECOS_DB_PASSWORD", "pw");
             out.println("Destinazione: " + url);
@@ -386,7 +394,7 @@ public final class LegacyCrmImport {
                 if (plan.acceptedAnomalies())
                     out.println(
                             "ATTENZIONE: la preparazione accetta esplicitamente anomalie. Leggere"
-                                + " import_report.txt.");
+                                    + " import_report.txt.");
                 if (!options.containsKey("--apply")) {
                     out.println(
                             "Solo verifica: nessun dato modificato. Per importare usare --apply.");
@@ -429,7 +437,7 @@ public final class LegacyCrmImport {
             err.println(
                     uncertain
                             ? "Connessione interrotta: verificare i dati sul database prima di"
-                                  + " riprovare; l'esito potrebbe non essere confermato."
+                                    + " riprovare; l'esito potrebbe non essere confermato."
                             : "Importazione non completata. Se era iniziata, tutte le modifiche"
                                   + " sono state annullate salvo errori di connessione; consultare"
                                   + " il backup e verificare prima di ripetere.");
@@ -450,7 +458,7 @@ public final class LegacyCrmImport {
             if (!values.contains(option) || ++i >= args.length || args[i].startsWith("--"))
                 throw new IOException(
                         "Uso: --dir CARTELLA --config application.properties [--url JDBC_LOCALE]"
-                            + " [--apply] [--backup-dir CARTELLA]");
+                                + " [--apply] [--backup-dir CARTELLA]");
             result.put(option, args[i]);
         }
         return result;

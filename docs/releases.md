@@ -31,7 +31,7 @@ ancora richiedere una distribuzione iniziale aggiornata: il runtime applicativo
 è distinto dal runtime che ospita il bootstrap.
 
 Il contratto dati resta `database.schema=1`; il contatore interno delle migrazioni
-è distinto e attualmente vale **6**. `ReleaseTool` legge `database/version.properties`
+è distinto e attualmente vale **14**. `ReleaseTool` legge `database/version.properties`
 dal JAR database e firma `database.migration.minimum` e `database.migration.target`.
 Le migrazioni supportate sono eseguite dall’HOST con backup, senza cambiare il
 config: vedere il [passaggio allo schema corrente](database-schema.md).

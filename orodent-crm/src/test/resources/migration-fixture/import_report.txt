@@ -4,7 +4,8 @@ Documenti XML letti: 1
 Documenti XML collegati: 1
 Documenti XML non collegati: 0
 Chiamate XML importate: 2
-Operatori distinti: 1
+Operatori distinti da clients.txt: 1
+Autori solo XML (conservati nelle note, senza creare operatori): nessuno
 Righe clienti malformate: 0
 Coinvolgimenti non validi: 0
 Date non valide: 0

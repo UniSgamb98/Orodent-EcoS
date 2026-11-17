@@ -19,3 +19,24 @@
     -fx-font-weight: 700;
     -fx-text-fill: -app-text;
 }.crm-module .settings-forno-row { -fx-padding: 8; -fx-background-color: -app-surface-alt; -fx-background-radius: 8; }.crm-module .settings-section .check-box { -fx-text-fill: -app-text; }.crm-module .settings-add-button, .crm-module .settings-remove-button { -fx-background-color: -app-control-alt-bg; -fx-text-fill: -app-text; -fx-font-weight: 700; -fx-cursor: hand; }.crm-module .settings-remove-button { -fx-background-color: -app-danger-bg; }.crm-module .settings-error { -fx-text-fill: -app-error; -fx-font-size: 12px; }
+
+.crm-module #crm-settings-operators .operator-name {
+    -fx-background-color: -app-field-bg;
+    -fx-background-radius: 6;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 6;
+    -fx-padding: 6 10;
+}
+.crm-module #crm-settings-operators .operator-name:focused { -fx-border-color: -app-primary; }
+.crm-module #crm-settings-operators .operator-save {
+    -fx-background-color: -app-primary;
+    -fx-background-radius: 6;
+    -fx-text-fill: white;
+    -fx-padding: 7 12;
+}
+.crm-module #crm-settings-operators .operator-save:disabled { -fx-opacity: 0.45; }
+.crm-module #crm-settings-operators .menu-button {
+    -fx-background-color: -app-control-alt-bg;
+    -fx-background-radius: 6;
+    -fx-padding: 6 10;
+}

@@ -37,6 +37,17 @@ final class CrmSchema {
         column(c, "ECOS", "OPERATORI", "USERNAME", Types.VARCHAR, 80);
     }
 
+    static void verifyOperators(Connection c) throws SQLException {
+        column(c, "ECOS", "OPERATORI", "ATTIVO", Types.SMALLINT, 0);
+        try (var q = c.createStatement();
+                var r =
+                        q.executeQuery(
+                                "SELECT VERSIONE FROM CRM.CATALOGHI_VERSIONI WHERE"
+                                    + " NOME='OPERATORI'")) {
+            if (!r.next() || r.getInt(1) < 0) throw incompatible("Revisione catalogo operatori");
+        }
+    }
+
     private static void column(
             Connection c, String schema, String table, String name, int type, int size)
             throws SQLException {

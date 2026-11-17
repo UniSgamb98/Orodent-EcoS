@@ -28,7 +28,6 @@ DEFAULT_INPUT_DIR = SCRIPT_DIR / "input"
 DEFAULT_CLIENTS_FILE = DEFAULT_INPUT_DIR / "clients.txt"
 DEFAULT_NOTES_FILE = DEFAULT_INPUT_DIR / "tutte_le_note.txt"
 SPECIAL_NULLS = {"", "?", "??", "???", "BLANK", "NULL", "NULLO"}
-UNKNOWN_OPERATOR = "NON SPECIFICATO CRM2"
 NS = uuid.UUID("8a05d4bc-97cc-4df0-bf06-000000000000")
 FIELDS = [
     "ragione_sociale", "persona_riferimento", "email_referente", "telefono", "paese", "regione", "citta",
@@ -104,7 +103,7 @@ def clean(value: str | None) -> str | None:
 
 def normalized_operator(value: str | None) -> str | None:
     value = clean(value)
-    return value.upper() if value else None
+    return value if value else None
 
 
 def uid(kind: str, key: str) -> str:
@@ -239,6 +238,7 @@ def note_text(call: Call) -> str:
     if call.number:
         lines.append(f"[Chiamata #{call.number}]")
     for label, value in (
+        ("Operatore originale CRM2", call.operatore),
         ("Stato precedente", call.previous_interest), ("Nuovo stato", call.new_interest),
         ("Checkpoint", call.checkpoint), ("Durata", call.durata), ("Messaggio", call.messaggio),
     ):
@@ -251,9 +251,12 @@ def note_text(call: Call) -> str:
     return "\n".join(lines)
 
 
-def operator_expression(operator: str | None) -> str:
-    operator = normalized_operator(operator) or UNKNOWN_OPERATOR
-    return f"(SELECT ID FROM ECOS.OPERATORI WHERE UPPER(TRIM(USERNAME)) = {sql(operator)})"
+def operator_expression(operator: str | None, operators: dict[str, str]) -> str:
+    name = normalized_operator(operator)
+    key = name.upper() if name else None
+    if key not in operators:
+        return "NULL"
+    return f"(SELECT ID FROM ECOS.OPERATORI WHERE UPPER(TRIM(USERNAME)) = {sql(key)})"
 
 
 def parse_notes(path: Path, diagnostics: Diagnostics) -> dict[str, list[Call]]:
@@ -361,14 +364,18 @@ def generate_files(clients_file: Path, notes_file: Path, out_dir: Path, *, allow
     diagnostics.unmatched_note_ids = sorted(set(notes) - {c.raw.get("note_id") for c in clients})
     diagnostics.missing_note_ids = sorted({c.raw["note_id"] for c in clients if c.raw.get("note_id") and c.raw["note_id"] not in notes and (c.raw.get("ultima_chiamata") or c.raw.get("volte_contattati") not in (None,"0"))})
 
-    operators = sorted({operator or UNKNOWN_OPERATOR for client in clients for operator in
-                        ([normalized_operator(client.raw.get("operatore"))] + [call.operatore for call in client.calls])})
+    operator_names: dict[str, str] = {}
+    for client in clients:
+        name = normalized_operator(client.raw.get("operatore"))
+        if name:
+            operator_names.setdefault(name.upper(), name)
+    operators = sorted(operator_names.values(), key=str.casefold)
     for operator in operators:
         require_length(operator, 80, "Nome operatore")
     counts: dict[str, int] = {}
     counts["import_operatori.sql"] = write_sql(out_dir, "import_operatori.sql", (
-        f"INSERT INTO ECOS.OPERATORI (ID, USERNAME, ATTIVO) SELECT '{uid('operatore', op)}', {sql(op)}, 1 "
-        f"FROM SYSIBM.SYSDUMMY1 WHERE NOT EXISTS (SELECT 1 FROM ECOS.OPERATORI WHERE UPPER(TRIM(USERNAME)) = {sql(op)});"
+        f"INSERT INTO ECOS.OPERATORI (ID, USERNAME, ATTIVO) SELECT '{uid('operatore', op.upper())}', {sql(op)}, 1 "
+        f"FROM SYSIBM.SYSDUMMY1 WHERE NOT EXISTS (SELECT 1 FROM ECOS.OPERATORI WHERE UPPER(TRIM(USERNAME)) = {sql(op.upper())});"
         for op in operators
     ))
     catalogue_rows = []
@@ -385,7 +392,7 @@ def generate_files(clients_file: Path, notes_file: Path, out_dir: Path, *, allow
         f"('{c.id}', {sql(c.raw.get('ragione_sociale'))}, {sql(c.raw.get('tipo_cliente'))}, {sql(final_interest(c))}, "
         f"{parse_involvement(c.raw.get('coinvolgimento')) or 'NULL'}, {sql(c.raw.get('partita_iva'))}, "
         f"{sql(c.raw.get('codice_fiscale'))}, {sql_date(c.raw.get('acquisizione'), diagnostics)}, "
-        f"{operator_expression(c.raw.get('operatore'))});" for c in clients
+        f"{operator_expression(c.raw.get('operatore'), operator_names)});" for c in clients
     ))
     counts["import_contatti.sql"] = write_sql(out_dir, "import_contatti.sql", (
         f"INSERT INTO CRM.CONTATTI_CLIENTE (ID, CLIENTE_ID, DESCRIZIONE) VALUES "
@@ -423,16 +430,16 @@ def generate_files(clients_file: Path, notes_file: Path, out_dir: Path, *, allow
             next_contact = client.raw.get("prossima_chiamata") if call is latest else None
             note_rows.append(
                 f"INSERT INTO CRM.NOTE_CLIENTE (ID, CLIENTE_ID, OPERATORE_ID, TESTO, CREATED_AT) VALUES "
-                f"('{note_id}', '{client.id}', {operator_expression(call.operatore)}, {sql_clob(note_text(call))}, {sql_timestamp(call.data, index)});")
+                f"('{note_id}', '{client.id}', {operator_expression(call.operatore, operator_names)}, {sql_clob(note_text(call))}, {sql_timestamp(call.data, index)});")
             note_rows.append(
                 "INSERT INTO CRM.INTERAZIONI (ID, CLIENTE_ID, OPERATORE_ID, NOTA_ID, DATA_CONTATTO, PROSSIMO_CONTATTO, ESITO, CREATED_AT) VALUES "
-                f"('{interaction_id}', '{client.id}', {operator_expression(call.operatore)}, '{note_id}', "
+                f"('{interaction_id}', '{client.id}', {operator_expression(call.operatore, operator_names)}, '{note_id}', "
                 f"{sql_date(call.data, diagnostics)}, {sql_date(next_contact, diagnostics)}, {sql(call_outcome(call.new_interest))}, {sql_timestamp(call.data, index)});")
         if not calls and (client.raw.get("ultima_chiamata") or client.raw.get("prossima_chiamata")):
             interaction_id = uid("interazione-sintetica", client.id)
             note_rows.append(
                 "INSERT INTO CRM.INTERAZIONI (ID, CLIENTE_ID, OPERATORE_ID, NOTA_ID, DATA_CONTATTO, PROSSIMO_CONTATTO) VALUES "
-                f"('{interaction_id}', '{client.id}', {operator_expression(client.raw.get('operatore'))}, NULL, "
+                f"('{interaction_id}', '{client.id}', {operator_expression(client.raw.get('operatore'), operator_names)}, NULL, "
                 f"{sql_date(client.raw.get('ultima_chiamata'), diagnostics)}, {sql_date(client.raw.get('prossima_chiamata'), diagnostics)});")
         extra = {key: client.raw.get(key) for key in ("note_id", "volte_contattati", "checkpoint") if client.raw.get(key)}
         for key in ("acquisizione", "ultima_chiamata", "prossima_chiamata"):
@@ -440,16 +447,19 @@ def generate_files(clients_file: Path, notes_file: Path, out_dir: Path, *, allow
                 extra[key + " (valore originale non valido)"] = client.raw[key]
         if extra:
             text = "Riepilogo originale CRM2\n" + "\n".join(f"{key}: {value}" for key, value in extra.items())
-            note_rows.append(f"INSERT INTO CRM.NOTE_CLIENTE (ID,CLIENTE_ID,OPERATORE_ID,TESTO) VALUES ('{uid('riepilogo-crm2',client.id)}','{client.id}',{operator_expression(client.raw.get('operatore'))},{sql_clob(text)});")
+            note_rows.append(f"INSERT INTO CRM.NOTE_CLIENTE (ID,CLIENTE_ID,OPERATORE_ID,TESTO) VALUES ('{uid('riepilogo-crm2',client.id)}','{client.id}',{operator_expression(client.raw.get('operatore'), operator_names)},{sql_clob(text)});")
     counts["import_note_interazioni.sql"] = write_sql(out_dir, "import_note_interazioni.sql", note_rows)
 
     linked_ids = {c.raw.get("note_id") for c in clients if c.raw.get("note_id") in notes}
     call_count = sum(len(c.calls) for c in clients)
+    historical_only = sorted({call.operatore for c in clients for call in c.calls
+                              if call.operatore and call.operatore.upper() not in operator_names})
     report = [
         "IMPORT LEGACY CRM - REPORT\n",
         f"Clienti letti: {len(clients)}\n", f"Documenti XML letti: {len(notes)}\n",
         f"Documenti XML collegati: {len(linked_ids)}\n", f"Documenti XML non collegati: {len(set(notes) - linked_ids)}\n",
-        f"Chiamate XML importate: {call_count}\n", f"Operatori distinti: {len(operators)}\n",
+        f"Chiamate XML importate: {call_count}\n", f"Operatori distinti da clients.txt: {len(operators)}\n",
+        f"Autori solo XML (conservati nelle note, senza creare operatori): {', '.join(historical_only) or 'nessuno'}\n",
         "Righe clienti malformate: 0\n",
         f"Coinvolgimenti non validi: {len(diagnostics.invalid_involvement_rows)}\n",
         f"Date non valide: {len(diagnostics.invalid_dates)}",
@@ -470,7 +480,7 @@ def generate_files(clients_file: Path, notes_file: Path, out_dir: Path, *, allow
         report.append("\nErrori XML:\n" + "\n".join(diagnostics.xml_errors) + "\n")
     (out_dir / "import_report.txt").write_text("".join(report), encoding="utf-8", newline="\n")
     anomalies = bool(diagnostics.xml_errors or diagnostics.duplicate_note_ids or diagnostics.unmatched_note_ids or diagnostics.invalid_dates or diagnostics.invalid_involvement_rows)
-    properties = {"format": "1", "source": "CRM2", "target": "OrodentEcoS", "schema.minimum": "13", "clients": str(len(clients)), "blocked": str(anomalies and not allow_anomalies).lower(), "anomalies.accepted": str(anomalies and allow_anomalies).lower(), "files.count": str(len(counts)), "operators.count": str(len(operators))}
+    properties = {"format": "1", "source": "CRM2", "target": "OrodentEcoS", "schema.minimum": "13", "clients": str(len(clients)), "blocked": str(anomalies and not allow_anomalies).lower(), "anomalies.accepted": str(anomalies and allow_anomalies).lower(), "files.count": str(len(counts)), "operators.count": str(len(operators)), "operators.source": "clients.txt"}
     for index, (name, count) in enumerate(counts.items(), 1):
         properties.update({f"file.{index}.name": name, f"file.{index}.statements": str(count), f"file.{index}.sha256": hashlib.sha256((out_dir/name).read_bytes()).hexdigest()})
     for index, operator in enumerate(operators, 1):
