@@ -64,7 +64,7 @@ const lines=[{id:'mst',code:'MST',name:'Thor',material:'ZR'},{id:'zst',code:'ZST
 const partNames={material:'Materiale',diameter:'Diametro',height:'Altezza',product:'Prodotto',text:'Testo fisso'};
 const productPartNames={material:'Materiale',line:'Linea',color:'Colore',text:'Testo fisso'};
 let rule=['material','diameter','height','product'].map(type=>({type})),separator='',productRule=['line','color'].map(type=>({type})),productSeparator='',ruleDraft=[],separatorDraft='',builderMode='articles';
-const colors=['A0','A1','A2','A3','A3.5','A4','B1','B2','B3','C1'];
+const colors=['A0','A1','A2','A3','A3.5','A4','B1','B2','B3','C1','C2','C3','D2','D3'];
 const selected=new Set(colors);
 const existingProducts=new Map([['MSTA3',{lineId:'mst',color:'A3'}]]);
 const $=id=>document.getElementById(id);
@@ -126,7 +126,7 @@ $('rule-add').addEventListener('click',event=>{const type=event.target.dataset.a
 $('rule-separator').addEventListener('change',event=>{separatorDraft=event.target.value;updateBuilderExample();});
 let previewTimer;function queuePreview(){clearTimeout(previewTimer);$('create').disabled=true;previewTimer=setTimeout(generate,450);}$('diameters').addEventListener('input',queuePreview);$('heights').addEventListener('input',queuePreview);
 function applyBuilder(){if($('rule-apply').disabled)return;if(builderMode==='products'){productRule=ruleDraft.map(part=>({...part}));productSeparator=separatorDraft;}else{rule=ruleDraft.map(part=>({...part}));separator=separatorDraft;}generate();closeBuilder();}
-function resetDemo(){lineContext=lines[0];$('new-products-line').value=lineContext.code;productRule=['line','color'].map(type=>({type}));productSeparator='';rule=['material','diameter','height','product'].map(type=>({type}));separator='';selected.clear();colors.slice(0,10).forEach(c=>selected.add(c));selectedProducts.clear();['mst-a1','mst-a2','mst-a3'].forEach(id=>selectedProducts.add(id));$('product-line').value='MST';drawProducts();$('diameters').value='98';$('heights').value='12; 14; 16; 18; 20';drawColors();setMode('products');}
+function resetDemo(){lineContext=lines[0];$('new-products-line').value=lineContext.code;productRule=['line','color'].map(type=>({type}));productSeparator='';rule=['material','diameter','height','product'].map(type=>({type}));separator='';selected.clear();colors.slice(0,14).forEach(c=>selected.add(c));selectedProducts.clear();['mst-a1','mst-a2','mst-a3'].forEach(id=>selectedProducts.add(id));$('product-line').value='MST';drawProducts();$('diameters').value='98';$('heights').value='12; 14; 16; 18; 20';drawColors();setMode('products');}
 function chosenProducts(){return products.filter(product=>selectedProducts.has(product.id));}
 function visibleProducts(){return products.filter(product=>product.line===$('product-line').value);}
 function isExisting(row){if(mode==='products'){const old=existingProducts.get(row.code.trim().toUpperCase());return !!old&&old.lineId===row.lineId&&old.color===row.color;}const old=existingArticles.get(row.code.trim().toUpperCase());return !!old&&old.productId===row.productId&&Number(old.d)===Number(row.d)&&Number(old.h)===Number(row.h);}

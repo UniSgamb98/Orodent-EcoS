@@ -127,8 +127,9 @@ public final class BulkWorkspace extends GridPane {
                             hint("Un prodotto per ogni colore selezionato."),
                             palette);
             for (String color :
-                    List.of("A0", "A1", "A2", "A3", "A3.5", "A4", "B1", "B2", "B3", "C1"))
-                addColorChoice(color);
+                    List.of(
+                            "A0", "A1", "A2", "A3", "A3.5", "A4", "B1", "B2", "B3", "C1", "C2",
+                            "C3", "D2", "D3")) addColorChoice(color);
             extraColor.setPromptText("Altro colore");
             extraColor.setId(id + "-extra-color");
             Button add = new Button("+");
