@@ -22,7 +22,9 @@ singola resta disponibile per i casi occasionali.
 
 ## Più prodotti per una linea
 
-1. La linea è già selezionata.
+1. La linea è preselezionata aprendo dalla sua scheda; altrimenti si sceglie dal
+   menu. Il menu resta sempre visibile e mostra la linea selezionata, senza un
+   riquadro di riepilogo o un comando separato per cambiarla.
 2. Si scelgono più colori commerciali, con possibilità di aggiungerne altri.
 3. L'anteprima genera una riga per colore. Il codice segue una composizione a
    blocchi modificabile, inizialmente **Linea + Colore**, che conserva la regola

@@ -80,10 +80,7 @@ public final class BulkWorkspace extends GridPane {
             diameters = new TextField("98"),
             heights = new TextField("12; 14; 16; 18; 20");
     private final TextArea notes = new TextArea();
-    private final Label contextTitle = new Label(),
-            contextHint = new Label(),
-            notice = new Label(),
-            feedback = new Label();
+    private final Label notice = new Label(), feedback = new Label();
     private final Label totalValue = new Label("0"),
             newValue = new Label("0"),
             existingValue = new Label("0"),
@@ -95,8 +92,7 @@ public final class BulkWorkspace extends GridPane {
     private final TableView<Row> table = new TableView<>();
     private final ObjectProperty<CodeComposition> rule;
     private Runnable inputs = () -> {}, changed = () -> {};
-    private boolean updating, wide, lineChooserOpen;
-    private final Button changeLine = new Button("Cambia linea…");
+    private boolean updating, wide;
     private Preview preview;
     private List<String> baseline = List.of(), generatedInputs = List.of();
 
@@ -121,36 +117,10 @@ public final class BulkWorkspace extends GridPane {
         right.setMinWidth(0);
         left.setMaxWidth(Double.MAX_VALUE);
         right.setMaxWidth(Double.MAX_VALUE);
-        contextTitle.getStyleClass().add("bulk-context-title");
-        contextTitle.setWrapText(true);
-        contextHint.getStyleClass().add("bulk-small");
-        contextHint.setWrapText(true);
-        VBox context =
-                new VBox(
-                        5,
-                        label(
-                                kind == CatalogKind.PRODUCTS
-                                        ? "Linea selezionata"
-                                        : "Prodotti selezionati",
-                                "bulk-small"),
-                        contextTitle,
-                        contextHint);
-        context.getStyleClass().add("bulk-context");
-        if (kind == CatalogKind.PRODUCTS) left.getChildren().add(context);
         if (kind == CatalogKind.PRODUCTS) {
             Label lineLabel = label("Linea", "bulk-field-label");
-            lineLabel.visibleProperty().bind(parents.visibleProperty());
-            lineLabel.managedProperty().bind(parents.managedProperty());
-            changeLine.setId(id + "-change-line");
-            changeLine.getStyleClass().add("bulk-link-button");
-            changeLine.setOnAction(
-                    e -> {
-                        lineChooserOpen = true;
-                        refreshContext();
-                    });
             left.getChildren()
                     .addAll(
-                            changeLine,
                             lineLabel,
                             parents,
                             label("Colori commerciali", "bulk-field-label"),
@@ -223,15 +193,12 @@ public final class BulkWorkspace extends GridPane {
                 .addAll(
                         field("Note comuni · facoltative", notes),
                         hint("Le anagrafiche già presenti conservano i propri dati."));
-        Label previewHeading = label("Controlla l'anteprima", "bulk-section-title");
-        right.getChildren()
-                .addAll(
-                        previewHeading,
-                        hint(
-                                kind == CatalogKind.PRODUCTS
-                                        ? "Codici e descrizioni vengono generati automaticamente."
-                                        : "Codici e misure possono essere corretti riga per"
-                                                + " riga."));
+        if (kind == CatalogKind.ARTICLES) {
+            right.getChildren()
+                    .addAll(
+                            label("Controlla l'anteprima", "bulk-section-title"),
+                            hint("Codici e misure possono essere corretti riga per riga."));
+        }
         VBox total = metric(totalValue, "Righe in anteprima"),
                 fresh =
                         metric(
@@ -302,7 +269,6 @@ public final class BulkWorkspace extends GridPane {
                         });
         widthProperty().addListener((o, a, b) -> arrange());
         arrange();
-        refreshContext();
         updateCounts();
         markClean();
     }
@@ -367,13 +333,10 @@ public final class BulkWorkspace extends GridPane {
     }
 
     private void selectionChanged() {
-        if (kind == CatalogKind.PRODUCTS) lineChooserOpen = false;
-        refreshContext();
         if (!updating) inputs.run();
     }
 
     private void settingsChanged() {
-        refreshContext();
         if (!updating) inputs.run();
     }
 
@@ -419,22 +382,6 @@ public final class BulkWorkspace extends GridPane {
 
     public Preview preview() {
         return preview;
-    }
-
-    public void refreshContext() {
-        Parent p = parents.value();
-        if (kind == CatalogKind.PRODUCTS) {
-            visible(parents, p == null || lineChooserOpen);
-            visible(changeLine, p != null && !lineChooserOpen);
-        }
-        contextTitle.setText(
-                kind == CatalogKind.PRODUCTS
-                        ? (p == null ? "Seleziona una linea" : p.toString())
-                        : parents.selected().size() + " prodotti selezionati");
-        contextHint.setText(
-                kind == CatalogKind.PRODUCTS
-                        ? "Codice e descrizione derivano dalla linea e dal colore."
-                        : "Ogni articolo mantiene il collegamento al proprio prodotto.");
     }
 
     private Values sample() {

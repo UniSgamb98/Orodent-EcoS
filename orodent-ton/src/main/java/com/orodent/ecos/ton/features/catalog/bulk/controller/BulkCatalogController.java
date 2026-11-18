@@ -126,7 +126,6 @@ public final class BulkCatalogController implements FeatureController {
                         if (selection.line() != null) w.lineFilter().select(selection.line());
                         selection.parents().forEach(w.parents()::select);
                         loadParents(w.parents(), w, false);
-                        w.refreshContext();
                         w.markClean();
                         queueGeneration(w);
                     },
@@ -143,7 +142,6 @@ public final class BulkCatalogController implements FeatureController {
         CompletableFuture<?> all = reads.remove("all-" + w.kind());
         if (all != null) all.cancel(false);
         w.parents().restrictToLine(w.lineFilter().id());
-        w.refreshContext();
         queueGeneration(w);
         loadParents(w.parents(), w, false);
     }
@@ -163,7 +161,6 @@ public final class BulkCatalogController implements FeatureController {
                 products -> {
                     if (before.equals(w.parents().selected())) w.parents().selectAll(products);
                     else queueGeneration(w);
-                    w.refreshContext();
                 },
                 error -> w.failed(message(error)));
     }
@@ -206,7 +203,6 @@ public final class BulkCatalogController implements FeatureController {
                 () -> service.parents(picker.kind(), "", lineId, append ? picker.loaded() : 0),
                 page -> {
                     picker.results(page, append);
-                    w.refreshContext();
                     if (w.settingsDirty()) queueGeneration(w);
                 },
                 e -> picker.error(message(e)));
@@ -292,7 +288,6 @@ public final class BulkCatalogController implements FeatureController {
                             w.parents().replaceSelected(parents);
                             if (w.lineFilter() != null)
                                 w.parents().restrictToLine(w.lineFilter().id());
-                            w.refreshContext();
                             if (w.hasRows()) {
                                 if (w.settingsDirty()) queueGeneration(w);
                                 else verify(w);

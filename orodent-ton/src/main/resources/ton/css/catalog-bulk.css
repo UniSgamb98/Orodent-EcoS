@@ -16,8 +16,6 @@
 .ton-bulk .bulk-mode-tabs .toggle-button { -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 10px 18px; }
 .ton-bulk .bulk-mode-tabs .toggle-button:selected { -fx-background-color: white; -fx-text-fill: #087087; -fx-effect: dropshadow(gaussian, #183b5222, 3, 0, 0, 1); }
 .ton-bulk .bulk-card { -fx-padding: 20px; -fx-background-color: white; -fx-background-radius: 11px; -fx-border-color: #cbdce7; -fx-border-radius: 11px; }
-.ton-bulk .bulk-context { -fx-padding: 12px; -fx-background-color: #f0f7fa; -fx-background-radius: 5px; -fx-border-color: transparent transparent transparent #18778c; -fx-border-width: 0 0 0 3px; }
-.ton-bulk .bulk-context-title { -fx-font-size: 16px; -fx-font-weight: bold; }
 .ton-bulk .bulk-color-choice { -fx-background-color: #f5f8fb; -fx-padding: 7px; -fx-border-color: #cbdce7; -fx-border-radius: 6px; -fx-background-radius: 6px; -fx-font-size: 12px; }
 .ton-bulk .check-box:selected .box { -fx-background-color: #18778c; }
 .ton-bulk .check-box:selected .mark { -fx-background-color: white; }
