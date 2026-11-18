@@ -249,6 +249,10 @@ public final class BulkCatalogUiProbe {
                                     && textLabel("ton-bulk-articles-count-existing").equals("1"));
             fx(
                     () -> {
+                        assertEquals("MST_A1", p1.code());
+                        assertEquals(
+                                "ZR9812MSTA1",
+                                workspace().table().getItems().getFirst().seed().code());
                         ((CheckBox) node("ton-bulk-select-product-" + zs.id())).fire();
                         return null;
                     });
@@ -299,7 +303,7 @@ public final class BulkCatalogUiProbe {
             await(() -> textLabel("ton-bulk-articles-count-invalid").equals("2"));
             fx(
                     () -> {
-                        field("ton-bulk-articles-code-1").setText("ZR9814" + p1.code());
+                        field("ton-bulk-articles-code-1").setText("ZR9814MSTA1");
                         Platform.runLater(() -> answer(ButtonType.NO));
                         button("ton-home-button").fire();
                         assertEquals(0, homes.get());
@@ -341,7 +345,7 @@ public final class BulkCatalogUiProbe {
                                 var r =
                                         q.executeQuery(
                                                 "SELECT prodotto_id FROM TON.ARTICOLI WHERE"
-                                                    + " codice='CUSTOM'")) {
+                                                        + " codice='CUSTOM'")) {
                             assertTrue(r.next());
                             assertEquals(p1.id(), r.getLong(1));
                         }
@@ -349,7 +353,7 @@ public final class BulkCatalogUiProbe {
                                 var r =
                                         q.executeQuery(
                                                 "SELECT COUNT(*) FROM"
-                                                    + " TON.CONFIGURAZIONI_ARTICOLO")) {
+                                                        + " TON.CONFIGURAZIONI_ARTICOLO")) {
                             r.next();
                             assertEquals(0, r.getInt(1));
                         }

@@ -72,8 +72,17 @@ articoli, cinque per ciascun prodotto. Con due diametri diventano trenta.
 
 L'anteprima include la colonna **Prodotto collegato**. Ogni riga mantiene
 l'identificativo del proprio prodotto: correggere il codice dell'articolo non
-cambia questo collegamento. Il componente **Prodotto** usa il codice del prodotto
-di quella riga; il componente **Materiale** usa la materia prima della sua linea.
+cambia questo collegamento. Il componente **Prodotto** compone **codice linea
+senza prefisso materiale + colore commerciale**, usando i dati strutturati della
+riga e non il codice salvato del prodotto. Rimuove una sola occorrenza iniziale
+corrispondente alla materia prima della linea; le altre parti del codice linea
+restano invariate. **Senza colore** non aggiunge un suffisso.
+Il componente **Materiale** usa la materia prima della linea.
+
+Esempio: le linee ZRMST (ZR) e ZSMST (ZS), entrambe con colore A0, generano
+rispettivamente **ZR9812MSTA0** e **ZS9812MSTA0**. Codici delle linee, codici dei
+prodotti e collegamenti nel DB restano invariati, anche con prodotti dal codice
+personalizzato. Gli articoli già salvati non vengono rinominati.
 La demo include anche un prodotto di un'altra linea per mostrare i prefissi ZR/ZS.
 I codici sono etichette, non sono usati per indovinare il collegamento al prodotto.
 Un codice appartenente a un articolo di un altro prodotto viene segnalato come

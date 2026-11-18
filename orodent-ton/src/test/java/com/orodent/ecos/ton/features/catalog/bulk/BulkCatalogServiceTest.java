@@ -147,7 +147,6 @@ class BulkCatalogServiceTest {
                                                 p.material(),
                                                 p.lineCode(),
                                                 p.color(),
-                                                p.code(),
                                                 new BigDecimal("98"),
                                                 BigDecimal.valueOf(h)));
                 seeds.add(article(key++, p, code, Integer.toString(h)));
@@ -229,7 +228,7 @@ class BulkCatalogServiceTest {
                     try (var q = c.createStatement()) {
                         q.executeUpdate(
                                 "ALTER TABLE TON.ARTICOLI ADD CONSTRAINT test_bulk_failure"
-                                    + " CHECK(codice<>'FAIL')");
+                                        + " CHECK(codice<>'FAIL')");
                     }
                     return null;
                 });
@@ -351,5 +350,56 @@ class BulkCatalogServiceTest {
                         .map(Parent::id)
                         .toList());
         assertTrue(bulk.parents(CatalogKind.PRODUCTS, "%", null, 0).join().rows().isEmpty());
+    }
+
+    @Test
+    void prefixedLinesGenerateDistinctArticleCodesAndPreserveProductLinksAndCodes() {
+        Line zr = line("ZRMST", "ZR"), zs = line("ZSMST", "ZS");
+        Product first =
+                (Product)
+                        single.create(
+                                        new ProductDraft(
+                                                "ZR-MST-A0",
+                                                "Codice personalizzato",
+                                                zr.id(),
+                                                "A0",
+                                                "",
+                                                true))
+                                .join()
+                                .entry();
+        Product second =
+                (Product)
+                        single.create(ProductDraft.configured(zs.id(), "A0", "", true))
+                                .join()
+                                .entry();
+        var rows = new ArrayList<Seed>();
+        for (Product product : List.of(first, second)) {
+            Parent parent = snapshot(product);
+            String code =
+                    CodeComposition.defaults(CatalogKind.ARTICLES)
+                            .code(
+                                    new CodeComposition.Values(
+                                            parent.material(),
+                                            parent.lineCode(),
+                                            parent.color(),
+                                            new BigDecimal("98"),
+                                            new BigDecimal("12")));
+            rows.add(article(rows.size(), parent, code, "12"));
+        }
+        Preview preview = bulk.preview(new Request(CatalogKind.ARTICLES, "", rows)).join();
+        assertEquals(2, preview.creating());
+        Created result = bulk.create(preview).join();
+        assertEquals(
+                List.of("ZR9812MSTA0", "ZS9812MSTA0"),
+                result.entries().stream().map(Entry::code).toList());
+        assertEquals(
+                List.of(first.id(), second.id()),
+                result.entries().stream().map(e -> ((Article) e).product().id()).toList());
+        assertEquals(
+                "ZR-MST-A0", single.load(CatalogKind.PRODUCTS, first.id()).join().entry().code());
+        assertEquals(
+                "ZSMSTA0", single.load(CatalogKind.PRODUCTS, second.id()).join().entry().code());
+        assertEquals("ZRMST", single.load(CatalogKind.LINES, zr.id()).join().entry().code());
+        assertEquals("ZSMST", single.load(CatalogKind.LINES, zs.id()).join().entry().code());
     }
 }

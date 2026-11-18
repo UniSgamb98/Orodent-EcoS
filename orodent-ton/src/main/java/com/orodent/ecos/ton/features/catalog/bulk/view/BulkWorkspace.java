@@ -230,7 +230,12 @@ public final class BulkWorkspace extends GridPane {
                                         : "Esempio per il primo formato"),
                         example,
                         compose,
-                        hint("Scegli l'ordine delle parti e aggiungi, se serve, un testo fisso."));
+                        hint(
+                                kind == CatalogKind.ARTICLES
+                                        ? "Prodotto usa linea senza prefisso materiale + colore. Il"
+                                              + " collegamento resta al prodotto selezionato."
+                                        : "Scegli l'ordine delle parti e aggiungi, se serve, un"
+                                              + " testo fisso."));
         notes.setId(id + "-notes");
         notes.setWrapText(true);
         notes.setPrefRowCount(3);
@@ -520,7 +525,6 @@ public final class BulkWorkspace extends GridPane {
                 kind == CatalogKind.PRODUCTS
                         ? (colors.isEmpty() ? "" : colors.iterator().next())
                         : (p == null ? "" : p.color()),
-                p == null ? "" : p.code(),
                 d,
                 h);
     }
@@ -542,10 +546,7 @@ public final class BulkWorkspace extends GridPane {
             Parent p = selected.getFirst();
             for (String color : colors) {
                 String code =
-                        rule.get()
-                                .code(
-                                        new Values(
-                                                p.material(), p.lineCode(), color, "", null, null));
+                        rule.get().code(new Values(p.material(), p.lineCode(), color, null, null));
                 rows.add(new Row(rows.size(), p, code, color, "", ""));
             }
         } else {
@@ -566,7 +567,6 @@ public final class BulkWorkspace extends GridPane {
                                                         p.material(),
                                                         p.lineCode(),
                                                         p.color(),
-                                                        p.code(),
                                                         d,
                                                         h));
                         rows.add(new Row(rows.size(), p, code, "", display(d), display(h)));

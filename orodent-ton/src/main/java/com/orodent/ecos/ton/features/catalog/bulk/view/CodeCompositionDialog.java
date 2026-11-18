@@ -182,7 +182,10 @@ public final class CodeCompositionDialog {
         Label hint =
                 new Label(
                         "Scegli le parti e usa le frecce per cambiarne l'ordine. I valori arrivano"
-                            + " dai dati selezionati.");
+                                + " dai dati selezionati."
+                                + (kind == CatalogKind.ARTICLES
+                                        ? " Prodotto = linea senza prefisso materiale + colore."
+                                        : ""));
         hint.setWrapText(true);
         hint.getStyleClass().add("bulk-small");
         VBox content =

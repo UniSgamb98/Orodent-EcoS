@@ -43,12 +43,7 @@ public record CodeComposition(List<Part> parts, String separator) {
     }
 
     public record Values(
-            String material,
-            String line,
-            String color,
-            String product,
-            BigDecimal diameter,
-            BigDecimal height) {}
+            String material, String line, String color, BigDecimal diameter, BigDecimal height) {}
 
     public CodeComposition {
         parts = List.copyOf(parts);
@@ -90,7 +85,7 @@ public record CodeComposition(List<Part> parts, String separator) {
                 switch (part.type()) {
                     case MATERIAL -> v.material();
                     case LINE -> v.line();
-                    case PRODUCT -> v.product();
+                    case PRODUCT -> articleProduct(v);
                     case COLOR ->
                             "SENZA_COLORE".equals(CatalogModels.commercialColor(v.color()))
                                     ? ""
@@ -106,6 +101,16 @@ public record CodeComposition(List<Part> parts, String separator) {
                             + part.type().label()
                             + "». Completa i dati o modifica la composizione.");
         return value;
+    }
+
+    /** Article labels use line/color data; the stored product code and identity are unchanged. */
+    private static String articleProduct(Values values) {
+        String line = CatalogModels.text(values.line()).toUpperCase(Locale.ROOT);
+        String material = CatalogModels.text(values.material()).toUpperCase(Locale.ROOT);
+        if (!material.isEmpty() && line.startsWith(material)) {
+            line = line.substring(material.length());
+        }
+        return CatalogModels.productCode(line, values.color());
     }
 
     private static String number(BigDecimal value) {
