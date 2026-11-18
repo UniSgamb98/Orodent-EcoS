@@ -278,7 +278,7 @@ public final class BulkWorkspace extends GridPane {
         getChildren().clear();
         getColumnConstraints().clear();
         if (wide) {
-            ColumnConstraints l = new ColumnConstraints(330);
+            ColumnConstraints l = new ColumnConstraints(346.5);
             l.setHgrow(Priority.NEVER);
             ColumnConstraints r = new ColumnConstraints();
             r.setHgrow(Priority.ALWAYS);
