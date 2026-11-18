@@ -377,20 +377,20 @@ public final class BulkCatalogUiProbe {
                                     && textLabel("ton-bulk-articles-count-total").equals("15"));
             fx(
                     () -> {
-                        field("ton-bulk-articles-code-0").requestFocus();
-                        field("ton-bulk-articles-code-0").clear();
+                        assertFalse(workspace().table().isEditable());
+                        assertTrue(
+                                workspace().table().getColumns().stream()
+                                        .filter(
+                                                c ->
+                                                        List.of(
+                                                                        "Codice articolo",
+                                                                        "Ø mm",
+                                                                        "Altezza mm")
+                                                                .contains(c.getText()))
+                                        .noneMatch(TableColumn::isEditable));
+                        assertTrue(workspace().table().lookupAll(".text-field").isEmpty());
                         return null;
                     });
-            for (char c : "CUSTOM".toCharArray())
-                fx(
-                        () -> {
-                            var field = field("ton-bulk-articles-code-0");
-                            field.replaceSelection(String.valueOf(c));
-                            layout();
-                            assertEquals(field.getText().length(), field.getCaretPosition());
-                            return null;
-                        });
-            await(() -> enabled("ton-bulk-articles-create"));
             fx(
                     () -> {
                         include("articles", 4).fire();
@@ -411,7 +411,7 @@ public final class BulkCatalogUiProbe {
             fx(
                     () -> {
                         var rows = workspace().table().getItems();
-                        assertEquals("CUSTOM", rows.getFirst().seed().code());
+                        assertEquals("ZR9812MSTA1", rows.getFirst().seed().code());
                         assertFalse(rows.get(4).seed().selected());
                         field("ton-bulk-articles-heights").setText("12; 14; 16; 18; 20");
                         return null;
@@ -431,16 +431,59 @@ public final class BulkCatalogUiProbe {
                                     && textLabel("ton-bulk-articles-count-new").equals("14"));
             fx(
                     () -> {
+                        Platform.runLater(() -> button("ton-bulk-articles-rule").fire());
+                        return null;
+                    });
+            await(() -> dialog() != null);
+            fx(
+                    () -> {
+                        dialog().lookupAll(".button").stream()
+                                .filter(
+                                        n ->
+                                                n instanceof Button b
+                                                        && "Rimuovi Altezza"
+                                                                .equals(b.getAccessibleText()))
+                                .map(Button.class::cast)
+                                .findFirst()
+                                .orElseThrow()
+                                .fire();
+                        ((Button) dialog().lookup("#ton-bulk-rule-apply")).fire();
+                        return null;
+                    });
+            await(() -> textLabel("ton-bulk-articles-count-invalid").equals("15"));
+            fx(
+                    () -> {
+                        assertFalse(enabled("ton-bulk-articles-create"));
+                        assertTrue(textLabel("ton-bulk-articles-notice").contains("composizione"));
+                        Platform.runLater(() -> button("ton-bulk-articles-rule").fire());
+                        return null;
+                    });
+            await(() -> dialog() != null);
+            fx(
+                    () -> {
+                        ((Button) dialog().lookup("#ton-bulk-rule-add-height")).fire();
+                        dialog().lookupAll(".button").stream()
+                                .filter(
+                                        n ->
+                                                n instanceof Button b
+                                                        && "Sposta Altezza prima"
+                                                                .equals(b.getAccessibleText()))
+                                .map(Button.class::cast)
+                                .findFirst()
+                                .orElseThrow()
+                                .fire();
+                        ((Button) dialog().lookup("#ton-bulk-rule-apply")).fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            enabled("ton-bulk-articles-create")
+                                    && textLabel("ton-bulk-articles-count-new").equals("14"));
+            fx(
+                    () -> {
                         assertEquals(
                                 p1.id(),
                                 workspace().table().getItems().getFirst().seed().parent().id());
-                        field("ton-bulk-articles-code-1").setText("CUSTOM");
-                        return null;
-                    });
-            await(() -> textLabel("ton-bulk-articles-count-invalid").equals("2"));
-            fx(
-                    () -> {
-                        field("ton-bulk-articles-code-1").setText("ZR9814MSTA1");
                         Platform.runLater(() -> answer(ButtonType.NO));
                         button("ton-home-button").fire();
                         assertEquals(0, homes.get());
@@ -495,7 +538,7 @@ public final class BulkCatalogUiProbe {
                                 var r =
                                         q.executeQuery(
                                                 "SELECT prodotto_id FROM TON.ARTICOLI WHERE"
-                                                        + " codice='CUSTOM'")) {
+                                                        + " codice='ZR9812MSTA1'")) {
                             assertTrue(r.next());
                             assertEquals(p1.id(), r.getLong(1));
                         }

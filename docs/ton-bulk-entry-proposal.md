@@ -71,15 +71,16 @@ conserva il suo codice, se linea e colore non cambiano.
    Il materiale è ereditato dalla linea (ZR o ZS); se manca va completato prima
    di generare un codice che lo usa. Le misure decimali usano il punto nei codici
    e non aggiungono zeri iniziali o decimali superflui: 12,50 diventa 12.5.
-5. Ogni codice e ogni misura è correggibile nella griglia. Si possono escludere
-   le combinazioni indesiderate senza ricominciare.
+5. Codice articolo, diametro e altezza sono in sola lettura nell'anteprima.
+   Le misure si cambiano nei campi comuni e i codici da **Personalizza composizione…**.
+   Nella griglia si possono soltanto includere o escludere le combinazioni.
 
 Esempio: MSTA1, MSTA2 e MSTA3 con diametro 98 e cinque altezze producono quindici
 articoli, cinque per ciascun prodotto. Con due diametri diventano trenta.
 
 L'anteprima include la colonna **Prodotto collegato**. Ogni riga mantiene
-l'identificativo del proprio prodotto: correggere il codice dell'articolo non
-cambia questo collegamento. Il componente **Prodotto** compone **codice linea
+l'identificativo del proprio prodotto, indipendentemente dalla composizione
+scelta per il codice. Il componente **Prodotto** compone **codice linea
 senza prefisso materiale + colore commerciale**, usando i dati strutturati della
 riga e non il codice salvato del prodotto. Rimuove una sola occorrenza iniziale
 corrispondente alla materia prima della linea; le altre parti del codice linea
@@ -109,7 +110,7 @@ alla volta e mantengono i prodotti selezionati caricando altre pagine della stes
 Le due operazioni condividono lo stesso schema visivo:
 
 - A sinistra soltanto i campi e i criteri di generazione, senza intestazione o frasi introduttive.
-- A destra la griglia modificabile, con riga, selezione ed esito.
+- A destra la griglia in sola lettura, con selezione delle righe ed esito.
 - Conteggio delle righe, degli elementi da creare e di quelli già presenti.
 - Pulsante finale esplicito: **Crea 10 articoli** / **Crea 10 prodotti**.
 - Una sola nota sotto l'anteprima riunisce il collegamento alle anagrafiche e il
@@ -119,8 +120,8 @@ A due colonne, elenco prodotti e anteprima occupano l'altezza disponibile e hann
 il proprio scorrimento; campi e pulsante Crea rimangono visibili senza far scorrere
 l'intera pagina. Torna al catalogo e Aggiorna dati condividono la stessa riga.
 In una finestra stretta o troppo bassa i pannelli si dispongono in verticale con
-uno scorrimento naturale della pagina. La griglia permette Tab e modifiche delle righe senza
-rigenerarsi ad ogni carattere digitato.
+uno scorrimento naturale della pagina. La griglia permette di cambiare le spunte
+senza modificare i valori generati.
 
 La validazione distingue:
 
@@ -128,7 +129,7 @@ La validazione distingue:
 - **Già presente**: stesso codice e stessi dati strutturali/collegamento. Escluso
   esplicitamente dalla creazione; nessun aggiornamento silenzioso.
 - **Conflitto**: codice già usato per dati strutturali diversi, anche in archivio.
-  Occorre correggere o escludere la riga.
+  Occorre modificare i dati comuni o la composizione, oppure escludere la riga.
 - **Da correggere**: duplicato interno, campo obbligatorio mancante, misura non
   valida o limite di lunghezza/precisione superato.
 
@@ -136,10 +137,12 @@ Le righe escluse non bloccano il salvataggio delle altre. Il conteggio finale
 rispecchia quanto sarà creato. All'uscita si proteggono le modifiche non
 salvate con la conferma di abbandono degli editor TON. Le due modalità mantengono
 bozze indipendenti finché si rimane nella pagina. Gli aggiornamenti automatici
-conservano codici, misure corrette manualmente ed esclusioni delle combinazioni
-che restano nel gruppo. Le combinazioni rimosse dalla selezione o dai formati
+ricalcolano codici e misure dalle impostazioni e conservano le esclusioni delle
+combinazioni che restano nel gruppo. Le combinazioni rimosse dalla selezione o dai formati
 scompaiono dall'anteprima. Dati incompleti o non validi disabilitano la creazione
-finché non vengono corretti. La digitazione nelle celle mantiene il cursore.
+finché non vengono corretti. Il riquadro rosso **Da correggere** appare solo
+quando ci sono problemi: resta utile anche senza editing delle celle, ad esempio
+se la regola genera codici duplicati o se il DB contiene formati con codici diversi.
 Il calcolo automatico non scrive sul DB: occorre sempre premere **Crea**.
 
 ## Salvataggio e configurazioni tecniche

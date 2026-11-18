@@ -17,53 +17,33 @@ import javafx.scene.layout.*;
 import java.math.BigDecimal;
 import java.util.*;
 
-/** The two cards in the approved prototype. All editable fields keep their row identity. */
+/** Generated preview values are immutable; only row inclusion can be changed. */
 public final class BulkWorkspace extends GridPane {
     public static final class Row {
         final int key;
         final Parent parent;
-        final StringProperty code, color, diameter, height;
+        final String code, color, diameter, height;
         final BooleanProperty selected = new SimpleBooleanProperty(true);
         final ObjectProperty<State> state = new SimpleObjectProperty<>(State.EXCLUDED);
         final StringProperty message = new SimpleStringProperty("Da verificare");
-        final String initialCode, initialDiameter, initialHeight;
         final Combination combination;
 
         Row(int key, Parent parent, String code, String color, String diameter, String height) {
             this.key = key;
             this.parent = parent;
-            this.code = new SimpleStringProperty(code);
-            this.color = new SimpleStringProperty(color);
-            this.diameter = new SimpleStringProperty(diameter);
-            this.height = new SimpleStringProperty(height);
-            initialCode = code;
-            initialDiameter = diameter;
-            initialHeight = height;
+            this.code = code;
+            this.color = color;
+            this.diameter = diameter;
+            this.height = height;
             combination = new Combination(parent.id(), color, diameter, height);
         }
 
         public Seed seed() {
-            return new Seed(
-                    key,
-                    parent,
-                    code.get(),
-                    color.get(),
-                    diameter.get(),
-                    height.get(),
-                    selected.get());
+            return new Seed(key, parent, code, color, diameter, height, selected.get());
         }
 
         String fingerprint() {
             return seed().toString();
-        }
-
-        void preserveEdits(Row previous) {
-            if (!previous.code.get().equals(previous.initialCode)) code.set(previous.code.get());
-            if (!previous.diameter.get().equals(previous.initialDiameter))
-                diameter.set(previous.diameter.get());
-            if (!previous.height.get().equals(previous.initialHeight))
-                height.set(previous.height.get());
-            selected.set(previous.selected.get());
         }
     }
 
@@ -191,7 +171,7 @@ public final class BulkWorkspace extends GridPane {
             right.getChildren()
                     .addAll(
                             label("Controlla l'anteprima", "bulk-section-title"),
-                            hint("Codici e misure possono essere corretti riga per riga."));
+                            hint("Codici e misure generati automaticamente."));
         }
         VBox total = metric(totalValue, "Righe in anteprima"),
                 fresh =
@@ -219,6 +199,7 @@ public final class BulkWorkspace extends GridPane {
         table.setMinWidth(0);
         table.setPrefHeight(180);
         table.setFixedCellSize(43);
+        table.setEditable(false);
         table.setMinHeight(Region.USE_PREF_SIZE);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         table.setPlaceholder(hint("Seleziona i dati: l'anteprima si aggiorna automaticamente."));
@@ -489,14 +470,11 @@ public final class BulkWorkspace extends GridPane {
         table.getItems().forEach(row -> previous.put(row.combination, row));
         for (Row row : rows) {
             Row old = previous.get(row.combination);
-            if (old != null) row.preserveEdits(old);
+            if (old != null) row.selected.set(old.selected.get());
             InvalidationListener listener =
                     o -> {
                         if (!updating) changed.run();
                     };
-            row.code.addListener(listener);
-            row.diameter.addListener(listener);
-            row.height.addListener(listener);
             row.selected.addListener(listener);
         }
         table.getItems().setAll(rows);
@@ -561,7 +539,8 @@ public final class BulkWorkspace extends GridPane {
         save.setDisable(preview == null || !preview.savable() || settingsDirty());
         String text =
                 invalid > 0
-                        ? "Correggi o escludi le righe segnalate. "
+                        ? "Modifica i dati comuni o la composizione, oppure escludi le righe"
+                              + " segnalate. "
                                 + preview.rows().stream()
                                         .filter(r -> r.state() == State.INVALID)
                                         .findFirst()
@@ -665,7 +644,7 @@ public final class BulkWorkspace extends GridPane {
         if (kind == CatalogKind.PRODUCTS) {
             TableColumn<Row, String> color = new TableColumn<>("Colore");
             color.setCellValueFactory(
-                    c -> new ReadOnlyStringWrapper(colorLabelOf(c.getValue().color.get())));
+                    c -> new ReadOnlyStringWrapper(colorLabelOf(c.getValue().color)));
             color.setPrefWidth(75);
             columns.add(color);
         }
@@ -673,22 +652,21 @@ public final class BulkWorkspace extends GridPane {
                 textColumn(
                         kind == CatalogKind.PRODUCTS ? "Codice prodotto" : "Codice articolo",
                         "code",
-                        kind == CatalogKind.ARTICLES,
                         170));
         if (kind == CatalogKind.ARTICLES) {
             TableColumn<Row, String> parent = new TableColumn<>("Prodotto collegato");
             parent.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().parent.code()));
             parent.setPrefWidth(125);
             columns.add(parent);
-            columns.add(textColumn("Ø mm", "diameter", true, 75));
-            columns.add(textColumn("Altezza mm", "height", true, 85));
+            columns.add(textColumn("Ø mm", "diameter", 75));
+            columns.add(textColumn("Altezza mm", "height", 85));
         } else {
             TableColumn<Row, String> name = new TableColumn<>("Descrizione");
             name.setCellValueFactory(
                     c ->
                             new ReadOnlyStringWrapper(
                                     productDescription(
-                                            c.getValue().parent.name(), c.getValue().color.get())));
+                                            c.getValue().parent.name(), c.getValue().color)));
             name.setPrefWidth(155);
             columns.add(name);
         }
@@ -701,56 +679,22 @@ public final class BulkWorkspace extends GridPane {
         table.getColumns().setAll(columns);
     }
 
-    private TableColumn<Row, String> textColumn(
-            String title, String property, boolean editable, double width) {
+    private TableColumn<Row, String> textColumn(String title, String property, double width) {
         TableColumn<Row, String> c = new TableColumn<>(title);
         c.setPrefWidth(width);
         c.setMinWidth(property.equals("code") ? 120 : 60);
-        c.setCellValueFactory(v -> property(v.getValue(), property));
-        if (editable) c.setCellFactory(ignored -> new TextCell(property));
+        c.setCellValueFactory(v -> new ReadOnlyStringWrapper(value(v.getValue(), property)));
+        c.setEditable(false);
         return c;
     }
 
-    private static StringProperty property(Row row, String property) {
+    private static String value(Row row, String property) {
         return switch (property) {
             case "code" -> row.code;
             case "diameter" -> row.diameter;
             case "height" -> row.height;
             default -> throw new IllegalArgumentException();
         };
-    }
-
-    private final class TextCell extends TableCell<Row, String> {
-        private final TextField field = new TextField();
-        private final String property;
-        private Row bound;
-
-        TextCell(String property) {
-            this.property = property;
-            field.getStyleClass().add("bulk-inline-field");
-            field.setMinWidth(0);
-        }
-
-        @Override
-        protected void updateItem(String text, boolean empty) {
-            super.updateItem(text, empty);
-            Row row = empty || getTableRow() == null ? null : getTableRow().getItem();
-            if (row != bound) {
-                if (bound != null)
-                    field.textProperty().unbindBidirectional(property(bound, property));
-                bound = row;
-                if (bound != null) {
-                    field.setText(property(bound, property).get());
-                    field.textProperty().bindBidirectional(property(bound, property));
-                }
-            }
-            if (bound != null) {
-                field.setId(id + "-" + property + "-" + bound.key);
-                field.setAccessibleText(property + " riga " + (bound.key + 1));
-            }
-            setText(null);
-            setGraphic(bound == null ? null : field);
-        }
     }
 
     private final class SelectionCell extends TableCell<Row, Row> {

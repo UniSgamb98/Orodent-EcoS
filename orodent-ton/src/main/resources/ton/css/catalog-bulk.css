@@ -37,8 +37,6 @@
 .ton-bulk .table-row-cell { -fx-background-color: white; -fx-border-color: transparent transparent #e6eef4 transparent; -fx-border-width: 0 0 1px 0; }
 .ton-bulk .table-row-cell:selected { -fx-background-color: #edf6fa; }
 .ton-bulk .table-cell { -fx-alignment: center-left; -fx-padding: 5px 7px; -fx-border-color: transparent; -fx-text-fill: #173f59; -fx-font-size: 12px; }
-.ton-bulk .bulk-inline-field { -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 5px 4px; -fx-font-size: 12px; }
-.ton-bulk .bulk-inline-field:hover, .ton-bulk .bulk-inline-field:focused { -fx-background-color: white; -fx-border-color: #b9cfdd; }
 .ton-bulk .bulk-status { -fx-font-size: 11px; -fx-padding: 3px 7px; -fx-background-radius: 12px; -fx-background-color: #f0f4f7; -fx-text-fill: #657e92; }
 .ton-bulk .bulk-status-new { -fx-background-color: #e6f3ee; -fx-text-fill: #21694f; }
 .ton-bulk .bulk-status-existing { -fx-background-color: #fff1cd; -fx-text-fill: #82601b; }
