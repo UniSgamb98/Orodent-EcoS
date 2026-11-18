@@ -189,10 +189,7 @@ public final class BulkWorkspace extends GridPane {
         notes.setWrapText(true);
         notes.setPrefRowCount(3);
         notes.setPromptText("Applicate ai nuovi elementi");
-        left.getChildren()
-                .addAll(
-                        field("Note comuni · facoltative", notes),
-                        hint("Le anagrafiche già presenti conservano i propri dati."));
+        left.getChildren().add(field("Note comuni · facoltative", notes));
         if (kind == CatalogKind.ARTICLES) {
             right.getChildren()
                     .addAll(
