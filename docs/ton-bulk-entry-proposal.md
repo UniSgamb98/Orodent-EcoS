@@ -22,13 +22,30 @@ singola resta disponibile per i casi occasionali.
 
 1. La linea è già selezionata.
 2. Si scelgono più colori commerciali, con possibilità di aggiungerne altri.
-3. L'anteprima genera una riga per colore usando le regole già esistenti:
-   codice della linea + colore, descrizione della linea + colore. «Senza colore»
-   conserva la regola di codice attuale.
-4. Le note comuni si compilano una volta sola; si selezionano le righe da creare.
+3. L'anteprima genera una riga per colore. Il codice segue una composizione a
+   blocchi modificabile, inizialmente **Linea + Colore**, che conserva la regola
+   attuale. Si possono riordinare le parti **Linea**, **Colore**, **Materiale** e
+   **Testo fisso**, scegliendo anche un separatore. La descrizione deriva dalla
+   linea e dal colore. «Senza colore» non aggiunge un suffisso colore né un
+   separatore finale.
+4. **Personalizza composizione…** offre lo stesso pannello degli articoli, con
+   esempio aggiornato durante la scelta e annullamento delle modifiche.
+5. Le note comuni si compilano una volta sola; si selezionano le righe da creare.
 
 Esempio: MST con A0, A1, A2, A3 produce MSTA0, MSTA1, MSTA2, MSTA3.
 La grafia dei colori e i limiti dei campi restano quelli di `CatalogModels`.
+Con **Materiale + Linea + Colore**, ad esempio, si ottiene ZRMSTA3. Una regola
+che non distingue i colori genera duplicati segnalati nell'anteprima.
+
+Prodotti e articoli hanno composizioni indipendenti: modificare la regola dei
+nuovi prodotti non cambia quella degli articoli o i codici degli elementi già
+salvati. La linea e il colore sono collegamenti espliciti delle righe, non vengono
+ricavati dal codice generato. Un codice già usato per un altro colore della linea
+viene segnalato come conflitto.
+
+Questa configurabilità estende la creazione attuale, dove i prodotti seguono una
+regola fissa. L'implementazione applicativa dovrà mantenere coerenti inserimento
+singolo e multiplo, senza ricalcolare i codici dei prodotti esistenti.
 
 ## Articoli per più prodotti
 

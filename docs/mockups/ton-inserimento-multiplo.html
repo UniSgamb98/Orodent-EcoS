@@ -21,7 +21,8 @@
 <div class="workspace">
 <section class="card" aria-labelledby="common-title"><h2 id="common-title">1. Dati comuni</h2><p class="hint">Scegli la linea o i prodotti a cui collegare i nuovi elementi.</p>
 <div class="context"><small id="parent-label">Linea selezionata</small><strong id="parent-title">MST · Thor</strong><div class="hint" id="inherited">Codice e descrizione derivano dalla linea e dal colore.</div></div>
-<div id="products-form"><h3>Colori commerciali</h3><p class="hint">Un prodotto per ogni colore selezionato.</p><div class="chips" id="color-chips"></div><div class="form-actions"><input type="text" id="custom-color" aria-label="Altro colore commerciale" placeholder="Altro colore"><button onclick="addColor()">+</button></div><div class="form-actions"><button class="secondary-link" onclick="selectColors(true)">Seleziona tutti</button><button class="secondary-link" onclick="selectColors(false)">Svuota selezione</button></div></div>
+<div id="products-form"><h3>Colori commerciali</h3><p class="hint">Un prodotto per ogni colore selezionato.</p><div class="chips" id="color-chips"></div><div class="form-actions"><input type="text" id="custom-color" aria-label="Altro colore commerciale" placeholder="Altro colore"><button onclick="addColor()">+</button></div><div class="form-actions"><button class="secondary-link" onclick="selectColors(true)">Seleziona tutti</button><button class="secondary-link" onclick="selectColors(false)">Svuota selezione</button></div>
+<label class="field">Composizione del codice prodotto</label><div id="product-rule-parts" class="rule-parts" aria-label="Ordine delle parti del codice prodotto"></div><div class="hint">Esempio per il primo colore selezionato</div><div id="product-rule-example" class="rule-example" aria-live="polite">MSTA0</div><button class="rule-edit" onclick="openBuilder()">Personalizza composizione…</button><p class="hint">La regola vale per i nuovi prodotti di questa linea. Gli articoli hanno una composizione indipendente.</p></div>
 <div id="articles-form" hidden>
 <label class="field" for="product-line">Prodotti a cui aggiungere articoli</label><select id="product-line"><option value="">Tutte le linee</option value="MST">MST · Thor</option><option value="ZST">ZST · Linea ZS</option></select>
 <input type="text" id="product-search" style="margin-top:7px" aria-label="Cerca prodotti" placeholder="Cerca prodotto o colore">
@@ -42,13 +43,13 @@
 </main>
 <dialog id="rule-dialog" class="rule-dialog" aria-labelledby="rule-title">
 <h2 id="rule-title">Componi il codice articolo</h2>
-<p class="intro hint">Scegli le parti e usa le frecce per cambiarne l'ordine. I valori arrivano dal prodotto e dalle misure di ciascuna riga.</p>
+<p id="rule-intro" class="intro hint"></p>
 <div id="rule-rows"></div>
 <h3>Aggiungi una parte</h3><div id="rule-add" class="rule-add"></div>
 <label class="field" for="rule-separator">Separatore tra le parti</label>
 <select id="rule-separator"><option value="">Nessuno</option><option value="-">Trattino · -</option><option value="_">Trattino basso · _</option></select>
-<div class="rule-preview-label">Anteprima del primo articolo</div><div id="rule-draft-example" class="rule-example" aria-live="polite"></div>
-<p class="hint">Le singole righe potranno essere corrette anche nell'anteprima generale.</p>
+<div id="rule-preview-label" class="rule-preview-label">Anteprima del primo articolo</div><div id="rule-draft-example" class="rule-example" aria-live="polite"></div>
+<p class="hint">Confermando aggiorni l'anteprima generale. I collegamenti restano quelli selezionati.</p>
 <div class="buttons"><button onclick="closeBuilder()">Annulla</button><button id="rule-apply" class="primary" onclick="applyBuilder()">Usa questa composizione</button></div>
 </dialog>
 <script>
@@ -61,11 +62,13 @@ const products=[
 ];
 const selectedProducts=new Set(['mst-a1','mst-a2','mst-a3']);
 const existingArticles=new Map([['ZR9816MSTA3',{productId:'mst-a3',d:'98',h:'16'}]]);
+const lineContext={id:'mst',code:'MST',name:'Thor',material:'ZR'};
 const partNames={material:'Materiale',diameter:'Diametro',height:'Altezza',product:'Prodotto',text:'Testo fisso'};
-let rule=['material','diameter','height','product'].map(type=>({type})),separator='',ruleDraft=[],separatorDraft='';
+const productPartNames={material:'Materiale',line:'Linea',color:'Colore',text:'Testo fisso'};
+let rule=['material','diameter','height','product'].map(type=>({type})),separator='',productRule=['line','color'].map(type=>({type})),productSeparator='',ruleDraft=[],separatorDraft='',builderMode='articles';
 const colors=['A0','A1','A2','A3','A3.5','A4','B1','B2','B3','C1'];
 const selected=new Set(colors);
-const exists=new Set(['MSTA3','ZR9816MSTA3']);
+const existingProducts=new Map([['MSTA3',{lineId:'mst',color:'A3'}]]);
 const $=id=>document.getElementById(id);
 const escapeText=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 function drawColors(){$('color-chips').innerHTML=colors.map(c=>`<label class="chip"><input type="checkbox" data-color="${escapeText(c)}" ${selected.has(c)?'checked':''}>${escapeText(c)}</label>`).join('');}
@@ -74,8 +77,8 @@ function addColor(){let c=$('custom-color').value.trim().toUpperCase();if(!c)ret
 function selectColors(all){selected.clear();if(all)colors.forEach(c=>selected.add(c));drawColors();generate();}
 function setMode(value){mode=value;$('products-tab').setAttribute('aria-selected',mode==='products');$('articles-tab').setAttribute('aria-selected',mode==='articles');$('products-form').hidden=mode!=='products';$('articles-form').hidden=mode!=='articles';$('parent-label').textContent=mode==='products'?'Linea selezionata':'Prodotti selezionati';$('parent-title').textContent=mode==='products'?'MST · Thor':`${selectedProducts.size} prodotti selezionati`;$('inherited').textContent=mode==='products'?'Codice e descrizione derivano dalla linea e dal colore.':'Ogni articolo mantiene il collegamento al proprio prodotto';$('breadcrumb').textContent=mode==='products'?'Prodotti':'Articoli';$('count-label').textContent=mode==='products'?'Prodotti da creare':'Articoli da creare';$('preview-hint').textContent=mode==='products'?'Codici e descrizioni vengono generati automaticamente.':'Codici e misure possono essere corretti riga per riga.';$('save-help').textContent=mode==='products'?'Verranno creati soltanto i nuovi prodotti selezionati.':'Ogni nuovo articolo sarà collegato al prodotto indicato nella sua riga.';renderRule();generate();}
 function measures(raw){return raw.split(';').map(x=>x.trim().replace(',','.')).filter(Boolean);}
-function generate(){if(mode==='products')rows=colors.filter(c=>selected.has(c)).map(c=>({color:c,code:'MST'+(['SENZA COLORE','SENZA_COLORE'].includes(c.toUpperCase())?'':c.toUpperCase()),name:'Thor '+(['SENZA COLORE','SENZA_COLORE'].includes(c.toUpperCase())?'Senza colore':c),selected:true}));else{const ds=measures($('diameters').value),hs=measures($('heights').value);rows=[];for(const product of chosenProducts())for(const d of ds)for(const h of hs)rows.push({productId:product.id,d,h,code:buildCode(d,h,rule,separator,product),selected:true});}render();}
-function problem(r){if(!r.code.trim())return 'Codice mancante';if(mode==='articles'&&existingArticles.has(r.code.trim().toUpperCase())&&!isExisting(r))return 'Codice in conflitto';if(r.code.length>(mode==='products'?50:80))return 'Codice troppo lungo';if(rows.filter(x=>x.code.trim().toUpperCase()===r.code.trim().toUpperCase()).length>1)return 'Codice duplicato';if(mode==='articles'&&(!Number.isFinite(Number(r.d))||!Number.isFinite(Number(r.h))||Number(r.d)<=0||Number(r.h)<=0))return 'Misure non valide';return '';}
+function generate(){renderRule();if(mode==='products')rows=colors.filter(c=>selected.has(c)).map(c=>({color:c,lineId:lineContext.id,code:buildProductCode(c),name:'Thor '+(['SENZA COLORE','SENZA_COLORE'].includes(c.toUpperCase())?'Senza colore':c),selected:true}));else{const ds=measures($('diameters').value),hs=measures($('heights').value);rows=[];for(const product of chosenProducts())for(const d of ds)for(const h of hs)rows.push({productId:product.id,d,h,code:buildCode(d,h,rule,separator,product),selected:true});}render();}
+function problem(r){if(!r.code.trim())return 'Codice mancante';if(mode==='products'&&existingProducts.has(r.code.trim().toUpperCase())&&!isExisting(r))return 'Codice in conflitto';if(mode==='articles'&&existingArticles.has(r.code.trim().toUpperCase())&&!isExisting(r))return 'Codice in conflitto';if(r.code.length>(mode==='products'?50:80))return 'Codice troppo lungo';if(rows.filter(x=>x.code.trim().toUpperCase()===r.code.trim().toUpperCase()).length>1)return 'Codice duplicato';if(mode==='articles'&&(!Number.isFinite(Number(r.d))||!Number.isFinite(Number(r.h))||Number(r.d)<=0||Number(r.h)<=0))return 'Misure non valide';return '';}
 function render(){const articles=mode==='articles';$('feedback').hidden=true;$('thead').innerHTML=articles?'<tr><th aria-label="Includi"></th><th>Codice articolo</th><th>Prodotto collegato</th><th>Ø mm</th><th>Altezza mm</th><th>Esito</th></tr>':'<tr><th aria-label="Includi"></th><th>Colore</th><th>Codice prodotto</th><th>Descrizione</th><th>Esito</th></tr>';
 $('rows').innerHTML=rows.map((r,i)=>{const old=isExisting(r),error=problem(r),badge=error?`<span class="badge error">${escapeText(error)}</span>`:old?'<span class="badge old">Già presente</span>':'<span class="badge">Nuovo</span>';return `<tr data-product-id="${escapeText(r.productId||'')}" class="${old?'old':!r.selected?'excluded':''}"><td><input type="checkbox" aria-label="Includi ${escapeText(r.code)}" data-index="${i}" data-key="selected" ${r.selected&&!old?'checked':''} ${old?'disabled':''}></td>${articles?`<td><input type="text" class="code" data-index="${i}" data-key="code" value="${escapeText(r.code)}" aria-label="Codice articolo riga ${i+1}"></td><td><strong>${escapeText(products.find(p=>p.id===r.productId)?.code||'')}</strong></td><td><input type="text" style="min-width:50px;width:60px" data-index="${i}" data-key="d" value="${escapeText(r.d)}" aria-label="Diametro riga ${i+1}"></td><td><input type="text" style="min-width:50px;width:60px" data-index="${i}" data-key="h" value="${escapeText(r.h)}" aria-label="Altezza riga ${i+1}"></td>`:`<td><strong>${escapeText(r.color)}</strong></td><td class="code">${escapeText(r.code)}</td><td>${escapeText(r.name)}</td>`}<td>${badge}</td></tr>`;}).join('');const old=rows.filter(r=>isExisting(r)).length;const invalid=rows.filter(r=>r.selected&&!isExisting(r)&&problem(r)).length;const creating=rows.filter(r=>r.selected&&!isExisting(r)&&!problem(r)).length;$('count-total').textContent=rows.length;$('count-new').textContent=creating;$('count-old').textContent=old;$('count-invalid').textContent=invalid;$('invalid-metric').hidden=!invalid;$('notice').hidden=!old&&!invalid;$('notice').textContent=invalid?'Correggi o escludi le righe segnalate prima di confermare.':`${old} ${old===1?'elemento già presente: verrà saltato':'elementi già presenti: verranno saltati'}. Nessun dato esistente sarà modificato.`;$('create').textContent=`Simula creazione di ${creating} ${articles?'articoli':'prodotti'}`;$('create').disabled=!creating||invalid>0;}
 $('rows').addEventListener('change',e=>{const {index,key}=e.target.dataset;if(index===undefined)return;rows[Number(index)][key]=key==='selected'?e.target.checked:e.target.value.trim();render();});
@@ -83,20 +86,42 @@ function simulate(){const count=$('count-new').textContent;$('feedback').hidden=
 function partValue(part,d,h,product=chosenProducts()[0]){return part.type==='material'?(product?.material||'—'):part.type==='product'?(product?.code||'—'):part.type==='diameter'?d:part.type==='height'?h:(part.text||'').trim();}
 function buildCode(d,h,parts=rule,joiner=separator,product=chosenProducts()[0]){return parts.map(part=>partValue(part,d,h,product)).join(joiner).toUpperCase();}
 function exampleValues(){return [measures($('diameters').value)[0]||'98',measures($('heights').value)[0]||'12'];}
-function renderRule(){
-  $('rule-parts').innerHTML=rule.map((part,i)=>`<span class="rule-part"><small>${i+1}</small>${escapeText(part.type==='text'?(part.text||'Testo fisso'):partNames[part.type])}</span>`).join('');
-  $('rule-example').textContent=chosenProducts().length?buildCode(...exampleValues()):'Seleziona almeno un prodotto';updateCombinationSummary();
+function productPartValue(part,color){
+  if(part.type==='material')return lineContext.material;
+  if(part.type==='line')return lineContext.code;
+  if(part.type==='color')return ['SENZA COLORE','SENZA_COLORE'].includes((color||'').toUpperCase())?'':(color||'');
+  return (part.text||'').trim();
 }
-function openBuilder(){ruleDraft=rule.map(part=>({...part}));separatorDraft=separator;$('rule-separator').value=separatorDraft;renderBuilder();$('rule-dialog').showModal();}
+function buildProductCode(color,parts=productRule,joiner=productSeparator){return parts.map(part=>productPartValue(part,color)).filter(value=>value!=='').join(joiner).toUpperCase();}
+function firstColor(){return colors.find(color=>selected.has(color));}
+function chips(parts,names){return parts.map((part,i)=>`<span class="rule-part"><small>${i+1}</small>${escapeText(part.type==='text'?(part.text||'Testo fisso'):names[part.type])}</span>`).join('');}
+function renderRule(){
+  $('rule-parts').innerHTML=chips(rule,partNames);
+  $('rule-example').textContent=chosenProducts().length?buildCode(...exampleValues()):'Seleziona almeno un prodotto';
+  $('product-rule-parts').innerHTML=chips(productRule,productPartNames);
+  $('product-rule-example').textContent=firstColor()?buildProductCode(firstColor()):'Seleziona almeno un colore';
+  updateCombinationSummary();
+}
+function openBuilder(){
+  builderMode=mode;
+  ruleDraft=(builderMode==='products'?productRule:rule).map(part=>({...part}));
+  separatorDraft=builderMode==='products'?productSeparator:separator;
+  $('rule-title').textContent=builderMode==='products'?'Componi il codice prodotto':'Componi il codice articolo';
+  $('rule-intro').textContent=builderMode==='products'
+    ? "Scegli le parti e usa le frecce per cambiarne l'ordine. Linea, materiale e colore arrivano dai dati del nuovo prodotto."
+    : "Scegli le parti e usa le frecce per cambiarne l'ordine. I valori arrivano dal prodotto e dalle misure di ciascuna riga.";
+  $('rule-preview-label').textContent=builderMode==='products'?'Anteprima del primo prodotto':'Anteprima del primo articolo';
+  $('rule-separator').value=separatorDraft;renderBuilder();$('rule-dialog').showModal();
+}
 function closeBuilder(){$('rule-dialog').close();}
 function renderBuilder(){
-  const [d,h]=exampleValues();
-  $('rule-rows').innerHTML=ruleDraft.map((part,i)=>`<div class="rule-row"><span class="number">${i+1}</span><span class="part-name">${partNames[part.type]}</span>${part.type==='text'?`<input type="text" data-text-index="${i}" value="${escapeText(part.text||'')}" aria-label="Testo fisso parte ${i+1}" placeholder="Scrivi il tuo testo">`:`<span class="part-value">${escapeText(partValue(part,d,h))}</span>`}<button data-move="-1" data-index="${i}" aria-label="Sposta ${partNames[part.type]} prima" ${i===0?'disabled':''}>↑</button><button data-move="1" data-index="${i}" aria-label="Sposta ${partNames[part.type]} dopo" ${i===ruleDraft.length-1?'disabled':''}>↓</button><button data-remove="${i}" aria-label="Rimuovi ${partNames[part.type]}">×</button></div>`).join('');
-  $('rule-add').innerHTML=Object.entries(partNames).map(([type,name])=>`<button data-add="${type}" ${type!=='text'&&ruleDraft.some(part=>part.type===type)?'disabled':''}>+ ${name}</button>`).join('');
+  const [d,h]=exampleValues(),names=builderMode==='products'?productPartNames:partNames;
+  $('rule-rows').innerHTML=ruleDraft.map((part,i)=>`<div class="rule-row"><span class="number">${i+1}</span><span class="part-name">${names[part.type]}</span>${part.type==='text'?`<input type="text" data-text-index="${i}" value="${escapeText(part.text||'')}" aria-label="Testo fisso parte ${i+1}" placeholder="Scrivi il tuo testo">`:`<span class="part-value">${escapeText(builderMode==='products'?productPartValue(part,firstColor()):partValue(part,d,h))}</span>`}<button data-move="-1" data-index="${i}" aria-label="Sposta ${names[part.type]} prima" ${i===0?'disabled':''}>↑</button><button data-move="1" data-index="${i}" aria-label="Sposta ${names[part.type]} dopo" ${i===ruleDraft.length-1?'disabled':''}>↓</button><button data-remove="${i}" aria-label="Rimuovi ${names[part.type]}">×</button></div>`).join('');
+  $('rule-add').innerHTML=Object.entries(names).map(([type,name])=>`<button data-add="${type}" ${type!=='text'&&ruleDraft.some(part=>part.type===type)?'disabled':''}>+ ${name}</button>`).join('');
   updateBuilderExample();
 }
 function updateBuilderExample(){
-  $('rule-draft-example').textContent=buildCode(...exampleValues(),ruleDraft,separatorDraft)||'Aggiungi almeno una parte';
+  $('rule-draft-example').textContent=(builderMode==='products'?buildProductCode(firstColor(),ruleDraft,separatorDraft):buildCode(...exampleValues(),ruleDraft,separatorDraft))||'Aggiungi almeno una parte';
   $('rule-apply').disabled=ruleDraft.length===0||ruleDraft.some(part=>part.type==='text'&&!(part.text||'').trim());
 }
 $('rule-rows').addEventListener('click',event=>{
@@ -109,11 +134,11 @@ $('rule-rows').addEventListener('input',event=>{const i=event.target.dataset.tex
 $('rule-add').addEventListener('click',event=>{const type=event.target.dataset.add;if(!type)return;ruleDraft.push({type,text:''});renderBuilder();if(type==='text')$('rule-rows').querySelector(`[data-text-index="${ruleDraft.length-1}"]`)?.focus();});
 $('rule-separator').addEventListener('change',event=>{separatorDraft=event.target.value;updateBuilderExample();});
 $('diameters').addEventListener('input',renderRule);$('heights').addEventListener('input',renderRule);
-function applyBuilder(){if($('rule-apply').disabled)return;rule=ruleDraft.map(part=>({...part}));separator=separatorDraft;renderRule();generate();closeBuilder();}
-function resetDemo(){rule=['material','diameter','height','product'].map(type=>({type}));separator='';selected.clear();colors.slice(0,10).forEach(c=>selected.add(c));selectedProducts.clear();['mst-a1','mst-a2','mst-a3'].forEach(id=>selectedProducts.add(id));$('product-line').value='';$('product-search').value='';drawProducts();$('diameters').value='98';$('heights').value='12; 14; 16; 18; 20';drawColors();setMode('products');}
+function applyBuilder(){if($('rule-apply').disabled)return;if(builderMode==='products'){productRule=ruleDraft.map(part=>({...part}));productSeparator=separatorDraft;}else{rule=ruleDraft.map(part=>({...part}));separator=separatorDraft;}renderRule();generate();closeBuilder();}
+function resetDemo(){productRule=['line','color'].map(type=>({type}));productSeparator='';rule=['material','diameter','height','product'].map(type=>({type}));separator='';selected.clear();colors.slice(0,10).forEach(c=>selected.add(c));selectedProducts.clear();['mst-a1','mst-a2','mst-a3'].forEach(id=>selectedProducts.add(id));$('product-line').value='';$('product-search').value='';drawProducts();$('diameters').value='98';$('heights').value='12; 14; 16; 18; 20';drawColors();setMode('products');}
 function chosenProducts(){return products.filter(product=>selectedProducts.has(product.id));}
 function visibleProducts(){const line=$('product-line').value,query=$('product-search').value.trim().toLowerCase();return products.filter(product=>(!line||product.line===line)&&`${product.code} ${product.name}`.toLowerCase().includes(query));}
-function isExisting(row){if(mode==='products')return exists.has(row.code.trim().toUpperCase());const old=existingArticles.get(row.code.trim().toUpperCase());return !!old&&old.productId===row.productId&&Number(old.d)===Number(row.d)&&Number(old.h)===Number(row.h);}
+function isExisting(row){if(mode==='products'){const old=existingProducts.get(row.code.trim().toUpperCase());return !!old&&old.lineId===row.lineId&&old.color===row.color;}const old=existingArticles.get(row.code.trim().toUpperCase());return !!old&&old.productId===row.productId&&Number(old.d)===Number(row.d)&&Number(old.h)===Number(row.h);}
 function drawProducts(){
   $('product-choices').innerHTML=visibleProducts().map(product=>`<label class="product-choice"><input type="checkbox" data-product="${product.id}" ${selectedProducts.has(product.id)?'checked':''}><span><strong>${product.code}</strong><small>${product.name} · ${product.material}</small></span></label>`).join('')||'<div class="product-empty">Nessun prodotto trovato.</div>';
   $('selected-products').innerHTML=chosenProducts().map(product=>`<span>${product.code}</span>`).join('');
