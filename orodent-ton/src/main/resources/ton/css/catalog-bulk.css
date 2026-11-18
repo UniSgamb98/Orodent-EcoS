@@ -1,6 +1,6 @@
 .ton-bulk, .ton-bulk > .viewport { -fx-background: #e3edf3; -fx-background-color: #e3edf3; }
 .ton-bulk { -fx-fit-to-width: true; -fx-font-family: "System"; -fx-font-weight: normal; }
-.ton-bulk .bulk-page { -fx-padding: 22px 26px; }
+.ton-bulk .bulk-page { -fx-padding: 8px 26px 20px 26px; }
 .ton-bulk .label, .ton-bulk-code-dialog .label { -fx-text-fill: #173f59; -fx-font-family: "System"; -fx-font-size: 13px; -fx-font-weight: normal; }
 .ton-bulk .button, .ton-bulk .toggle-button, .ton-bulk-code-dialog .button { -fx-padding: 9px 13px; -fx-background-color: white; -fx-background-radius: 7px; -fx-border-color: #cbdce7; -fx-border-radius: 7px; -fx-text-fill: #173f59; -fx-font-weight: bold; -fx-cursor: hand; }
 .ton-bulk .button:hover, .ton-bulk-code-dialog .button:hover { -fx-background-color: #eaf4f7; }
@@ -12,7 +12,7 @@
 .ton-bulk .bulk-section-title { -fx-font-size: 17px; -fx-font-weight: bold; }
 .ton-bulk .bulk-small, .ton-bulk-code-dialog .bulk-small { -fx-font-size: 12px; -fx-font-weight: normal; -fx-text-fill: #657e92; }
 .ton-bulk .bulk-field-label { -fx-font-size: 12px; -fx-font-weight: bold; }
-.ton-bulk .bulk-mode-tabs { -fx-padding: 5px; -fx-background-color: #d1e2eb; -fx-background-radius: 9px; -fx-alignment: center-left; -fx-max-width: 590px; }
+.ton-bulk .bulk-mode-tabs { -fx-padding: 5px; -fx-background-color: #d1e2eb; -fx-background-radius: 9px; -fx-alignment: center-left; }
 .ton-bulk .bulk-mode-tabs .toggle-button { -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 10px 18px; }
 .ton-bulk .bulk-mode-tabs .toggle-button:selected { -fx-background-color: white; -fx-text-fill: #087087; -fx-effect: dropshadow(gaussian, #183b5222, 3, 0, 0, 1); }
 .ton-bulk .bulk-card { -fx-padding: 20px; -fx-background-color: white; -fx-background-radius: 11px; -fx-border-color: #cbdce7; -fx-border-radius: 11px; }
@@ -20,6 +20,7 @@
 .ton-bulk .check-box:selected .box { -fx-background-color: #18778c; }
 .ton-bulk .check-box:selected .mark { -fx-background-color: white; }
 .ton-bulk .bulk-color-choice:selected { -fx-background-color: #e4f2f5; -fx-border-color: #8ebdca; }
+.ton-bulk .bulk-refresh-button { -fx-padding: 5px 13px; }
 .ton-bulk .bulk-link-button { -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 3px 2px; -fx-font-size: 12px; -fx-text-fill: #16768c; }
 .ton-bulk .bulk-product-picker, .ton-bulk .bulk-product-picker > .viewport { -fx-background-color: white; -fx-background: white; }
 .ton-bulk .bulk-product-picker { -fx-border-color: #cbdce7; -fx-border-radius: 7px; -fx-background-radius: 7px; }

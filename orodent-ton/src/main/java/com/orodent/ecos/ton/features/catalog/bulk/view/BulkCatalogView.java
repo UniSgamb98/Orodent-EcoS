@@ -31,6 +31,7 @@ public final class BulkCatalogView extends ScrollPane {
         back.setId("ton-bulk-back");
         back.getStyleClass().add("bulk-link-button");
         refresh.setId("ton-bulk-refresh");
+        refresh.getStyleClass().add("bulk-refresh-button");
         Region gap = new Region();
         HBox.setHgrow(gap, Priority.ALWAYS);
         HBox commands = new HBox(12, back, gap, refresh);
@@ -46,6 +47,7 @@ public final class BulkCatalogView extends ScrollPane {
         articles.setToggleGroup(toggles);
         HBox tabs = new HBox(4, products, articles);
         tabs.getStyleClass().add("bulk-mode-tabs");
+        tabs.setMaxWidth(Region.USE_PREF_SIZE);
         workspaces.put(CatalogKind.PRODUCTS, new BulkWorkspace(CatalogKind.PRODUCTS));
         workspaces.put(CatalogKind.ARTICLES, new BulkWorkspace(CatalogKind.ARTICLES));
         products.setOnAction(e -> mode.set(CatalogKind.PRODUCTS));
@@ -57,7 +59,7 @@ public final class BulkCatalogView extends ScrollPane {
                     workspaceHost.getChildren().setAll(workspaces.get(b));
                     setVvalue(0);
                 });
-        content.getChildren().setAll(commands, title, tabs, workspaceHost);
+        content.getChildren().setAll(new VBox(6, commands, title), tabs, workspaceHost);
         mode.set(initial);
     }
 

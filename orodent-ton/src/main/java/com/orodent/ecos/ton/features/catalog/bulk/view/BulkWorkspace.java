@@ -172,12 +172,7 @@ public final class BulkWorkspace extends GridPane {
             HBox.setHgrow(hs, Priority.ALWAYS);
             ds.setMinWidth(0);
             hs.setMinWidth(0);
-            left.getChildren()
-                    .addAll(
-                            dimensions,
-                            hint(
-                                    "Separa le misure con “;”. Gli stessi formati verranno creati"
-                                            + " per tutti i prodotti selezionati."));
+            left.getChildren().addAll(dimensions, hint("Separa le misure con “;”"));
         }
         compose.setId(id + "-rule");
         compose.setMaxWidth(Double.MAX_VALUE);

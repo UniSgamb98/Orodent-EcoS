@@ -1,3 +1,4 @@
+.ton-module { -fx-background-color: #e3edf3; }
 .ton-module > .app-header { -fx-padding: 12px 24px; }
 .ton-module .ton-sidebar {
     -fx-background-color: white;
@@ -36,13 +37,13 @@
 .ton-module .ton-home-icon { -fx-fill: white; }
 .ton-module .ton-page-scroll,
 .ton-module .ton-page-scroll > .viewport {
-    -fx-background-color: #f4f7fb;
-    -fx-background: #f4f7fb;
+    -fx-background-color: #e3edf3;
+    -fx-background: #e3edf3;
     -fx-border-width: 0;
     -fx-padding: 0;
 }
 .ton-module .ton-breadcrumb {
-    -fx-background-color: #f4f7fb;
+    -fx-background-color: #e3edf3;
     -fx-text-fill: #6a7f93;
     -fx-font-size: 11px;
     -fx-padding: 13px 26px 0 26px;

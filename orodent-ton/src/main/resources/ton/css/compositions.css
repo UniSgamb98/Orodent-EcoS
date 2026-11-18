@@ -15,5 +15,5 @@
 .ton-compositions .tab-pane > .tab-header-area > .tab-header-background { -fx-background-color: #eaf0f5; }
 .ton-compositions .tab-pane > .tab-header-area > .headers-region > .tab { -fx-padding: 7px 10px; }
 .ton-compositions .tab-pane > .tab-header-area > .headers-region > .tab:selected { -fx-background-color: white; -fx-border-color: transparent transparent #176d86 transparent; -fx-border-width: 0 0 3px 0; }
-.ton-compositions .scroll-pane, .ton-compositions .scroll-pane > .viewport { -fx-background-color: #f4f7fb; -fx-background: #f4f7fb; }
+.ton-compositions .scroll-pane, .ton-compositions .scroll-pane > .viewport { -fx-background-color: #e3edf3; -fx-background: #e3edf3; }
 .ton-compositions .tab-content-area { -fx-padding: 16px 0; }

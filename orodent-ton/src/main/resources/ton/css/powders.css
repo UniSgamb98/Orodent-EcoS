@@ -10,4 +10,4 @@
 .ton-powders .ton-powder-total { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #173f5f; }
 .ton-powders .table-cell { -fx-padding: 7px; }
 .ton-powders .table-cell .text-field, .ton-powders .table-cell .combo-box { -fx-background-radius: 5px; }
-.ton-powders .scroll-pane, .ton-powders .scroll-pane > .viewport { -fx-background-color: #f4f7fb; -fx-background: #f4f7fb; }
+.ton-powders .scroll-pane, .ton-powders .scroll-pane > .viewport { -fx-background-color: #e3edf3; -fx-background: #e3edf3; }
