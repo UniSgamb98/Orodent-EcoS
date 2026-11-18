@@ -226,6 +226,7 @@ class PowderPricesUiTest {
                     });
             rejectedSwitch.get(15, TimeUnit.SECONDS);
             await(() -> table().getSelectionModel().getSelectedIndex() == 0
+                    && field("costi-inline-quantity-1") != null
                     && field("costi-inline-quantity-1").isFocused());
             fx(
                     () -> {

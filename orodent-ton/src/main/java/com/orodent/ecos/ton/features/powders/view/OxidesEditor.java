@@ -100,7 +100,7 @@ final class OxidesEditor extends VBox {
         Label hint =
                 new Label(
                         "Valori in percentuale in peso (wt%). Le analisi parziali sono ammesse; il"
-                            + " totale non viene normalizzato automaticamente.");
+                                + " totale non viene normalizzato automaticamente.");
         hint.setWrapText(true);
         hint.setMinHeight(Region.USE_PREF_SIZE);
         hint.getStyleClass().add("muted-label");
@@ -155,7 +155,7 @@ final class OxidesEditor extends VBox {
             error.setText(
                     sum.compareTo(BigDecimal.valueOf(100)) > 0
                             ? "Il totale supera il 100 wt%. Puoi conservare la bozza, ma devi"
-                                  + " correggerla prima dell'approvazione."
+                                    + " correggerla prima dell'approvazione."
                             : "");
         } catch (IllegalArgumentException invalid) {
             total.setText("Totale da verificare");
@@ -182,7 +182,7 @@ final class OxidesEditor extends VBox {
                 else
                     throw new IllegalArgumentException(
                             "Incolla gli ossidi e una sola colonna di valori per questa polvere."
-                                + " Sono ammesse due colonne, oppure ossido / wt% / valore.");
+                                    + " Sono ammesse due colonne, oppure ossido / wt% / valore.");
                 pasted.add(
                         new Oxide(
                                 cells[0],
@@ -266,19 +266,24 @@ final class OxidesEditor extends VBox {
         @Override
         protected void updateItem(String value, boolean empty) {
             super.updateItem(value, empty);
-            if (bound != null) field.getEditor().textProperty().unbindBidirectional(bound.code);
-            bound = null;
-            setGraphic(null);
-            if (!empty && getTableRow() != null && getTableRow().getItem() != null) {
-                bound = getTableRow().getItem();
-                field.setValue(bound.code.get());
-                field.getEditor().setText(bound.code.get());
+            Row row = empty || getTableRow() == null ? null : getTableRow().getItem();
+            // Observable row changes also refresh this cell during typing. Rebind only when
+            // virtualization assigns a different row; resetting text would move the caret.
+            if (row != bound) {
+                if (bound != null) field.getEditor().textProperty().unbindBidirectional(bound.code);
+                bound = row;
+                if (bound != null) {
+                    field.setValue(bound.code.get());
+                    field.getEditor().setText(bound.code.get());
+                    field.getEditor().textProperty().bindBidirectional(bound.code);
+                }
+            }
+            if (bound != null) {
                 field.getEditor().setId("ton-oxide-code-" + getIndex());
                 field.getEditor()
                         .setAccessibleText("Formula dell'ossido, riga " + (getIndex() + 1));
-                field.getEditor().textProperty().bindBidirectional(bound.code);
-                setGraphic(field);
             }
+            setGraphic(bound == null ? null : field);
         }
     }
 
@@ -294,17 +299,20 @@ final class OxidesEditor extends VBox {
         @Override
         protected void updateItem(String value, boolean empty) {
             super.updateItem(value, empty);
-            if (bound != null) field.textProperty().unbindBidirectional(bound.amount);
-            bound = null;
-            setGraphic(null);
-            if (!empty && getTableRow() != null && getTableRow().getItem() != null) {
-                bound = getTableRow().getItem();
-                field.setText(bound.amount.get());
+            Row row = empty || getTableRow() == null ? null : getTableRow().getItem();
+            if (row != bound) {
+                if (bound != null) field.textProperty().unbindBidirectional(bound.amount);
+                bound = row;
+                if (bound != null) {
+                    field.setText(bound.amount.get());
+                    field.textProperty().bindBidirectional(bound.amount);
+                }
+            }
+            if (bound != null) {
                 field.setId("ton-oxide-percent-" + getIndex());
                 field.setAccessibleText("Percentuale in peso, riga " + (getIndex() + 1));
-                field.textProperty().bindBidirectional(bound.amount);
-                setGraphic(field);
             }
+            setGraphic(bound == null ? null : field);
         }
     }
 }

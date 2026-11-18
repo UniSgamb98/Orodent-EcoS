@@ -59,6 +59,8 @@ class DocumentEditorIntegrationTest {
                 });
         started.get(10, TimeUnit.SECONDS);
         try {
+            new com.orodent.ecos.ton.features.powders.view.OxidesEditorChecks()
+                    .typingKeepsCaretSelectionAndImmediateValuesAcrossCellUpdates();
             fx(
                     () -> {
                         stage = new Stage();
