@@ -23,7 +23,13 @@ public final class DiskModelListView extends VBox {
         filter.getItems().setAll(Filter.values());
         filter.setValue(Filter.ALL);
         filter.setAccessibleText("Filtra stato del modello");
-        var heading = new HBox(15, TechnicalUi.label("Modelli disco", "ton-page-heading"), create);
+        var intro =
+                TechnicalUi.label(
+                        "Geometria, strati e parametri di pressatura. Una riga per modello, con"
+                            + " tutte le versioni nella scheda.",
+                        "muted-label");
+        HBox.setHgrow(intro, Priority.ALWAYS);
+        var heading = new HBox(15, intro, create);
         heading.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         var filters = new HBox(12, search, filter);
         HBox.setHgrow(search, Priority.ALWAYS);
@@ -45,15 +51,7 @@ public final class DiskModelListView extends VBox {
                 100,
                 r -> r.draftVersion() == null ? "—" : "v" + r.draftVersion());
         VBox.setVgrow(results, Priority.ALWAYS);
-        getChildren()
-                .addAll(
-                        heading,
-                        TechnicalUi.label(
-                                "Geometria, strati e parametri di pressatura. Una riga per modello,"
-                                        + " con tutte le versioni nella scheda.",
-                                "muted-label"),
-                        filters,
-                        results);
+        getChildren().addAll(heading, filters, results);
     }
 
     public TextField search() {

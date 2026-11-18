@@ -2,7 +2,9 @@
 
 TON dispone di **Panoramica**, **Produzione**, **Forni e cotture**, **Dati tecnici**,
 **Tracciabilità** e **Documenti**. Il percorso completo è mostrato nell'intestazione
-(es. **TON › Dati tecnici › Articoli**), senza una seconda barra sotto;
+(es. **TON › Dati tecnici › Articoli**), senza una seconda barra sotto o titoli
+ripetuti nel corpo delle pagine. L'inserimento multiplo aggiunge l'ultimo livello:
+**TON › Dati tecnici › Prodotti tecnici › Inserimento multiplo** (oppure Articoli);
 **Home Orodent-EcoS** torna al catalogo principale e **Panoramica** resta in TON.
 
 Dati tecnici mantiene al massimo due colonne, disposte per righe:

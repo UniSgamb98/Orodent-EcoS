@@ -3,6 +3,8 @@ package com.orodent.ecos.ton.view;
 import com.orodent.ecos.ton.navigation.TonFeature;
 import com.orodent.ecos.ton.navigation.TonSection;
 import javafx.geometry.Insets;
+import javafx.application.Platform;
+import javafx.scene.Parent;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -22,7 +24,7 @@ final class TonPages {
     private TonPages() { }
 
     static VBox overview(Consumer<TonSection> navigate, Consumer<TonFeature> openFeature) {
-        VBox page = page("ton-overview-page", "Panoramica TON", "Produzione, schede tecniche, cotture e tracciabilità.");
+        VBox page = page("ton-overview-page", "Produzione, schede tecniche, cotture e tracciabilità.");
         VBox ready = card(); ready.getStyleClass().add("ton-ready-card");
         ready.getChildren().addAll(badge("Disponibile", true), label("Cataloghi del laboratorio", "ton-card-title"),
                 label("Linee, prodotti, articoli, composizioni, modelli disco e schede delle polveri. Naviga tra i cataloghi e consulta lo storico.", "ton-description"),
@@ -41,7 +43,7 @@ final class TonPages {
     }
 
     static VBox section(TonSection section, Consumer<TonFeature> openFeature) {
-        VBox page = page("ton-" + section.id() + "-page", section.title(), section.description());
+        VBox page = page("ton-" + section.id() + "-page", section.description());
         page.getChildren().add(label(section == TonSection.TECHNICAL
                 ? "I sei cataloghi tecnici sono operativi. Le funzioni di produzione saranno attivate progressivamente."
                 : section == TonSection.DOCUMENTS ? "L’editor dei modelli è disponibile. L’archivio dei documenti emessi sarà collegato alle produzioni."
@@ -80,8 +82,8 @@ final class TonPages {
         return card;
     }
 
-    private static VBox page(String id, String title, String description) {
-        VBox page = new VBox(18, label(title, "ton-page-heading"), label(description, "ton-description"));
+    private static VBox page(String id, String description) {
+        VBox page = new VBox(18, label(description, "ton-description"));
         page.setId(id); page.getStyleClass().add("ton-landing-page");
         page.setPadding(new Insets(22, 26, 28, 26)); page.setMinWidth(0);
         return page;
@@ -115,7 +117,21 @@ final class TonPages {
 
     private static GridPane grid(List<Node> cards, int maximumColumns) {
         GridPane grid = new GridPane(); grid.setHgap(16); grid.setVgap(16); grid.setMinWidth(0);
-        grid.widthProperty().addListener((observable, before, width) -> arrange(grid, cards, width.doubleValue(), maximumColumns));
+        // Wrapped card heights must be measured after the restored window width has been laid out.
+        boolean[] queued = {false};
+        grid.widthProperty().addListener((observable, before, width) -> {
+            arrange(grid, cards, width.doubleValue(), maximumColumns);
+            if (queued[0]) return;
+            queued[0] = true;
+            Platform.runLater(() -> {
+                queued[0] = false;
+                if (grid.getScene() == null) return;
+                for (Node card : cards) {
+                    if (card instanceof Parent parent) parent.requestLayout();
+                }
+                grid.requestLayout();
+            });
+        });
         arrange(grid, cards, 0, maximumColumns); return grid;
     }
 

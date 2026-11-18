@@ -115,8 +115,11 @@ Le due operazioni condividono lo stesso schema visivo:
 - Una sola nota sotto l'anteprima riunisce il collegamento alle anagrafiche e il
   passaggio tecnico successivo; usa una riga quando lo spazio lo permette.
 
-In una finestra stretta i pannelli si dispongono in verticale con uno scorrimento
-naturale della pagina. La griglia permette Tab e modifiche delle righe senza
+A due colonne, elenco prodotti e anteprima occupano l'altezza disponibile e hanno
+il proprio scorrimento; campi e pulsante Crea rimangono visibili senza far scorrere
+l'intera pagina. Torna al catalogo e Aggiorna dati condividono la stessa riga.
+In una finestra stretta o troppo bassa i pannelli si dispongono in verticale con
+uno scorrimento naturale della pagina. La griglia permette Tab e modifiche delle righe senza
 rigenerarsi ad ogni carattere digitato.
 
 La validazione distingue:

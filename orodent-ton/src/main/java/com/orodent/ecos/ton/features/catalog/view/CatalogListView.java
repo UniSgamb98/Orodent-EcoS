@@ -38,15 +38,13 @@ public final class CatalogListView extends VBox {
         next = CatalogUi.button("→", base + "-next", false);
         previous.setAccessibleText("Pagina precedente");
         next.setAccessibleText("Pagina successiva");
-        Label heading = new Label(kind.title());
-        heading.getStyleClass().add("ton-page-heading");
         Region gap = new Region();
         HBox.setHgrow(gap, Priority.ALWAYS);
         bulk =
                 kind == CatalogKind.LINES
                         ? null
                         : CatalogUi.button("Inserimento multiplo…", base + "-bulk", false);
-        HBox title = new HBox(12, heading, gap);
+        HBox title = new HBox(12, gap);
         if (bulk != null) title.getChildren().add(bulk);
         title.getChildren().add(create);
         title.setAlignment(Pos.CENTER_LEFT);
@@ -85,7 +83,9 @@ public final class CatalogListView extends VBox {
         HBox.setHgrow(spacer, Priority.ALWAYS);
         HBox pages = new HBox(10, result, spacer, previous, next);
         pages.setAlignment(Pos.CENTER_LEFT);
-        getChildren().addAll(title, intro, query);
+        title.getChildren().addFirst(intro);
+        HBox.setHgrow(intro, Priority.ALWAYS);
+        getChildren().addAll(title, query);
         if (!filterFields.isEmpty()) {
             TitledPane filters =
                     new TitledPane(

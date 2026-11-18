@@ -23,8 +23,13 @@ public final class CompositionListView extends VBox {
         getStyleClass().add("ton-comp-page");
         var spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        var heading =
-                new HBox(15, TechnicalUi.label("Composizioni", "ton-page-heading"), spacer, create);
+        var intro =
+                TechnicalUi.label(
+                        "Una ricetta per prodotto, con revisioni precise delle polveri in ogni"
+                            + " strato.",
+                        "muted-label");
+        HBox.setHgrow(intro, Priority.ALWAYS);
+        var heading = new HBox(15, intro, spacer, create);
         heading.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         filter.setId("ton-composition-filter");
         filter.getItems().setAll(Filter.values());
@@ -56,16 +61,7 @@ public final class CompositionListView extends VBox {
                 80,
                 r -> r.draftVersion() == null ? "—" : "v" + r.draftVersion());
         VBox.setVgrow(results, Priority.ALWAYS);
-        getChildren()
-                .addAll(
-                        heading,
-                        TechnicalUi.label(
-                                "Una ricetta per prodotto, con revisioni precise delle polveri in"
-                                        + " ogni strato.",
-                                "muted-label"),
-                        filters,
-                        archived,
-                        results);
+        getChildren().addAll(heading, filters, archived, results);
     }
 
     public TextField search() {

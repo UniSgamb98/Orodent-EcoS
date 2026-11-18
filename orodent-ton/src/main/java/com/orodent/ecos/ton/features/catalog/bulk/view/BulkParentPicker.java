@@ -15,6 +15,7 @@ public final class BulkParentPicker extends VBox {
     private final boolean multiple;
     private final ComboBox<Parent> single = new ComboBox<>();
     private final VBox choices = new VBox();
+    private final ScrollPane products = new ScrollPane(choices);
     private final Button more = new Button("Altri risultati…"),
             selectAll = new Button("Seleziona tutto");
     private final Label feedback = new Label();
@@ -42,7 +43,7 @@ public final class BulkParentPicker extends VBox {
         feedback.setWrapText(true);
         feedback.setMinHeight(Region.USE_PREF_SIZE);
         if (multiple) {
-            ScrollPane scroll = new ScrollPane(choices);
+            ScrollPane scroll = products;
             scroll.setFitToWidth(true);
             scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
             scroll.setPrefHeight(360);
@@ -76,6 +77,24 @@ public final class BulkParentPicker extends VBox {
                             });
         }
         getChildren().addAll(more, feedback);
+    }
+
+    public void fitAvailableHeight(boolean fit) {
+        if (!multiple) return;
+        setMinHeight(fit ? 0 : Region.USE_PREF_SIZE);
+        products.setMinHeight(fit ? 100 : 260);
+        VBox.setVgrow(products, fit ? Priority.ALWAYS : Priority.NEVER);
+    }
+
+    public double minimumFlexibleHeight(double width) {
+        double result = getInsets().getTop() + getInsets().getBottom();
+        long count = getChildren().stream().filter(javafx.scene.Node::isManaged).count();
+        result += Math.max(0, count - 1) * getSpacing();
+        for (var child : getChildren())
+            if (child.isManaged()) {
+                result += child == products ? 100 : child.prefHeight(width);
+            }
+        return result;
     }
 
     public void onSelection(Runnable action) {
@@ -218,7 +237,7 @@ public final class BulkParentPicker extends VBox {
             choices.getChildren().add(row);
         }
         if (visible.isEmpty())
-            choices.getChildren().add(new Label("Cerca i prodotti da selezionare."));
+            choices.getChildren().add(new Label("Seleziona una linea per vedere i prodotti."));
     }
 
     public Button selectAllButton() {

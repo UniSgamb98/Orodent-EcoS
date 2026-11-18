@@ -124,6 +124,27 @@ public final class BulkCatalogUiProbe {
                                                 .toUri()
                                                 .toString());
                         stage.show();
+                        return null;
+                    });
+            fx(
+                    () -> {
+                        stage.setWidth(1900);
+                        stage.setHeight(1050);
+                        return null;
+                    });
+            Thread.sleep(250);
+            fx(
+                    () -> {
+                        stage.setWidth(1120);
+                        stage.setHeight(800);
+                        return null;
+                    });
+            Thread.sleep(250);
+            fx(
+                    () -> {
+                        assertNoOverlaps(stage.getScene().getRoot().lookupAll(".ton-feature-card"));
+                        stage.setWidth(1600);
+                        stage.setHeight(1050);
                         button("ton-lines-button").fire();
                         return null;
                     });
@@ -177,6 +198,9 @@ public final class BulkCatalogUiProbe {
             fx(
                     () -> {
                         assertEquals(line.id(), workspace().parents().value().id());
+                        assertEquals(
+                                "TON › Dati tecnici › Prodotti tecnici › Inserimento multiplo",
+                                textLabel("ton-breadcrumb"));
                         for (String color : List.of("A1", "A2", "A3"))
                             ((CheckBox) node("ton-bulk-products-color-" + color)).fire();
                         return null;
@@ -258,6 +282,12 @@ public final class BulkCatalogUiProbe {
                             enabled("ton-bulk-articles-create")
                                     && textLabel("ton-bulk-articles-count-total").equals("15")
                                     && textLabel("ton-bulk-articles-count-existing").equals("1"));
+            await(() -> ((BulkCatalogView) node("ton-bulk-view")).isFitToHeight());
+            fx(
+                    () -> {
+                        assertWideFits();
+                        return null;
+                    });
             fx(
                     () -> {
                         assertEquals("MST_A1", p1.code());
@@ -302,6 +332,7 @@ public final class BulkCatalogUiProbe {
                                     && textLabel("ton-bulk-articles-count-total").equals("255"));
             fx(
                     () -> {
+                        assertWideFits();
                         assertTrue(
                                 workspace().table().getItems().stream()
                                         .map(BulkWorkspace.Row::seed)
@@ -418,6 +449,19 @@ public final class BulkCatalogUiProbe {
             await(() -> enabled("ton-bulk-articles-create"));
             fx(
                     () -> {
+                        stage.setHeight(500);
+                        return null;
+                    });
+            await(() -> !((BulkCatalogView) node("ton-bulk-view")).isFitToHeight());
+            fx(
+                    () -> {
+                        stage.setHeight(1050);
+                        return null;
+                    });
+            await(() -> ((BulkCatalogView) node("ton-bulk-view")).isFitToHeight());
+            fx(
+                    () -> {
+                        assertWideFits();
                         snapshot("target/ton-bulk-articles.png");
                         stage.setWidth(1050);
                         return null;
@@ -425,7 +469,7 @@ public final class BulkCatalogUiProbe {
             await(() -> workspace().getWidth() < 1040);
             fx(
                     () -> {
-                        layout();
+                        assertNoOverlaps(workspace().lookupAll(".bulk-card"));
                         var cards =
                                 workspace().lookupAll(".bulk-card").stream()
                                         .map(n -> n.localToScene(n.getBoundsInLocal()))
@@ -566,6 +610,55 @@ public final class BulkCatalogUiProbe {
             Thread.sleep(50);
         }
         throw new AssertionError("Timeout UI bulk; screenshot state may be inspected in target");
+    }
+
+    private void assertNoOverlaps(Set<Node> cards) {
+        assertFalse(cards.isEmpty());
+        var bounds =
+                cards.stream().map(card -> card.localToScene(card.getBoundsInLocal())).toList();
+        for (int i = 0; i < bounds.size(); i++)
+            for (int j = i + 1; j < bounds.size(); j++) {
+                var a = bounds.get(i);
+                var b = bounds.get(j);
+                boolean overlap =
+                        a.getMaxX() > b.getMinX() + 2
+                                && b.getMaxX() > a.getMinX() + 2
+                                && a.getMaxY() > b.getMinY() + 2
+                                && b.getMaxY() > a.getMinY() + 2;
+                assertFalse(
+                        overlap,
+                        "Cards must reflow after restoring the window without a second resize");
+            }
+    }
+
+    private void assertWideFits() {
+        layout();
+        BulkCatalogView page = (BulkCatalogView) node("ton-bulk-view");
+        assertTrue(page.isFitToHeight());
+        assertTrue(
+                page.getContent().getLayoutBounds().getHeight()
+                        <= page.getViewportBounds().getHeight() + 1);
+        var frame = page.localToScene(page.getBoundsInLocal());
+        var save =
+                workspace().saveButton().localToScene(workspace().saveButton().getBoundsInLocal());
+        var notes =
+                node("ton-bulk-articles-notes")
+                        .localToScene(node("ton-bulk-articles-notes").getBoundsInLocal());
+        assertTrue(
+                save.getMaxY() <= frame.getMaxY(),
+                "Create must remain visible without scrolling the page");
+        assertTrue(
+                notes.getMaxY() <= frame.getMaxY(),
+                "Common fields must remain visible without scrolling the page");
+        assertEquals(
+                "TON › Dati tecnici › Articoli › Inserimento multiplo",
+                textLabel("ton-breadcrumb"));
+        var back = page.back();
+        var refresh = page.refresh();
+        assertEquals(
+                refresh.localToScene(refresh.getBoundsInLocal()).getCenterY(),
+                back.localToScene(back.getBoundsInLocal()).getCenterY(),
+                1);
     }
 
     private void layout() {

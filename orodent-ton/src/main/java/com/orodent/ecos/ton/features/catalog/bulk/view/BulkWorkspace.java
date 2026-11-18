@@ -184,6 +184,7 @@ public final class BulkWorkspace extends GridPane {
         notes.setId(id + "-notes");
         notes.setWrapText(true);
         notes.setPrefRowCount(3);
+        notes.setMinHeight(Region.USE_PREF_SIZE);
         notes.setPromptText("Applicate ai nuovi elementi");
         left.getChildren().add(field("Note comuni · facoltative", notes));
         if (kind == CatalogKind.ARTICLES) {
@@ -260,24 +261,60 @@ public final class BulkWorkspace extends GridPane {
                         (o, a, b) -> {
                             if (!updating) changed.run();
                         });
-        widthProperty().addListener((o, a, b) -> arrange());
-        arrange();
+        setWideLayout(false);
         updateCounts();
         markClean();
     }
 
-    private void arrange() {
-        boolean next = getWidth() >= 1040;
+    /** Native controls keep their preferred height; lists consume the remaining space. */
+    public double minimumWideHeight(double width) {
+        double leftWidth = 346.5 - left.getInsets().getLeft() - left.getInsets().getRight();
+        double rightWidth =
+                Math.max(
+                        0,
+                        width
+                                - 346.5
+                                - getHgap()
+                                - right.getInsets().getLeft()
+                                - right.getInsets().getRight());
+        return Math.max(
+                cardMinimum(left, leftWidth, parents, kind == CatalogKind.ARTICLES),
+                cardMinimum(right, rightWidth, table, true));
+    }
+
+    private double cardMinimum(VBox card, double width, Node flexible, boolean useFlexible) {
+        double height = card.getInsets().getTop() + card.getInsets().getBottom();
+        long count = card.getChildren().stream().filter(Node::isManaged).count();
+        height += Math.max(0, count - 1) * card.getSpacing();
+        for (Node child : card.getChildren())
+            if (child.isManaged()) {
+                height +=
+                        child == flexible && useFlexible
+                                ? child == parents ? parents.minimumFlexibleHeight(width) : 140
+                                : child.prefHeight(width);
+            }
+        return height;
+    }
+
+    public void setWideLayout(boolean next) {
         if (!getChildren().isEmpty() && next == wide) return;
         wide = next;
         getChildren().clear();
         getColumnConstraints().clear();
+        getRowConstraints().clear();
+        setMinHeight(wide ? 0 : Region.USE_PREF_SIZE);
+        left.setMinHeight(wide ? 0 : Region.USE_PREF_SIZE);
+        right.setMinHeight(wide ? 0 : Region.USE_PREF_SIZE);
         if (wide) {
             ColumnConstraints l = new ColumnConstraints(346.5);
             l.setHgrow(Priority.NEVER);
             ColumnConstraints r = new ColumnConstraints();
             r.setHgrow(Priority.ALWAYS);
             getColumnConstraints().addAll(l, r);
+            RowConstraints row = new RowConstraints();
+            row.setPercentHeight(100);
+            row.setVgrow(Priority.ALWAYS);
+            getRowConstraints().add(row);
             add(left, 0, 0);
             add(right, 1, 0);
         } else {
@@ -290,9 +327,15 @@ public final class BulkWorkspace extends GridPane {
         }
         GridPane.setValignment(left, VPos.TOP);
         GridPane.setValignment(right, VPos.TOP);
-        GridPane.setFillHeight(left, false);
-        GridPane.setFillHeight(right, false);
+        GridPane.setFillHeight(left, wide);
+        GridPane.setFillHeight(right, wide);
         GridPane.setHgrow(right, Priority.ALWAYS);
+        if (kind == CatalogKind.ARTICLES) {
+            parents.fitAvailableHeight(wide);
+            VBox.setVgrow(parents, wide ? Priority.ALWAYS : Priority.NEVER);
+        }
+        table.setMinHeight(wide ? 140 : Region.USE_PREF_SIZE);
+        VBox.setVgrow(table, wide ? Priority.ALWAYS : Priority.NEVER);
     }
 
     private void addColorChoice(String raw) {

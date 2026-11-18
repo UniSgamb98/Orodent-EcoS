@@ -8,7 +8,6 @@
 .ton-bulk .text-area { -fx-padding: 3px; }
 .ton-bulk .text-area .content { -fx-background-color: white; -fx-padding: 6px; }
 .ton-bulk .text-field:focused, .ton-bulk-code-dialog .text-field:focused { -fx-border-color: #3196aa; -fx-effect: dropshadow(gaussian, #a6d4df, 3, 0, 0, 0); }
-.ton-bulk .bulk-page-title { -fx-font-size: 27px; -fx-font-weight: bold; }
 .ton-bulk .bulk-section-title { -fx-font-size: 17px; -fx-font-weight: bold; }
 .ton-bulk .bulk-small, .ton-bulk-code-dialog .bulk-small { -fx-font-size: 12px; -fx-font-weight: normal; -fx-text-fill: #657e92; }
 .ton-bulk .bulk-field-label { -fx-font-size: 12px; -fx-font-weight: bold; }

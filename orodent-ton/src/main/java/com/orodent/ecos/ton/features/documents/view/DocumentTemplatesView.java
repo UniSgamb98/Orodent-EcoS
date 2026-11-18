@@ -58,10 +58,9 @@ public final class DocumentTemplatesView extends BorderPane {
         var top =
                 new VBox(
                         12,
-                        label("Modelli documento", "ton-page-heading"),
                         label(
                                 "Progetta il foglio operativo, salva le bozze e conserva le"
-                                    + " versioni approvate. L’anteprima usa dati di esempio.",
+                                        + " versioni approvate. L’anteprima usa dati di esempio.",
                                 "ton-description"),
                         tools);
         top.setPadding(new Insets(18, 24, 16, 24));

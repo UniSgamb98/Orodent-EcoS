@@ -27,11 +27,9 @@ public final class PowderListView extends VBox {
         setId("ton-powders-list");
         getStyleClass().add("ton-powder-page");
         setMinWidth(0);
-        Label heading = new Label("Polveri");
-        heading.getStyleClass().add("ton-page-heading");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox header = new HBox(12, heading, spacer, create);
+        HBox header = new HBox(12, spacer, create);
         header.setAlignment(Pos.CENTER_LEFT);
         Label intro =
                 new Label(
@@ -39,6 +37,9 @@ public final class PowderListView extends VBox {
                                 + " percentuale in peso (wt%).");
         intro.setWrapText(true);
         intro.getStyleClass().add("muted-label");
+        intro.setMinWidth(0);
+        header.getChildren().addFirst(intro);
+        HBox.setHgrow(intro, Priority.ALWAYS);
         search.setId("ton-powders-search");
         search.setPromptText("Cerca codice, nome o fornitore");
         HBox.setHgrow(search, Priority.ALWAYS);
@@ -78,7 +79,6 @@ public final class PowderListView extends VBox {
         getChildren()
                 .setAll(
                         header,
-                        intro,
                         new HBox(10, search, refresh),
                         inactive,
                         table,

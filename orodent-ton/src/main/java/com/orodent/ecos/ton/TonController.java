@@ -126,7 +126,7 @@ final class TonController {
                     .addListener(
                             (o, previous, kind) -> {
                                 activeFeature = kind.feature();
-                                view.showFeature(page, activeFeature);
+                                view.showFeature(page, activeFeature, "Inserimento multiplo");
                             });
             install(route.kind().feature(), page, controller, () -> controller.start(route));
             return;
@@ -167,7 +167,8 @@ final class TonController {
         activeFeature = feature;
         section = feature.section();
         view.navigationBlockedProperty().bind(active.savingProperty());
-        view.showFeature(page, feature);
+        view.showFeature(
+                page, feature, page instanceof BulkCatalogView ? "Inserimento multiplo" : null);
         initialize.run();
     }
 

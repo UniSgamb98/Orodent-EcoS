@@ -96,8 +96,14 @@ public final class TonView extends BorderPane {
     }
 
     public void showFeature(Parent page, TonFeature feature) {
+        showFeature(page, feature, null);
+    }
+
+    public void showFeature(Parent page, TonFeature feature, String subpage) {
         viewport.setContent(page);
-        select(feature.section(), "TON › " + feature.section().title() + " › " + feature.title());
+        String location = "TON › " + feature.section().title() + " › " + feature.title();
+        if (subpage != null && !subpage.isBlank()) location += " › " + subpage;
+        select(feature.section(), location);
     }
 
     private Button navigation(TonSection section) {
