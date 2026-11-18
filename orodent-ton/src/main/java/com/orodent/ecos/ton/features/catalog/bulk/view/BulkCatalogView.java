@@ -37,9 +37,6 @@ public final class BulkCatalogView extends ScrollPane {
         commands.setAlignment(Pos.CENTER_LEFT);
         Label title = new Label("Inserimento multiplo");
         title.getStyleClass().add("bulk-page-title");
-        Label hint = new Label("Imposta i dati comuni, controlla le righe e crea tutto insieme.");
-        hint.getStyleClass().add("bulk-small");
-        hint.setWrapText(true);
         ToggleGroup toggles = new ToggleGroup();
         ToggleButton products = new ToggleButton("Più prodotti di una linea"),
                 articles = new ToggleButton("Articoli per più prodotti");
@@ -60,7 +57,7 @@ public final class BulkCatalogView extends ScrollPane {
                     workspaceHost.getChildren().setAll(workspaces.get(b));
                     setVvalue(0);
                 });
-        content.getChildren().setAll(commands, new VBox(5, title, hint), tabs, workspaceHost);
+        content.getChildren().setAll(commands, title, tabs, workspaceHost);
         mode.set(initial);
     }
 

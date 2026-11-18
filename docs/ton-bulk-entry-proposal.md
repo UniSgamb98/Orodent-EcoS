@@ -52,9 +52,8 @@ conserva il suo codice, se linea e colore non cambiano.
 ## Articoli per più prodotti
 
 1. Si sceglie una linea dal menu a tendina, poi i prodotti con le caselle di spunta.
-   La ricerca dei prodotti non cambia la selezione. **Seleziona tutto** comprende
-   tutti i prodotti attivi della linea, anche oltre la pagina caricata o fuori
-   dalla ricerca corrente. Cambiare linea azzera la selezione precedente.
+   Non ci sono caselle di ricerca. **Seleziona tutto** comprende tutti i prodotti
+   attivi della linea, anche oltre la pagina caricata. Cambiare linea azzera la selezione precedente.
    L'elenco è più alto e non mostra etichette separate dei prodotti selezionati.
    Non esistono ricerca della linea, opzione «Tutte le linee» o riquadro di riepilogo
    dei prodotti selezionati. Linea, colore e materiale si ereditano dal prodotto.
@@ -101,16 +100,18 @@ codici riservati dallo storico. Applica i limiti già adottati dal catalogo:
 misure positive con massimo due decimali e vincolo esistente di formato univoco
 per prodotto. Lo stesso colore non può essere creato due volte nella stessa linea.
 Ogni gruppo può contenere al massimo 1.000 righe; i selettori caricano 50 risultati
-alla volta e mantengono i prodotti selezionati cambiando ricerca nella stessa linea.
+alla volta e mantengono i prodotti selezionati caricando altre pagine della stessa linea.
 
 ## Anteprima e conferma
 
 Le due operazioni condividono lo stesso schema visivo:
 
-- A sinistra i dati comuni e i criteri di generazione.
+- A sinistra soltanto i campi e i criteri di generazione, senza intestazione o frasi introduttive.
 - A destra la griglia modificabile, con riga, selezione ed esito.
 - Conteggio delle righe, degli elementi da creare e di quelli già presenti.
 - Pulsante finale esplicito: **Crea 10 articoli** / **Crea 10 prodotti**.
+- Una sola nota sotto l'anteprima riunisce il collegamento alle anagrafiche e il
+  passaggio tecnico successivo; usa una riga quando lo spazio lo permette.
 
 In una finestra stretta i pannelli si dispongono in verticale con uno scorrimento
 naturale della pagina. La griglia permette Tab e modifiche delle righe senza
@@ -153,7 +154,7 @@ distinte per ciascun articolo.
 
 Restano sviluppi futuri la creazione multipla di linee, un comando per applicare
 configurazioni tecniche comuni e il passaggio diretto dai prodotti appena creati
-agli articoli con preselezione automatica. I nuovi prodotti sono già ricercabili
+agli articoli con preselezione automatica. I nuovi prodotti sono già selezionabili
 nella modalità articoli della stessa pagina.
 
 L'inserimento multiplo usa selezioni e combinazioni interne a TON; non include

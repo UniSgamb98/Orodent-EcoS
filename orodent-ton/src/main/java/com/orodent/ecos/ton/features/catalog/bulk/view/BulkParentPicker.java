@@ -9,11 +9,10 @@ import javafx.scene.layout.*;
 
 import java.util.*;
 
-/** Bounded search pages; selected products survive filters and subsequent pages. */
+/** Bounded catalogue pages; products stay selected across subsequent pages. */
 public final class BulkParentPicker extends VBox {
     private final CatalogKind kind;
     private final boolean multiple;
-    private final TextField query = new TextField();
     private final ComboBox<Parent> single = new ComboBox<>();
     private final VBox choices = new VBox();
     private final Button more = new Button("Altri risultati…"),
@@ -29,9 +28,6 @@ public final class BulkParentPicker extends VBox {
         this.kind = kind;
         this.multiple = multiple;
         setMinWidth(0);
-        query.setId(id + "-search");
-        query.setPromptText("Cerca " + (kind == CatalogKind.LINES ? "linea" : "prodotto o colore"));
-        query.setAccessibleText(query.getPromptText());
         single.setId(id);
         single.setMaxWidth(Double.MAX_VALUE);
         single.setVisibleRowCount(10);
@@ -45,7 +41,6 @@ public final class BulkParentPicker extends VBox {
         feedback.managedProperty().bind(feedback.visibleProperty());
         feedback.setWrapText(true);
         feedback.setMinHeight(Region.USE_PREF_SIZE);
-        if (kind != CatalogKind.LINES) getChildren().add(query);
         if (multiple) {
             ScrollPane scroll = new ScrollPane(choices);
             scroll.setFitToWidth(true);
@@ -89,10 +84,6 @@ public final class BulkParentPicker extends VBox {
 
     public CatalogKind kind() {
         return kind;
-    }
-
-    public TextField query() {
-        return query;
     }
 
     public Button more() {

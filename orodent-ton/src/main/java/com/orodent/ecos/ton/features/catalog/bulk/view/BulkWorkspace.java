@@ -121,7 +121,6 @@ public final class BulkWorkspace extends GridPane {
         right.setMinWidth(0);
         left.setMaxWidth(Double.MAX_VALUE);
         right.setMaxWidth(Double.MAX_VALUE);
-        Label heading = label("1. Dati comuni", "bulk-section-title");
         contextTitle.getStyleClass().add("bulk-context-title");
         contextTitle.setWrapText(true);
         contextHint.getStyleClass().add("bulk-small");
@@ -137,10 +136,6 @@ public final class BulkWorkspace extends GridPane {
                         contextTitle,
                         contextHint);
         context.getStyleClass().add("bulk-context");
-        left.getChildren()
-                .addAll(
-                        heading,
-                        hint("Scegli la linea o i prodotti a cui collegare i nuovi elementi."));
         if (kind == CatalogKind.PRODUCTS) left.getChildren().add(context);
         if (kind == CatalogKind.PRODUCTS) {
             Label lineLabel = label("Linea", "bulk-field-label");
@@ -228,7 +223,7 @@ public final class BulkWorkspace extends GridPane {
                 .addAll(
                         field("Note comuni · facoltative", notes),
                         hint("Le anagrafiche già presenti conservano i propri dati."));
-        Label previewHeading = label("2. Controlla l'anteprima", "bulk-section-title");
+        Label previewHeading = label("Controlla l'anteprima", "bulk-section-title");
         right.getChildren()
                 .addAll(
                         previewHeading,
@@ -269,14 +264,18 @@ public final class BulkWorkspace extends GridPane {
         buildColumns();
         save = new Button();
         save.setId(id + "-create");
+        save.setMinWidth(Region.USE_PREF_SIZE);
         save.getStyleClass().add("bulk-primary");
         save.setDisable(true);
         Label saveHint =
                 hint(
                         kind == CatalogKind.PRODUCTS
-                                ? "Verranno creati soltanto i nuovi prodotti selezionati."
-                                : "Ogni articolo sarà collegato al prodotto indicato nella sua"
-                                        + " riga.");
+                                ? "Saranno creati solo i nuovi prodotti selezionati; ricette,"
+                                        + " modelli disco e approvazioni si gestiscono"
+                                        + " successivamente."
+                                : "Ogni articolo resta collegato al proprio prodotto; ricette,"
+                                        + " modelli disco e approvazioni si gestiscono"
+                                        + " successivamente.");
         saveHint.setMinWidth(0);
         saveHint.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(saveHint, Priority.ALWAYS);
@@ -291,17 +290,7 @@ public final class BulkWorkspace extends GridPane {
         openList.setText("Apri elenco " + plural() + " →");
         openList.getStyleClass().add("bulk-link-button");
         visible(openList, false);
-        right.getChildren()
-                .addAll(
-                        metrics,
-                        notice,
-                        table,
-                        footer,
-                        feedback,
-                        openList,
-                        hint(
-                                "Ricette, modelli disco e approvazioni si gestiscono nel passaggio"
-                                        + " tecnico successivo."));
+        right.getChildren().addAll(metrics, notice, table, footer, feedback, openList);
         parents.onSelection(this::selectionChanged);
         diameters.textProperty().addListener((o, a, b) -> settingsChanged());
         heights.textProperty().addListener((o, a, b) -> settingsChanged());

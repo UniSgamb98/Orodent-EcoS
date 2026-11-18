@@ -143,7 +143,6 @@ public final class BulkCatalogController implements FeatureController {
         CompletableFuture<?> all = reads.remove("all-" + w.kind());
         if (all != null) all.cancel(false);
         w.parents().restrictToLine(w.lineFilter().id());
-        w.parents().query().clear();
         w.refreshContext();
         queueGeneration(w);
         loadParents(w.parents(), w, false);
@@ -187,9 +186,6 @@ public final class BulkCatalogController implements FeatureController {
     }
 
     private void configurePicker(BulkParentPicker picker, BulkWorkspace workspace) {
-        PauseTransition search = timer();
-        search.setOnFinished(e -> loadParents(picker, workspace, false));
-        picker.query().textProperty().addListener((o, a, b) -> search.playFromStart());
         picker.more().setOnAction(e -> loadParents(picker, workspace, true));
     }
 
@@ -207,12 +203,7 @@ public final class BulkCatalogController implements FeatureController {
         }
         read(
                 picker,
-                () ->
-                        service.parents(
-                                picker.kind(),
-                                picker.query().getText(),
-                                lineId,
-                                append ? picker.loaded() : 0),
+                () -> service.parents(picker.kind(), "", lineId, append ? picker.loaded() : 0),
                 page -> {
                     picker.results(page, append);
                     w.refreshContext();
