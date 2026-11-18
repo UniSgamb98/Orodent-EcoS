@@ -114,11 +114,11 @@ class BulkCatalogServiceTest {
     }
 
     @Test
-    void createsArticlesForSeveralProductsWithTheirOwnMaterialAndSkipsExactExisting() {
-        Line zr = line("MST", "ZR"), zs = line("ZST", "ZS");
+    void createsArticlesForSeveralProductsOfOneLineAndSkipsExactExisting() {
+        Line zr = line("MST", "ZR");
         var parents = new ArrayList<Parent>();
         for (int i = 1; i <= 3; i++) {
-            Line l = i == 3 ? zs : zr;
+            Line l = zr;
             parents.add(
                     snapshot(
                             single.create(ProductDraft.configured(l.id(), "A" + i, "", true))
@@ -386,20 +386,69 @@ class BulkCatalogServiceTest {
                                             new BigDecimal("12")));
             rows.add(article(rows.size(), parent, code, "12"));
         }
-        Preview preview = bulk.preview(new Request(CatalogKind.ARTICLES, "", rows)).join();
-        assertEquals(2, preview.creating());
-        Created result = bulk.create(preview).join();
+        var entries = new ArrayList<Entry>();
+        for (Seed row : rows) {
+            Preview preview =
+                    bulk.preview(new Request(CatalogKind.ARTICLES, "", List.of(row))).join();
+            assertEquals(1, preview.creating());
+            entries.addAll(bulk.create(preview).join().entries());
+        }
         assertEquals(
-                List.of("ZR9812MSTA0", "ZS9812MSTA0"),
-                result.entries().stream().map(Entry::code).toList());
+                List.of("ZR9812MSTA0", "ZS9812MSTA0"), entries.stream().map(Entry::code).toList());
         assertEquals(
                 List.of(first.id(), second.id()),
-                result.entries().stream().map(e -> ((Article) e).product().id()).toList());
+                entries.stream().map(e -> ((Article) e).product().id()).toList());
         assertEquals(
                 "ZR-MST-A0", single.load(CatalogKind.PRODUCTS, first.id()).join().entry().code());
         assertEquals(
                 "ZSMSTA0", single.load(CatalogKind.PRODUCTS, second.id()).join().entry().code());
         assertEquals("ZRMST", single.load(CatalogKind.LINES, zr.id()).join().entry().code());
         assertEquals("ZSMST", single.load(CatalogKind.LINES, zs.id()).join().entry().code());
+    }
+
+    @Test
+    void rejectsSelectedProductsFromDifferentLinesBeforeWritingAnything() {
+        Parent first =
+                snapshot(
+                        single.create(
+                                        ProductDraft.configured(
+                                                line("ZRMST", "ZR").id(), "A0", "", true))
+                                .join()
+                                .entry());
+        Parent second =
+                snapshot(
+                        single.create(
+                                        ProductDraft.configured(
+                                                line("ZSMST", "ZS").id(), "A0", "", true))
+                                .join()
+                                .entry());
+        Request request =
+                new Request(
+                        CatalogKind.ARTICLES,
+                        "",
+                        List.of(
+                                article(0, first, "ZR9812MSTA0", "12"),
+                                article(1, second, "ZS9812MSTA0", "12")));
+        Preview rejected = bulk.preview(request).join();
+        assertEquals(2, rejected.invalid());
+        assertTrue(rejected.rows().stream().allMatch(r -> r.message().contains("una sola linea")));
+        var stale =
+                new Preview(
+                        request,
+                        List.of(
+                                new RowResult(0, State.NEW, "Nuovo", null),
+                                new RowResult(1, State.NEW, "Nuovo", null)));
+        assertThrows(CompletionException.class, () -> bulk.create(stale).join());
+        assertEquals(0, count("ARTICOLI"));
+        assertEquals(0, count("ARTICOLI_REVISIONI"));
+        Seed excluded = new Seed(1, second, "ZS9812MSTA0", "", "98", "12", false);
+        assertTrue(
+                bulk.preview(
+                                new Request(
+                                        CatalogKind.ARTICLES,
+                                        "",
+                                        List.of(request.rows().getFirst(), excluded)))
+                        .join()
+                        .savable());
     }
 }

@@ -26,6 +26,8 @@ public final class BulkWorkspace extends GridPane {
         final BooleanProperty selected = new SimpleBooleanProperty(true);
         final ObjectProperty<State> state = new SimpleObjectProperty<>(State.EXCLUDED);
         final StringProperty message = new SimpleStringProperty("Da verificare");
+        final String initialCode, initialDiameter, initialHeight;
+        final Combination combination;
 
         Row(int key, Parent parent, String code, String color, String diameter, String height) {
             this.key = key;
@@ -34,6 +36,10 @@ public final class BulkWorkspace extends GridPane {
             this.color = new SimpleStringProperty(color);
             this.diameter = new SimpleStringProperty(diameter);
             this.height = new SimpleStringProperty(height);
+            initialCode = code;
+            initialDiameter = diameter;
+            initialHeight = height;
+            combination = new Combination(parent.id(), color, diameter, height);
         }
 
         public Seed seed() {
@@ -50,14 +56,25 @@ public final class BulkWorkspace extends GridPane {
         String fingerprint() {
             return seed().toString();
         }
+
+        void preserveEdits(Row previous) {
+            if (!previous.code.get().equals(previous.initialCode)) code.set(previous.code.get());
+            if (!previous.diameter.get().equals(previous.initialDiameter))
+                diameter.set(previous.diameter.get());
+            if (!previous.height.get().equals(previous.initialHeight))
+                height.set(previous.height.get());
+            selected.set(previous.selected.get());
+        }
     }
+
+    private record Combination(long parentId, String color, String diameter, String height) {}
 
     private final CatalogKind kind;
     private final String id;
     private final VBox left = new VBox(12), right = new VBox(12);
     private final BulkParentPicker parents, lineFilter;
     private final LinkedHashSet<String> colors = new LinkedHashSet<>();
-    private final FlowPane palette = new FlowPane(6, 6), ruleParts = new FlowPane(6, 6);
+    private final FlowPane palette = new FlowPane(6, 6);
     private final LinkedHashMap<String, CheckBox> colorChecks = new LinkedHashMap<>();
     private final TextField extraColor = new TextField(),
             diameters = new TextField("98"),
@@ -65,8 +82,6 @@ public final class BulkWorkspace extends GridPane {
     private final TextArea notes = new TextArea();
     private final Label contextTitle = new Label(),
             contextHint = new Label(),
-            combination = new Label(),
-            example = new Label(),
             notice = new Label(),
             feedback = new Label();
     private final Label totalValue = new Label("0"),
@@ -75,18 +90,15 @@ public final class BulkWorkspace extends GridPane {
             invalidValue = new Label("0");
     private final VBox invalidMetric;
     private final Button compose = new Button("Personalizza composizione…"),
-            generate,
             save,
             openList = new Button();
     private final TableView<Row> table = new TableView<>();
     private final ObjectProperty<CodeComposition> rule;
-    private Runnable inputs = () -> {}, changed = () -> {}, automatic = () -> {};
+    private Runnable inputs = () -> {}, changed = () -> {};
     private boolean updating, wide, lineChooserOpen;
     private final Button changeLine = new Button("Cambia linea…");
     private Preview preview;
-    private List<String> baseline = List.of(),
-            generatedInputs = List.of(),
-            generatedRows = List.of();
+    private List<String> baseline = List.of(), generatedInputs = List.of();
 
     public BulkWorkspace(CatalogKind kind) {
         this.kind = kind;
@@ -98,11 +110,10 @@ public final class BulkWorkspace extends GridPane {
         getStyleClass().add("bulk-workspace");
         rule = new SimpleObjectProperty<>(CodeComposition.defaults(kind));
         parents =
-                new BulkParentPicker(
-                        kind.parent(), kind == CatalogKind.ARTICLES, false, id + "-parents");
+                new BulkParentPicker(kind.parent(), kind == CatalogKind.ARTICLES, id + "-parents");
         lineFilter =
                 kind == CatalogKind.ARTICLES
-                        ? new BulkParentPicker(CatalogKind.LINES, false, true, id + "-line-filter")
+                        ? new BulkParentPicker(CatalogKind.LINES, false, id + "-line-filter")
                         : null;
         left.getStyleClass().add("bulk-card");
         right.getStyleClass().add("bulk-card");
@@ -129,8 +140,8 @@ public final class BulkWorkspace extends GridPane {
         left.getChildren()
                 .addAll(
                         heading,
-                        hint("Scegli la linea o i prodotti a cui collegare i nuovi elementi."),
-                        context);
+                        hint("Scegli la linea o i prodotti a cui collegare i nuovi elementi."));
+        if (kind == CatalogKind.PRODUCTS) left.getChildren().add(context);
         if (kind == CatalogKind.PRODUCTS) {
             Label lineLabel = label("Linea", "bulk-field-label");
             lineLabel.visibleProperty().bind(parents.visibleProperty());
@@ -181,7 +192,7 @@ public final class BulkWorkspace extends GridPane {
         } else {
             left.getChildren()
                     .addAll(
-                            label("Filtra per linea", "bulk-field-label"),
+                            label("Linea dei prodotti", "bulk-field-label"),
                             lineFilter,
                             label("Prodotti a cui aggiungere articoli", "bulk-field-label"),
                             parents);
@@ -195,59 +206,26 @@ public final class BulkWorkspace extends GridPane {
             HBox.setHgrow(hs, Priority.ALWAYS);
             ds.setMinWidth(0);
             hs.setMinWidth(0);
-            combination.getStyleClass().add("bulk-combination");
-            combination.setWrapText(true);
-            combination.setMinHeight(Region.USE_PREF_SIZE);
             left.getChildren()
                     .addAll(
                             dimensions,
                             hint(
                                     "Separa le misure con “;”. Gli stessi formati verranno creati"
-                                            + " per tutti i prodotti selezionati."),
-                            combination);
+                                            + " per tutti i prodotti selezionati."));
         }
-        example.getStyleClass().add("bulk-code-example");
-        example.setWrapText(true);
-        example.setMinHeight(Region.USE_PREF_SIZE);
-        example.setMaxWidth(Double.MAX_VALUE);
-        example.setId(id + "-code-example");
         compose.setId(id + "-rule");
         compose.setMaxWidth(Double.MAX_VALUE);
         compose.setOnAction(
                 e ->
                         CodeCompositionDialog.show(this, kind, rule.get(), sample())
                                 .ifPresent(rule::set));
-        left.getChildren()
-                .addAll(
-                        label(
-                                "Composizione del codice"
-                                        + (kind == CatalogKind.PRODUCTS ? " prodotto" : ""),
-                                "bulk-field-label"),
-                        ruleParts,
-                        hint(
-                                kind == CatalogKind.PRODUCTS
-                                        ? "Esempio per il primo colore selezionato"
-                                        : "Esempio per il primo formato"),
-                        example,
-                        compose,
-                        hint(
-                                kind == CatalogKind.ARTICLES
-                                        ? "Prodotto usa linea senza prefisso materiale + colore. Il"
-                                              + " collegamento resta al prodotto selezionato."
-                                        : "Scegli l'ordine delle parti e aggiungi, se serve, un"
-                                              + " testo fisso."));
+        left.getChildren().add(compose);
         notes.setId(id + "-notes");
         notes.setWrapText(true);
         notes.setPrefRowCount(3);
         notes.setPromptText("Applicate ai nuovi elementi");
-        generate =
-                new Button(
-                        kind == CatalogKind.PRODUCTS ? "Genera prodotti" : "Genera combinazioni");
-        generate.setId(id + "-generate");
-        generate.setMaxWidth(Double.MAX_VALUE);
         left.getChildren()
                 .addAll(
-                        generate,
                         field("Note comuni · facoltative", notes),
                         hint("Le anagrafiche già presenti conservano i propri dati."));
         Label previewHeading = label("2. Controlla l'anteprima", "bulk-section-title");
@@ -283,10 +261,11 @@ public final class BulkWorkspace extends GridPane {
         notice.setId(id + "-notice");
         table.setId(id + "-preview");
         table.setMinWidth(0);
+        table.setPrefHeight(180);
         table.setFixedCellSize(43);
         table.setMinHeight(Region.USE_PREF_SIZE);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        table.setPlaceholder(hint("Seleziona i dati e genera l'anteprima."));
+        table.setPlaceholder(hint("Seleziona i dati: l'anteprima si aggiorna automaticamente."));
         buildColumns();
         save = new Button();
         save.setId(id + "-create");
@@ -326,11 +305,7 @@ public final class BulkWorkspace extends GridPane {
         parents.onSelection(this::selectionChanged);
         diameters.textProperty().addListener((o, a, b) -> settingsChanged());
         heights.textProperty().addListener((o, a, b) -> settingsChanged());
-        rule.addListener(
-                (o, a, b) -> {
-                    settingsChanged();
-                    if (!updating) automatic.run();
-                });
+        rule.addListener((o, a, b) -> settingsChanged());
         notes.textProperty()
                 .addListener(
                         (o, a, b) -> {
@@ -405,10 +380,7 @@ public final class BulkWorkspace extends GridPane {
     private void selectionChanged() {
         if (kind == CatalogKind.PRODUCTS) lineChooserOpen = false;
         refreshContext();
-        if (!updating) {
-            inputs.run();
-            automatic.run();
-        }
+        if (!updating) inputs.run();
     }
 
     private void settingsChanged() {
@@ -422,10 +394,6 @@ public final class BulkWorkspace extends GridPane {
 
     public void onRows(Runnable action) {
         changed = action;
-    }
-
-    public void onAutomatic(Runnable action) {
-        automatic = action;
     }
 
     private String plural() {
@@ -442,10 +410,6 @@ public final class BulkWorkspace extends GridPane {
 
     public BulkParentPicker lineFilter() {
         return lineFilter;
-    }
-
-    public Button generateButton() {
-        return generate;
     }
 
     public Button saveButton() {
@@ -482,33 +446,6 @@ public final class BulkWorkspace extends GridPane {
                 kind == CatalogKind.PRODUCTS
                         ? "Codice e descrizione derivano dalla linea e dal colore."
                         : "Ogni articolo mantiene il collegamento al proprio prodotto.");
-        ruleParts.getChildren().clear();
-        int i = 0;
-        for (var part : rule.get().parts()) {
-            Label chip = new Label(++i + " " + part.label());
-            chip.getStyleClass().add("bulk-code-part");
-            ruleParts.getChildren().add(chip);
-        }
-        try {
-            example.setText(rule.get().code(sample()));
-        } catch (IllegalArgumentException missing) {
-            example.setText("Completa la selezione");
-        }
-        try {
-            int ds = measures(diameters.getText(), "Diametro").size(),
-                    hs = measures(heights.getText(), "Altezza").size();
-            combination.setText(
-                    parents.selected().size()
-                            + " prodotti × "
-                            + ds
-                            + " diametri × "
-                            + hs
-                            + " altezze = "
-                            + ((long) parents.selected().size() * ds * hs)
-                            + " articoli in anteprima");
-        } catch (IllegalArgumentException invalid) {
-            combination.setText(invalid.getMessage());
-        }
     }
 
     private Values sample() {
@@ -535,14 +472,18 @@ public final class BulkWorkspace extends GridPane {
 
     public void generate() {
         List<Parent> selected = parents.selected();
-        if (selected.isEmpty())
-            throw invalid(
-                    kind == CatalogKind.PRODUCTS
-                            ? "Seleziona una linea."
-                            : "Seleziona almeno un prodotto.");
+        if (!hasGenerationSelection()) {
+            table.getItems().clear();
+            table.setPrefHeight(180);
+            generatedInputs = inputFingerprint();
+            preview = null;
+            updateCounts();
+            visible(openList, false);
+            feedback("", false);
+            return;
+        }
         var rows = new ArrayList<Row>();
         if (kind == CatalogKind.PRODUCTS) {
-            if (colors.isEmpty()) throw invalid("Seleziona almeno un colore commerciale.");
             Parent p = selected.getFirst();
             for (String color : colors) {
                 String code =
@@ -572,7 +513,11 @@ public final class BulkWorkspace extends GridPane {
                         rows.add(new Row(rows.size(), p, code, "", display(d), display(h)));
                     }
         }
+        var previous = new HashMap<Combination, Row>();
+        table.getItems().forEach(row -> previous.put(row.combination, row));
         for (Row row : rows) {
+            Row old = previous.get(row.combination);
+            if (old != null) row.preserveEdits(old);
             InvalidationListener listener =
                     o -> {
                         if (!updating) changed.run();
@@ -585,7 +530,6 @@ public final class BulkWorkspace extends GridPane {
         table.getItems().setAll(rows);
         table.setPrefHeight(Math.max(180, Math.min(32 + rows.size() * 43, 850)));
         generatedInputs = inputFingerprint();
-        generatedRows = rowFingerprint();
         preview = null;
         updateCounts();
         visible(openList, false);
@@ -601,17 +545,13 @@ public final class BulkWorkspace extends GridPane {
         return hasRows() && !generatedInputs.equals(inputFingerprint());
     }
 
-    public boolean manualRowsDirty() {
-        return hasRows() && !generatedRows.equals(rowFingerprint());
-    }
-
     public void pending() {
         preview = null;
         newValue.setText("—");
         save.setDisable(true);
         notice.setText(
                 settingsDirty()
-                        ? "Impostazioni modificate: genera di nuovo l'anteprima."
+                        ? "Aggiornamento automatico dell'anteprima…"
                         : "Verifica delle righe in corso…");
         visible(notice, true);
     }
@@ -630,6 +570,7 @@ public final class BulkWorkspace extends GridPane {
                 }
             }
             updateCounts();
+            if (feedback.getStyleClass().contains("bulk-error")) feedback("", false);
         } finally {
             updating = false;
         }

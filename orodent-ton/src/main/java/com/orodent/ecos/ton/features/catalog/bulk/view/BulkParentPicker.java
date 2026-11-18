@@ -16,15 +16,15 @@ public final class BulkParentPicker extends VBox {
     private final TextField query = new TextField();
     private final ComboBox<Parent> single = new ComboBox<>();
     private final VBox choices = new VBox();
-    private final FlowPane tags = new FlowPane(5, 5);
-    private final Button more = new Button("Altri risultati…");
+    private final Button more = new Button("Altri risultati…"),
+            selectAll = new Button("Seleziona tutto");
     private final Label feedback = new Label();
     private final LinkedHashMap<Long, Parent> visible = new LinkedHashMap<>(),
             selected = new LinkedHashMap<>();
     private Runnable changed = () -> {};
     private boolean updating;
 
-    public BulkParentPicker(CatalogKind kind, boolean multiple, boolean clearable, String id) {
+    public BulkParentPicker(CatalogKind kind, boolean multiple, String id) {
         super(7);
         this.kind = kind;
         this.multiple = multiple;
@@ -35,7 +35,7 @@ public final class BulkParentPicker extends VBox {
         single.setId(id);
         single.setMaxWidth(Double.MAX_VALUE);
         single.setVisibleRowCount(10);
-        single.setPromptText(clearable ? "Tutte le linee" : "Seleziona la linea");
+        single.setPromptText("Seleziona la linea");
         more.setId(id + "-more");
         more.getStyleClass().add("bulk-link-button");
         more.setVisible(false);
@@ -45,37 +45,28 @@ public final class BulkParentPicker extends VBox {
         feedback.managedProperty().bind(feedback.visibleProperty());
         feedback.setWrapText(true);
         feedback.setMinHeight(Region.USE_PREF_SIZE);
-        getChildren().add(query);
+        if (kind != CatalogKind.LINES) getChildren().add(query);
         if (multiple) {
             ScrollPane scroll = new ScrollPane(choices);
             scroll.setFitToWidth(true);
             scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-            scroll.setPrefHeight(180);
-            scroll.setMinHeight(130);
+            scroll.setPrefHeight(360);
+            scroll.setMinHeight(260);
             scroll.getStyleClass().add("bulk-product-picker");
             scroll.setId(id);
-            tags.getStyleClass().add("bulk-selected-tags");
-            getChildren().addAll(scroll, tags);
-            Button all = new Button("Seleziona visibili"), clear = new Button("Azzera selezione");
-            all.getStyleClass().add("bulk-link-button");
+            getChildren().add(scroll);
+            Button clear = new Button("Azzera selezione");
+            selectAll.getStyleClass().add("bulk-link-button");
             clear.getStyleClass().add("bulk-link-button");
-            all.setId(id + "-all");
+            selectAll.setId(id + "-all");
             clear.setId(id + "-clear");
-            all.setOnAction(
-                    e -> {
-                        visible.values().stream()
-                                .filter(Parent::available)
-                                .forEach(p -> selected.put(p.id(), p));
-                        render();
-                        changed.run();
-                    });
             clear.setOnAction(
                     e -> {
                         selected.clear();
                         render();
                         changed.run();
                     });
-            FlowPane commands = new FlowPane(5, 5, all, clear);
+            FlowPane commands = new FlowPane(5, 5, selectAll, clear);
             getChildren().add(commands);
         } else {
             getChildren().add(single);
@@ -88,13 +79,6 @@ public final class BulkParentPicker extends VBox {
                                     changed.run();
                                 }
                             });
-            if (clearable) {
-                Button clear = new Button("Tutte le linee");
-                clear.getStyleClass().add("bulk-link-button");
-                clear.setId(id + "-clear");
-                clear.setOnAction(e -> single.setValue(null));
-                getChildren().add(clear);
-            }
         }
         getChildren().addAll(more, feedback);
     }
@@ -193,6 +177,15 @@ public final class BulkParentPicker extends VBox {
         }
     }
 
+    /** A bulk article group belongs to one line; a line change cannot retain other products. */
+    public void restrictToLine(Long lineId) {
+        visible.values().removeIf(p -> lineId == null || p.lineId() != lineId);
+        selected.values().removeIf(p -> lineId == null || p.lineId() != lineId);
+        more.setVisible(false);
+        more.setManaged(false);
+        render();
+    }
+
     public void error(String text) {
         feedback.setText(text);
     }
@@ -222,7 +215,6 @@ public final class BulkParentPicker extends VBox {
                     e -> {
                         if (check.isSelected()) selected.put(parent.id(), parent);
                         else selected.remove(parent.id());
-                        renderTags();
                         changed.run();
                     });
             row.setOnMouseClicked(
@@ -236,22 +228,15 @@ public final class BulkParentPicker extends VBox {
         }
         if (visible.isEmpty())
             choices.getChildren().add(new Label("Cerca i prodotti da selezionare."));
-        renderTags();
     }
 
-    private void renderTags() {
-        tags.getChildren().clear();
-        for (Parent p : selected.values()) {
-            Button tag = new Button(p.code() + " ×");
-            tag.setAccessibleText("Rimuovi " + p.code() + " dalla selezione");
-            tag.getStyleClass().add("bulk-product-tag");
-            tag.setOnAction(
-                    e -> {
-                        selected.remove(p.id());
-                        render();
-                        changed.run();
-                    });
-            tags.getChildren().add(tag);
-        }
+    public Button selectAllButton() {
+        return selectAll;
+    }
+
+    public void selectAll(List<Parent> products) {
+        products.stream().filter(Parent::available).forEach(p -> selected.put(p.id(), p));
+        render();
+        changed.run();
     }
 }

@@ -9,6 +9,9 @@ import com.orodent.ecos.database.DatabaseSchema;
 import com.orodent.ecos.database.service.*;
 import com.orodent.ecos.module.*;
 import com.orodent.ecos.ton.TonModule;
+import com.orodent.ecos.ton.features.catalog.bulk.model.BulkCatalogModels.*;
+import com.orodent.ecos.ton.features.catalog.bulk.model.BulkCatalogModels.Parent;
+import com.orodent.ecos.ton.features.catalog.bulk.service.BulkCatalogService;
 import com.orodent.ecos.ton.features.catalog.bulk.view.*;
 import com.orodent.ecos.ton.features.catalog.model.CatalogKind;
 import com.orodent.ecos.ton.features.catalog.service.CatalogService;
@@ -88,6 +91,14 @@ public final class BulkCatalogUiProbe {
                                 new BigDecimal("16"),
                                 "Storico intatto",
                                 true))
+                .join();
+        var bulk = new BulkCatalogService(db, workers);
+        var otherParent =
+                bulk.parentsByIds(CatalogKind.LINES, List.of(otherLine.id())).join().getFirst();
+        var otherProducts = new ArrayList<Seed>();
+        for (int i = 0; i < 50; i++)
+            otherProducts.add(new Seed(i, otherParent, "ZSTB" + i, "B" + i, "", "", true));
+        bulk.create(bulk.preview(new Request(CatalogKind.PRODUCTS, "", otherProducts)).join())
                 .join();
         Platform.startup(() -> {});
         Platform.setImplicitExit(false);
@@ -253,23 +264,80 @@ public final class BulkCatalogUiProbe {
                         assertEquals(
                                 "ZR9812MSTA1",
                                 workspace().table().getItems().getFirst().seed().code());
-                        ((CheckBox) node("ton-bulk-select-product-" + zs.id())).fire();
+                        assertNull(node("ton-bulk-articles-generate"));
+                        assertNull(node("ton-bulk-articles-code-example"));
+                        assertNull(node("ton-bulk-articles-line-filter-clear"));
+                        assertNull(node("ton-bulk-articles-line-filter-search"));
+                        assertTrue(workspace().lookupAll(".bulk-context").isEmpty());
+                        assertTrue(workspace().lookupAll(".bulk-product-tag").isEmpty());
+                        assertEquals(
+                                "Seleziona tutto",
+                                button("ton-bulk-articles-parents-all").getText());
+                        assertTrue(
+                                ((ScrollPane) node("ton-bulk-articles-parents")).getPrefHeight()
+                                        >= 300);
+                        var lines = (ComboBox<Parent>) node("ton-bulk-articles-line-filter");
+                        lines.setValue(
+                                lines.getItems().stream()
+                                        .filter(p -> p.id() == otherLine.id())
+                                        .findFirst()
+                                        .orElseThrow());
+                        assertTrue(workspace().parents().selected().isEmpty());
+                        assertFalse(enabled("ton-bulk-articles-create"));
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-bulk-select-product-" + zs.id()) != null
+                                    && textLabel("ton-bulk-articles-count-total").equals("0"));
+            fx(
+                    () -> {
+                        button("ton-bulk-articles-parents-all").fire();
                         return null;
                     });
             await(
                     () ->
                             enabled("ton-bulk-articles-create")
-                                    && textLabel("ton-bulk-articles-count-total").equals("20"));
+                                    && workspace().parents().selected().size() == 51
+                                    && textLabel("ton-bulk-articles-count-total").equals("255"));
             fx(
                     () -> {
                         assertTrue(
                                 workspace().table().getItems().stream()
                                         .map(BulkWorkspace.Row::seed)
-                                        .anyMatch(
-                                                s ->
-                                                        s.parent().id() == zs.id()
-                                                                && s.code().startsWith("ZS")));
-                        ((CheckBox) node("ton-bulk-select-product-" + zs.id())).fire();
+                                        .allMatch(
+                                                seed -> seed.parent().lineId() == otherLine.id()));
+                        var lines = (ComboBox<Parent>) node("ton-bulk-articles-line-filter");
+                        lines.setValue(
+                                lines.getItems().stream()
+                                        .filter(p -> p.id() == line.id())
+                                        .findFirst()
+                                        .orElseThrow());
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-bulk-select-product-" + p1.id()) != null
+                                    && textLabel("ton-bulk-articles-count-total").equals("0"));
+            fx(
+                    () -> {
+                        button("ton-bulk-articles-parents-all").fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            enabled("ton-bulk-articles-create")
+                                    && textLabel("ton-bulk-articles-count-total").equals("15"));
+            fx(
+                    () -> {
+                        button("ton-bulk-articles-parents-clear").fire();
+                        return null;
+                    });
+            await(() -> textLabel("ton-bulk-articles-count-total").equals("0"));
+            fx(
+                    () -> {
+                        for (Product product : List.of(p1, p2, old))
+                            ((CheckBox) node("ton-bulk-select-product-" + product.id())).fire();
                         return null;
                     });
             await(
@@ -292,6 +360,44 @@ public final class BulkCatalogUiProbe {
                             return null;
                         });
             await(() -> enabled("ton-bulk-articles-create"));
+            fx(
+                    () -> {
+                        include("articles", 4).fire();
+                        field("ton-bulk-articles-heights").setText("12; x");
+                        assertFalse(enabled("ton-bulk-articles-create"));
+                        return null;
+                    });
+            await(() -> textLabel("ton-bulk-articles-feedback").contains("misure separate"));
+            fx(
+                    () -> {
+                        field("ton-bulk-articles-heights").setText("12; 14; 16; 18; 20; 22");
+                        return null;
+                    });
+            await(
+                    () ->
+                            enabled("ton-bulk-articles-create")
+                                    && textLabel("ton-bulk-articles-count-total").equals("18"));
+            fx(
+                    () -> {
+                        var rows = workspace().table().getItems();
+                        assertEquals("CUSTOM", rows.getFirst().seed().code());
+                        assertFalse(rows.get(4).seed().selected());
+                        field("ton-bulk-articles-heights").setText("12; 14; 16; 18; 20");
+                        return null;
+                    });
+            await(
+                    () ->
+                            enabled("ton-bulk-articles-create")
+                                    && textLabel("ton-bulk-articles-count-total").equals("15"));
+            fx(
+                    () -> {
+                        include("articles", 4).fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            enabled("ton-bulk-articles-create")
+                                    && textLabel("ton-bulk-articles-count-new").equals("14"));
             fx(
                     () -> {
                         assertEquals(

@@ -42,7 +42,7 @@ public final class BulkCatalogService {
                                     args.add(query);
                                     String where =
                                             " WHERE (UPPER(b.codice) LIKE ? ESCAPE '\\' OR"
-                                                + " UPPER(COALESCE("
+                                                    + " UPPER(COALESCE("
                                                     + (kind == CatalogKind.LINES
                                                             ? "b.nome"
                                                             : "b.descrizione")
@@ -114,8 +114,8 @@ public final class BulkCatalogService {
                                             || !current.preview().rows().equals(expected.rows()))
                                         throw invalid(
                                                 "I dati dell'anteprima sono cambiati. Verifica di"
-                                                    + " nuovo le righe prima di salvare. Nessun"
-                                                    + " elemento è stato creato.");
+                                                        + " nuovo le righe prima di salvare. Nessun"
+                                                        + " elemento è stato creato.");
                                     var repo = new CatalogRepository(c);
                                     var history = new CatalogHistoryRepository(c);
                                     var created = new ArrayList<Entry>();
@@ -167,8 +167,8 @@ public final class BulkCatalogService {
                         || parent.lineRevision() != snapshot.lineRevision()
                         || parent.lineId() != snapshot.lineId())
                     throw invalid(
-                            "Il collegamento è stato modificato. Aggiorna i dati e rigenera"
-                                + " l'anteprima.");
+                            "Il collegamento è stato modificato. Aggiorna i dati per ricalcolare"
+                                    + " l'anteprima.");
                 if (!parent.available())
                     throw invalid("Il collegamento o la linea sono archiviati o incompleti.");
                 Draft draft =
@@ -198,6 +198,21 @@ public final class BulkCatalogService {
                         seed.key(),
                         new RowResult(seed.key(), State.INVALID, invalid.getMessage(), null));
             }
+        }
+        if (request.kind() == CatalogKind.ARTICLES
+                && parents.values().stream().map(Parent::lineId).distinct().count() > 1) {
+            for (Seed seed : request.rows())
+                if (seed.selected()) {
+                    results.put(
+                            seed.key(),
+                            new RowResult(
+                                    seed.key(),
+                                    State.INVALID,
+                                    "Scegli prodotti di una sola linea per ogni gruppo di"
+                                            + " articoli.",
+                                    null));
+                }
+            drafts.clear();
         }
         var codeCounts = new HashMap<String, Integer>();
         var naturalCounts = new HashMap<String, Integer>();
@@ -412,18 +427,18 @@ public final class BulkCatalogService {
     private static String parentSelect(CatalogKind kind) {
         if (kind == CatalogKind.LINES)
             return "SELECT b.linea_id AS parent_id,b.codice AS parent_code,b.nome AS"
-                       + " parent_name,b.linea_id,b.codice AS line_code,b.materia_prima AS"
-                       + " material,CAST(NULL AS VARCHAR(30)) AS color,b.versione_modifica AS"
-                       + " parent_revision,b.versione_modifica AS line_revision,b.attivo AS"
-                       + " available FROM TON.LINEE b";
+                    + " parent_name,b.linea_id,b.codice AS line_code,b.materia_prima AS"
+                    + " material,CAST(NULL AS VARCHAR(30)) AS color,b.versione_modifica AS"
+                    + " parent_revision,b.versione_modifica AS line_revision,b.attivo AS"
+                    + " available FROM TON.LINEE b";
         if (kind != CatalogKind.PRODUCTS) throw invalid("Seleziona linee o prodotti.");
         return "SELECT b.prodotto_id AS parent_id,b.codice AS parent_code,b.descrizione AS"
-                   + " parent_name,b.linea_id,l.codice AS line_code,l.materia_prima AS"
-                   + " material,b.colore_commerciale AS color,b.versione_modifica AS"
-                   + " parent_revision,l.versione_modifica AS line_revision,CASE WHEN b.attivo=TRUE"
-                   + " AND l.attivo=TRUE AND b.colore_commerciale IS NOT NULL THEN TRUE ELSE FALSE"
-                   + " END AS available FROM TON.PRODOTTI b LEFT JOIN TON.LINEE l ON"
-                   + " l.linea_id=b.linea_id";
+                + " parent_name,b.linea_id,l.codice AS line_code,l.materia_prima AS"
+                + " material,b.colore_commerciale AS color,b.versione_modifica AS"
+                + " parent_revision,l.versione_modifica AS line_revision,CASE WHEN b.attivo=TRUE"
+                + " AND l.attivo=TRUE AND b.colore_commerciale IS NOT NULL THEN TRUE ELSE FALSE"
+                + " END AS available FROM TON.PRODOTTI b LEFT JOIN TON.LINEE l ON"
+                + " l.linea_id=b.linea_id";
     }
 
     private static Parent loadParent(Connection c, CatalogKind kind, long id) throws SQLException {
@@ -464,8 +479,8 @@ public final class BulkCatalogService {
                                             .contains(sql.getSQLState()))
                                 throw new IllegalArgumentException(
                                         "Il catalogo è cambiato o contiene già questi dati. Nessun"
-                                            + " elemento del gruppo è stato creato. Verifica di"
-                                            + " nuovo l'anteprima.",
+                                                + " elemento del gruppo è stato creato. Verifica di"
+                                                + " nuovo l'anteprima.",
                                         error);
                         throw error;
                     }

@@ -27,10 +27,7 @@
 .ton-bulk .bulk-product-picker { -fx-border-color: #cbdce7; -fx-border-radius: 7px; -fx-background-radius: 7px; }
 .ton-bulk .bulk-product-option { -fx-padding: 8px; -fx-background-color: #f5fafc; -fx-border-color: transparent transparent #e7eef3 transparent; -fx-border-width: 0 0 1px 0; }
 .ton-bulk .bulk-product-name { -fx-font-weight: bold; -fx-font-size: 12px; }
-.ton-bulk .bulk-product-tag { -fx-background-color: #deeff3; -fx-border-color: transparent; -fx-padding: 3px 6px; -fx-font-size: 11px; -fx-font-weight: normal; }
-.ton-bulk .bulk-code-part { -fx-background-color: #e9f5f7; -fx-border-color: #b8d8e1; -fx-border-radius: 6px; -fx-background-radius: 6px; -fx-padding: 6px 8px; -fx-font-size: 12px; }
 .ton-bulk .bulk-code-example, .ton-bulk-code-dialog .bulk-code-example { -fx-background-color: #f1f6fa; -fx-background-radius: 7px; -fx-padding: 10px 12px; -fx-font-family: "Monospaced"; -fx-font-size: 18px; -fx-font-weight: normal; }
-.ton-bulk .bulk-combination { -fx-background-color: #edf5f9; -fx-background-radius: 6px; -fx-padding: 10px; -fx-font-size: 12px; }
 .ton-bulk .bulk-metric { -fx-background-color: #f0f6f9; -fx-background-radius: 7px; -fx-padding: 10px 12px; }
 .ton-bulk .bulk-metric-value { -fx-font-size: 21px; -fx-font-weight: bold; }
 .ton-bulk .bulk-metric-existing { -fx-background-color: #fff6e1; }

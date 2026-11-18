@@ -14,8 +14,9 @@ dati di esempio; la creazione singola resta disponibile.
   la linea o si selezionano i prodotti. Un filtro padre già impostato viene ripreso.
 
 La linea si seleziona una volta sola per creare prodotti; per gli articoli si
-selezionano uno o più prodotti. Aprendo il flusso dalla scheda di un prodotto,
-questo è preselezionato ma si possono aggiungere altri prodotti. Si propongono
+sceglie una linea e si selezionano uno o più prodotti appartenenti a quella linea.
+Aprendo il flusso dalla scheda di un prodotto, linea e prodotto sono preselezionati;
+si possono aggiungere altri prodotti della stessa linea. Si propongono
 solo collegamenti attivi e utilizzabili già previsti dal catalogo. La creazione
 singola resta disponibile per i casi occasionali.
 
@@ -50,14 +51,19 @@ conserva il suo codice, se linea e colore non cambiano.
 
 ## Articoli per più prodotti
 
-1. Si selezionano più prodotti con caselle di spunta, ricerca per codice/colore
-   e filtro per linea. I selezionati restano visibili anche cambiando filtro.
-   Linea, colore e materiale si ereditano dal prodotto di ciascuna riga.
+1. Si sceglie una linea dal menu a tendina, poi i prodotti con le caselle di spunta.
+   La ricerca dei prodotti non cambia la selezione. **Seleziona tutto** comprende
+   tutti i prodotti attivi della linea, anche oltre la pagina caricata o fuori
+   dalla ricerca corrente. Cambiare linea azzera la selezione precedente.
+   L'elenco è più alto e non mostra etichette separate dei prodotti selezionati.
+   Non esistono ricerca della linea, opzione «Tutte le linee» o riquadro di riepilogo
+   dei prodotti selezionati. Linea, colore e materiale si ereditano dal prodotto.
 2. Si inseriscono uno o più diametri e una serie di altezze.
-3. **Genera combinazioni** prepara il prodotto cartesiano **prodotti × diametri ×
-   altezze**, mostrando il conteggio atteso prima della generazione.
-4. **Composizione del codice** mostra blocchi ordinati: **Materiale**, **Diametro**,
-   **Altezza**, **Prodotto**. **Personalizza composizione…** apre un pannello per
+3. L'anteprima si aggiorna automaticamente con le combinazioni **prodotti × diametri ×
+   altezze**, dopo una pausa di circa 450 ms nella digitazione o nelle selezioni.
+   Non serve un pulsante per rigenerare: i conteggi compaiono soltanto a destra.
+4. **Personalizza composizione…** apre un pannello con i blocchi **Materiale**,
+   **Diametro**, **Altezza**, **Prodotto**, per
    spostarli con le frecce, aggiungerli o rimuoverli, inserire un **Testo fisso** e
    scegliere un separatore. Non si scrivono formule né parentesi. L'esempio del
    primo articolo si aggiorna subito; **Annulla** conserva la regola precedente.
@@ -83,7 +89,9 @@ Esempio: le linee ZRMST (ZR) e ZSMST (ZS), entrambe con colore A0, generano
 rispettivamente **ZR9812MSTA0** e **ZS9812MSTA0**. Codici delle linee, codici dei
 prodotti e collegamenti nel DB restano invariati, anche con prodotti dal codice
 personalizzato. Gli articoli già salvati non vengono rinominati.
-La demo include anche un prodotto di un'altra linea per mostrare i prefissi ZR/ZS.
+La demo permette di scegliere separatamente una linea ZR o una linea ZS.
+Ogni gruppo contiene prodotti di una sola linea; il servizio ricontrolla questo
+vincolo sul DB anche al salvataggio.
 I codici sono etichette, non sono usati per indovinare il collegamento al prodotto.
 Un codice appartenente a un articolo di un altro prodotto viene segnalato come
 conflitto, senza spostare articoli o trasformarlo in un elemento già presente.
@@ -93,7 +101,7 @@ codici riservati dallo storico. Applica i limiti già adottati dal catalogo:
 misure positive con massimo due decimali e vincolo esistente di formato univoco
 per prodotto. Lo stesso colore non può essere creato due volte nella stessa linea.
 Ogni gruppo può contenere al massimo 1.000 righe; i selettori caricano 50 risultati
-alla volta e mantengono i prodotti selezionati cambiando ricerca o filtro.
+alla volta e mantengono i prodotti selezionati cambiando ricerca nella stessa linea.
 
 ## Anteprima e conferma
 
@@ -121,8 +129,12 @@ La validazione distingue:
 Le righe escluse non bloccano il salvataggio delle altre. Il conteggio finale
 rispecchia quanto sarà creato. All'uscita si proteggono le modifiche non
 salvate con la conferma di abbandono degli editor TON. Le due modalità mantengono
-bozze indipendenti finché si rimane nella pagina. Rigenerare una griglia corretta
-manualmente richiede conferma; la digitazione nelle celle mantiene il cursore.
+bozze indipendenti finché si rimane nella pagina. Gli aggiornamenti automatici
+conservano codici, misure corrette manualmente ed esclusioni delle combinazioni
+che restano nel gruppo. Le combinazioni rimosse dalla selezione o dai formati
+scompaiono dall'anteprima. Dati incompleti o non validi disabilitano la creazione
+finché non vengono corretti. La digitazione nelle celle mantiene il cursore.
+Il calcolo automatico non scrive sul DB: occorre sempre premere **Crea**.
 
 ## Salvataggio e configurazioni tecniche
 
