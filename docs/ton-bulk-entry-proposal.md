@@ -1,8 +1,8 @@
-# TON: proposta di inserimento multiplo
+# TON: inserimento multiplo di prodotti e articoli
 
-Stato: proposta UI da valutare. La demo HTML usa solo dati di esempio e non scrive
-nel database. Il catalogo di produzione mantiene per ora il proprio inserimento
-singolo.
+Stato: implementato in TON. La pagina JavaFX riprende la demo approvata e salva
+le anagrafiche nel database EcoS. La demo HTML resta un riferimento grafico con
+dati di esempio; la creazione singola resta disponibile.
 
 [Apri la demo interattiva](mockups/ton-inserimento-multiplo.html).
 
@@ -10,7 +10,8 @@ singolo.
 
 - Nella scheda Linea, accanto a «Nuovo prodotto»: **Crea più prodotti…**.
 - Nella scheda Prodotto, accanto a «Nuovo articolo»: **Crea più articoli…**.
-- Negli elenchi, la stessa azione richiede prima di scegliere il padre.
+- Negli elenchi Prodotti tecnici e Articoli: **Inserimento multiplo…**; si sceglie
+  la linea o si selezionano i prodotti. Un filtro padre già impostato viene ripreso.
 
 La linea si seleziona una volta sola per creare prodotti; per gli articoli si
 selezionano uno o più prodotti. Aprendo il flusso dalla scheda di un prodotto,
@@ -43,9 +44,9 @@ salvati. La linea e il colore sono collegamenti espliciti delle righe, non vengo
 ricavati dal codice generato. Un codice già usato per un altro colore della linea
 viene segnalato come conflitto.
 
-Questa configurabilità estende la creazione attuale, dove i prodotti seguono una
-regola fissa. L'implementazione applicativa dovrà mantenere coerenti inserimento
-singolo e multiplo, senza ricalcolare i codici dei prodotti esistenti.
+La creazione singola propone la concatenazione linea/colore. Una modifica alle
+sole note o allo stato di un prodotto creato con una composizione personalizzata
+conserva il suo codice, se linea e colore non cambiano.
 
 ## Articoli per più prodotti
 
@@ -61,8 +62,8 @@ singolo e multiplo, senza ricalcolare i codici dei prodotti esistenti.
    scegliere un separatore. Non si scrivono formule né parentesi. L'esempio del
    primo articolo si aggiorna subito; **Annulla** conserva la regola precedente.
    Il materiale è ereditato dalla linea (ZR o ZS); se manca va completato prima
-   di generare un codice che lo usa. La convenzione resta da confermare prima
-   dell'implementazione, soprattutto per misure decimali e zeri iniziali.
+   di generare un codice che lo usa. Le misure decimali usano il punto nei codici
+   e non aggiungono zeri iniziali o decimali superflui: 12,50 diventa 12.5.
 5. Ogni codice e ogni misura è correggibile nella griglia. Si possono escludere
    le combinazioni indesiderate senza ricominciare.
 
@@ -78,9 +79,12 @@ I codici sono etichette, non sono usati per indovinare il collegamento al prodot
 Un codice appartenente a un articolo di un altro prodotto viene segnalato come
 conflitto, senza spostare articoli o trasformarlo in un elemento già presente.
 
-La demo mostra un controllo preventivo dei codici duplicati e dei valori
-incompleti. La prima versione applicativa deve usare anche i limiti e la precisione
-già adottati dal catalogo, senza aggiungere vincoli impliciti di unicità del formato.
+La pagina verifica sul DB codici duplicati, valori incompleti, collegamenti e
+codici riservati dallo storico. Applica i limiti già adottati dal catalogo:
+misure positive con massimo due decimali e vincolo esistente di formato univoco
+per prodotto. Lo stesso colore non può essere creato due volte nella stessa linea.
+Ogni gruppo può contenere al massimo 1.000 righe; i selettori caricano 50 risultati
+alla volta e mantengono i prodotti selezionati cambiando ricerca o filtro.
 
 ## Anteprima e conferma
 
@@ -95,7 +99,7 @@ In una finestra stretta i pannelli si dispongono in verticale con uno scorriment
 naturale della pagina. La griglia permette Tab e modifiche delle righe senza
 rigenerarsi ad ogni carattere digitato.
 
-La validazione applicativa deve distinguere:
+La validazione distingue:
 
 - **Nuovo**: codice disponibile e dati validi.
 - **Già presente**: stesso codice e stessi dati strutturali/collegamento. Escluso
@@ -105,26 +109,31 @@ La validazione applicativa deve distinguere:
 - **Da correggere**: duplicato interno, campo obbligatorio mancante, misura non
   valida o limite di lunghezza/precisione superato.
 
-Le righe escluse non bloccano il salvataggio delle altre. Il conteggio finale deve
-rispecchiare esattamente quanto sarà creato. All'uscita si proteggono le righe non
-salvate con la stessa conferma di abbandono degli editor TON.
+Le righe escluse non bloccano il salvataggio delle altre. Il conteggio finale
+rispecchia quanto sarà creato. All'uscita si proteggono le modifiche non
+salvate con la conferma di abbandono degli editor TON. Le due modalità mantengono
+bozze indipendenti finché si rimane nella pagina. Rigenerare una griglia corretta
+manualmente richiede conferma; la digitazione nelle celle mantiene il cursore.
 
 ## Salvataggio e configurazioni tecniche
 
-La futura implementazione deve riconvalidare codici e collegamenti all'ultimo momento e
-salvare tutte le nuove righe selezionate in una singola transazione, con lo storico
-individuale già previsto dal catalogo. Un conflitto concorrente annulla il gruppo,
-lascia l'anteprima disponibile e indica cosa aggiornare.
+Il salvataggio riconvalida codici, collegamenti e revisioni all'ultimo momento e
+crea tutte le nuove righe selezionate in una singola transazione, con lo storico
+individuale già previsto dal catalogo. Un conflitto concorrente o un errore di
+scrittura annulla il gruppo. La bozza resta disponibile per aggiornare e
+ricontrollare l'anteprima; non vengono ripetute scritture automaticamente. Durante
+il salvataggio la navigazione è bloccata. Dopo la creazione compare il riepilogo
+e si può aprire l'elenco oppure continuare nell'altra modalità.
 
-La creazione anagrafica non deve attribuire approvazioni tecniche implicitamente.
+La creazione anagrafica non attribuisce approvazioni tecniche implicitamente.
 Ricette, modelli disco e specifiche restano un passaggio esplicito. Un eventuale
 comando successivo per applicare una configurazione comune deve creare bozze
 distinte per ciascun articolo.
 
-Dopo la creazione dei prodotti si può offrire **Crea gli articoli per questi
-prodotti**, aprendo lo stesso flusso con quei prodotti già selezionati. Per le
-linee, invece, una griglia codice/nome/tecnologia/materia prima permette
-l'inserimento multiplo senza generare automaticamente tecnologie.
+Restano sviluppi futuri la creazione multipla di linee, un comando per applicare
+configurazioni tecniche comuni e il passaggio diretto dai prodotti appena creati
+agli articoli con preselezione automatica. I nuovi prodotti sono già ricercabili
+nella modalità articoli della stessa pagina.
 
-L'inserimento multiplo usa selezioni e combinazioni interne a TON; l'importazione
-da Excel è stata rimossa dalla proposta.
+L'inserimento multiplo usa selezioni e combinazioni interne a TON; non include
+importazione da Excel.

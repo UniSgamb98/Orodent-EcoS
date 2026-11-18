@@ -13,7 +13,7 @@ public final class CatalogListView extends VBox {
     private final TextField search, diameter, height;
     private final CheckBox archived = new CheckBox("Mostra anche archiviati");
     private final CatalogTable table;
-    private final Button create, open, refresh, previous, next;
+    private final Button create, open, refresh, previous, next, bulk;
     private final Label result = new Label(), feedback;
     private final CatalogLookup line, product;
 
@@ -42,7 +42,13 @@ public final class CatalogListView extends VBox {
         heading.getStyleClass().add("ton-page-heading");
         Region gap = new Region();
         HBox.setHgrow(gap, Priority.ALWAYS);
-        HBox title = new HBox(12, heading, gap, create);
+        bulk =
+                kind == CatalogKind.LINES
+                        ? null
+                        : CatalogUi.button("Inserimento multiplo…", base + "-bulk", false);
+        HBox title = new HBox(12, heading, gap);
+        if (bulk != null) title.getChildren().add(bulk);
+        title.getChildren().add(create);
         title.setAlignment(Pos.CENTER_LEFT);
         Label intro =
                 CatalogUi.hint(
@@ -51,7 +57,7 @@ public final class CatalogListView extends VBox {
                             case PRODUCTS -> "Una linea e un colore commerciale per ogni prodotto.";
                             case ARTICLES ->
                                     "I formati degli articoli, con linea e colore ereditati dal"
-                                        + " prodotto.";
+                                            + " prodotto.";
                         });
         HBox query = new HBox(10, search, refresh);
         HBox.setHgrow(search, Priority.ALWAYS);
@@ -164,6 +170,10 @@ public final class CatalogListView extends VBox {
 
     public CatalogTable table() {
         return table;
+    }
+
+    public Button bulk() {
+        return bulk;
     }
 
     public Button create() {

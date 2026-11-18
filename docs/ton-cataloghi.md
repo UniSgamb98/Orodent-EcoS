@@ -34,6 +34,18 @@ conserva codice e descrizione già salvati, anche se diversi dal nuovo formato:
 una modifica alle note o una correzione del nome della linea non lo rinomina.
 Questa modifica non richiede una nuova migrazione del DB.
 
+## Inserimento multiplo
+
+Gli elenchi Prodotti tecnici e Articoli offrono **Inserimento multiplo…**.
+Dalle schede Linea e Prodotto si usano **Crea più prodotti…** e **Crea più articoli…**
+con il padre preselezionato. La pagina permette di scegliere colori, prodotti e
+formati, comporre i codici con blocchi visivi e controllare il gruppo prima della
+creazione. I duplicati esatti vengono saltati; i conflitti vanno corretti o esclusi.
+Tutte le nuove righe e le rispettive revisioni si salvano insieme. Non crea
+specifiche, ricette o approvazioni implicitamente.
+
+[Uso, regole e controlli dell'inserimento multiplo](ton-bulk-entry-proposal.md).
+
 ## Elenchi e collegamenti
 
 Gli elenchi cercano codice o descrizione e sono paginati in gruppi di 50.

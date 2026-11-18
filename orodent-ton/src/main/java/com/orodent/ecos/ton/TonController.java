@@ -1,6 +1,9 @@
 package com.orodent.ecos.ton;
 
 import com.orodent.ecos.module.ModuleContext;
+import com.orodent.ecos.ton.features.catalog.bulk.controller.BulkCatalogController;
+import com.orodent.ecos.ton.features.catalog.bulk.service.BulkCatalogService;
+import com.orodent.ecos.ton.features.catalog.bulk.view.BulkCatalogView;
 import com.orodent.ecos.ton.features.catalog.controller.CatalogController;
 import com.orodent.ecos.ton.features.catalog.model.CatalogKind;
 import com.orodent.ecos.ton.features.catalog.model.CatalogModels.Navigation;
@@ -29,6 +32,7 @@ import javafx.scene.Parent;
 final class TonController {
     private final TonView view = new TonView();
     private final CatalogService catalogues;
+    private final BulkCatalogService bulkCatalogues;
     private final SpecificationService specifications;
     private final PowderService powders;
     private final DiskModelService models;
@@ -43,6 +47,7 @@ final class TonController {
         workers = context.workers();
         documents = new DocumentTemplateService(context.connections(), workers);
         catalogues = new CatalogService(context.connections(), context.workers());
+        bulkCatalogues = new BulkCatalogService(context.connections(), context.workers());
         specifications = new SpecificationService(context.connections(), context.workers());
         powders = new PowderService(context.connections(), context.workers());
         models = new DiskModelService(context.connections(), context.workers());
@@ -114,6 +119,12 @@ final class TonController {
     }
 
     private void installCatalogue(Navigation route) {
+        if (route.bulk()) {
+            var page = new BulkCatalogView(route.kind());
+            var controller = new BulkCatalogController(page, bulkCatalogues, this::openCatalogue);
+            install(route.kind().feature(), page, controller, () -> controller.start(route));
+            return;
+        }
         var page = new CatalogView(route.kind());
         var controller =
                 new CatalogController(

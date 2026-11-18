@@ -18,6 +18,7 @@ con bozze e versioni nel DB. Le funzioni restanti sono indicate come
 **In preparazione**, senza contatori fittizi o comandi non implementati. Il cubaggio resta rinviato.
 
 - [Linee, prodotti, articoli, storico e specifiche produttive](ton-cataloghi.md).
+- [Inserimento multiplo di prodotti e articoli](ton-bulk-entry-proposal.md).
 - [Polveri, ossidi e schede tecniche approvate](ton-polveri.md).
 - [Modelli disco, strati, sovramateriali e versioni](ton-modelli-disco.md).
 - [Composizioni, ricette per strato, ossidi e utilizzi](ton-composizioni.md).

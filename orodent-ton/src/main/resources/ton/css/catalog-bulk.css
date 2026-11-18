@@ -1,0 +1,62 @@
+.ton-bulk, .ton-bulk > .viewport { -fx-background: #e3edf3; -fx-background-color: #e3edf3; }
+.ton-bulk { -fx-fit-to-width: true; -fx-font-family: "System"; -fx-font-weight: normal; }
+.ton-bulk .bulk-page { -fx-padding: 22px 26px; }
+.ton-bulk .label, .ton-bulk-code-dialog .label { -fx-text-fill: #173f59; -fx-font-family: "System"; -fx-font-size: 13px; -fx-font-weight: normal; }
+.ton-bulk .button, .ton-bulk .toggle-button, .ton-bulk-code-dialog .button { -fx-padding: 9px 13px; -fx-background-color: white; -fx-background-radius: 7px; -fx-border-color: #cbdce7; -fx-border-radius: 7px; -fx-text-fill: #173f59; -fx-font-weight: bold; -fx-cursor: hand; }
+.ton-bulk .button:hover, .ton-bulk-code-dialog .button:hover { -fx-background-color: #eaf4f7; }
+.ton-bulk .text-field, .ton-bulk .text-area, .ton-bulk .combo-box, .ton-bulk-code-dialog .text-field, .ton-bulk-code-dialog .combo-box { -fx-background-color: white; -fx-background-radius: 6px; -fx-border-radius: 6px; -fx-border-color: #bed3df; -fx-text-fill: #173f59; -fx-padding: 7px 9px; -fx-font-size: 13px; }
+.ton-bulk .text-area { -fx-padding: 3px; }
+.ton-bulk .text-area .content { -fx-background-color: white; -fx-padding: 6px; }
+.ton-bulk .text-field:focused, .ton-bulk-code-dialog .text-field:focused { -fx-border-color: #3196aa; -fx-effect: dropshadow(gaussian, #a6d4df, 3, 0, 0, 0); }
+.ton-bulk .bulk-page-title { -fx-font-size: 27px; -fx-font-weight: bold; }
+.ton-bulk .bulk-section-title { -fx-font-size: 17px; -fx-font-weight: bold; }
+.ton-bulk .bulk-small, .ton-bulk-code-dialog .bulk-small { -fx-font-size: 12px; -fx-font-weight: normal; -fx-text-fill: #657e92; }
+.ton-bulk .bulk-field-label { -fx-font-size: 12px; -fx-font-weight: bold; }
+.ton-bulk .bulk-mode-tabs { -fx-padding: 5px; -fx-background-color: #d1e2eb; -fx-background-radius: 9px; -fx-alignment: center-left; -fx-max-width: 590px; }
+.ton-bulk .bulk-mode-tabs .toggle-button { -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 10px 18px; }
+.ton-bulk .bulk-mode-tabs .toggle-button:selected { -fx-background-color: white; -fx-text-fill: #087087; -fx-effect: dropshadow(gaussian, #183b5222, 3, 0, 0, 1); }
+.ton-bulk .bulk-card { -fx-padding: 20px; -fx-background-color: white; -fx-background-radius: 11px; -fx-border-color: #cbdce7; -fx-border-radius: 11px; }
+.ton-bulk .bulk-context { -fx-padding: 12px; -fx-background-color: #f0f7fa; -fx-background-radius: 5px; -fx-border-color: transparent transparent transparent #18778c; -fx-border-width: 0 0 0 3px; }
+.ton-bulk .bulk-context-title { -fx-font-size: 16px; -fx-font-weight: bold; }
+.ton-bulk .bulk-color-choice { -fx-background-color: #f5f8fb; -fx-padding: 7px; -fx-border-color: #cbdce7; -fx-border-radius: 6px; -fx-background-radius: 6px; -fx-font-size: 12px; }
+.ton-bulk .check-box:selected .box { -fx-background-color: #18778c; }
+.ton-bulk .check-box:selected .mark { -fx-background-color: white; }
+.ton-bulk .bulk-color-choice:selected { -fx-background-color: #e4f2f5; -fx-border-color: #8ebdca; }
+.ton-bulk .bulk-link-button { -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 3px 2px; -fx-font-size: 12px; -fx-text-fill: #16768c; }
+.ton-bulk .bulk-product-picker, .ton-bulk .bulk-product-picker > .viewport { -fx-background-color: white; -fx-background: white; }
+.ton-bulk .bulk-product-picker { -fx-border-color: #cbdce7; -fx-border-radius: 7px; -fx-background-radius: 7px; }
+.ton-bulk .bulk-product-option { -fx-padding: 8px; -fx-background-color: #f5fafc; -fx-border-color: transparent transparent #e7eef3 transparent; -fx-border-width: 0 0 1px 0; }
+.ton-bulk .bulk-product-name { -fx-font-weight: bold; -fx-font-size: 12px; }
+.ton-bulk .bulk-product-tag { -fx-background-color: #deeff3; -fx-border-color: transparent; -fx-padding: 3px 6px; -fx-font-size: 11px; -fx-font-weight: normal; }
+.ton-bulk .bulk-code-part { -fx-background-color: #e9f5f7; -fx-border-color: #b8d8e1; -fx-border-radius: 6px; -fx-background-radius: 6px; -fx-padding: 6px 8px; -fx-font-size: 12px; }
+.ton-bulk .bulk-code-example, .ton-bulk-code-dialog .bulk-code-example { -fx-background-color: #f1f6fa; -fx-background-radius: 7px; -fx-padding: 10px 12px; -fx-font-family: "Monospaced"; -fx-font-size: 18px; -fx-font-weight: normal; }
+.ton-bulk .bulk-combination { -fx-background-color: #edf5f9; -fx-background-radius: 6px; -fx-padding: 10px; -fx-font-size: 12px; }
+.ton-bulk .bulk-metric { -fx-background-color: #f0f6f9; -fx-background-radius: 7px; -fx-padding: 10px 12px; }
+.ton-bulk .bulk-metric-value { -fx-font-size: 21px; -fx-font-weight: bold; }
+.ton-bulk .bulk-metric-existing { -fx-background-color: #fff6e1; }
+.ton-bulk .bulk-metric-invalid { -fx-background-color: #ffecef; }
+.ton-bulk .bulk-notice { -fx-padding: 11px 13px; -fx-background-color: #fffaed; -fx-border-color: #e4d3a7; -fx-border-radius: 7px; -fx-background-radius: 7px; -fx-text-fill: #765b1b; -fx-font-size: 12px; }
+.ton-bulk .table-view { -fx-background-color: white; -fx-border-color: #cbdce7; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-padding: 0; }
+.ton-bulk .table-view .column-header-background, .ton-bulk .table-view .column-header { -fx-background-color: #eaf2f7; }
+.ton-bulk .table-view .column-header .label { -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #47677e; }
+.ton-bulk .table-row-cell { -fx-background-color: white; -fx-border-color: transparent transparent #e6eef4 transparent; -fx-border-width: 0 0 1px 0; }
+.ton-bulk .table-row-cell:selected { -fx-background-color: #edf6fa; }
+.ton-bulk .table-cell { -fx-alignment: center-left; -fx-padding: 5px 7px; -fx-border-color: transparent; -fx-text-fill: #173f59; -fx-font-size: 12px; }
+.ton-bulk .bulk-inline-field { -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 5px 4px; -fx-font-size: 12px; }
+.ton-bulk .bulk-inline-field:hover, .ton-bulk .bulk-inline-field:focused { -fx-background-color: white; -fx-border-color: #b9cfdd; }
+.ton-bulk .bulk-status { -fx-font-size: 11px; -fx-padding: 3px 7px; -fx-background-radius: 12px; -fx-background-color: #f0f4f7; -fx-text-fill: #657e92; }
+.ton-bulk .bulk-status-new { -fx-background-color: #e6f3ee; -fx-text-fill: #21694f; }
+.ton-bulk .bulk-status-existing { -fx-background-color: #fff1cd; -fx-text-fill: #82601b; }
+.ton-bulk .bulk-status-invalid { -fx-background-color: #ffe7ed; -fx-text-fill: #9e3750; }
+.ton-bulk .bulk-primary, .ton-bulk-code-dialog .bulk-primary { -fx-background-color: #18778c; -fx-border-color: #18778c; -fx-text-fill: white; }
+.ton-bulk .bulk-primary:hover, .ton-bulk-code-dialog .bulk-primary:hover { -fx-background-color: #12677a; }
+.ton-bulk .bulk-feedback { -fx-padding: 12px; -fx-background-color: #e2f2ed; -fx-border-color: #a2ccbd; -fx-border-radius: 6px; -fx-background-radius: 6px; }
+.ton-bulk .bulk-error, .ton-bulk-code-dialog .bulk-error { -fx-text-fill: #9e3750; }
+.ton-bulk .bulk-feedback.bulk-error { -fx-background-color: #fff0f2; -fx-border-color: #e4bcc6; }
+.ton-bulk-code-dialog { -fx-background-color: white; -fx-padding: 20px; -fx-font-family: "System"; -fx-font-weight: normal; }
+.ton-bulk-code-dialog .bulk-dialog-scroll, .ton-bulk-code-dialog .bulk-dialog-scroll > .viewport { -fx-background: white; -fx-background-color: white; -fx-padding: 0; }
+.ton-bulk-code-dialog .bulk-dialog-title { -fx-font-size: 22px; -fx-font-weight: bold; }
+.ton-bulk-code-dialog .bulk-rule-row { -fx-padding: 9px; -fx-background-color: #f7fafc; -fx-border-color: #cbdce7; -fx-border-radius: 8px; -fx-background-radius: 8px; }
+.ton-bulk-code-dialog .bulk-rule-row .button { -fx-padding: 5px 9px; }
+.ton-bulk-code-dialog .bulk-part-title { -fx-font-weight: bold; }
+.ton-bulk-code-dialog .bulk-order { -fx-background-color: #dcebf2; -fx-background-radius: 30px; -fx-padding: 4px 8px; }

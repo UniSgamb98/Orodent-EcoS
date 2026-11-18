@@ -221,7 +221,7 @@ public final class CatalogModels {
         if (result.length() > 50)
             throw invalid(
                     "Il codice generato supera 50 caratteri. Riduci il codice della linea o il"
-                        + " colore commerciale.");
+                            + " colore commerciale.");
         return result;
     }
 
@@ -310,7 +310,16 @@ public final class CatalogModels {
         }
     }
 
-    public record Navigation(CatalogKind kind, Long parentFilter, Long openId, boolean create) {
+    public record Navigation(
+            CatalogKind kind, Long parentFilter, Long openId, boolean create, boolean bulk) {
+        public Navigation(CatalogKind kind, Long parentFilter, Long openId, boolean create) {
+            this(kind, parentFilter, openId, create, false);
+        }
+
+        public static Navigation bulk(CatalogKind kind, Long parent) {
+            return new Navigation(kind, parent, null, false, true);
+        }
+
         public static Navigation list(CatalogKind kind) {
             return new Navigation(kind, null, null, false);
         }

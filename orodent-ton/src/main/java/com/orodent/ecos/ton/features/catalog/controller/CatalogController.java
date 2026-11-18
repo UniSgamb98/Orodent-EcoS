@@ -73,6 +73,16 @@ public final class CatalogController implements FeatureController {
                                         : kind == CatalogKind.ARTICLES
                                                 ? list.product().value()
                                                 : null));
+        if (list.bulk() != null)
+            on(
+                    list.bulk(),
+                    () ->
+                            navigate.accept(
+                                    Navigation.bulk(
+                                            kind,
+                                            kind == CatalogKind.PRODUCTS
+                                                    ? list.line().id()
+                                                    : list.product().id())));
         on(list.open(), this::openSelected);
         listen(
                 list.table().getSelectionModel().selectedItemProperty(),
@@ -136,7 +146,7 @@ public final class CatalogController implements FeatureController {
                                             ? "Archivia anagrafica"
                                             : "Riattiva anagrafica",
                                     "I dati e lo storico vengono conservati. I figli non cambiano"
-                                        + " stato automaticamente."))
+                                            + " stato automaticamente."))
                         write(
                                 () ->
                                         service.setActive(
@@ -152,8 +162,8 @@ public final class CatalogController implements FeatureController {
                             && confirm(
                                     "Elimina anagrafica",
                                     "Eliminare definitivamente questo elemento mai utilizzato? I"
-                                        + " riferimenti vengono ricontrollati prima"
-                                        + " dell'eliminazione."))
+                                            + " riferimenti vengono ricontrollati prima"
+                                            + " dell'eliminazione."))
                         write(
                                 () -> service.delete(original.entry()).thenApply(ignored -> null),
                                 "Anagrafica eliminata.",
@@ -172,6 +182,12 @@ public final class CatalogController implements FeatureController {
                 (o, a, b) -> sheetChanged());
         if (editor.related() != null) {
             var related = editor.related();
+            on(
+                    related.bulk(),
+                    () -> {
+                        if (original != null)
+                            navigate.accept(Navigation.bulk(kind.child(), original.entry().id()));
+                    });
             on(
                     related.create(),
                     () -> {
@@ -378,7 +394,7 @@ public final class CatalogController implements FeatureController {
             if (!confirm(
                     "Modifiche non salvate",
                     "Salva le modifiche nella scheda corrente oppure scartale prima di modificare"
-                        + " l'altra scheda. Vuoi scartarle?")) {
+                            + " l'altra scheda. Vuoi scartarle?")) {
                 view.editor().sheet(lastSheet);
                 return;
             }
@@ -482,7 +498,7 @@ public final class CatalogController implements FeatureController {
                             && confirm(
                                     "Ritira versione",
                                     "I dati rimangono nello storico. Se è predefinita, dovrai"
-                                        + " scegliere un'altra versione prima di produrre."))
+                                            + " scegliere un'altra versione prima di produrre."))
                         write(
                                 () ->
                                         specifications.retire(
@@ -524,7 +540,7 @@ public final class CatalogController implements FeatureController {
                                     && !confirm(
                                             "Modifiche alla versione",
                                             "Vuoi scartare le modifiche non salvate di questa"
-                                                + " versione?")) {
+                                                    + " versione?")) {
                                 s.selectVersion(selectedVersion);
                                 return;
                             }
@@ -594,7 +610,7 @@ public final class CatalogController implements FeatureController {
                     && !confirm(
                             "Approva specifica produttiva",
                             "Composizione e modello verranno collegati alle revisioni anagrafiche"
-                                + " correnti. La versione approvata sarà di sola lettura."))
+                                    + " correnti. La versione approvata sarà di sola lettura."))
                 return;
             write(
                     () ->
@@ -629,7 +645,7 @@ public final class CatalogController implements FeatureController {
                                     .log(
                                             System.Logger.Level.WARNING,
                                             "Scrittura catalogo terminata con errore dopo la"
-                                                + " chiusura della pagina",
+                                                    + " chiusura della pagina",
                                             error);
                         return;
                     }

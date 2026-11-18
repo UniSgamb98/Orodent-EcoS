@@ -9,7 +9,7 @@ import javafx.scene.layout.*;
 
 public final class CatalogRelatedView extends VBox {
     private final CatalogTable table;
-    private final Button create, open, previous, next;
+    private final Button create, open, previous, next, bulk;
     private final Label result = new Label(), feedback;
 
     public CatalogRelatedView(CatalogKind owner) {
@@ -20,6 +20,11 @@ public final class CatalogRelatedView extends VBox {
         table = new CatalogTable(child, base + "-table");
         VBox.setVgrow(table, Priority.ALWAYS);
         create = CatalogUi.button("+ Nuovo " + child.singular(), base + "-new", true);
+        bulk =
+                CatalogUi.button(
+                        child == CatalogKind.PRODUCTS ? "Crea più prodotti…" : "Crea più articoli…",
+                        base + "-bulk",
+                        false);
         open = CatalogUi.button("Apri scheda selezionata", base + "-open", false);
         open.setDisable(true);
         previous = CatalogUi.button("←", base + "-previous", false);
@@ -36,8 +41,8 @@ public final class CatalogRelatedView extends VBox {
                 .setAll(
                         CatalogUi.hint(
                                 "Gli elementi vengono creati con il collegamento a questa scheda"
-                                    + " già selezionato."),
-                        create,
+                                        + " già selezionato."),
+                        new javafx.scene.layout.FlowPane(10, 8, create, bulk),
                         table,
                         pages,
                         open,
@@ -49,6 +54,7 @@ public final class CatalogRelatedView extends VBox {
 
     public void reset(boolean saved, boolean available) {
         create.setDisable(!saved || !available);
+        bulk.setDisable(!saved || !available);
         table.getItems().clear();
         previous.setDisable(true);
         next.setDisable(true);
@@ -86,6 +92,10 @@ public final class CatalogRelatedView extends VBox {
 
     public CatalogTable table() {
         return table;
+    }
+
+    public Button bulk() {
+        return bulk;
     }
 
     public Button create() {
