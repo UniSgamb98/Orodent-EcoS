@@ -11,6 +11,7 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -30,8 +31,7 @@ public final class TonView extends BorderPane {
     private static final PseudoClass SELECTED = PseudoClass.getPseudoClass("selected");
     private final Button home = new Button("Home Orodent-EcoS");
     private final Button menu = new Button("☰  Menu TON");
-    private final Label title = new Label("TON · Panoramica");
-    private final Label breadcrumb = new Label();
+    private final Label title = new Label("TON › Panoramica");
     private final VBox sidebar = new VBox(6);
     private final BorderPane body = new BorderPane();
     private final ScrollPane viewport = new ScrollPane();
@@ -53,7 +53,11 @@ public final class TonView extends BorderPane {
         menu.setId("ton-menu-button"); menu.getStyleClass().add("nav-button");
         menu.setAccessibleText("Mostra o nascondi il menu di TON");
         menu.setOnAction(event -> showMenu(!menuOpen));
+        title.setId("ton-breadcrumb");
         title.setMinWidth(0); title.setMaxWidth(Double.MAX_VALUE); title.getStyleClass().add("page-title");
+        Tooltip locationTooltip = new Tooltip();
+        locationTooltip.textProperty().bind(title.textProperty());
+        title.setTooltip(locationTooltip);
         HBox.setHgrow(title, Priority.ALWAYS);
         HBox header = new HBox(16, home, title, menu); header.setAlignment(Pos.CENTER_LEFT);
         header.getStyleClass().add("app-header"); setTop(header);
@@ -64,11 +68,9 @@ public final class TonView extends BorderPane {
                 navigation(TonSection.PRODUCTION), navigation(TonSection.FIRING), groupLabel("PREPARAZIONE"),
                 navigation(TonSection.TECHNICAL), groupLabel("CONSULTAZIONE"),
                 navigation(TonSection.TRACEABILITY), navigation(TonSection.DOCUMENTS));
-        breadcrumb.setId("ton-breadcrumb"); breadcrumb.getStyleClass().add("ton-breadcrumb");
-        breadcrumb.setWrapText(true); breadcrumb.setMaxWidth(Double.MAX_VALUE);
         viewport.setId("ton-page-scroll"); viewport.setFitToWidth(true); viewport.setFitToHeight(true);
         viewport.getStyleClass().add("ton-page-scroll");
-        BorderPane workspace = new BorderPane(viewport); workspace.setTop(breadcrumb); workspace.setMinWidth(0);
+        BorderPane workspace = new BorderPane(viewport); workspace.setMinWidth(0);
         body.setCenter(workspace); setCenter(body); showMenu(true);
         widthProperty().addListener(resizeListener);
         setOnKeyPressed(event -> {
@@ -113,7 +115,7 @@ public final class TonView extends BorderPane {
     }
 
     private void select(TonSection selected, String location) {
-        title.setText("TON · " + selected.title()); breadcrumb.setText(location);
+        title.setText(location);
         buttons.forEach((section, button) -> {
             button.pseudoClassStateChanged(SELECTED, section == selected);
             button.setAccessibleText(section.title() + (section == selected ? ", area corrente" : ""));

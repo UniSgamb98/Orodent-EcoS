@@ -42,12 +42,6 @@
     -fx-border-width: 0;
     -fx-padding: 0;
 }
-.ton-module .ton-breadcrumb {
-    -fx-background-color: #e3edf3;
-    -fx-text-fill: #6a7f93;
-    -fx-font-size: 11px;
-    -fx-padding: 13px 26px 0 26px;
-}
 .ton-module .ton-page-heading { -fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #173f5f; }
 .ton-module .ton-card-title { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #173f5f; }
 .ton-module .ton-description { -fx-font-size: 13px; -fx-text-fill: #637c93; -fx-line-spacing: 3px; }

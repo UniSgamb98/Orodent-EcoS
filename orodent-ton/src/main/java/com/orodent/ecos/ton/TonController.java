@@ -122,6 +122,12 @@ final class TonController {
         if (route.bulk()) {
             var page = new BulkCatalogView(route.kind());
             var controller = new BulkCatalogController(page, bulkCatalogues, this::openCatalogue);
+            page.modeProperty()
+                    .addListener(
+                            (o, previous, kind) -> {
+                                activeFeature = kind.feature();
+                                view.showFeature(page, activeFeature);
+                            });
             install(route.kind().feature(), page, controller, () -> controller.start(route));
             return;
         }

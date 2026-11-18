@@ -1,7 +1,8 @@
 # TON: navigazione e cataloghi tecnici
 
 TON dispone di **Panoramica**, **Produzione**, **Forni e cotture**, **Dati tecnici**,
-**Tracciabilità** e **Documenti**. Il percorso indica la pagina corrente;
+**Tracciabilità** e **Documenti**. Il percorso completo è mostrato nell'intestazione
+(es. **TON › Dati tecnici › Articoli**), senza una seconda barra sotto;
 **Home Orodent-EcoS** torna al catalogo principale e **Panoramica** resta in TON.
 
 Dati tecnici mantiene al massimo due colonne, disposte per righe:
