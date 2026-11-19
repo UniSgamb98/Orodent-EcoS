@@ -22,6 +22,9 @@ import com.orodent.ecos.ton.features.documents.view.DocumentTemplatesView;
 import com.orodent.ecos.ton.features.powders.controller.PowdersController;
 import com.orodent.ecos.ton.features.powders.service.PowderService;
 import com.orodent.ecos.ton.features.powders.view.PowdersView;
+import com.orodent.ecos.ton.features.production.controller.ProductionController;
+import com.orodent.ecos.ton.features.production.service.ProductionService;
+import com.orodent.ecos.ton.features.production.view.ProductionView;
 import com.orodent.ecos.ton.navigation.FeatureController;
 import com.orodent.ecos.ton.navigation.TonFeature;
 import com.orodent.ecos.ton.navigation.TonSection;
@@ -38,6 +41,7 @@ final class TonController {
     private final DiskModelService models;
     private final CompositionService compositions;
     private final DocumentTemplateService documents;
+    private final ProductionService productions;
     private final java.util.concurrent.Executor workers;
     private FeatureController active;
     private TonFeature activeFeature;
@@ -46,6 +50,7 @@ final class TonController {
     TonController(ModuleContext context) {
         workers = context.workers();
         documents = new DocumentTemplateService(context.connections(), workers);
+        productions = new ProductionService(context.connections(), workers);
         catalogues = new CatalogService(context.connections(), context.workers());
         bulkCatalogues = new BulkCatalogService(context.connections(), context.workers());
         specifications = new SpecificationService(context.connections(), context.workers());
@@ -80,6 +85,20 @@ final class TonController {
         if (activeFeature == feature || !canLeave()) return;
         closePage();
         switch (feature) {
+            case PRODUCTIONS -> {
+                var page = new ProductionView();
+                page.subpageProperty()
+                        .addListener(
+                                (o, before, subpage) -> view.showFeature(page, feature, subpage));
+                var controller =
+                        new ProductionController(
+                                page,
+                                productions,
+                                article ->
+                                        openCatalogue(
+                                                Navigation.open(CatalogKind.ARTICLES, article)));
+                install(feature, page, controller, controller::start);
+            }
             case PRODUCTS -> {
                 installCatalogue(Navigation.list(CatalogKind.PRODUCTS));
             }

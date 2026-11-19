@@ -154,6 +154,10 @@ public final class DocumentEditorPane extends BorderPane {
         call("restore", payload);
     }
 
+    public String renderProduction(String template, String payload) {
+        return (String) call("renderProduction", template, payload);
+    }
+
     public void newModel() {
         call("newModel");
     }

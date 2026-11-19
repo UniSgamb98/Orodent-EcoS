@@ -28,9 +28,11 @@ L’editor è integrato in **TON → Documenti → Modelli documento** tramite u
 L’elenco usa il [componente comune degli elenchi TON](ton-elenchi.md), con ricerca,
 **Aggiorna** e apertura tramite doppio clic o Invio.
 La [guida ai comandi](ton-editor-visuale.md) descrive bozze, approvazione e versioni.
-I modelli sono salvati nel DB condiviso; i blocchi usano ancora dati di esempio.
-Il collegamento alle produzioni reali, il motore PDF e l’archivio delle emissioni
-restano da integrare.
+I modelli sono salvati nel DB condiviso. Durante la progettazione i blocchi usano
+dati di esempio; nella [produzione](ton-produzione.md) ricevono i dati reali dal
+servizio di calcolo, mantenendo layout, testi e proprietà del modello utente.
+Il foglio emesso viene conservato come HTML autosufficiente e stampato tramite il
+dialogo nativo. Un archivio automatico dei PDF resta da integrare.
 
 `javafx-web` e `javafx-media` sono ora dipendenze runtime. Tutti i moduli JavaFX
 sono fissati a **21.0.6**, compresi base e graphics, evitando versioni transitive
@@ -39,11 +41,16 @@ Il primo ZIP completo installa anche l’**updater di protocollo 2** sulle posta
 con il vecchio launcher. Da quel momento le release possono aggiornare sia i JAR
 sia il Java applicativo: un futuro nuovo modulo Java non richiede di ridistribuire
 manualmente lo ZIP. Vedere [runtime e release firmate](releases.md).
-Non cambia la versione dello schema DB e non si devono spostare i dati.
+La produzione reale aggiunge lo schema V15 con la normale migrazione HOST;
+non si devono spostare i dati.
 
 Il ponte JavaScript `window.OrodentDocumentEditor` espone operazioni delimitate:
 serializzazione/ripristino JSON con versione dello schema, comandi ammessi,
 inserimento dei blocchi, stato delle modifiche, sola lettura e rilascio.
+`renderProduction(template, payload)` compila una copia del modello con quantità,
+pesate, miscele, pressione del modello e note reali; restituisce HTML con CSS e
+impostazioni di pagina incorporati. La visualizzazione del risultato è passiva,
+con JavaScript disabilitato.
 Lo schema editoriale è ora **4**; i modelli degli schemi 1, 2 e 3 sono ancora
 caricabili. Lo schema 4 conserva anche le opzioni dei blocchi automatici per
 contenuto, aspetto e stampa, oltre a larghezze, spazio fra colonne e opzioni ppm/g/mm. La riapertura dei vecchi modelli li aggiorna in memoria

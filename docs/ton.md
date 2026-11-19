@@ -17,7 +17,8 @@ Dati tecnici mantiene al massimo due colonne, disposte per righe:
 
 Tutti e sei i cataloghi tecnici sono operativi e si aprono anche dalla
 Panoramica. In **Documenti → Modelli documento** è disponibile l’editor visuale
-con bozze e versioni nel DB. Le funzioni restanti sono indicate come
+con bozze e versioni nel DB. In **Produzione → Produzioni e bozze** si preparano
+i dischi richiesti e le relative pesate. Le funzioni restanti sono indicate come
 **In preparazione**, senza contatori fittizi o comandi non implementati. Il cubaggio resta rinviato.
 
 - [Linee, prodotti, articoli, storico e specifiche produttive](ton-cataloghi.md).
@@ -25,7 +26,8 @@ con bozze e versioni nel DB. Le funzioni restanti sono indicate come
 - [Polveri, ossidi e schede tecniche approvate](ton-polveri.md).
 - [Modelli disco, strati, sovramateriali e versioni](ton-modelli-disco.md).
 - [Composizioni, ricette per strato, ossidi e utilizzi](ton-composizioni.md).
-- [Proposta da discutere: preparazione della produzione e mockup interattivo](ton-produzione-proposta.md).
+- [Produzioni e bozze: quantità, pesate e documenti reali](ton-produzione.md).
+- [Mockup di riferimento della produzione](ton-produzione-proposta.md).
 - [Proposta iniziale dell'editor visuale dei documenti](ton-documenti-proposta.md).
 - [Base Tiptap offline e ricostruzione delle risorse](ton-editor-offline.md).
 - [Editor integrato, bozze, versioni e blocchi dimostrativi](ton-editor-visuale.md).
@@ -58,7 +60,8 @@ finestra, senza avviare un processo distinto per catalogo.
 
 V3 crea il catalogo prodotti, V4 aggiunge il dominio produttivo e documentale,
 V5 il colore delle polveri e V6 la gerarchia dei cataloghi con storico reale.
-Il dominio TON comprende 28 tabelle. Le migrazioni pubblicate restano immutabili.
+V15 aggiunge i piani di preparazione e il foglio operativo conservato.
+Il dominio TON comprende 31 tabelle. Le migrazioni pubblicate restano immutabili.
 
 L'HOST salva il backup prima delle scritture e applica le migrazioni pendenti in
 transazione, prima di pubblicare il servizio. Il CLIENT verifica lo schema

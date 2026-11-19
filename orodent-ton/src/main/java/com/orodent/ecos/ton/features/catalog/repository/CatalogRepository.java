@@ -292,7 +292,8 @@ public final class CatalogRepository {
 ,((SELECT COUNT(*) FROM TON.ARTICOLI c WHERE c.prodotto_id=b.prodotto_id)
  +(SELECT COUNT(*) FROM TON.ARTICOLI_REVISIONI c WHERE c.prodotto_id=b.prodotto_id)
  +(SELECT COUNT(*) FROM TON.COMPOSIZIONI c WHERE c.prodotto_id=b.prodotto_id)
- +(SELECT COUNT(*) FROM TON.LINEE_PRODOTTI c WHERE c.prodotto_id=b.prodotto_id)) AS uses_count
+ +(SELECT COUNT(*) FROM TON.LINEE_PRODOTTI c WHERE c.prodotto_id=b.prodotto_id)
+ +(SELECT COUNT(*) FROM TON.PIANI_PRODUZIONE c WHERE c.prodotto_id=b.prodotto_id)) AS uses_count
 """;
                     case ARTICLES ->
                             """

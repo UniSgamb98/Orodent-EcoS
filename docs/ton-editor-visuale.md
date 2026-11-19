@@ -30,8 +30,10 @@ I conflitti fra postazioni vengono rifiutati e il contenuto locale resta
 nell’editor; **Esporta JSON** permette di conservarlo prima di ricaricare.
 Le scritture interrotte non vengono ripetute automaticamente.
 
-Questa prima integrazione riguarda i **modelli di produzione**. I documenti
-emessi e i modelli di cottura verranno collegati ai rispettivi flussi produttivi.
+I **modelli di produzione** approvati sono selezionabili in
+[Produzione → Produzioni e bozze](ton-produzione.md). Il layout viene compilato con
+i dati reali del piano; la preparazione conserva il foglio operativo. I modelli
+di cottura saranno collegati al rispettivo flusso.
 
 ## Comandi disponibili
 
@@ -88,8 +90,8 @@ Selezionare un blocco e usare le tre schede nel pannello destro:
   tabelle che proseguono su un'altra pagina. Queste istruzioni sono salvate nel
   modello e applicate dai CSS di stampa; l'editor resta un documento in flusso.
   La frammentazione nelle colonne annidate dipende dal motore di stampa; una scheda
-  più alta di una pagina deve comunque potersi dividere. Il PDF definitivo e
-  l'anteprima con una produzione reale rimangono da collegare al flusso produttivo.
+  più alta di una pagina deve comunque potersi dividere. La produzione reale usa
+  queste proprietà nella stampa nativa; l’archiviazione automatica dei PDF resta futura.
 
 Filtri e ordinamento non ricalcolano quantità o totali. Le proprietà si conservano
 in salvataggio, duplicazione, nuova revisione, esportazione e ripristino JSON;
@@ -144,15 +146,19 @@ mantiene il contenuto corrente. I modelli hanno un limite di 8 MB; le immagini
 singole di 2 MB. Nel browser separato gli stessi comandi sono Apri/Esporta modello.
 
 **Verifica** segnala eventuali blocchi mancanti per una scheda operativa TON.
-**Anteprima** mostra il contenuto compilato con esempi. Nell’app non è ancora
-abilitata la stampa definitiva: prima devono essere collegati calcoli, produzione
-e conservazione del PDF emesso. La pagina aperta separatamente nel browser offre
-la stampa del browser, che non costituisce un’emissione archiviata.
+**Anteprima** nell’editor mostra il contenuto compilato con esempi. La scheda
+Documento della produzione usa invece i calcoli reali. **Prepara produzione**
+conserva il foglio HTML nel DB; la stampa usa il dialogo nativo e ristampa lo
+stesso contenuto. Non viene archiviato automaticamente un PDF. La stampa dalla
+pagina separata nel browser non costituisce un’emissione archiviata.
 
 Il campione riprende 64 dischi, quattro strati, P300 a 83,3 bar, maggiorazione
 × 1,005 e pesatura a 0,1 g. I valori sono precompilati in `sample-data.json`,
 con le convenzioni descritte nella [scheda di laboratorio](ton-documenti-laboratorio.md).
-L'editor non ricostruisce i calcoli fisici: li forniranno i servizi TON.
+L’editor non ricostruisce i calcoli fisici: nella produzione li riceve dai servizi
+TON. P300 e 83,3 bar restano esempi dell’editor, non dati della produzione reale.
+Fra i campi dinamici è disponibile anche **Note di lavorazione**, per collocare
+nel modello le istruzioni inserite durante la preparazione.
 
 ## Struttura del codice
 

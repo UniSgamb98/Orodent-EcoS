@@ -5,7 +5,7 @@ import { TextStyleKit } from '@tiptap/extension-text-style';
 import TextAlign from '@tiptap/extension-text-align';
 import { EditorState } from '@tiptap/pm/state';
 import { TonBlock, TonField, TonColumns, TonColumn, TableAppearance, LocalImage } from './extensions.js';
-import { initialContent } from './laboratory-blocks.js';
+import { initialContent, setProductionData } from './laboratory-blocks.js';
 import { defaultPage, documentSchemaVersion, readModel, writeModel, applyPage } from './document-model.js';
 import { mountEditorUI } from './editor-ui.js';
 
@@ -111,6 +111,23 @@ try {
       window.dispatchEvent(new Event('resize'));
     },
     restore,
+    renderProduction(template, payload) {
+      setProductionData(payload);
+      restore(template);
+      activeEditor().setEditable(false);
+      const content = activeEditor().getHTML();
+      const css = document.querySelector('style').textContent;
+      const pageWidth = page.orientation === 'landscape' ? '297mm' : '210mm';
+      const extra = `body.issued-document { display:block; margin:0; padding:18px; overflow:auto; background:#e3edf3; }
+        #production-output { display:block; box-sizing:border-box; width:${pageWidth}; max-width:none; margin:auto; padding:${page.margin}mm; background:white; color:#243e50; }
+        #production-output .ton-field { background:transparent; border:0; }
+        @page { size:A4 ${page.orientation}; margin:${page.margin}mm; }
+        @media print { body.issued-document { padding:0; background:white; overflow:visible; }
+          body.issued-document > #production-output { display:block!important; width:auto; margin:0; padding:0; box-shadow:none; }
+          #production-output .tiptap { display:block!important; } }`;
+      return '<!doctype html><html lang="it"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src data:"><style>'
+        + css + extra + '</style></head><body class="issued-document"><main id="production-output"><div class="tiptap">' + content + '</div></main></body></html>';
+    },
     isDirty() { activeEditor(); return dirty; },
     markSaved() { activeEditor(); dirty = false; ui.refresh(); },
     setEditable(editable) { activeEditor().setEditable(Boolean(editable)); ui.refresh(true); },

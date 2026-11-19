@@ -1,8 +1,9 @@
 import { optionDefaults, blockColumns, visibleFormats, visiblePowders, powderLabel } from './block-options.js';
 import { normalizeLayoutJSON } from './layout-model.js';
-import sample from './sample-data.json';
+import fixture from './sample-data.json';
+let sample = fixture;
 
-// Fixture-only presentation. Actual production calculations belong to TON services.
+// Editor fixtures or native production payload; calculations belong to TON services.
 export const blockTypes = Object.freeze({
   identity: 'Dati della produzione',
   press: 'Parametri della pressa',
@@ -17,7 +18,16 @@ export const fields = Object.freeze({
   line: ['Linea', sample.line],
   product: ['Prodotto', sample.product],
   quantity: ['Numero dischi', String(sample.quantity)],
+  notes: ['Note di lavorazione', ''],
 });
+export function setProductionData(payload) {
+  const data = JSON.parse(payload);
+  if (!data || !Array.isArray(data.formats) || !Array.isArray(data.layers) || !Number.isInteger(data.quantity))
+    throw new Error('Dati della produzione non validi.');
+  sample = data;
+  for (const key of Object.keys(fields)) fields[key][1] = String(data[key] ?? '');
+}
+
 export const escape = value => String(value ?? '').replace(/[&<>"']/g,
   c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -51,7 +61,7 @@ export function blockElement(attrs, editing = false) {
       body = `<div class="production-fields">${['production', 'date', 'product'].map(k => `<div><small>${escape(fields[k][0])}</small><b>${escape(fields[k][1])}</b></div>`).join('')}</div>`;
       break;
     case 'press':
-      body = `<div class="press-setting"><div><small>PRESSIONE DA IMPOSTARE · ${sample.machine}</small><strong>${sample.pressure} <span>bar</span></strong></div><p>Ricetta ${sample.recipe}<br>Modello ${sample.model}</p></div>`;
+      body = `<div class="press-setting"><div><small>${escape(sample.pressureLabel || 'PRESSIONE DA IMPOSTARE')}${sample.machine ? ' · ' + escape(sample.machine) : ''}</small><strong>${escape(sample.pressure)} <span>${escape(sample.pressureUnit || 'bar')}</span></strong></div><p>Ricetta ${escape(sample.recipe)}<br>Modello ${escape(sample.model)}</p></div>`;
       break;
     case 'weighing':
       body = visibleFormats(sample.formats, attrs).map(f => {

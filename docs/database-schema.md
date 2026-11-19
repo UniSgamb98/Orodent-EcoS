@@ -8,7 +8,7 @@ EcoS usa un solo database Derby, organizzato per dominio dei dati.
 | `ANAGRAFICHE` | `CLIENTI` | Anagrafica condivisa tra i moduli |
 | `VENDITE` | `VENDITE_DETTAGLIO` | Vendite e rettifiche condivise |
 | `COSTI` | `POLVERI_PREZZI`, `POLVERI_LOTTI` | Fotografie manuali dei prezzi e delle quantità delle polveri, con revisioni economiche |
-| `TON` | 28 tabelle: cataloghi, specifiche versionate, produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
+| `TON` | 31 tabelle: cataloghi, specifiche versionate, piani e produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
 
 Statistiche legge clienti e vendite dagli schemi condivisi; TON gestisce il proprio
 catalogo tecnico in `TON.PRODOTTI`. Lo schema `STATISTICHE` sarà creato soltanto
@@ -248,3 +248,18 @@ L'HOST esegue il normale backup prima della migrazione. Un database nuovo termin
 senza account predefiniti: il login consente la creazione del primo operatore.
 Rinomine e attivazioni usano gli UUID esistenti e la revisione del catalogo per
 rilevare le modifiche concorrenti. Aggiornare prima l'HOST e poi i CLIENT.
+
+## Migrazione dalla versione 14 alla 15
+
+`V15__ton_production_plans.sql` aggiunge tre tabelle TON per preparare il lavoro:
+`PIANI_PRODUZIONE`, `PIANO_PRODUZIONE_RIGHE` e `PIANI_DOCUMENTI`. Conservano prodotto,
+formati richiesti e specifiche approvate, stato bozza/preparata, versione per i
+conflitti fra postazioni, fotografia dei calcoli e modello editoriale selezionato.
+Il foglio operativo emesso è conservato come HTML autosufficiente e immutabile.
+
+Le quantità sono **richieste**, distinte da `PRODUZIONE_RIGHE.quantita_prodotta`.
+La migrazione non interpreta vecchie produzioni come piani, non modifica scorte,
+lotti o cotture e non aggiunge dati dimostrativi. Un piano preparato si riapre dalla
+fotografia conservata, anche se in seguito vengono ritirate le specifiche.
+La procedura HOST/CLIENT e il backup prima delle migrazioni restano quelli
+condivisi. Vedere la [guida alla produzione](ton-produzione.md).

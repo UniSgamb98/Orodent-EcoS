@@ -621,7 +621,10 @@ public final class CatalogDetailsUiProbe {
                     versions.getSelectionModel().selectLast();
                     return null;
                 });
-        await(() -> ((Label) node("ton-composition-status")).getText().startsWith("v1"));
+        await(
+                () ->
+                        node("ton-composition-status") instanceof Label status
+                                && status.getText().startsWith("v1"));
         fx(
                 () -> {
                     assertTrue(node("ton-composition-notes").isDisabled());

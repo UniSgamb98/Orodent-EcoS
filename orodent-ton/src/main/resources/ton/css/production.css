@@ -1,0 +1,147 @@
+/* Every TON main list uses TonListView and this palette. */
+.ton-production {
+    -fx-background-color: #e3edf3;
+    -fx-text-fill: #173f59;
+    -fx-font-family: "System";
+    -fx-font-weight: normal;
+}
+.ton-production .label { -fx-text-fill: #173f59; -fx-font-family: "System"; -fx-font-weight: normal; }
+.ton-production .muted-label { -fx-text-fill: #526e83; }
+.ton-production .label:disabled { -fx-opacity: 1; }
+.ton-production .button {
+    -fx-background-color: white;
+    -fx-background-radius: 7px;
+    -fx-border-color: #cbdce7;
+    -fx-border-radius: 7px;
+    -fx-padding: 9px 14px;
+    -fx-text-fill: #173f59;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+.ton-production .button:hover { -fx-background-color: #eaf4f7; }
+.ton-production .button:focused { -fx-border-color: #3196aa; }
+.ton-production .primary-button {
+    -fx-background-color: #18778c;
+    -fx-border-color: #18778c;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+.ton-production .primary-button:hover { -fx-background-color: #12677a; -fx-border-color: #12677a; }
+.ton-production .text-field,
+.ton-production .text-area,
+.ton-production .combo-box {
+    -fx-background-color: white;
+    -fx-background-radius: 6px;
+    -fx-border-color: #bed3df;
+    -fx-border-radius: 6px;
+    -fx-padding: 7px 9px;
+    -fx-text-fill: #173f59;
+    -fx-prompt-text-fill: #73899a;
+    -fx-font-family: "System";
+    -fx-font-weight: normal;
+}
+.ton-production .text-field:focused,
+.ton-production .text-area:focused,
+.ton-production .combo-box:focused { -fx-border-color: #3196aa; }
+.ton-production .text-area .content { -fx-background-color: white; }
+.ton-production .combo-box .list-cell { -fx-background-color: transparent; -fx-text-fill: #173f59; }
+.ton-production .combo-box .text-field { -fx-padding: 0; -fx-border-width: 0; }
+.ton-production .combo-box > .arrow-button { -fx-background-color: transparent; }
+.ton-production .check-box:selected .box { -fx-background-color: #18778c; }
+.ton-production .check-box:selected .mark { -fx-background-color: white; }
+.ton-production .text-field:disabled,
+.ton-production .text-area:disabled,
+.ton-production .combo-box:disabled {
+    -fx-opacity: 1;
+    -fx-background-color: #f0f6f9;
+    -fx-text-fill: #526e83;
+}
+.ton-production .text-area:disabled .content { -fx-background-color: #f0f6f9; }
+.ton-production .table-view {
+    -fx-background-color: white;
+    -fx-border-color: #cbdce7;
+    -fx-border-radius: 7px;
+    -fx-background-radius: 7px;
+    -fx-padding: 0;
+}
+.ton-production .table-view .column-header,
+.ton-production .table-view .filler,
+.ton-production .table-view .column-header-background {
+    -fx-background-color: #eaf2f7;
+    -fx-border-width: 0;
+}
+.ton-production .table-view .column-header .label { -fx-text-fill: #47677e; -fx-padding: 7px; }
+.ton-production .table-row-cell { -fx-background-color: white; -fx-background-insets: 0; }
+.ton-production .table-row-cell:selected { -fx-background-color: #edf6fa; }
+.ton-production .table-cell {
+    -fx-text-fill: #173f59;
+    -fx-border-color: transparent transparent #e6eef4 transparent;
+}
+.ton-production .table-cell .button { -fx-padding: 5px 10px; }
+.ton-production .ton-error-feedback { -fx-text-fill: #a52d48; }
+.ton-production .ton-list-card {
+    -fx-padding: 20px;
+    -fx-background-color: white;
+    -fx-background-radius: 11px;
+    -fx-border-color: #cbdce7;
+    -fx-border-radius: 11px;
+}
+.ton-production .titled-pane > .title {
+    -fx-background-color: #eaf2f7;
+    -fx-background-radius: 6px;
+    -fx-border-color: #cbdce7;
+    -fx-border-radius: 6px;
+    -fx-padding: 8px 10px;
+}
+.ton-production .titled-pane > .content {
+    -fx-background-color: white;
+    -fx-border-color: #cbdce7;
+    -fx-padding: 12px;
+}
+.ton-production .table-row-cell:empty .table-cell { -fx-border-color: transparent; }
+.ton-production .table-cell { -fx-padding: 8px; }
+
+.ton-production .production-editor { -fx-padding: 8px 26px 20px 26px; }
+.ton-production .production-left, .ton-production .production-right { -fx-background-color:white; -fx-background-radius:11px; -fx-border-color:#cbdce7; -fx-border-radius:11px; }
+.ton-production .production-left > .viewport { -fx-background-color:white; -fx-background-radius:11px; }
+.ton-production .production-configuration { -fx-padding:20px; }
+.ton-production .production-content { -fx-padding:20px; }
+.ton-production .production-content > .scroll-pane, .ton-production .scroll-pane, .ton-production .scroll-pane > .viewport { -fx-background-color:white; -fx-background:white; -fx-border-width:0; }
+.ton-production .production-section-title { -fx-font-size:16px; -fx-font-weight:bold; }
+.ton-production .production-field-label { -fx-font-size:13px; -fx-font-weight:bold; }
+.ton-production .production-row-hint { -fx-font-size:11px; -fx-text-fill:#648096; }
+.ton-production .production-metric, .ton-production .production-metric-warm { -fx-background-color:#eff6f9; -fx-background-radius:7px; -fx-padding:14px; }
+.ton-production .production-metric-warm { -fx-background-color:#fff6df; }
+.ton-production .production-metric-value { -fx-font-size:23px; -fx-font-weight:bold; }
+.ton-production .production-band, .ton-production .production-specification { -fx-background-color:#eff6f9; -fx-background-radius:7px; -fx-padding:12px; -fx-font-size:12px; }
+.ton-production .production-specification { -fx-line-spacing:5px; }
+.ton-production .production-state { -fx-background-color:#fff3d4; -fx-background-radius:20px; -fx-padding:6px 11px; -fx-text-fill:#8d6514; -fx-font-size:12px; }
+.ton-production .production-state:prepared { -fx-background-color:#e0f2ed; -fx-text-fill:#17695d; }
+.ton-production .production-color { -fx-background-color:white; -fx-border-color:#cbdce7; -fx-border-radius:6px; -fx-background-radius:6px; -fx-padding:8px 10px; -fx-text-fill:#173f59; -fx-cursor:hand; }
+.ton-production .production-color:selected { -fx-background-color:#18778c; -fx-border-color:#18778c; -fx-text-fill:white; -fx-font-weight:bold; }
+.ton-production .production-link { -fx-background-color:transparent; -fx-border-color:transparent; -fx-text-fill:#18778c; -fx-font-size:12px; -fx-padding:4px 2px; }
+.ton-production .production-refresh { -fx-padding:5px 13px; }
+.ton-production .production-actions { -fx-border-color:#cbdce7 transparent transparent transparent; -fx-padding:15px 20px; }
+.ton-production .production-feedback { -fx-padding:0px 20px 12px 20px; }
+.ton-production .production-quantity { -fx-padding:7px 9px; -fx-alignment:center; }
+.ton-production .production-quantity:disabled { -fx-opacity:1; -fx-background-color:#f0f6f9; }
+.ton-production .production-mixture { -fx-background-color:#fff9e8; -fx-border-color:#e8dca9; -fx-background-radius:9px; -fx-border-radius:9px; -fx-padding:16px; }
+.ton-production .production-powder-code { -fx-font-size:12px; }
+.ton-production .production-document-toolbar { -fx-padding:12px 20px; }
+.ton-production .tab-pane { -fx-padding:0; }
+.ton-production .tab-pane > .tab-header-area { -fx-padding:5px 5px 0px 5px; }
+.ton-production .tab-pane > .tab-header-area > .tab-header-background { -fx-background-color:#d1e2eb; -fx-background-radius:10px 10px 0px 0px; }
+.ton-production .tab-pane > .tab-header-area > .headers-region > .tab { -fx-background-color:transparent; -fx-background-radius:7px 7px 0px 0px; -fx-border-color:transparent; -fx-border-width:0px 0px 3px 0px; -fx-padding:12px 18px; }
+.ton-production .tab-pane .tab .tab-label { -fx-text-fill:#173f59; -fx-font-weight:bold; }
+.ton-production .tab-pane > .tab-header-area > .headers-region > .tab:selected { -fx-background-color:white; -fx-border-color:transparent transparent #18778c transparent; }
+.ton-production .tab-pane .tab:selected .tab-label { -fx-text-fill:#18778c; }
+.ton-production .tab-pane > .tab-content-area { -fx-padding:0; -fx-background-color:white; }
+.ton-production .table-row-cell:included { -fx-background-color:#f3f9fb; }
+.ton-production #ton-production-quantities .table-row-cell { -fx-cell-size:58px; }
+.ton-production .production-mixture .muted-label { -fx-text-fill:#887844; }
+
+.ton-production:compact .production-content { -fx-padding:14px; }
+.ton-production:compact .production-metric,
+.ton-production:compact .production-metric-warm { -fx-padding:10px; }
+.ton-production:compact .production-metric-value { -fx-font-size:19px; }
+.ton-production:compact .production-band { -fx-padding:9px; }

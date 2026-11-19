@@ -31,6 +31,10 @@ class CrmOperatorMigrationTest {
                 };
         new DatabaseSchema(db).initialize();
         execute(
+                "DROP TABLE TON.PIANI_DOCUMENTI",
+                "DROP TABLE TON.PIANO_PRODUZIONE_RIGHE",
+                "DROP TABLE TON.PIANI_PRODUZIONE",
+                "DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE VERSION>=15",
                 "DELETE FROM CRM.CATALOGHI_VERSIONI WHERE NOME='OPERATORI'",
                 "DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE VERSION=14",
                 "INSERT INTO ECOS.OPERATORI(ID,NOME,USERNAME) VALUES ('"

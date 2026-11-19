@@ -17,54 +17,139 @@ import java.util.Properties;
 public final class DatabaseSchema {
     public static final int CURRENT_VERSION = currentVersion();
     private static final String HISTORY = "ECOS_SCHEMA_HISTORY";
-    private static final SchemaMigration BASELINE = new SchemaMigration(1,
-            "Shared customers and sales baseline", "/database/schema.sql");
-    private static final SchemaMigration DOMAINS = new SchemaMigration(2,
-            "Separate ecosystem, master data and sales schemas", "/database/migrations/V2__domain_schemas.sql");
-    private static final SchemaMigration TON_PRODUCTS = new SchemaMigration(3,
-            "TON technical product catalogue", "/database/migrations/V3__ton_products.sql");
-    private static final SchemaMigration TON_DOMAIN = new SchemaMigration(4,
-            "TON versioned specifications, production, firing and documents", "/database/migrations/V4__ton_domain.sql");
-    private static final SchemaMigration TON_POWDER_COLORS = new SchemaMigration(5,
-            "TON powder colors", "/database/migrations/V5__ton_powder_colors.sql");
-    private static final SchemaMigration TON_CATALOGUES = new SchemaMigration(6,
-            "TON catalogue hierarchy and history", "/database/migrations/V6__ton_catalogue_history.sql");
-    private static final SchemaMigration COSTS_POWDER_PRICES = new SchemaMigration(7,
-            "Costs manual powder prices and lot snapshots", "/database/migrations/V7__costs_powder_prices.sql");
-    private static final SchemaMigration COSTS_PRODUCT_PARAMETERS = new SchemaMigration(8,
-            "Costs product transformation parameters", "/database/migrations/V8__costs_product_parameters.sql");
-    private static final SchemaMigration COSTS_STOCK = new SchemaMigration(9, "Costs minimum stock policies", "/database/migrations/V9__costs_minimum_stock.sql");
-    private static final SchemaMigration WAREHOUSE_ORDERS = new SchemaMigration(10,
-            "Warehouse base totals and expected powder orders", "/database/migrations/V10__warehouse_and_purchase_orders.sql");
-    private static final SchemaMigration COST_SCENARIOS = new SchemaMigration(11, "Versioned cost scenarios and frozen bases", "/database/migrations/V11__cost_scenarios.sql");
-    private static final SchemaMigration TON_POWDER_SUPPLIER = new SchemaMigration(12,
-            "TON powder supplier", "/database/migrations/V12__ton_powder_supplier.sql");
-    private static final SchemaMigration CRM = new SchemaMigration(13, "CRM leads, operators and commercial activity", "/database/migrations/V13__crm.sql");
-    private static final SchemaMigration CRM_OPERATORS = new SchemaMigration(14, "CRM operator management and removal of placeholder user", "/database/migrations/V14__crm_operators.sql");
-    private static final List<SchemaMigration> MIGRATIONS = List.of(BASELINE, DOMAINS, TON_PRODUCTS, TON_DOMAIN, TON_POWDER_COLORS, TON_CATALOGUES, COSTS_POWDER_PRICES, COSTS_PRODUCT_PARAMETERS, COSTS_STOCK, WAREHOUSE_ORDERS, COST_SCENARIOS, TON_POWDER_SUPPLIER, CRM, CRM_OPERATORS);
+    private static final SchemaMigration BASELINE =
+            new SchemaMigration(1, "Shared customers and sales baseline", "/database/schema.sql");
+    private static final SchemaMigration DOMAINS =
+            new SchemaMigration(
+                    2,
+                    "Separate ecosystem, master data and sales schemas",
+                    "/database/migrations/V2__domain_schemas.sql");
+    private static final SchemaMigration TON_PRODUCTS =
+            new SchemaMigration(
+                    3,
+                    "TON technical product catalogue",
+                    "/database/migrations/V3__ton_products.sql");
+    private static final SchemaMigration TON_DOMAIN =
+            new SchemaMigration(
+                    4,
+                    "TON versioned specifications, production, firing and documents",
+                    "/database/migrations/V4__ton_domain.sql");
+    private static final SchemaMigration TON_POWDER_COLORS =
+            new SchemaMigration(
+                    5, "TON powder colors", "/database/migrations/V5__ton_powder_colors.sql");
+    private static final SchemaMigration TON_CATALOGUES =
+            new SchemaMigration(
+                    6,
+                    "TON catalogue hierarchy and history",
+                    "/database/migrations/V6__ton_catalogue_history.sql");
+    private static final SchemaMigration COSTS_POWDER_PRICES =
+            new SchemaMigration(
+                    7,
+                    "Costs manual powder prices and lot snapshots",
+                    "/database/migrations/V7__costs_powder_prices.sql");
+    private static final SchemaMigration COSTS_PRODUCT_PARAMETERS =
+            new SchemaMigration(
+                    8,
+                    "Costs product transformation parameters",
+                    "/database/migrations/V8__costs_product_parameters.sql");
+    private static final SchemaMigration COSTS_STOCK =
+            new SchemaMigration(
+                    9,
+                    "Costs minimum stock policies",
+                    "/database/migrations/V9__costs_minimum_stock.sql");
+    private static final SchemaMigration WAREHOUSE_ORDERS =
+            new SchemaMigration(
+                    10,
+                    "Warehouse base totals and expected powder orders",
+                    "/database/migrations/V10__warehouse_and_purchase_orders.sql");
+    private static final SchemaMigration COST_SCENARIOS =
+            new SchemaMigration(
+                    11,
+                    "Versioned cost scenarios and frozen bases",
+                    "/database/migrations/V11__cost_scenarios.sql");
+    private static final SchemaMigration TON_POWDER_SUPPLIER =
+            new SchemaMigration(
+                    12, "TON powder supplier", "/database/migrations/V12__ton_powder_supplier.sql");
+    private static final SchemaMigration CRM =
+            new SchemaMigration(
+                    13,
+                    "CRM leads, operators and commercial activity",
+                    "/database/migrations/V13__crm.sql");
+    private static final SchemaMigration CRM_OPERATORS =
+            new SchemaMigration(
+                    14,
+                    "CRM operator management and removal of placeholder user",
+                    "/database/migrations/V14__crm_operators.sql");
+    private static final SchemaMigration TON_PRODUCTION_PLANS =
+            new SchemaMigration(
+                    15,
+                    "TON requested production plans and frozen work documents",
+                    "/database/migrations/V15__ton_production_plans.sql");
+    private static final List<SchemaMigration> MIGRATIONS =
+            List.of(
+                    BASELINE,
+                    DOMAINS,
+                    TON_PRODUCTS,
+                    TON_DOMAIN,
+                    TON_POWDER_COLORS,
+                    TON_CATALOGUES,
+                    COSTS_POWDER_PRICES,
+                    COSTS_PRODUCT_PARAMETERS,
+                    COSTS_STOCK,
+                    WAREHOUSE_ORDERS,
+                    COST_SCENARIOS,
+                    TON_POWDER_SUPPLIER,
+                    CRM,
+                    CRM_OPERATORS,
+                    TON_PRODUCTION_PLANS);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
-    private static final List<Column> CUSTOMERS = List.of(
-            varchar("CODICE_CLIENTE", 50), varchar("CODICE_ISO", 10), varchar("CATEGORIA", 100),
-            varchar("LISTINO", 100), varchar("AGENTE", 150), varchar("TIPO_CLIENTE", 50),
-            varchar("RAGIONE_SOCIALE", 500), timestamp("IMPORTATO_IL"));
-    private static final List<Column> SALES = List.of(
-            identity("VENDITA_ID"), varchar("SORGENTE", 30), varchar("DOCUMENTO_ID", 100),
-            varchar("NUMERO_DOCUMENTO", 50), column("NUMERO_RIGA", Types.INTEGER), column("DATA_VENDITA", Types.DATE),
-            varchar("CODICE_CLIENTE", 50), varchar("CODICE_PRODOTTO", 50), varchar("DESCRIZIONE_PRODOTTO", 250),
-            varchar("CATEGORIA_PRODOTTO", 100), decimal("QUANTITA", 15, 3), decimal("PREZZO_UNITARIO", 15, 4),
-            decimal("SCONTO_PERCENTUALE", 7, 4), decimal("SCONTO_IMPORTO", 15, 2), decimal("IMPORTO_NETTO", 15, 2),
-            varchar("TIPO_OPERAZIONE", 20), varchar("CANALE", 50), varchar("AGENTE", 150),
-            timestamp("IMPORTATO_IL"));
-    private static final List<Column> PRODUCTS = List.of(
-            identity("PRODOTTO_ID"), varchar("CODICE", 50), varchar("DESCRIZIONE", 200),
-            column("ATTIVO", Types.BOOLEAN), column("VERSIONE_MODIFICA", Types.INTEGER),
-            timestamp("CREATO_IL"), timestamp("AGGIORNATO_IL"));
+    private static final List<Column> CUSTOMERS =
+            List.of(
+                    varchar("CODICE_CLIENTE", 50),
+                    varchar("CODICE_ISO", 10),
+                    varchar("CATEGORIA", 100),
+                    varchar("LISTINO", 100),
+                    varchar("AGENTE", 150),
+                    varchar("TIPO_CLIENTE", 50),
+                    varchar("RAGIONE_SOCIALE", 500),
+                    timestamp("IMPORTATO_IL"));
+    private static final List<Column> SALES =
+            List.of(
+                    identity("VENDITA_ID"),
+                    varchar("SORGENTE", 30),
+                    varchar("DOCUMENTO_ID", 100),
+                    varchar("NUMERO_DOCUMENTO", 50),
+                    column("NUMERO_RIGA", Types.INTEGER),
+                    column("DATA_VENDITA", Types.DATE),
+                    varchar("CODICE_CLIENTE", 50),
+                    varchar("CODICE_PRODOTTO", 50),
+                    varchar("DESCRIZIONE_PRODOTTO", 250),
+                    varchar("CATEGORIA_PRODOTTO", 100),
+                    decimal("QUANTITA", 15, 3),
+                    decimal("PREZZO_UNITARIO", 15, 4),
+                    decimal("SCONTO_PERCENTUALE", 7, 4),
+                    decimal("SCONTO_IMPORTO", 15, 2),
+                    decimal("IMPORTO_NETTO", 15, 2),
+                    varchar("TIPO_OPERAZIONE", 20),
+                    varchar("CANALE", 50),
+                    varchar("AGENTE", 150),
+                    timestamp("IMPORTATO_IL"));
+    private static final List<Column> PRODUCTS =
+            List.of(
+                    identity("PRODOTTO_ID"),
+                    varchar("CODICE", 50),
+                    varchar("DESCRIZIONE", 200),
+                    column("ATTIVO", Types.BOOLEAN),
+                    column("VERSIONE_MODIFICA", Types.INTEGER),
+                    timestamp("CREATO_IL"),
+                    timestamp("AGGIORNATO_IL"));
 
     private final ConnectionProvider connectionProvider;
 
     private static int currentVersion() {
         try (var input = DatabaseSchema.class.getResourceAsStream("/database/version.properties")) {
-            if (input == null) throw new IllegalStateException("Versione database non configurata.");
+            if (input == null)
+                throw new IllegalStateException("Versione database non configurata.");
             Properties properties = new Properties();
             properties.load(input);
             int version = Integer.parseInt(properties.getProperty("current"));
@@ -86,32 +171,37 @@ public final class DatabaseSchema {
 
     /** The HOST supplies a consistent backup; no schema writes precede this callback. */
     void initialize(ConnectionProvider.ConnectionWork<Void> beforeMigration) {
-        connectionProvider.withConnection(connection -> {
-            int version = existingVersion(connection);
-            if (version < CURRENT_VERSION && (version > 0 || tableExists(connection, "APP", "CLIENTI")
-                    || tableExists(connection, "APP", "VENDITE_DETTAGLIO"))) {
-                beforeMigration.execute(connection);
-            }
-            return null;
-        });
-        connectionProvider.withTransaction(connection -> {
-            connection.setSchema("APP");
-            int version = existingVersion(connection);
-            if (version == CURRENT_VERSION) return null;
-            if (!tableExists(connection, "ECOS", HISTORY)) {
-                migrateLegacy(connection);
-                version = DOMAINS.version();
-            }
-            for (SchemaMigration migration : MIGRATIONS) {
-                if (migration.version() > version) {
-                    migration.apply(connection, false);
-                    if (migration.version() == WAREHOUSE_ORDERS.version()) WarehouseMigration.apply(connection);
-                    recordMigration(connection, "ECOS", migration);
-                }
-            }
-            verifyCompatible(connection);
-            return null;
-        });
+        connectionProvider.withConnection(
+                connection -> {
+                    int version = existingVersion(connection);
+                    if (version < CURRENT_VERSION
+                            && (version > 0
+                                    || tableExists(connection, "APP", "CLIENTI")
+                                    || tableExists(connection, "APP", "VENDITE_DETTAGLIO"))) {
+                        beforeMigration.execute(connection);
+                    }
+                    return null;
+                });
+        connectionProvider.withTransaction(
+                connection -> {
+                    connection.setSchema("APP");
+                    int version = existingVersion(connection);
+                    if (version == CURRENT_VERSION) return null;
+                    if (!tableExists(connection, "ECOS", HISTORY)) {
+                        migrateLegacy(connection);
+                        version = DOMAINS.version();
+                    }
+                    for (SchemaMigration migration : MIGRATIONS) {
+                        if (migration.version() > version) {
+                            migration.apply(connection, false);
+                            if (migration.version() == WAREHOUSE_ORDERS.version())
+                                WarehouseMigration.apply(connection);
+                            recordMigration(connection, "ECOS", migration);
+                        }
+                    }
+                    verifyCompatible(connection);
+                    return null;
+                });
     }
 
     private static void migrateLegacy(Connection connection) throws SQLException {
@@ -119,7 +209,9 @@ public final class DatabaseSchema {
         // rather than an implicit merge or replacement of either copy of the user's data.
         if (tableExists(connection, "ANAGRAFICHE", "CLIENTI")
                 || tableExists(connection, "VENDITE", "VENDITE_DETTAGLIO")) {
-            throw incompatible("Schemi di destinazione già presenti senza uno storico valido: migrazione annullata.");
+            throw incompatible(
+                    "Schemi di destinazione già presenti senza uno storico valido: migrazione"
+                        + " annullata.");
         }
         if (tableExists(connection, "APP", HISTORY)) {
             verifyHistory(connection, "APP", 1);
@@ -128,7 +220,8 @@ public final class DatabaseSchema {
             BASELINE.apply(connection, true);
             verifyTables(connection, "APP", "APP");
             try (Statement statement = connection.createStatement()) {
-                statement.executeUpdate("""
+                statement.executeUpdate(
+                        """
                         CREATE TABLE APP.ECOS_SCHEMA_HISTORY (
                             version INTEGER PRIMARY KEY,
                             description VARCHAR(200) NOT NULL,
@@ -150,22 +243,26 @@ public final class DatabaseSchema {
         if (tableExists(connection, "ECOS", HISTORY)) {
             int version;
             try (var statement = connection.createStatement();
-                 var rows = statement.executeQuery("SELECT MAX(version) FROM ECOS." + HISTORY)) {
+                    var rows = statement.executeQuery("SELECT MAX(version) FROM ECOS." + HISTORY)) {
                 rows.next();
                 version = rows.getInt(1);
             }
-            if (version < DOMAINS.version()) throw incompatible("Storico migrazioni incompleto o non valido.");
+            if (version < DOMAINS.version())
+                throw incompatible("Storico migrazioni incompleto o non valido.");
             verifyHistory(connection, "ECOS", version);
             verifyTables(connection, "ANAGRAFICHE", "VENDITE");
-            if (version >= TON_PRODUCTS.version()) verifyColumns(connection, "TON", "PRODOTTI", PRODUCTS);
+            if (version >= TON_PRODUCTS.version())
+                verifyColumns(connection, "TON", "PRODOTTI", PRODUCTS);
             if (version >= TON_DOMAIN.version()) TonSchema.verify(connection, version);
             if (version >= COSTS_POWDER_PRICES.version()) CostsSchema.verify(connection);
-            if (version >= COSTS_PRODUCT_PARAMETERS.version()) ProductCostsSchema.verify(connection);
+            if (version >= COSTS_PRODUCT_PARAMETERS.version())
+                ProductCostsSchema.verify(connection);
             if (version >= COSTS_STOCK.version()) StockPolicySchema.verify(connection);
             if (version >= WAREHOUSE_ORDERS.version()) WarehouseSchema.verify(connection);
             if (version >= COST_SCENARIOS.version()) ScenarioSchema.verify(connection);
             if (version >= CRM.version()) CrmSchema.verify(connection);
             if (version >= CRM_OPERATORS.version()) CrmSchema.verifyOperators(connection);
+            if (version >= TON_PRODUCTION_PLANS.version()) ProductionPlanSchema.verify(connection);
             return version;
         }
         if (tableExists(connection, "APP", HISTORY)) {
@@ -179,17 +276,30 @@ public final class DatabaseSchema {
     /** CLIENT probes never baseline or migrate a remote HOST. */
     public static void verifyCompatible(Connection connection) throws SQLException {
         if (!tableExists(connection, "ECOS", HISTORY)) {
-            throw incompatible("Schema database " + CURRENT_VERSION + " richiesto: aggiornare e riavviare l'HOST.");
+            throw incompatible(
+                    "Schema database "
+                            + CURRENT_VERSION
+                            + " richiesto: aggiornare e riavviare l'HOST.");
         }
         if (existingVersion(connection) != CURRENT_VERSION)
-            throw incompatible("Schema database " + CURRENT_VERSION + " richiesto: aggiornare e riavviare l'HOST.");
+            throw incompatible(
+                    "Schema database "
+                            + CURRENT_VERSION
+                            + " richiesto: aggiornare e riavviare l'HOST.");
     }
 
-    private static void verifyHistory(Connection connection, String schema, int expectedVersion) throws SQLException {
+    private static void verifyHistory(Connection connection, String schema, int expectedVersion)
+            throws SQLException {
         int expected = 1;
         try (Statement statement = connection.createStatement()) {
             statement.setQueryTimeout(3);
-            try (var rows = statement.executeQuery("SELECT version, checksum FROM " + schema + "." + HISTORY + " ORDER BY version")) {
+            try (var rows =
+                    statement.executeQuery(
+                            "SELECT version, checksum FROM "
+                                    + schema
+                                    + "."
+                                    + HISTORY
+                                    + " ORDER BY version")) {
                 while (rows.next()) {
                     int version = rows.getInt("version");
                     if (version > expectedVersion || version > CURRENT_VERSION) {
@@ -198,8 +308,13 @@ public final class DatabaseSchema {
                     if (version != expected || version < 1) {
                         throw incompatible("Storico migrazioni incompleto o non valido.");
                     }
-                    if (!MIGRATIONS.get(version - 1).checksum().equals(rows.getString("checksum"))) {
-                        throw incompatible("La migrazione registrata non corrisponde alla versione dell'applicazione.");
+                    if (!MIGRATIONS
+                            .get(version - 1)
+                            .checksum()
+                            .equals(rows.getString("checksum"))) {
+                        throw incompatible(
+                                "La migrazione registrata non corrisponde alla versione"
+                                    + " dell'applicazione.");
                     }
                     expected++;
                 }
@@ -207,16 +322,26 @@ public final class DatabaseSchema {
         } catch (SQLException failure) {
             if (INCOMPATIBLE_SCHEMA.equals(failure.getSQLState())) throw failure;
             if (failure.getSQLState() != null && failure.getSQLState().startsWith("42")) {
-                throw new SQLException("Struttura dello storico migrazioni non valida.", INCOMPATIBLE_SCHEMA, failure);
+                throw new SQLException(
+                        "Struttura dello storico migrazioni non valida.",
+                        INCOMPATIBLE_SCHEMA,
+                        failure);
             }
             throw failure;
         }
-        if (expected != expectedVersion + 1) throw incompatible("Storico migrazioni incompleto o non valido.");
+        if (expected != expectedVersion + 1)
+            throw incompatible("Storico migrazioni incompleto o non valido.");
     }
 
-    private static void recordMigration(Connection connection, String schema, SchemaMigration migration) throws SQLException {
-        try (var statement = connection.prepareStatement(
-                "INSERT INTO " + schema + "." + HISTORY + "(version, description, checksum) VALUES (?, ?, ?)")) {
+    private static void recordMigration(
+            Connection connection, String schema, SchemaMigration migration) throws SQLException {
+        try (var statement =
+                connection.prepareStatement(
+                        "INSERT INTO "
+                                + schema
+                                + "."
+                                + HISTORY
+                                + "(version, description, checksum) VALUES (?, ?, ?)")) {
             statement.setInt(1, migration.version());
             statement.setString(2, migration.description());
             statement.setString(3, migration.checksum());
@@ -224,56 +349,92 @@ public final class DatabaseSchema {
         }
     }
 
-    private static void verifyTables(Connection connection, String customersSchema, String salesSchema) throws SQLException {
+    private static void verifyTables(
+            Connection connection, String customersSchema, String salesSchema) throws SQLException {
         verifyColumns(connection, customersSchema, "CLIENTI", CUSTOMERS);
         verifyColumns(connection, salesSchema, "VENDITE_DETTAGLIO", SALES);
     }
 
-    private static void verifyColumns(Connection connection, String schema, String table, List<Column> expected) throws SQLException {
+    private static void verifyColumns(
+            Connection connection, String schema, String table, List<Column> expected)
+            throws SQLException {
         Map<String, Column> actual = new java.util.HashMap<>();
         try (var columns = connection.getMetaData().getColumns(null, schema, table, null)) {
             while (columns.next()) {
-                actual.put(columns.getString("COLUMN_NAME"), new Column(columns.getString("COLUMN_NAME"),
-                        columns.getInt("DATA_TYPE"), columns.getInt("COLUMN_SIZE"), columns.getInt("DECIMAL_DIGITS"),
-                        "YES".equals(columns.getString("IS_AUTOINCREMENT")), columns.getString("COLUMN_DEF")));
+                actual.put(
+                        columns.getString("COLUMN_NAME"),
+                        new Column(
+                                columns.getString("COLUMN_NAME"),
+                                columns.getInt("DATA_TYPE"),
+                                columns.getInt("COLUMN_SIZE"),
+                                columns.getInt("DECIMAL_DIGITS"),
+                                "YES".equals(columns.getString("IS_AUTOINCREMENT")),
+                                columns.getString("COLUMN_DEF")));
             }
         }
         if ("APP".equals(schema) && actual.size() != expected.size()) {
-            throw incompatible("Colonne legacy non previste in APP." + table + ": migrazione annullata per conservarne i dati.");
+            throw incompatible(
+                    "Colonne legacy non previste in APP."
+                            + table
+                            + ": migrazione annullata per conservarne i dati.");
         }
         for (Column column : expected) {
             Column existing = actual.get(column.name());
-            if (existing == null || existing.type() != column.type()
+            if (existing == null
+                    || existing.type() != column.type()
                     || column.precision() > 0 && existing.precision() < column.precision()
                     || column.type() == Types.DECIMAL && existing.scale() != column.scale()
                     || column.autoIncrement() && !existing.autoIncrement()
                     || column.defaultExpression() != null
-                        && !column.defaultExpression().equals(normalizeExpression(existing.defaultExpression()))) {
-                throw incompatible("Schema incompatibile: " + schema + "." + table + "." + column.name());
+                            && !column.defaultExpression()
+                                    .equals(normalizeExpression(existing.defaultExpression()))) {
+                throw incompatible(
+                        "Schema incompatibile: " + schema + "." + table + "." + column.name());
             }
         }
     }
 
-    private static boolean tableExists(Connection connection, String schema, String table) throws SQLException {
-        try (var tables = connection.getMetaData().getTables(null, schema, table, new String[]{"TABLE"})) {
+    private static boolean tableExists(Connection connection, String schema, String table)
+            throws SQLException {
+        try (var tables =
+                connection.getMetaData().getTables(null, schema, table, new String[] {"TABLE"})) {
             return tables.next();
         }
     }
 
-    private static SQLException incompatible(String message) { return new SQLException(message, INCOMPATIBLE_SCHEMA); }
-    private static Column column(String name, int type) { return new Column(name, type, 0, 0, false, null); }
-    private static Column varchar(String name, int length) { return new Column(name, Types.VARCHAR, length, 0, false, null); }
+    private static SQLException incompatible(String message) {
+        return new SQLException(message, INCOMPATIBLE_SCHEMA);
+    }
+
+    private static Column column(String name, int type) {
+        return new Column(name, type, 0, 0, false, null);
+    }
+
+    private static Column varchar(String name, int length) {
+        return new Column(name, Types.VARCHAR, length, 0, false, null);
+    }
+
     private static Column decimal(String name, int precision, int scale) {
         return new Column(name, Types.DECIMAL, precision, scale, false, null);
     }
-    private static Column identity(String name) { return new Column(name, Types.BIGINT, 0, 0, true, null); }
+
+    private static Column identity(String name) {
+        return new Column(name, Types.BIGINT, 0, 0, true, null);
+    }
+
     private static Column timestamp(String name) {
         return new Column(name, Types.TIMESTAMP, 0, 0, false, "CURRENT_TIMESTAMP");
     }
+
     private static String normalizeExpression(String expression) {
         return expression == null ? null : expression.trim().toUpperCase(Locale.ROOT);
     }
-    private record Column(String name, int type, int precision, int scale,
-                          boolean autoIncrement, String defaultExpression) { }
 
+    private record Column(
+            String name,
+            int type,
+            int precision,
+            int scale,
+            boolean autoIncrement,
+            String defaultExpression) {}
 }

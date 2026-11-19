@@ -1,9 +1,12 @@
 # Proposta: preparazione della produzione TON
 
-Stato: **proposta da discutere**, con [mockup interattivo](mockups/ton-produzione.html).
-Non abilita la sezione nell'applicazione, non legge o scrive il DB e non emette
-produzioni o documenti reali. Il mockup mantiene i dati soltanto nella pagina
-aperta; il ricaricamento ripristina gli esempi.
+Stato: **implementata in EcoS**; la [guida alla produzione](ton-produzione.md)
+descrive il comportamento reale. Il [mockup interattivo](mockups/ton-produzione.html)
+resta un riferimento grafico con dati dimostrativi, senza accesso al DB.
+Il documento nell'applicazione usa il modello approvato dall'utente: il layout
+dimostrativo del mockup non è imposto ai fogli operativi. La pressione visualizzata
+è quella reale del modello in kg/cm²; la conversione macchina richiederà la futura
+configurazione dei macchinari.
 
 ![Quantità per formato](mockups/ton-produzione-quantita.png)
 
