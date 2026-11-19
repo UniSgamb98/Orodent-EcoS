@@ -1,12 +1,12 @@
 package com.orodent.ecos.ton.features.powders.view;
 
 import com.orodent.ecos.ton.features.powders.model.PowderModel.*;
+import com.orodent.ecos.ton.features.technical.view.TechnicalDetailView;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
@@ -14,10 +14,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class PowderEditorView extends VBox {
-    private final Button back =
-            button("← Torna alle polveri", "ton-powders-back", "secondary-button");
-    private final Button reload = button("Aggiorna dati", "ton-powder-reload", "secondary-button");
+public final class PowderEditorView extends TechnicalDetailView {
     private final Button newVersion =
             button("Crea nuova versione", "ton-powder-new-version", "secondary-button");
     private final Button retire =
@@ -29,9 +26,7 @@ public final class PowderEditorView extends VBox {
             button("Salva anagrafica", "ton-powder-save-identity", "primary-button");
     private final Button cancel =
             button("Annulla modifiche", "ton-powder-cancel", "secondary-button");
-    private final ReadOnlyStringWrapper headerCode = new ReadOnlyStringWrapper("");
     private final Label status = new Label();
-    private final Label feedback = new Label();
     private final ObjectProperty<Revision> selectedVersion = new SimpleObjectProperty<>();
     private final TextField code = field("ton-powder-code", "Es. P001");
     private final TextField name = field("ton-powder-name", "Nome della polvere");
@@ -44,22 +39,14 @@ public final class PowderEditorView extends VBox {
     private final ComboBox<String> yttria = new ComboBox<>();
     private final TextArea notes = new TextArea();
     private final OxidesEditor oxides = new OxidesEditor();
-    private final TabPane tabs = new TabPane();
     private final TableView<Revision> history = new TableView<>();
     private final VBox technical;
     private boolean updating;
 
     public PowderEditorView() {
-        super(10);
-        setId("ton-powder-editor");
-        getStyleClass().add("ton-powder-page");
-        setMinWidth(0);
-        back.getStyleClass().add("ton-editor-back-link");
-        reload.getStyleClass().add("ton-editor-refresh");
-        back.setMinWidth(Region.USE_PREF_SIZE);
-        reload.setMinWidth(Region.USE_PREF_SIZE);
+        super("ton-powder", "← Torna alle polveri");
+        back.setId("ton-powders-back");
         status.setId("ton-powder-state");
-        status.getStyleClass().add("ton-area-status");
         status.setWrapText(true);
         active.setId("ton-powder-active");
         color.setId("ton-powder-color");
@@ -153,43 +140,20 @@ public final class PowderEditorView extends VBox {
                         history,
                         openHistory);
         historyPane.getStyleClass().add("ton-powder-tab");
-        tabs.setId("ton-powder-tabs");
-        tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-        tabs.getTabs()
-                .setAll(
-                        tab("Anagrafica", identity),
-                        tab("Dati tecnici", technical),
-                        tab("Ossidi", oxides),
-                        tab("Versioni", historyPane));
-        tabs.setMinHeight(240);
-        tabs.setPrefHeight(380);
-        VBox.setVgrow(tabs, Priority.ALWAYS);
-        feedback.setId("ton-powder-feedback");
-        feedback.setWrapText(true);
-        feedback.setMinHeight(Region.USE_PREF_SIZE);
-        feedback.visibleProperty().bind(feedback.textProperty().isNotEmpty());
-        feedback.managedProperty().bind(feedback.visibleProperty());
-        FlowPane actions = new FlowPane(10, 8, cancel, save, identitySave, approve, retire);
-        actions.getStyleClass().add("ton-editor-actions");
-        Region gap = new Region();
-        HBox.setHgrow(gap, Priority.ALWAYS);
-        HBox top = new HBox(12, back, gap, reload);
-        top.setAlignment(Pos.CENTER_LEFT);
-        status.setMinWidth(0);
-        status.setMaxWidth(Double.MAX_VALUE);
-        status.setMinHeight(Region.USE_PREF_SIZE);
-        HBox.setHgrow(status, Priority.ALWAYS);
-        newVersion.setMinWidth(Region.USE_PREF_SIZE);
-        HBox versionRow = new HBox(12, status, newVersion);
-        versionRow.setAlignment(Pos.CENTER_LEFT);
-        getChildren().setAll(top, versionRow, tabs, actions, feedback);
+        addSheet("Anagrafica", identity, true);
+        addSheet("Dati tecnici", technical, true);
+        addSheet("Ossidi", oxides, true);
+        addSheet("Versioni", historyPane, true);
+        status(true, status);
+        addStatusAction(newVersion);
+        actions(cancel, save, identitySave, approve, retire);
     }
 
     public void show(Detail detail, Revision revision) {
         updating = true;
         try {
             var powder = detail == null ? null : detail.powder();
-            headerCode.set(powder == null ? "Nuova polvere" : powder.code());
+            headerTitle.set(powder == null ? "Nuova polvere" : powder.code());
             selectedVersion.set(revision);
             code.setText(powder == null ? "" : powder.code());
             name.setText(powder == null ? "" : powder.name());
@@ -281,12 +245,6 @@ public final class PowderEditorView extends VBox {
         return List.copyOf(values);
     }
 
-    public void feedback(String message, boolean error) {
-        feedback.setText(message);
-        feedback.getStyleClass().remove("ton-error-feedback");
-        if (error) feedback.getStyleClass().add("ton-error-feedback");
-    }
-
     public void saving(boolean value) {
         setDisable(value);
         save.setText(value ? "Salvataggio…" : "Salva bozza");
@@ -303,14 +261,6 @@ public final class PowderEditorView extends VBox {
         } finally {
             updating = false;
         }
-    }
-
-    public Button back() {
-        return back;
-    }
-
-    public Button reload() {
-        return reload;
     }
 
     public Button save() {
@@ -342,7 +292,7 @@ public final class PowderEditorView extends VBox {
     }
 
     public ReadOnlyStringProperty headerCodeProperty() {
-        return headerCode.getReadOnlyProperty();
+        return headerTitleProperty();
     }
 
     public void newEditor() {
@@ -353,13 +303,6 @@ public final class PowderEditorView extends VBox {
     private static void visible(javafx.scene.Node node, boolean value) {
         node.setVisible(value);
         node.setManaged(value);
-    }
-
-    private static Tab tab(String title, javafx.scene.Node content) {
-        ScrollPane scroll = new ScrollPane(content);
-        scroll.setFitToWidth(true);
-        scroll.setFitToHeight(true);
-        return new Tab(title, scroll);
     }
 
     private static VBox form(String label, javafx.scene.Node node) {

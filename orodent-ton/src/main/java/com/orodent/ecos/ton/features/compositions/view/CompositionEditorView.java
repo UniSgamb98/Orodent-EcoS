@@ -9,12 +9,11 @@ import com.orodent.ecos.ton.features.technical.view.*;
 
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
 
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-public final class CompositionEditorView extends VBox {
+public final class CompositionEditorView extends TechnicalDetailView {
     public enum Sheet {
         DATA("Dati generali"),
         RECIPE("Ricetta per strato"),
@@ -38,15 +37,12 @@ public final class CompositionEditorView extends VBox {
     private final RecipeState state = new RecipeState();
     private final RecipeEditor recipe = new RecipeEditor(state);
     private final CompositionSummary summary = new CompositionSummary();
-    private final Label heading = TechnicalUi.label("", "ton-page-heading"),
-            status = TechnicalUi.label("", "muted-label"),
+    private final Label status = TechnicalUi.label("", "muted-label"),
             inherited =
                     TechnicalUi.label(
                             "Scegli il prodotto per visualizzare linea e colore.", "muted-label"),
-            readonly = TechnicalUi.label("", "ton-comp-readonly"),
-            feedback = TechnicalUi.label("", "muted-label");
+            readonly = TechnicalUi.label("", "muted-label");
     private final TextArea notes = new TextArea();
-    private final TabPane tabs = new TabPane();
     private final Map<Tab, Sheet> sheets = new HashMap<>();
     private final ComboBox<Version> versions = new ComboBox<>();
     private final TextField modelSearch =
@@ -59,35 +55,22 @@ public final class CompositionEditorView extends VBox {
     private final TechnicalTablePage<Version> history =
             new TechnicalTablePage<>("ton-composition-versions", "Apri versione");
     private final Button
-            back = TechnicalUi.button("← Elenco composizioni", "ton-composition-back", false),
-            reload = TechnicalUi.button("Ricarica scheda", "ton-composition-reload", false),
             cancel = TechnicalUi.button("Annulla modifiche", "ton-composition-cancel", false),
-            save = TechnicalUi.button("Salva bozza", "ton-composition-save", false),
+            save = TechnicalUi.button("Salva bozza", "ton-composition-save", true),
             approve = TechnicalUi.button("Salva e approva", "ton-composition-approve", true),
-            copy = TechnicalUi.button("Crea nuova versione", "ton-composition-copy", true),
+            copy = TechnicalUi.button("Crea nuova versione", "ton-composition-copy", false),
             retire = TechnicalUi.button("Ritira versione", "ton-composition-retire", false),
             delete = TechnicalUi.button("Elimina bozza", "ton-composition-delete", false);
     private boolean updating;
 
     CompositionEditorView() {
-        super(12);
-        setId("ton-composition-editor");
-        setMinWidth(0);
-        getStyleClass().add("ton-comp-page");
-        heading.setId("ton-composition-heading");
+        super("ton-composition", "← Torna alle composizioni");
         status.setId("ton-composition-status");
         readonly.setId("ton-composition-readonly");
-        feedback.setId("ton-composition-feedback");
         inherited.setId("ton-composition-inherited");
-        feedback.visibleProperty().bind(feedback.textProperty().isNotEmpty());
-        feedback.managedProperty().bind(feedback.visibleProperty());
         versions.setId("ton-composition-version");
         versions.setPrefWidth(210);
         versions.setAccessibleText("Versione della composizione");
-        var spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        var title = new HBox(15, heading, spacer, new Label("Versione"), versions);
-        title.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         notes.setId("ton-composition-notes");
         notes.setWrapText(true);
         notes.setPrefRowCount(3);
@@ -189,10 +172,6 @@ public final class CompositionEditorView extends VBox {
                         "Ogni versione conserva ricetta, note e riferimenti precisi alle schede"
                                 + " delle polveri.",
                         history));
-        tabs.setId("ton-composition-tabs");
-        tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-        tabs.setMinHeight(240);
-        VBox.setVgrow(tabs, Priority.ALWAYS);
         tabs.getSelectionModel()
                 .selectedItemProperty()
                 .addListener(
@@ -206,24 +185,16 @@ public final class CompositionEditorView extends VBox {
                         if (sheet() == Sheet.SUMMARY) summary.show(state);
                     }
                 });
-        for (Button b : List.of(retire, delete)) b.getStyleClass().add("ton-comp-danger");
-        var actions = new FlowPane(10, 8, cancel, save, approve, copy, retire, delete);
-        actions.getStyleClass().add("ton-comp-actions");
-        getChildren()
-                .addAll(
-                        new FlowPane(10, 8, back, reload),
-                        title,
-                        status,
-                        readonly,
-                        tabs,
-                        actions,
-                        feedback);
+        for (Button b : List.of(retire, delete)) b.getStyleClass().add("ton-editor-danger");
+        status(true, status, readonly);
+        addStatusAction(TechnicalUi.field("Versione", versions));
+        addStatusAction(copy);
+        actions(cancel, save, approve, retire, delete);
     }
 
     private void tab(Sheet sheet, Node content) {
-        var tab = new Tab(sheet.title(), TechnicalUi.scroll(content));
+        var tab = addSheet(sheet.title(), content);
         sheets.put(tab, sheet);
-        tabs.getTabs().add(tab);
     }
 
     public void show(Detail detail) {
@@ -251,7 +222,7 @@ public final class CompositionEditorView extends VBox {
                     r == null ? List.of(new Layer(1, "", List.of())) : r.data().layers(),
                     detail == null ? Map.of() : detail.powders());
             recipe.show(frozen);
-            heading.setText(detail == null ? "Nuova composizione" : detail.product().label());
+            headerTitle.set(detail == null ? "Nuova composizione" : detail.product().label());
             status.setText(
                     r == null
                             ? "Prima versione · non ancora salvata."
@@ -337,12 +308,6 @@ public final class CompositionEditorView extends VBox {
         if (sheet == Sheet.SUMMARY) summary.show(state);
     }
 
-    public void feedback(String text, boolean error) {
-        feedback.setText(text);
-        feedback.getStyleClass().remove("ton-error-feedback");
-        if (error) feedback.getStyleClass().add("ton-error-feedback");
-    }
-
     public void selectVersion(Version v) {
         updating = true;
         try {
@@ -368,10 +333,6 @@ public final class CompositionEditorView extends VBox {
         return product;
     }
 
-    public TabPane tabs() {
-        return tabs;
-    }
-
     public ComboBox<Version> versions() {
         return versions;
     }
@@ -394,14 +355,6 @@ public final class CompositionEditorView extends VBox {
 
     public TechnicalTablePage<Version> history() {
         return history;
-    }
-
-    public Button back() {
-        return back;
-    }
-
-    public Button reload() {
-        return reload;
     }
 
     public Button cancel() {

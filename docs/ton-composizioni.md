@@ -1,5 +1,7 @@
 # Composizioni
 
+Le schede usano il [contenitore comune di Dati tecnici](ton-schede-tecniche.md).
+
 Aprire **TON → Dati tecnici → Composizioni**, oppure **Apri composizioni**
 dalla Panoramica TON. Il catalogo usa provider ed executor di EcoS e le tabelle
 già presenti nello schema V6: non introduce una nuova migrazione.

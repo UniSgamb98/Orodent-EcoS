@@ -25,11 +25,6 @@ public final class CatalogView extends BorderPane {
                                 .toExternalForm());
         list = new CatalogListView(kind);
         editor = new CatalogEditorView(kind);
-        getStylesheets()
-                .add(
-                        Objects.requireNonNull(
-                                        getClass().getResource("/ton/css/technical-editor.css"))
-                                .toExternalForm());
         subpage.bind(
                 Bindings.createStringBinding(
                         () -> getCenter() == editor ? editor.headerTitleProperty().get() : "",

@@ -2,15 +2,13 @@ package com.orodent.ecos.ton.features.catalog.view;
 
 import com.orodent.ecos.ton.features.catalog.model.CatalogKind;
 import com.orodent.ecos.ton.features.catalog.model.CatalogModels.*;
+import com.orodent.ecos.ton.features.technical.view.TechnicalDetailView;
 
-import javafx.beans.property.ReadOnlyStringProperty;
-import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
 
 import java.util.*;
 
-public final class CatalogEditorView extends VBox {
+public final class CatalogEditorView extends TechnicalDetailView {
     public enum Sheet {
         GENERAL,
         RELATED,
@@ -23,38 +21,25 @@ public final class CatalogEditorView extends VBox {
     private final CatalogRelatedView related;
     private final CatalogHistoryView history;
     private final SpecificationsView specifications;
-    private final TabPane tabs = new TabPane();
     private final Map<Tab, Sheet> sheets = new HashMap<>();
-    private final Button back, reload, save, cancel, archive, delete, parent;
-    private final Label heading = new Label(), status = CatalogUi.hint(""), feedback;
-    private final FlowPane actions;
+    private final Button save, cancel, archive, delete, parent;
+    private final Label status = CatalogUi.hint("");
     private boolean updating;
 
     public CatalogEditorView(CatalogKind kind) {
-        super(10);
+        super(
+                "ton-" + kind.id(),
+                switch (kind) {
+                    case LINES -> "← Torna alle linee";
+                    case PRODUCTS -> "← Torna ai prodotti";
+                    case ARTICLES -> "← Torna agli articoli";
+                });
         this.kind = kind;
         String base = "ton-" + kind.id();
-        setId(base + "-editor");
-        setMinWidth(0);
-        getStyleClass().addAll("ton-catalogue-page", "ton-catalogue-detail");
         form = new CatalogForm(kind);
         related = kind.child() == null ? null : new CatalogRelatedView(kind);
         history = new CatalogHistoryView(base);
         specifications = kind == CatalogKind.ARTICLES ? new SpecificationsView() : null;
-        back =
-                CatalogUi.button(
-                        switch (kind) {
-                            case LINES -> "← Torna alle linee";
-                            case PRODUCTS -> "← Torna ai prodotti";
-                            case ARTICLES -> "← Torna agli articoli";
-                        },
-                        base + "-back",
-                        false);
-        reload = CatalogUi.button("Aggiorna dati", base + "-reload", false);
-        back.getStyleClass().add("ton-editor-back-link");
-        reload.getStyleClass().add("ton-editor-refresh");
-        back.setMinWidth(Region.USE_PREF_SIZE);
-        reload.setMinWidth(Region.USE_PREF_SIZE);
         parent =
                 CatalogUi.button(
                         kind == CatalogKind.ARTICLES ? "Apri prodotto" : "Apri linea",
@@ -64,44 +49,25 @@ public final class CatalogEditorView extends VBox {
         cancel = CatalogUi.button("Annulla modifiche", base + "-cancel", false);
         archive = CatalogUi.button("Archivia", base + "-archive", false);
         delete = CatalogUi.button("Elimina", base + "-delete", false);
-        delete.getStyleClass().add("ton-catalogue-danger");
-        heading.setId(base + "-heading");
-        heading.getStyleClass().add("ton-page-heading");
-        heading.setWrapText(true);
+        delete.getStyleClass().add("ton-editor-danger");
         status.setId(base + "-status");
-        status.getStyleClass().addAll("ton-area-status", "ton-editor-status");
-        tabs.getStyleClass().add("ton-editor-tabs");
-        tabs.setId(base + "-tabs");
-        tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-        tabs.setMinHeight(250);
-        tabs.setPrefHeight(420);
-        VBox.setVgrow(tabs, Priority.ALWAYS);
         tab("Anagrafica", Sheet.GENERAL, form);
         if (related != null) tab(kind.child().title(), Sheet.RELATED, related);
         if (specifications != null)
             tab("Specifiche di produzione", Sheet.SPECIFICATIONS, specifications);
         tab("Storico", Sheet.HISTORY, history);
-        actions = new FlowPane(10, 8, cancel, save, archive, delete);
-        actions.getStyleClass().add("ton-editor-actions");
-        feedback = CatalogUi.feedback(base + "-feedback");
-        Region toolbarGap = new Region();
-        HBox.setHgrow(toolbarGap, Priority.ALWAYS);
-        HBox toolbar = new HBox(10, back, toolbarGap, reload);
-        toolbar.setAlignment(Pos.CENTER_LEFT);
-        parent.setMinWidth(Region.USE_PREF_SIZE);
+        actions(cancel, save, archive, delete);
+        status(false, status);
         CatalogUi.visible(parent, kind.parent() != null);
-        HBox revision = new HBox(12, status, parent);
-        revision.setAlignment(Pos.CENTER_LEFT);
-        getChildren().setAll(toolbar, revision, tabs, actions, feedback);
+        addStatusAction(parent);
         tabs.getSelectionModel()
                 .selectedItemProperty()
                 .addListener((o, a, b) -> CatalogUi.visible(actions, sheet() == Sheet.GENERAL));
     }
 
     private void tab(String title, Sheet sheet, javafx.scene.Node content) {
-        Tab tab = new Tab(title, CatalogUi.scroll(content));
+        Tab tab = addSheet(title, content);
         sheets.put(tab, sheet);
-        tabs.getTabs().add(tab);
     }
 
     public void show(Detail detail, Choice context) {
@@ -109,7 +75,7 @@ public final class CatalogEditorView extends VBox {
         try {
             Entry e = detail == null ? null : detail.entry();
             form.show(detail, context);
-            heading.setText(
+            headerTitle.set(
                     e == null
                             ? "Nuov"
                                     + (kind == CatalogKind.LINES
@@ -140,10 +106,6 @@ public final class CatalogEditorView extends VBox {
         }
     }
 
-    public ReadOnlyStringProperty headerTitleProperty() {
-        return heading.textProperty();
-    }
-
     public Sheet sheet() {
         Tab selected = tabs.getSelectionModel().getSelectedItem();
         return sheets.getOrDefault(selected, Sheet.GENERAL);
@@ -167,12 +129,6 @@ public final class CatalogEditorView extends VBox {
         return updating;
     }
 
-    public void feedback(String text, boolean error) {
-        feedback.setText(text);
-        feedback.getStyleClass().remove("ton-error-feedback");
-        if (error) feedback.getStyleClass().add("ton-error-feedback");
-    }
-
     public CatalogForm form() {
         return form;
     }
@@ -187,18 +143,6 @@ public final class CatalogEditorView extends VBox {
 
     public SpecificationsView specifications() {
         return specifications;
-    }
-
-    public TabPane tabs() {
-        return tabs;
-    }
-
-    public Button back() {
-        return back;
-    }
-
-    public Button reload() {
-        return reload;
     }
 
     public Button save() {

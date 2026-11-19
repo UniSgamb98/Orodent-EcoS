@@ -1,5 +1,7 @@
 # Polveri: schede tecniche e ossidi
 
+Le schede usano il [contenitore comune di Dati tecnici](ton-schede-tecniche.md).
+
 Aprire **TON → Dati tecnici → Polveri**, oppure **Apri polveri** dalla Panoramica.
 La funzione utilizza il database condiviso e le tabelle introdotte dalla V4;
 la V5 aggiunge il colore della polvere. Le migrazioni sono gestite dall'HOST con
@@ -7,7 +9,7 @@ il normale backup preventivo; non vengono inseriti dati dimostrativi.
 
 ## Elenco e scheda
 
-L'elenco cerca codice o nome, con pagine di 50 polveri. **Mostra anche archiviate**
+L'elenco cerca codice, nome o fornitore e mostra tutti i risultati in una tabella scorrevole. **Mostra anche archiviate**
 include le anagrafiche disattivate. L'ordine predefinito è **bianche → gialle →
 rosa → grigie**, poi per codice all'interno dello stesso colore. Il colore è
 visibile anche nell'elenco. Le colonne distinguono l'ultima versione

@@ -12,6 +12,7 @@ import com.orodent.ecos.ton.features.catalog.model.CatalogModels.*;
 import com.orodent.ecos.ton.features.catalog.service.CatalogService;
 import com.orodent.ecos.ton.features.powders.model.PowderModel;
 import com.orodent.ecos.ton.features.powders.service.PowderService;
+import com.orodent.ecos.ton.features.technical.view.TechnicalDetailView;
 import com.orodent.ecos.ton.features.technical.view.TonListView;
 
 import javafx.application.Platform;
@@ -147,6 +148,39 @@ public final class CatalogDetailsUiProbe {
                                                         "Y2O3", new BigDecimal("5.150")))),
                                 true)
                         .join();
+        var composition =
+                compositions
+                        .load(
+                                compositions
+                                        .catalogue(
+                                                "ZRMSTA54",
+                                                com.orodent.ecos.ton.features.compositions.model
+                                                        .Compositions.Filter.ALL,
+                                                false)
+                                        .join()
+                                        .rows()
+                                        .getFirst()
+                                        .id())
+                        .join();
+        compositions
+                .save(
+                        composition.revision(),
+                        new com.orodent.ecos.ton.features.compositions.model.Compositions.Draft(
+                                lastProduct.id(),
+                                "",
+                                List.of(
+                                        new com.orodent.ecos.ton.features.compositions.model
+                                                .Compositions.Layer(
+                                                1,
+                                                "",
+                                                List.of(
+                                                        new com.orodent.ecos.ton.features
+                                                                .compositions.model.Compositions
+                                                                .Ingredient(
+                                                                target.latest().id(),
+                                                                new BigDecimal("100")))))),
+                        true)
+                .join();
         db.withTransaction(
                 c -> {
                     try (var insert =
@@ -247,6 +281,7 @@ public final class CatalogDetailsUiProbe {
                                 ((Label) node("ton-breadcrumb"))
                                         .getText()
                                         .endsWith("Polveri › Z-TARGET"));
+                        assertRefreshOnRight("powder");
                         assertEquals(
                                 target.powder().code(),
                                 ((TextField) node("ton-powder-code")).getText());
@@ -542,6 +577,55 @@ public final class CatalogDetailsUiProbe {
         await(() -> node("ton-composition-editor") != null);
         fx(
                 () -> {
+                    assertRefreshOnRight("composition");
+                    assertTrue(
+                            ((Label) node("ton-breadcrumb"))
+                                    .getText()
+                                    .contains("Composizioni › ZRMSTA54"));
+                    assertNull(node("ton-composition-heading"));
+                    assertTrue(node("ton-composition-notes").isDisabled());
+                    assertEquals(
+                            "← Torna alle composizioni", button("ton-composition-back").getText());
+                    screenshot("target/composition-detail-approved-shared.png");
+                    stage.setWidth(1000);
+                    stage.setHeight(720);
+                    return null;
+                });
+        Thread.sleep(200);
+        fx(
+                () -> {
+                    screenshot("target/composition-detail-compact-shared.png");
+                    stage.setWidth(1600);
+                    stage.setHeight(1000);
+                    button("ton-composition-copy").fire();
+                    return null;
+                });
+        await(() -> ((Label) node("ton-composition-status")).getText().startsWith("v2"));
+        fx(
+                () -> {
+                    assertFalse(node("ton-composition-notes").isDisabled());
+                    ((TabPane) node("ton-composition-tabs")).getSelectionModel().selectFirst();
+                    ((TextArea) node("ton-composition-notes"))
+                            .setText("Nota salvata dal contenitore comune");
+                    button("ton-composition-save").fire();
+                    return null;
+                });
+        await(() -> ((Label) node("ton-composition-feedback")).getText().contains("salvata"));
+        fx(
+                () -> {
+                    assertEquals(
+                            "Nota salvata dal contenitore comune",
+                            ((TextArea) node("ton-composition-notes")).getText());
+                    var versions = (ComboBox<?>) node("ton-composition-version");
+                    assertEquals(2, versions.getItems().size());
+                    versions.getSelectionModel().selectLast();
+                    return null;
+                });
+        await(() -> ((Label) node("ton-composition-status")).getText().startsWith("v1"));
+        fx(
+                () -> {
+                    assertTrue(node("ton-composition-notes").isDisabled());
+                    assertEquals("", ((TextArea) node("ton-composition-notes")).getText());
                     button("ton-composition-back").fire();
                     return null;
                 });
@@ -674,6 +758,11 @@ public final class CatalogDetailsUiProbe {
         fx(
                 () -> {
                     assertCommonList("ton-document-list");
+                    assertTrue(
+                            stage.getScene()
+                                    .getRoot()
+                                    .lookupAll(".ton-technical-detail")
+                                    .isEmpty());
                     var view =
                             (com.orodent.ecos.ton.features.documents.view.DocumentTemplatesView)
                                     node("ton-document-templates-view");
@@ -774,6 +863,8 @@ public final class CatalogDetailsUiProbe {
         layout();
         var button = node("ton-" + kind + "-reload");
         var editor = node("ton-" + kind + "-editor");
+        assertInstanceOf(TechnicalDetailView.class, editor);
+        assertEquals("Aggiorna dati", ((Button) button).getText());
         assertTrue(
                 button.localToScene(button.getBoundsInLocal()).getMaxX()
                         > editor.localToScene(editor.getBoundsInLocal()).getMaxX() - 40);
@@ -782,9 +873,10 @@ public final class CatalogDetailsUiProbe {
     private void assertParentBesideStatus(String kind) {
         var button = node("ton-" + kind + "-open-parent");
         var status = node("ton-" + kind + "-status");
-        assertSame(status.getParent(), button.getParent());
+        var card = status.getParent();
+        assertSame(card.getParent(), button.getParent());
         assertFalse(button.isDisabled());
-        assertTrue(button.getBoundsInParent().getMinX() > status.getBoundsInParent().getMaxX());
+        assertTrue(button.getBoundsInParent().getMinX() > card.getBoundsInParent().getMaxX());
     }
 
     private void assertEvenColumns(TableView<?> table) {

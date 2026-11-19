@@ -27,11 +27,6 @@ public final class DiskModelsView extends BorderPane {
                 .add(
                         Objects.requireNonNull(getClass().getResource("/ton/css/disk-models.css"))
                                 .toExternalForm());
-        getStylesheets()
-                .add(
-                        Objects.requireNonNull(
-                                        getClass().getResource("/ton/css/technical-editor.css"))
-                                .toExternalForm());
         showList();
     }
 

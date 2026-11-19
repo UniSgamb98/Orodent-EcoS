@@ -1,25 +1,15 @@
-/* Shared palette for technical detail pages. */
-#ton-powder-editor,
-.ton-catalogue .ton-catalogue-detail,
-.ton-models .ton-model-detail {
+/* Visual shell and palette used only by Dati tecnici detail views. */
+.ton-technical-detail {
     -fx-padding: 8px 26px 20px 26px;
     -fx-background-color: #e3edf3;
     -fx-text-fill: #173f59;
     -fx-font-family: "System";
     -fx-font-weight: normal;
 }
-#ton-powder-editor .label,
-.ton-catalogue .ton-catalogue-detail .label,
-.ton-models .ton-model-detail .label { -fx-text-fill: #173f59; -fx-font-family: "System"; -fx-font-weight: normal; }
-#ton-powder-editor .muted-label,
-.ton-catalogue .ton-catalogue-detail .muted-label,
-.ton-models .ton-model-detail .muted-label { -fx-text-fill: #526e83; }
-#ton-powder-editor .label:disabled,
-.ton-catalogue .ton-catalogue-detail .label:disabled,
-.ton-models .ton-model-detail .label:disabled { -fx-opacity: 1; }
-#ton-powder-editor .button,
-.ton-catalogue .ton-catalogue-detail .button,
-.ton-models .ton-model-detail .button {
+.ton-technical-detail .label { -fx-text-fill: #173f59; -fx-font-family: "System"; -fx-font-weight: normal; }
+.ton-technical-detail .muted-label { -fx-text-fill: #526e83; }
+.ton-technical-detail .label:disabled { -fx-opacity: 1; }
+.ton-technical-detail .button {
     -fx-background-color: white;
     -fx-background-radius: 7px;
     -fx-border-color: #cbdce7;
@@ -29,32 +19,18 @@
     -fx-font-weight: bold;
     -fx-cursor: hand;
 }
-#ton-powder-editor .button:hover,
-.ton-catalogue .ton-catalogue-detail .button:hover,
-.ton-models .ton-model-detail .button:hover { -fx-background-color: #eaf4f7; }
-#ton-powder-editor .button:focused,
-.ton-catalogue .ton-catalogue-detail .button:focused,
-.ton-models .ton-model-detail .button:focused { -fx-border-color: #3196aa; }
-#ton-powder-editor .primary-button,
-.ton-catalogue .ton-catalogue-detail .primary-button,
-.ton-models .ton-model-detail .primary-button {
+.ton-technical-detail .button:hover { -fx-background-color: #eaf4f7; }
+.ton-technical-detail .button:focused { -fx-border-color: #3196aa; }
+.ton-technical-detail .primary-button {
     -fx-background-color: #18778c;
     -fx-border-color: #18778c;
     -fx-text-fill: white;
     -fx-font-weight: bold;
 }
-#ton-powder-editor .primary-button:hover,
-.ton-catalogue .ton-catalogue-detail .primary-button:hover,
-.ton-models .ton-model-detail .primary-button:hover { -fx-background-color: #12677a; -fx-border-color: #12677a; }
-#ton-powder-editor .text-field,
-.ton-catalogue .ton-catalogue-detail .text-field,
-#ton-powder-editor .text-area,
-.ton-catalogue .ton-catalogue-detail .text-area,
-#ton-powder-editor .combo-box,
-.ton-catalogue .ton-catalogue-detail .combo-box,
-.ton-models .ton-model-detail .text-field,
-.ton-models .ton-model-detail .text-area,
-.ton-models .ton-model-detail .combo-box {
+.ton-technical-detail .primary-button:hover { -fx-background-color: #12677a; -fx-border-color: #12677a; }
+.ton-technical-detail .text-field,
+.ton-technical-detail .text-area,
+.ton-technical-detail .combo-box {
     -fx-background-color: white;
     -fx-background-radius: 6px;
     -fx-border-color: #bed3df;
@@ -65,86 +41,46 @@
     -fx-font-family: "System";
     -fx-font-weight: normal;
 }
-#ton-powder-editor .text-field:focused,
-.ton-catalogue .ton-catalogue-detail .text-field:focused,
-#ton-powder-editor .text-area:focused,
-.ton-catalogue .ton-catalogue-detail .text-area:focused,
-#ton-powder-editor .combo-box:focused,
-.ton-catalogue .ton-catalogue-detail .combo-box:focused,
-.ton-models .ton-model-detail .text-field:focused,
-.ton-models .ton-model-detail .text-area:focused,
-.ton-models .ton-model-detail .combo-box:focused { -fx-border-color: #3196aa; }
-#ton-powder-editor .text-area .content,
-.ton-catalogue .ton-catalogue-detail .text-area .content,
-.ton-models .ton-model-detail .text-area .content { -fx-background-color: white; }
-#ton-powder-editor .combo-box .list-cell,
-.ton-catalogue .ton-catalogue-detail .combo-box .list-cell,
-.ton-models .ton-model-detail .combo-box .list-cell { -fx-background-color: transparent; -fx-text-fill: #173f59; }
-#ton-powder-editor .combo-box .text-field,
-.ton-catalogue .ton-catalogue-detail .combo-box .text-field,
-.ton-models .ton-model-detail .combo-box .text-field { -fx-padding: 0; -fx-border-width: 0; }
-#ton-powder-editor .combo-box > .arrow-button,
-.ton-catalogue .ton-catalogue-detail .combo-box > .arrow-button,
-.ton-models .ton-model-detail .combo-box > .arrow-button { -fx-background-color: transparent; }
-#ton-powder-editor .check-box:selected .box,
-.ton-catalogue .ton-catalogue-detail .check-box:selected .box,
-.ton-models .ton-model-detail .check-box:selected .box { -fx-background-color: #18778c; }
-#ton-powder-editor .check-box:selected .mark,
-.ton-catalogue .ton-catalogue-detail .check-box:selected .mark,
-.ton-models .ton-model-detail .check-box:selected .mark { -fx-background-color: white; }
-#ton-powder-editor .text-field:disabled,
-.ton-catalogue .ton-catalogue-detail .text-field:disabled,
-#ton-powder-editor .text-area:disabled,
-.ton-catalogue .ton-catalogue-detail .text-area:disabled,
-#ton-powder-editor .combo-box:disabled,
-.ton-catalogue .ton-catalogue-detail .combo-box:disabled,
-.ton-models .ton-model-detail .text-field:disabled,
-.ton-models .ton-model-detail .text-area:disabled,
-.ton-models .ton-model-detail .combo-box:disabled {
+.ton-technical-detail .text-field:focused,
+.ton-technical-detail .text-area:focused,
+.ton-technical-detail .combo-box:focused { -fx-border-color: #3196aa; }
+.ton-technical-detail .text-area .content { -fx-background-color: white; }
+.ton-technical-detail .combo-box .list-cell { -fx-background-color: transparent; -fx-text-fill: #173f59; }
+.ton-technical-detail .combo-box .text-field { -fx-padding: 0; -fx-border-width: 0; }
+.ton-technical-detail .combo-box > .arrow-button { -fx-background-color: transparent; }
+.ton-technical-detail .check-box:selected .box { -fx-background-color: #18778c; }
+.ton-technical-detail .check-box:selected .mark { -fx-background-color: white; }
+.ton-technical-detail .text-field:disabled,
+.ton-technical-detail .text-area:disabled,
+.ton-technical-detail .combo-box:disabled {
     -fx-opacity: 1;
     -fx-background-color: #f0f6f9;
     -fx-text-fill: #526e83;
 }
-#ton-powder-editor .text-area:disabled .content,
-.ton-catalogue .ton-catalogue-detail .text-area:disabled .content,
-.ton-models .ton-model-detail .text-area:disabled .content { -fx-background-color: #f0f6f9; }
-#ton-powder-state,
-.ton-catalogue .ton-catalogue-detail .ton-editor-status,
-#ton-powder-editor .ton-editor-actions,
-.ton-catalogue .ton-catalogue-detail .ton-editor-actions,
-.ton-models .ton-model-detail .ton-editor-status,
-.ton-models .ton-model-detail .ton-editor-actions {
+.ton-technical-detail .text-area:disabled .content { -fx-background-color: #f0f6f9; }
+.ton-technical-detail .ton-editor-status,
+.ton-technical-detail .ton-editor-actions {
     -fx-background-color: white;
     -fx-background-radius: 11px;
     -fx-border-color: #cbdce7;
     -fx-border-radius: 11px;
     -fx-padding: 12px 15px;
 }
-#ton-powder-state,
-.ton-catalogue .ton-catalogue-detail .ton-editor-status,
-.ton-models .ton-model-detail .ton-editor-status { -fx-text-fill: #47677e; }
-#ton-powder-tabs,
-.ton-catalogue .ton-catalogue-detail .ton-editor-tabs,
-.ton-models .ton-model-detail .ton-editor-tabs {
+.ton-technical-detail .ton-editor-status { -fx-text-fill: #47677e; }
+.ton-technical-detail .ton-editor-tabs {
     -fx-background-color: white;
     -fx-background-radius: 11px;
     -fx-border-color: #cbdce7;
     -fx-border-radius: 11px;
     -fx-padding: 0;
 }
-#ton-powder-tabs > .tab-header-area,
-.ton-catalogue .ton-catalogue-detail .ton-editor-tabs > .tab-header-area,
-.ton-models .ton-model-detail .ton-editor-tabs > .tab-header-area { -fx-padding: 5px 5px 0 5px; }
-#ton-powder-tabs > .tab-header-area > .tab-header-background,
-.ton-catalogue .ton-catalogue-detail .ton-editor-tabs > .tab-header-area > .tab-header-background,
-.ton-models .ton-model-detail .ton-editor-tabs > .tab-header-area > .tab-header-background {
+.ton-technical-detail .ton-editor-tabs > .tab-header-area { -fx-padding: 5px 5px 0 5px; }
+.ton-technical-detail .ton-editor-tabs > .tab-header-area > .tab-header-background {
     -fx-background-color: #d1e2eb;
     -fx-background-radius: 10px 10px 0 0;
     -fx-background-insets: 0;
 }
-#ton-powder-tabs > .tab-header-area > .headers-region > .tab,
-.ton-catalogue .ton-catalogue-detail .ton-editor-tabs > .tab-header-area > .headers-region > .tab,
-.ton-models .ton-model-detail .ton-editor-tabs > .tab-header-area > .headers-region > .tab {
+.ton-technical-detail .ton-editor-tabs > .tab-header-area > .headers-region > .tab {
     -fx-background-color: transparent;
     -fx-background-insets: 0;
     -fx-background-radius: 7px 7px 0 0;
@@ -152,101 +88,56 @@
     -fx-border-width: 0 0 3px 0;
     -fx-padding: 10px 18px;
 }
-#ton-powder-tabs .tab .tab-label,
-.ton-catalogue .ton-catalogue-detail .ton-editor-tabs .tab .tab-label,
-.ton-models .ton-model-detail .ton-editor-tabs .tab .tab-label { -fx-text-fill: #173f59; -fx-font-weight: bold; }
-#ton-powder-tabs > .tab-header-area > .headers-region > .tab:hover,
-.ton-catalogue .ton-catalogue-detail .ton-editor-tabs > .tab-header-area > .headers-region > .tab:hover,
-.ton-models .ton-model-detail .ton-editor-tabs > .tab-header-area > .headers-region > .tab:hover { -fx-background-color: #eaf4f7; }
-#ton-powder-tabs > .tab-header-area > .headers-region > .tab:selected,
-.ton-catalogue .ton-catalogue-detail .ton-editor-tabs > .tab-header-area > .headers-region > .tab:selected,
-.ton-models .ton-model-detail .ton-editor-tabs > .tab-header-area > .headers-region > .tab:selected {
+.ton-technical-detail .ton-editor-tabs .tab .tab-label { -fx-text-fill: #173f59; -fx-font-weight: bold; }
+.ton-technical-detail .ton-editor-tabs > .tab-header-area > .headers-region > .tab:hover { -fx-background-color: #eaf4f7; }
+.ton-technical-detail .ton-editor-tabs > .tab-header-area > .headers-region > .tab:selected {
     -fx-background-color: white;
     -fx-border-color: transparent transparent #18778c transparent;
 }
-#ton-powder-tabs .tab:selected .tab-label,
-.ton-catalogue .ton-catalogue-detail .ton-editor-tabs .tab:selected .tab-label,
-.ton-models .ton-model-detail .ton-editor-tabs .tab:selected .tab-label { -fx-text-fill: #18778c; }
-#ton-powder-tabs .scroll-pane,
-.ton-catalogue .ton-catalogue-detail .ton-editor-tabs .scroll-pane,
-#ton-powder-tabs .scroll-pane > .viewport,
-.ton-catalogue .ton-catalogue-detail .ton-editor-tabs .scroll-pane > .viewport,
-#ton-powder-tabs .ton-powder-tab,
-.ton-catalogue .ton-catalogue-detail .ton-editor-tabs .ton-catalogue-tab,
-.ton-models .ton-model-detail .ton-editor-tabs .scroll-pane,
-.ton-models .ton-model-detail .ton-editor-tabs .scroll-pane > .viewport,
-.ton-models .ton-model-detail .ton-editor-tabs .ton-catalogue-tab {
+.ton-technical-detail .ton-editor-tabs .tab:selected .tab-label { -fx-text-fill: #18778c; }
+.ton-technical-detail .ton-editor-tabs .scroll-pane,
+.ton-technical-detail .ton-editor-tabs .scroll-pane > .viewport,
+.ton-technical-detail .ton-editor-tabs .ton-editor-content {
     -fx-background-color: white;
     -fx-background: white;
     -fx-background-radius: 0 0 10px 10px;
     -fx-border-width: 0;
     -fx-padding: 0;
 }
-#ton-powder-tabs .ton-powder-tab,
-.ton-catalogue .ton-catalogue-detail .ton-editor-tabs .ton-catalogue-tab,
-.ton-models .ton-model-detail .ton-editor-tabs .ton-catalogue-tab { -fx-padding: 20px; }
-#ton-powder-editor .table-view,
-.ton-catalogue .ton-catalogue-detail .table-view,
-.ton-models .ton-model-detail .table-view {
+.ton-technical-detail .ton-editor-tabs .ton-editor-content { -fx-padding: 20px; }
+.ton-technical-detail .ton-editor-status .label { -fx-text-fill: #47677e; }
+.ton-technical-detail .table-view {
     -fx-background-color: white;
     -fx-border-color: #cbdce7;
     -fx-border-radius: 7px;
     -fx-background-radius: 7px;
     -fx-padding: 0;
 }
-#ton-powder-editor .table-view .column-header,
-.ton-catalogue .ton-catalogue-detail .table-view .column-header,
-#ton-powder-editor .table-view .filler,
-.ton-catalogue .ton-catalogue-detail .table-view .filler,
-#ton-powder-editor .table-view .column-header-background,
-.ton-catalogue .ton-catalogue-detail .table-view .column-header-background,
-.ton-models .ton-model-detail .table-view .column-header,
-.ton-models .ton-model-detail .table-view .filler,
-.ton-models .ton-model-detail .table-view .column-header-background {
+.ton-technical-detail .table-view .column-header,
+.ton-technical-detail .table-view .filler,
+.ton-technical-detail .table-view .column-header-background {
     -fx-background-color: #eaf2f7;
     -fx-border-width: 0;
 }
-#ton-powder-editor .table-view .column-header .label,
-.ton-catalogue .ton-catalogue-detail .table-view .column-header .label,
-.ton-models .ton-model-detail .table-view .column-header .label { -fx-text-fill: #47677e; -fx-padding: 7px; }
-#ton-powder-editor .table-row-cell,
-.ton-catalogue .ton-catalogue-detail .table-row-cell,
-.ton-models .ton-model-detail .table-row-cell { -fx-background-color: white; -fx-background-insets: 0; }
-#ton-powder-editor .table-row-cell:selected,
-.ton-catalogue .ton-catalogue-detail .table-row-cell:selected,
-.ton-models .ton-model-detail .table-row-cell:selected { -fx-background-color: #edf6fa; }
-#ton-powder-editor .table-cell,
-.ton-catalogue .ton-catalogue-detail .table-cell,
-.ton-models .ton-model-detail .table-cell {
+.ton-technical-detail .table-view .column-header .label { -fx-text-fill: #47677e; -fx-padding: 7px; }
+.ton-technical-detail .table-row-cell { -fx-background-color: white; -fx-background-insets: 0; }
+.ton-technical-detail .table-row-cell:selected { -fx-background-color: #edf6fa; }
+.ton-technical-detail .table-cell {
     -fx-text-fill: #173f59;
     -fx-border-color: transparent transparent #e6eef4 transparent;
 }
-#ton-powder-editor .table-cell .button,
-.ton-catalogue .ton-catalogue-detail .table-cell .button,
-.ton-models .ton-model-detail .table-cell .button { -fx-padding: 5px 10px; }
-#ton-powder-editor .ton-error-feedback,
-.ton-catalogue .ton-catalogue-detail .ton-error-feedback,
-.ton-models .ton-model-detail .ton-error-feedback { -fx-text-fill: #a52d48; }
-#ton-powder-editor .ton-editor-back-link,
-.ton-catalogue .ton-catalogue-detail .ton-editor-back-link,
-.ton-models .ton-model-detail .ton-editor-back-link {
+.ton-technical-detail .table-cell .button { -fx-padding: 5px 10px; }
+.ton-technical-detail .ton-error-feedback { -fx-text-fill: #a52d48; }
+.ton-technical-detail .ton-editor-back-link {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
     -fx-padding: 3px 2px;
     -fx-font-size: 12px;
     -fx-text-fill: #16768c;
 }
-#ton-powder-editor .ton-editor-back-link:hover,
-.ton-catalogue .ton-catalogue-detail .ton-editor-back-link:hover,
-.ton-models .ton-model-detail .ton-editor-back-link:hover { -fx-background-color: #eaf4f7; }
-#ton-powder-editor .ton-editor-back-link:focused,
-.ton-catalogue .ton-catalogue-detail .ton-editor-back-link:focused,
-.ton-models .ton-model-detail .ton-editor-back-link:focused { -fx-border-color: #3196aa; }
-#ton-powder-editor .ton-editor-refresh,
-.ton-catalogue .ton-catalogue-detail .ton-editor-refresh,
-.ton-models .ton-model-detail .ton-editor-refresh { -fx-padding: 5px 13px; }
-.ton-catalogue .ton-catalogue-detail .ton-catalogue-danger,
-.ton-models .ton-model-detail .ton-catalogue-danger { -fx-text-fill: #a22b2b; -fx-background-color: #fff1ef; }
-.ton-models .ton-model-detail .ton-editor-tabs > .tab-content-area { -fx-padding: 0; }
-.ton-models .ton-model-detail .ton-editor-content { -fx-padding: 20px; -fx-background-color: white; }
-.ton-models .ton-model-detail .ton-model-danger { -fx-text-fill: #a22b2b; -fx-background-color: #fff1ef; }
+.ton-technical-detail .ton-editor-back-link:hover { -fx-background-color: #eaf4f7; }
+.ton-technical-detail .ton-editor-back-link:focused { -fx-border-color: #3196aa; }
+.ton-technical-detail .ton-editor-refresh { -fx-padding: 5px 13px; }
+.ton-technical-detail .ton-editor-danger { -fx-text-fill: #a22b2b; -fx-background-color: #fff1ef; }
+.ton-technical-detail .ton-editor-tabs > .tab-content-area { -fx-padding: 0; }
+.ton-technical-detail .ton-editor-content { -fx-padding: 20px; -fx-background-color: white; }

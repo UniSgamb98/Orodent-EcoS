@@ -102,6 +102,10 @@ final class TonController {
             }
             case COMPOSITIONS -> {
                 var page = new CompositionsView();
+                page.subpageProperty()
+                        .addListener(
+                                (observable, before, subpage) ->
+                                        view.showFeature(page, feature, subpage));
                 var controller =
                         new CompositionsController(
                                 page,

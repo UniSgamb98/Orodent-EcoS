@@ -1,5 +1,7 @@
 # Cataloghi TON: Linee, Prodotti tecnici e Articoli
 
+Le schede usano il [contenitore comune di Dati tecnici](ton-schede-tecniche.md).
+
 Aprire **TON → Dati tecnici → Linee / Prodotti tecnici / Articoli**.
 Gli stessi cataloghi sono raggiungibili dalla Panoramica.
 

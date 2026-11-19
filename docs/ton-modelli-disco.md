@@ -1,5 +1,7 @@
 # Modelli disco
 
+Le schede usano il [contenitore comune di Dati tecnici](ton-schede-tecniche.md).
+
 Aprire **TON → Dati tecnici → Modelli disco**, oppure **Apri modelli disco**
 dalla Panoramica TON. La scheda usa lo stesso DB, provider ed executor di EcoS.
 Non serve una migrazione nuova: lo schema resta V6.

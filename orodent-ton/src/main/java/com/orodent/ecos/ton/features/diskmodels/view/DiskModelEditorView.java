@@ -2,11 +2,11 @@ package com.orodent.ecos.ton.features.diskmodels.view;
 
 import static com.orodent.ecos.ton.features.diskmodels.model.DiskModels.*;
 
+import com.orodent.ecos.ton.features.technical.view.TechnicalDetailView;
 import com.orodent.ecos.ton.features.technical.view.TechnicalTablePage;
 import com.orodent.ecos.ton.features.technical.view.TechnicalUi;
 
 import javafx.beans.property.ReadOnlyStringProperty;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-public final class DiskModelEditorView extends VBox {
+public final class DiskModelEditorView extends TechnicalDetailView {
     public enum Sheet {
         PARAMETERS("Parametri"),
         LAYERS("Strati"),
@@ -40,11 +40,8 @@ public final class DiskModelEditorView extends VBox {
             top = TechnicalUi.input("ton-model-top", "Sovramateriale superiore"),
             bottom = TechnicalUi.input("ton-model-bottom", "Sovramateriale inferiore");
     private final TextArea notes = new TextArea();
-    private final Label heading = TechnicalUi.label("", "ton-page-heading"),
-            status = TechnicalUi.label("", "muted-label"),
-            feedback = TechnicalUi.label("", "muted-label"),
+    private final Label status = TechnicalUi.label("", "muted-label"),
             readonly = TechnicalUi.label("", "muted-label");
-    private final TabPane tabs = new TabPane();
     private final Map<Tab, Sheet> sheets = new HashMap<>();
     private final EnumMap<Sheet, GridPane> grids = new EnumMap<>(Sheet.class);
     private final DiskModelPreview preview = new DiskModelPreview();
@@ -54,8 +51,7 @@ public final class DiskModelEditorView extends VBox {
             new TechnicalTablePage<>("ton-model-usages", "Apri articolo");
     private final TechnicalTablePage<Version> history =
             new TechnicalTablePage<>("ton-model-versions", "Apri versione");
-    private final Button back = TechnicalUi.button("← Torna ai modelli", "ton-model-back", false),
-            reload = TechnicalUi.button("Aggiorna dati", "ton-model-reload", false),
+    private final Button
             cancel = TechnicalUi.button("Annulla modifiche", "ton-model-cancel", false),
             save = TechnicalUi.button("Salva bozza", "ton-model-save", true),
             approve = TechnicalUi.button("Salva e approva", "ton-model-approve", true),
@@ -66,20 +62,9 @@ public final class DiskModelEditorView extends VBox {
     private boolean updating;
 
     DiskModelEditorView() {
-        super(12);
-        setId("ton-model-editor");
-        setMinWidth(0);
-        getStyleClass().addAll("ton-model-page", "ton-model-detail");
-        back.getStyleClass().add("ton-editor-back-link");
-        reload.getStyleClass().add("ton-editor-refresh");
-        back.setMinWidth(Region.USE_PREF_SIZE);
-        reload.setMinWidth(Region.USE_PREF_SIZE);
-        heading.setId("ton-model-heading");
+        super("ton-model", "← Torna ai modelli");
         status.setId("ton-model-status");
-        feedback.setId("ton-model-feedback");
         readonly.setId("ton-model-readonly");
-        feedback.visibleProperty().bind(feedback.textProperty().isNotEmpty());
-        feedback.managedProperty().bind(feedback.visibleProperty());
         notes.setId("ton-model-notes");
         notes.setWrapText(true);
         notes.setPrefRowCount(3);
@@ -168,28 +153,12 @@ public final class DiskModelEditorView extends VBox {
                 170,
                 v -> v.updated().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
         tab(Sheet.VERSIONS, historyPanel);
-        tabs.setId("ton-model-tabs");
-        tabs.getStyleClass().add("ton-editor-tabs");
-        tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-        tabs.setMinHeight(230);
-        VBox.setVgrow(tabs, Priority.ALWAYS);
         tabs.getSelectionModel().selectedItemProperty().addListener((o, a, b) -> movePreview());
-        delete.getStyleClass().add("ton-model-danger");
-        retire.getStyleClass().add("ton-model-danger");
-        var actions = new FlowPane(10, 8, cancel, save, approve, retire, delete);
-        actions.getStyleClass().addAll("ton-model-actions", "ton-editor-actions");
-        Region gap = new Region();
-        HBox.setHgrow(gap, Priority.ALWAYS);
-        HBox toolbar = new HBox(12, back, gap, reload);
-        toolbar.setAlignment(Pos.CENTER_LEFT);
-        VBox state = new VBox(6, status, readonly);
-        state.getStyleClass().add("ton-editor-status");
-        state.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(state, Priority.ALWAYS);
-        copy.setMinWidth(Region.USE_PREF_SIZE);
-        HBox versionRow = new HBox(12, state, copy);
-        versionRow.setAlignment(Pos.CENTER_LEFT);
-        getChildren().addAll(toolbar, versionRow, tabs, actions, feedback);
+        delete.getStyleClass().add("ton-editor-danger");
+        retire.getStyleClass().add("ton-editor-danger");
+        status(true, status, readonly);
+        addStatusAction(copy);
+        actions(cancel, save, approve, retire, delete);
         editable.addAll(List.of(diameter, pressure, grams, top, bottom, notes, layers, ranges));
         for (TextField field : List.of(diameter, top, bottom))
             field.textProperty().addListener((o, a, b) -> refreshPreview());
@@ -234,10 +203,8 @@ public final class DiskModelEditorView extends VBox {
     }
 
     private void tab(Sheet sheet, Node content) {
-        content.getStyleClass().add("ton-editor-content");
-        var tab = new Tab(sheet.title(), TechnicalUi.scroll(content));
+        var tab = addSheet(sheet.title(), content);
         sheets.put(tab, sheet);
-        tabs.getTabs().add(tab);
     }
 
     private void movePreview() {
@@ -267,7 +234,7 @@ public final class DiskModelEditorView extends VBox {
             for (Node n : editable) n.setDisable(frozen);
             layers.show(data == null ? List.of(BigDecimal.valueOf(100)) : data.layers(), frozen);
             ranges.show(data == null ? List.of() : data.ranges(), frozen);
-            heading.setText(data == null ? "Nuovo modello disco" : data.code());
+            headerTitle.set(data == null ? "Nuovo modello disco" : data.code());
             status.setText(
                     revision == null
                             ? "Prima versione · non ancora salvata."
@@ -333,12 +300,6 @@ public final class DiskModelEditorView extends VBox {
         preview.update(top.getText(), bottom.getText(), diameter.getText(), layers.texts());
     }
 
-    public void feedback(String message, boolean error) {
-        feedback.setText(message);
-        feedback.getStyleClass().remove("ton-error-feedback");
-        if (error) feedback.getStyleClass().add("ton-error-feedback");
-    }
-
     public void sheet(Sheet sheet) {
         boolean before = updating;
         updating = true;
@@ -362,12 +323,8 @@ public final class DiskModelEditorView extends VBox {
         return updating;
     }
 
-    public TabPane tabs() {
-        return tabs;
-    }
-
     public ReadOnlyStringProperty headerCodeProperty() {
-        return heading.textProperty();
+        return headerTitleProperty();
     }
 
     public LayersEditor layers() {
@@ -380,14 +337,6 @@ public final class DiskModelEditorView extends VBox {
 
     public TechnicalTablePage<Version> history() {
         return history;
-    }
-
-    public Button back() {
-        return back;
-    }
-
-    public Button reload() {
-        return reload;
     }
 
     public Button cancel() {
