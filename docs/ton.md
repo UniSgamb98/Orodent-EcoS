@@ -25,6 +25,7 @@ con bozze e versioni nel DB. Le funzioni restanti sono indicate come
 - [Polveri, ossidi e schede tecniche approvate](ton-polveri.md).
 - [Modelli disco, strati, sovramateriali e versioni](ton-modelli-disco.md).
 - [Composizioni, ricette per strato, ossidi e utilizzi](ton-composizioni.md).
+- [Proposta da discutere: preparazione della produzione e mockup interattivo](ton-produzione-proposta.md).
 - [Proposta iniziale dell'editor visuale dei documenti](ton-documenti-proposta.md).
 - [Base Tiptap offline e ricostruzione delle risorse](ton-editor-offline.md).
 - [Editor integrato, bozze, versioni e blocchi dimostrativi](ton-editor-visuale.md).
