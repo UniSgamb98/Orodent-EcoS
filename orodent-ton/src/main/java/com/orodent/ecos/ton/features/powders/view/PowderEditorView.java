@@ -2,7 +2,10 @@ package com.orodent.ecos.ton.features.powders.view;
 
 import com.orodent.ecos.ton.features.powders.model.PowderModel.*;
 
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -12,9 +15,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class PowderEditorView extends VBox {
-    private final Button back = button("← Elenco polveri", "ton-powders-back", "secondary-button");
-    private final Button reload =
-            button("Ricarica scheda", "ton-powder-reload", "secondary-button");
+    private final Button back =
+            button("← Torna alle polveri", "ton-powders-back", "secondary-button");
+    private final Button reload = button("Aggiorna dati", "ton-powder-reload", "secondary-button");
     private final Button newVersion =
             button("Crea nuova versione", "ton-powder-new-version", "secondary-button");
     private final Button retire =
@@ -26,10 +29,10 @@ public final class PowderEditorView extends VBox {
             button("Salva anagrafica", "ton-powder-save-identity", "primary-button");
     private final Button cancel =
             button("Annulla modifiche", "ton-powder-cancel", "secondary-button");
-    private final Label heading = new Label();
+    private final ReadOnlyStringWrapper headerCode = new ReadOnlyStringWrapper("");
     private final Label status = new Label();
     private final Label feedback = new Label();
-    private final ComboBox<Revision> versions = new ComboBox<>();
+    private final ObjectProperty<Revision> selectedVersion = new SimpleObjectProperty<>();
     private final TextField code = field("ton-powder-code", "Es. P001");
     private final TextField name = field("ton-powder-name", "Nome della polvere");
     private final TextField supplier =
@@ -51,9 +54,10 @@ public final class PowderEditorView extends VBox {
         setId("ton-powder-editor");
         getStyleClass().add("ton-powder-page");
         setMinWidth(0);
-        heading.setId("ton-powder-heading");
-        heading.getStyleClass().add("ton-page-heading");
-        heading.setWrapText(true);
+        back.getStyleClass().add("ton-powder-back-link");
+        reload.getStyleClass().add("ton-powder-refresh");
+        back.setMinWidth(Region.USE_PREF_SIZE);
+        reload.setMinWidth(Region.USE_PREF_SIZE);
         status.setId("ton-powder-state");
         status.getStyleClass().add("ton-area-status");
         status.setWrapText(true);
@@ -63,8 +67,6 @@ public final class PowderEditorView extends VBox {
         color.setPromptText("Seleziona il colore");
         color.setAccessibleText("Colore della polvere");
         color.setMaxWidth(Double.MAX_VALUE);
-        versions.setId("ton-powder-version");
-        versions.setPrefWidth(190);
         yttria.setId("ton-powder-class");
         yttria.setEditable(true);
         yttria.getItems().setAll("3Y", "4Y", "5Y", "6Y");
@@ -137,7 +139,7 @@ public final class PowderEditorView extends VBox {
         openHistory.setOnAction(
                 event -> {
                     if (history.getSelectionModel().getSelectedItem() != null) {
-                        versions.setValue(history.getSelectionModel().getSelectedItem());
+                        selectedVersion.set(history.getSelectionModel().getSelectedItem());
                         tabs.getSelectionModel().select(1);
                     }
                 });
@@ -169,23 +171,26 @@ public final class PowderEditorView extends VBox {
         feedback.managedProperty().bind(feedback.visibleProperty());
         FlowPane actions = new FlowPane(10, 8, cancel, save, identitySave, approve, retire);
         actions.getStyleClass().add("ton-powder-actions");
-        HBox top = new HBox(12, back, reload);
+        Region gap = new Region();
+        HBox.setHgrow(gap, Priority.ALWAYS);
+        HBox top = new HBox(12, back, gap, reload);
         top.setAlignment(Pos.CENTER_LEFT);
-        FlowPane versionRow =
-                new FlowPane(12, 8, new HBox(8, new Label("Scheda tecnica"), versions), newVersion);
-        getChildren().setAll(top, heading, versionRow, status, tabs, actions, feedback);
+        status.setMinWidth(0);
+        status.setMaxWidth(Double.MAX_VALUE);
+        status.setMinHeight(Region.USE_PREF_SIZE);
+        HBox.setHgrow(status, Priority.ALWAYS);
+        newVersion.setMinWidth(Region.USE_PREF_SIZE);
+        HBox versionRow = new HBox(12, status, newVersion);
+        versionRow.setAlignment(Pos.CENTER_LEFT);
+        getChildren().setAll(top, versionRow, tabs, actions, feedback);
     }
 
     public void show(Detail detail, Revision revision) {
         updating = true;
         try {
             var powder = detail == null ? null : detail.powder();
-            heading.setText(
-                    powder == null ? "Nuova polvere" : powder.code() + " · " + powder.name());
-            versions.getItems().setAll(detail == null ? List.of() : detail.revisions());
-            versions.setValue(revision);
-            versions.setPromptText("v1 · Nuova bozza");
-            versions.setDisable(detail == null);
+            headerCode.set(powder == null ? "Nuova polvere" : powder.code());
+            selectedVersion.set(revision);
             code.setText(powder == null ? "" : powder.code());
             name.setText(powder == null ? "" : powder.name());
             supplier.setText(powder == null ? "" : powder.supplier());
@@ -212,17 +217,19 @@ public final class PowderEditorView extends VBox {
     }
 
     private void state(boolean locked, Detail detail, Revision revision) {
+        String sheet = "Scheda tecnica" + (detail == null ? "" : " " + detail.powder().code());
         status.setText(
                 revision == null
-                        ? "Nuova bozza · i dati non sono ancora salvati."
-                        : revision.state() == State.BOZZA
-                                ? "Bozza v"
-                                        + revision.number()
-                                        + " · modificabile. La scheda approvata precedente resta"
-                                        + " disponibile."
-                                : revision
-                                        + " · caratteristiche e ossidi in sola lettura."
-                                        + " L'anagrafica resta modificabile.");
+                        ? sheet + " · nuova bozza: i dati non sono ancora salvati."
+                        : sheet
+                                + " · "
+                                + revision
+                                + ": "
+                                + (revision.state() == State.BOZZA
+                                        ? "modificabile. La scheda approvata precedente resta"
+                                              + " disponibile."
+                                        : "caratteristiche e ossidi in sola lettura. L'anagrafica"
+                                              + " resta modificabile."));
         visible(save, !locked);
         visible(approve, !locked);
         visible(identitySave, locked);
@@ -232,7 +239,7 @@ public final class PowderEditorView extends VBox {
         newVersion.setTooltip(
                 new Tooltip(
                         "Copia questa scheda in una nuova bozza. Se esiste già una bozza, aprila"
-                                + " dal selettore delle versioni."));
+                                + " dalla scheda Versioni."));
         reload.setDisable(detail == null);
     }
 
@@ -292,7 +299,7 @@ public final class PowderEditorView extends VBox {
     public void selectVersion(Revision value) {
         updating = true;
         try {
-            versions.setValue(value);
+            selectedVersion.set(value);
         } finally {
             updating = false;
         }
@@ -330,8 +337,12 @@ public final class PowderEditorView extends VBox {
         return retire;
     }
 
-    public ComboBox<Revision> versions() {
-        return versions;
+    public ObjectProperty<Revision> selectedVersionProperty() {
+        return selectedVersion;
+    }
+
+    public ReadOnlyStringProperty headerCodeProperty() {
+        return headerCode.getReadOnlyProperty();
     }
 
     public void newEditor() {

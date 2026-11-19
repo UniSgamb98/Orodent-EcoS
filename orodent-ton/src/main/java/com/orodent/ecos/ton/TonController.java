@@ -87,6 +87,10 @@ final class TonController {
             case ARTICLES -> installCatalogue(Navigation.list(CatalogKind.ARTICLES));
             case POWDERS -> {
                 var page = new PowdersView();
+                page.subpageProperty()
+                        .addListener(
+                                (observable, before, subpage) ->
+                                        view.showFeature(page, feature, subpage));
                 var controller = new PowdersController(page, powders);
                 install(feature, page, controller, controller::loadInitialData);
             }

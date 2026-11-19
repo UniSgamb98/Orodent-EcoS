@@ -30,6 +30,7 @@ public final class PowdersController implements FeatureController {
     private final PauseTransition debounce = new PauseTransition(Duration.millis(250));
     private final ChangeListener<String> searchListener;
     private final ChangeListener<Row> selectionListener;
+    private final ChangeListener<Revision> versionListener;
     private CompletableFuture<Page> listRead;
     private CompletableFuture<Detail> detailRead;
     private Detail original;
@@ -139,7 +140,7 @@ public final class PowdersController implements FeatureController {
                                         () -> service.newVersion(original, selected),
                                         0,
                                         "Nuova bozza creata: puoi modificarne caratteristiche e"
-                                            + " ossidi.");
+                                                + " ossidi.");
                         });
         editor.retire()
                 .setOnAction(
@@ -148,24 +149,21 @@ public final class PowdersController implements FeatureController {
                                     && confirm(
                                             "Ritira versione",
                                             "La versione non sarà più proposta per nuove ricette. I"
-                                                + " dati e i collegamenti esistenti rimangono"
-                                                + " conservati."))
+                                                    + " dati e i collegamenti esistenti rimangono"
+                                                    + " conservati."))
                                 write(
                                         () -> service.retire(original, selected),
                                         selected.id(),
                                         "Versione ritirata.");
                         });
-        editor.versions()
-                .setOnAction(
-                        event -> {
-                            if (editor.updating()
-                                    || !editing
-                                    || editor.versions().getValue() == null
-                                    || editor.versions().getValue().equals(selected)) return;
-                            Revision next = editor.versions().getValue();
-                            if (canLeave()) render(original, next.id());
-                            else editor.selectVersion(selected);
-                        });
+        versionListener =
+                (observable, before, next) -> {
+                    if (editor.updating() || !editing || next == null || next.equals(selected))
+                        return;
+                    if (canLeave()) render(original, next.id());
+                    else editor.selectVersion(selected);
+                };
+        editor.selectedVersionProperty().addListener(versionListener);
     }
 
     public void loadInitialData() {
@@ -294,8 +292,7 @@ public final class PowdersController implements FeatureController {
                 if (!confirm(
                         "Approva scheda tecnica",
                         "La scheda approvata diventerà di sola lettura. Per modificare"
-                            + " caratteristiche e ossidi creerai una nuova versione."))
-                    return;
+                                + " caratteristiche e ossidi creerai una nuova versione.")) return;
             }
             long version = selected == null ? 0 : selected.id();
             write(
@@ -335,7 +332,7 @@ public final class PowdersController implements FeatureController {
                                     .log(
                                             System.Logger.Level.WARNING,
                                             "Salvataggio polvere terminato con errore dopo la"
-                                                + " chiusura della pagina",
+                                                    + " chiusura della pagina",
                                             error);
                         return;
                     }
@@ -404,7 +401,7 @@ public final class PowdersController implements FeatureController {
                         view.editor().identitySave(),
                         view.editor().newVersion(),
                         view.editor().retire())) button.setOnAction(null);
-        view.editor().versions().setOnAction(null);
+        view.editor().selectedVersionProperty().removeListener(versionListener);
         view.dispose();
     }
 }

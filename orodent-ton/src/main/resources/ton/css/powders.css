@@ -6,13 +6,13 @@
 
 /* Same surfaces and action hierarchy as bulk entry, scoped to the powder editor. */
 #ton-powder-editor {
+    -fx-padding: 8px 26px 20px 26px;
     -fx-background-color: #e3edf3;
     -fx-text-fill: #173f59;
     -fx-font-family: "System";
     -fx-font-weight: normal;
 }
 #ton-powder-editor .label { -fx-text-fill: #173f59; -fx-font-family: "System"; -fx-font-weight: normal; }
-#ton-powder-editor .ton-page-heading { -fx-font-weight: bold; }
 #ton-powder-editor .muted-label { -fx-text-fill: #526e83; }
 #ton-powder-editor .label:disabled { -fx-opacity: 1; }
 #ton-powder-editor .button {
@@ -133,3 +133,14 @@
 }
 #ton-powder-editor .table-cell .button { -fx-padding: 5px 10px; }
 #ton-powder-editor .ton-error-feedback { -fx-text-fill: #a52d48; }
+
+#ton-powder-editor .ton-powder-back-link {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 3px 2px;
+    -fx-font-size: 12px;
+    -fx-text-fill: #16768c;
+}
+#ton-powder-editor .ton-powder-back-link:hover { -fx-background-color: #eaf4f7; }
+#ton-powder-editor .ton-powder-back-link:focused { -fx-border-color: #3196aa; }
+#ton-powder-editor .ton-powder-refresh { -fx-padding: 5px 13px; }

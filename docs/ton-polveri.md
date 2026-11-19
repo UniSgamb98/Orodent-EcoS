@@ -29,7 +29,11 @@ Con **Nuova polvere** o **Apri scheda** si entra nell'editor a quattro schede:
   calcolata dalla percentuale in peso di Y₂O₃. Se si dichiara la traslucenza,
   prima dell'approvazione occorre riportarne metodo e scala nelle note.
 - **Ossidi**: una formula e una percentuale in peso per riga, con totale visibile.
-- **Versioni**: storico con stato e date; si può aprire una versione precedente.
+- **Versioni**: storico con stato e date; da qui si aprono bozze e versioni precedenti.
+
+Il codice della polvere compare nel percorso dell’intestazione. Il riquadro sopra
+le schede riporta codice, versione e stato, con **Crea nuova versione** a fianco.
+**Torna alle polveri** e **Aggiorna dati** occupano i due estremi della barra superiore.
 
 ## Percentuali e incolla da Excel
 
@@ -90,7 +94,7 @@ un salvataggio. Le modifiche non salvate richiedono conferma prima di essere sca
 Ogni scrittura acquisisce la revisione attesa della polvere nella stessa
 transazione che modifica scheda e ossidi. Due operatori non possono sovrascriversi
 né creare contemporaneamente due versioni con lo stesso numero. In caso di
-conflitto il testo locale resta nell'editor: **Ricarica scheda** permette di leggere
+conflitto il testo locale resta nell'editor: **Aggiorna dati** permette di leggere
 i dati correnti dopo aver confermato lo scarto delle proprie modifiche. Un errore
 SQL annulla l'intero comando. I salvataggi interrotti non vengono ripetuti automaticamente.
 
