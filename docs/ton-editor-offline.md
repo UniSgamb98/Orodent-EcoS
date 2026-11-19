@@ -25,6 +25,8 @@ Gli operatori non devono installare Node.js o scaricare dipendenze JavaScript.
 
 L’editor è integrato in **TON → Documenti → Modelli documento** tramite un
 `WebView` creato soltanto quando si apre una scheda e rilasciato tornando all’elenco.
+L’elenco usa il [componente comune degli elenchi TON](ton-elenchi.md), con ricerca,
+**Aggiorna** e apertura tramite doppio clic o Invio.
 La [guida ai comandi](ton-editor-visuale.md) descrive bozze, approvazione e versioni.
 I modelli sono salvati nel DB condiviso; i blocchi usano ancora dati di esempio.
 Il collegamento alle produzioni reali, il motore PDF e l’archivio delle emissioni

@@ -62,7 +62,7 @@ public final class DiskModelsView extends BorderPane {
     }
 
     public void dispose() {
-        list.results().dispose();
+        list.dispose();
         editor.dispose();
         setCenter(null);
     }

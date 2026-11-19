@@ -37,7 +37,7 @@ public final class DocumentTemplateRepository {
             q.setString(1, pattern);
             q.setString(2, pattern);
             q.setInt(3, offset);
-            q.setInt(4, limit + 1);
+            q.setInt(4, limit == Integer.MAX_VALUE ? limit : limit + 1);
             try (var r = q.executeQuery()) {
                 while (r.next()) rows.add(row(r));
             }
@@ -128,7 +128,7 @@ public final class DocumentTemplateRepository {
         try (var q =
                 c.prepareStatement(
                         "UPDATE TON.MODELLI_DOCUMENTO SET versione_modifica=versione_modifica WHERE"
-                            + " codice=? AND numero_versione=1 AND tipo='PRODUZIONE'")) {
+                                + " codice=? AND numero_versione=1 AND tipo='PRODUZIONE'")) {
             q.setString(1, code);
             changed(q.executeUpdate());
         }
@@ -138,8 +138,8 @@ public final class DocumentTemplateRepository {
         try (var q =
                 c.prepareStatement(
                         "DELETE FROM TON.MODELLI_DOCUMENTO WHERE modello_documento_id=? AND"
-                            + " versione_modifica=? AND codice=? AND stato='BOZZA' AND"
-                            + " tipo='PRODUZIONE'")) {
+                                + " versione_modifica=? AND codice=? AND stato='BOZZA' AND"
+                                + " tipo='PRODUZIONE'")) {
             q.setLong(1, expected.id());
             q.setInt(2, expected.token());
             q.setString(3, expected.code());
@@ -151,7 +151,7 @@ public final class DocumentTemplateRepository {
         if (count != 1)
             throw new IllegalStateException(
                     "Il modello è stato modificato da un’altra postazione. Ricaricalo prima di"
-                        + " salvare; le modifiche locali sono ancora nell’editor.");
+                            + " salvare; le modifiche locali sono ancora nell’editor.");
     }
 
     private static Template row(ResultSet r) throws SQLException {

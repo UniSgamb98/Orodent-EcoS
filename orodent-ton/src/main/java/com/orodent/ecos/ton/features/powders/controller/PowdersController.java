@@ -11,7 +11,6 @@ import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyCode;
 import javafx.util.Duration;
 
 import java.util.List;
@@ -48,21 +47,7 @@ public final class PowdersController implements FeatureController {
         view.list().search().setOnAction(event -> reloadList());
         view.list().inactive().setOnAction(event -> reloadList());
         view.list().refresh().setOnAction(event -> reloadList());
-        view.list()
-                .table()
-                .setOnMouseClicked(
-                        event -> {
-                            if (event.getClickCount() == 2) openSelected();
-                        });
-        view.list()
-                .table()
-                .setOnKeyPressed(
-                        event -> {
-                            if (event.getCode() == KeyCode.ENTER) {
-                                openSelected();
-                                event.consume();
-                            }
-                        });
+        view.list().onOpen(this::openSelected);
         view.list()
                 .create()
                 .setOnAction(

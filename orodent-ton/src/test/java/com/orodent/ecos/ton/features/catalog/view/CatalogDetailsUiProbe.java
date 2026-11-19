@@ -12,6 +12,7 @@ import com.orodent.ecos.ton.features.catalog.model.CatalogModels.*;
 import com.orodent.ecos.ton.features.catalog.service.CatalogService;
 import com.orodent.ecos.ton.features.powders.model.PowderModel;
 import com.orodent.ecos.ton.features.powders.service.PowderService;
+import com.orodent.ecos.ton.features.technical.view.TonListView;
 
 import javafx.application.Platform;
 import javafx.scene.*;
@@ -161,6 +162,23 @@ public final class CatalogDetailsUiProbe {
                     }
                     return null;
                 });
+        var documents =
+                new com.orodent.ecos.ton.features.documents.service.DocumentTemplateService(
+                        db, workers);
+        for (int i = 0; i < 55; i++) {
+            String content =
+                    """
+{"schemaVersion":2,"title":"Foglio %02d","page":{"orientation":"landscape","margin":15},
+ "content":{"type":"doc","content":[{"type":"paragraph"}]}}
+"""
+                            .formatted(i);
+            documents
+                    .create(
+                            new com.orodent.ecos.ton.features.documents.model.DocumentTemplates
+                                    .Draft("DOC-%02d".formatted(i), content),
+                            false)
+                    .join();
+        }
         Platform.startup(() -> {});
         Platform.setImplicitExit(false);
         try {
@@ -194,6 +212,7 @@ public final class CatalogDetailsUiProbe {
                                     && table.getItems().size() == 55);
             fx(
                     () -> {
+                        assertCommonList("ton-powders-list");
                         assertNull(node("ton-powders-previous"));
                         assertNull(node("ton-powders-next"));
                         assertNull(node("ton-powder-open"));
@@ -424,6 +443,7 @@ public final class CatalogDetailsUiProbe {
                     });
             await(() -> node("ton-lines-table") != null);
             verifyTechnicalLists();
+            verifyDocumentList();
             fx(
                     () -> {
                         button("ton-nav-technical").fire();
@@ -490,7 +510,7 @@ public final class CatalogDetailsUiProbe {
                     var view =
                             (com.orodent.ecos.ton.features.compositions.view.CompositionsView)
                                     node("ton-compositions-view");
-                    view.list().results().error("Errore di caricamento simulato");
+                    view.list().error("Errore di caricamento simulato");
                     assertTrue(node("ton-compositions-status").isVisible());
                     assertEquals(
                             "Errore di caricamento simulato",
@@ -549,6 +569,7 @@ public final class CatalogDetailsUiProbe {
                 });
         fx(
                 () -> {
+                    ((TitledPane) node("ton-model-filters")).setExpanded(true);
                     ((ComboBox<?>) node("ton-model-filter")).getSelectionModel().select(2);
                     return null;
                 });
@@ -639,7 +660,86 @@ public final class CatalogDetailsUiProbe {
                 });
     }
 
+    private void verifyDocumentList() throws Exception {
+        fx(
+                () -> {
+                    button("ton-nav-documents").fire();
+                    button("ton-tech-document_templates-button").fire();
+                    return null;
+                });
+        await(
+                () ->
+                        node("ton-document-table") instanceof TableView<?> t
+                                && t.getItems().size() == 55);
+        fx(
+                () -> {
+                    assertCommonList("ton-document-list");
+                    var view =
+                            (com.orodent.ecos.ton.features.documents.view.DocumentTemplatesView)
+                                    node("ton-document-templates-view");
+                    view.listingBusy(true);
+                    view.listingBusy(false);
+                    view.feedback("Errore di caricamento simulato", true);
+                    assertFalse(button("ton-document-refresh").isDisabled());
+                    assertTrue(node("ton-document-feedback").isVisible());
+                    view.page(
+                            new com.orodent.ecos.ton.features.documents.model.DocumentTemplates
+                                    .Page(view.table.getItems().stream().toList(), 0, false));
+                    assertFalse(node("ton-document-feedback").isVisible());
+                    assertNull(node("ton-document-open"));
+                    assertNull(node("ton-document-next"));
+                    assertNull(node("ton-document-previous"));
+                    assertNull(node("ton-document-webview"));
+                    assertEquals("Aggiorna", button("ton-document-refresh").getText());
+                    assertEvenColumns((TableView<?>) node("ton-document-table"));
+                    screenshot("target/document-models-list-shared.png");
+                    stage.setWidth(1000);
+                    stage.setHeight(720);
+                    return null;
+                });
+        Thread.sleep(200);
+        fx(
+                () -> {
+                    screenshot("target/document-models-list-compact.png");
+                    var table = (TableView<?>) node("ton-document-table");
+                    assertTrue(table.getHeight() > 180);
+                    TextField search = (TextField) node("ton-document-search");
+                    search.setText("DOC-54");
+                    search.getOnAction().handle(new javafx.event.ActionEvent());
+                    return null;
+                });
+        await(() -> ((TableView<?>) node("ton-document-table")).getItems().size() == 1);
+        fx(
+                () -> {
+                    TextField search = (TextField) node("ton-document-search");
+                    search.setText("missing-document");
+                    search.getOnAction().handle(new javafx.event.ActionEvent());
+                    return null;
+                });
+        await(() -> ((TableView<?>) node("ton-document-table")).getItems().isEmpty());
+        fx(
+                () -> {
+                    ((TextField) node("ton-document-search")).clear();
+                    button("ton-document-refresh").fire();
+                    stage.setWidth(1600);
+                    stage.setHeight(1000);
+                    return null;
+                });
+        await(() -> ((TableView<?>) node("ton-document-table")).getItems().size() == 55);
+    }
+
+    private void assertCommonList(String id) {
+        assertInstanceOf(TonListView.class, node(id));
+        assertEquals(1, stage.getScene().getRoot().lookupAll(".ton-list-page").size());
+    }
+
     private void assertNoFooter(String plural) {
+        assertCommonList(
+                switch (plural) {
+                    case "compositions" -> "ton-composition-list";
+                    case "models" -> "ton-model-list";
+                    default -> "ton-" + plural + "-list";
+                });
         assertNull(node("ton-" + plural + "-next"));
         assertNull(node("ton-" + plural + "-previous"));
         String singular =

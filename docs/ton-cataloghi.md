@@ -48,6 +48,8 @@ specifiche, ricette o approvazioni implicitamente.
 
 ## Elenchi e collegamenti
 
+La pagina usa il [componente comune degli elenchi TON](ton-elenchi.md).
+
 Gli elenchi cercano codice o descrizione e mostrano tutti i risultati filtrati
 in una tabella scorrevole, senza pulsante di apertura, frecce di navigazione
 o contatore in basso. Ricerca, filtri e

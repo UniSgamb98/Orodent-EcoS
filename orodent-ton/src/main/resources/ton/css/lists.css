@@ -1,0 +1,103 @@
+/* Every TON main list uses TonListView and this palette. */
+.ton-list-page {
+    -fx-padding: 8px 26px 20px 26px;
+    -fx-background-color: #e3edf3;
+    -fx-text-fill: #173f59;
+    -fx-font-family: "System";
+    -fx-font-weight: normal;
+}
+.ton-list-page .label { -fx-text-fill: #173f59; -fx-font-family: "System"; -fx-font-weight: normal; }
+.ton-list-page .muted-label { -fx-text-fill: #526e83; }
+.ton-list-page .label:disabled { -fx-opacity: 1; }
+.ton-list-page .button {
+    -fx-background-color: white;
+    -fx-background-radius: 7px;
+    -fx-border-color: #cbdce7;
+    -fx-border-radius: 7px;
+    -fx-padding: 9px 14px;
+    -fx-text-fill: #173f59;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+.ton-list-page .button:hover { -fx-background-color: #eaf4f7; }
+.ton-list-page .button:focused { -fx-border-color: #3196aa; }
+.ton-list-page .primary-button {
+    -fx-background-color: #18778c;
+    -fx-border-color: #18778c;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+.ton-list-page .primary-button:hover { -fx-background-color: #12677a; -fx-border-color: #12677a; }
+.ton-list-page .text-field,
+.ton-list-page .text-area,
+.ton-list-page .combo-box {
+    -fx-background-color: white;
+    -fx-background-radius: 6px;
+    -fx-border-color: #bed3df;
+    -fx-border-radius: 6px;
+    -fx-padding: 7px 9px;
+    -fx-text-fill: #173f59;
+    -fx-prompt-text-fill: #73899a;
+    -fx-font-family: "System";
+    -fx-font-weight: normal;
+}
+.ton-list-page .text-field:focused,
+.ton-list-page .text-area:focused,
+.ton-list-page .combo-box:focused { -fx-border-color: #3196aa; }
+.ton-list-page .text-area .content { -fx-background-color: white; }
+.ton-list-page .combo-box .list-cell { -fx-background-color: transparent; -fx-text-fill: #173f59; }
+.ton-list-page .combo-box .text-field { -fx-padding: 0; -fx-border-width: 0; }
+.ton-list-page .combo-box > .arrow-button { -fx-background-color: transparent; }
+.ton-list-page .check-box:selected .box { -fx-background-color: #18778c; }
+.ton-list-page .check-box:selected .mark { -fx-background-color: white; }
+.ton-list-page .text-field:disabled,
+.ton-list-page .text-area:disabled,
+.ton-list-page .combo-box:disabled {
+    -fx-opacity: 1;
+    -fx-background-color: #f0f6f9;
+    -fx-text-fill: #526e83;
+}
+.ton-list-page .text-area:disabled .content { -fx-background-color: #f0f6f9; }
+.ton-list-page .table-view {
+    -fx-background-color: white;
+    -fx-border-color: #cbdce7;
+    -fx-border-radius: 7px;
+    -fx-background-radius: 7px;
+    -fx-padding: 0;
+}
+.ton-list-page .table-view .column-header,
+.ton-list-page .table-view .filler,
+.ton-list-page .table-view .column-header-background {
+    -fx-background-color: #eaf2f7;
+    -fx-border-width: 0;
+}
+.ton-list-page .table-view .column-header .label { -fx-text-fill: #47677e; -fx-padding: 7px; }
+.ton-list-page .table-row-cell { -fx-background-color: white; -fx-background-insets: 0; }
+.ton-list-page .table-row-cell:selected { -fx-background-color: #edf6fa; }
+.ton-list-page .table-cell {
+    -fx-text-fill: #173f59;
+    -fx-border-color: transparent transparent #e6eef4 transparent;
+}
+.ton-list-page .table-cell .button { -fx-padding: 5px 10px; }
+.ton-list-page .ton-error-feedback { -fx-text-fill: #a52d48; }
+.ton-list-page .ton-list-card {
+    -fx-padding: 20px;
+    -fx-background-color: white;
+    -fx-background-radius: 11px;
+    -fx-border-color: #cbdce7;
+    -fx-border-radius: 11px;
+}
+.ton-list-page .titled-pane > .title {
+    -fx-background-color: #eaf2f7;
+    -fx-background-radius: 6px;
+    -fx-border-color: #cbdce7;
+    -fx-border-radius: 6px;
+    -fx-padding: 8px 10px;
+}
+.ton-list-page .titled-pane > .content {
+    -fx-background-color: white;
+    -fx-border-color: #cbdce7;
+    -fx-padding: 12px;
+}
+.ton-list-page .table-row-cell:empty .table-cell { -fx-border-color: transparent; }
+.ton-list-page .table-cell { -fx-padding: 8px; }

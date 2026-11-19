@@ -3,6 +3,8 @@ package com.orodent.ecos.ton.features.documents.view;
 import static com.orodent.ecos.ton.features.documents.model.DocumentTemplates.*;
 import static com.orodent.ecos.ton.features.technical.view.TechnicalUi.*;
 
+import com.orodent.ecos.ton.features.technical.view.TonListView;
+
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -13,13 +15,17 @@ import java.time.format.DateTimeFormatter;
  * Native navigation/version controls around the local HTML editor. WebView is created on demand.
  */
 public final class DocumentTemplatesView extends BorderPane {
-    public final TextField search = input("ton-document-search", "Cerca per codice o nome");
-    public final TableView<Template> table = new TableView<>();
-    public final Button create = button("Nuovo modello", "ton-document-new", true);
-    public final Button open = button("Apri modello", "ton-document-open", true);
-    public final Button refresh = button("Ricarica", "ton-document-refresh", false);
-    public final Button previous = button("←", "ton-document-previous", false);
-    public final Button next = button("→", "ton-document-next", false);
+    private final TonListView<Template> listing =
+            new TonListView<>(
+                    "ton-document",
+                    "Progetta il foglio operativo, salva le bozze e conserva le versioni approvate."
+                            + " L’anteprima usa dati di esempio.",
+                    "Cerca per codice o nome",
+                    "Nuovo modello");
+    public final TextField search = listing.search();
+    public final TableView<Template> table = listing.table();
+    public final Button create = listing.create();
+    public final Button refresh = listing.refresh();
     public final Button back = button("← Elenco modelli", "ton-document-back", false);
     public final Button save = button("Salva bozza", "ton-document-save", true);
     public final Button approve = button("Salva e approva", "ton-document-approve", true);
@@ -32,8 +38,6 @@ public final class DocumentTemplatesView extends BorderPane {
     public final ComboBox<Template> versions = new ComboBox<>();
     private final Label feedback = label("", "muted-label");
     private final Label state = label("", "ton-description");
-    private final Label paging = label("", "muted-label");
-    private final BorderPane listing = new BorderPane();
     private final BorderPane editing = new BorderPane();
     private final FlowPane actions = new FlowPane(8, 6);
     private DocumentEditorPane editor;
@@ -42,7 +46,6 @@ public final class DocumentTemplatesView extends BorderPane {
         setId("ton-document-templates-view");
         setMinSize(0, 0);
         table.setId("ton-document-table");
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         table.setPlaceholder(new Label("Nessun modello. Crea il primo foglio operativo."));
         column(table, "Codice", 180, Template::code);
         column(table, "Nome", 280, Template::name);
@@ -53,23 +56,6 @@ public final class DocumentTemplatesView extends BorderPane {
                 "Aggiornato",
                 160,
                 t -> t.updated().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
-        var tools = new HBox(10, search, refresh, create);
-        HBox.setHgrow(search, Priority.ALWAYS);
-        var top =
-                new VBox(
-                        12,
-                        label(
-                                "Progetta il foglio operativo, salva le bozze e conserva le"
-                                        + " versioni approvate. L’anteprima usa dati di esempio.",
-                                "ton-description"),
-                        tools);
-        top.setPadding(new Insets(18, 24, 16, 24));
-        listing.setTop(top);
-        listing.setCenter(table);
-        var bottom = new HBox(10, previous, paging, next, new Region(), open);
-        bottom.setPadding(new Insets(12, 24, 16, 24));
-        HBox.setHgrow(bottom.getChildren().get(3), Priority.ALWAYS);
-        listing.setBottom(bottom);
         code.setPrefColumnCount(15);
         code.setMaxWidth(220);
         versions.setId("ton-document-versions");
@@ -92,13 +78,15 @@ public final class DocumentTemplatesView extends BorderPane {
         editing.setTop(controls);
         feedback.setId("ton-document-feedback");
         feedback.setPadding(new Insets(7, 12, 7, 12));
-        setBottom(feedback);
+        feedback.visibleProperty().bind(feedback.textProperty().isNotEmpty());
+        feedback.managedProperty().bind(feedback.visibleProperty());
         showList();
     }
 
     public void showList() {
         closeEditor();
         setCenter(listing);
+        setBottom(null);
         feedback("", false);
     }
 
@@ -108,7 +96,12 @@ public final class DocumentTemplatesView extends BorderPane {
             editing.setCenter(editor);
         }
         setCenter(editing);
+        setBottom(feedback);
         return editor;
+    }
+
+    public void onOpen(Runnable action) {
+        listing.onOpen(action);
     }
 
     public DocumentEditorPane editor() {
@@ -122,16 +115,11 @@ public final class DocumentTemplatesView extends BorderPane {
     }
 
     public void page(Page page) {
-        table.getItems().setAll(page.rows());
-        previous.setDisable(page.offset() == 0);
-        next.setDisable(!page.more());
-        paging.setText(
-                page.rows().isEmpty()
-                        ? "Nessun modello"
-                        : (page.offset() + 1) + "–" + (page.offset() + page.rows().size()));
+        listing.showRows(page.rows());
     }
 
     public void listingBusy(boolean value) {
+        if (value) listing.loading();
         listing.setDisable(value);
     }
 
@@ -155,6 +143,11 @@ public final class DocumentTemplatesView extends BorderPane {
     }
 
     public void feedback(String message, boolean error) {
+        if (getCenter() == listing) {
+            if (error) listing.error(message);
+            else listing.feedback(message, false);
+            return;
+        }
         feedback.setText(message);
         feedback.getStyleClass().remove("ton-error-feedback");
         if (error) feedback.getStyleClass().add("ton-error-feedback");
@@ -162,7 +155,7 @@ public final class DocumentTemplatesView extends BorderPane {
 
     public void dispose() {
         closeEditor();
-        table.getItems().clear();
+        listing.dispose();
         setCenter(null);
     }
 }

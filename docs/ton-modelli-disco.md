@@ -6,6 +6,8 @@ Non serve una migrazione nuova: lo schema resta V6.
 
 ## Elenco e scheda
 
+La pagina usa il [componente comune degli elenchi TON](ton-elenchi.md).
+
 L'elenco mostra tutti i risultati filtrati in una sola tabella scorrevole,
 con una sola riga per modello:
 codice, diametro/strati della versione più recente, ultima approvata ed eventuale

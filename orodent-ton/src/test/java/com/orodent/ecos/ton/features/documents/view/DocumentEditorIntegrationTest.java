@@ -202,7 +202,16 @@ class DocumentEditorIntegrationTest {
                         var table = (TableView<?>) stage.getScene().lookup("#ton-document-table");
                         assertEquals(1, table.getItems().size());
                         table.getSelectionModel().selectFirst();
-                        click("ton-document-open");
+                        table.fireEvent(
+                                new javafx.scene.input.KeyEvent(
+                                        javafx.scene.input.KeyEvent.KEY_PRESSED,
+                                        "",
+                                        "",
+                                        javafx.scene.input.KeyCode.ENTER,
+                                        false,
+                                        false,
+                                        false,
+                                        false));
                         return null;
                     });
             await(() -> web() != null && !button("ton-document-save").isDisabled());

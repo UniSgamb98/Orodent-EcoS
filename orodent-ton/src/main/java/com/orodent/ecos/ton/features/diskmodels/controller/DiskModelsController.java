@@ -47,8 +47,8 @@ public final class DiskModelsController implements FeatureController {
         list.search().setOnAction(event -> loadList());
         list.filter().setOnAction(event -> loadList());
         on(list.create(), this::create);
-        on(list.results().refresh(), () -> loadList());
-        tableAction(list.results().table(), this::openSelected);
+        on(list.refresh(), () -> loadList());
+        list.onOpen(this::openSelected);
         on(
                 e.back(),
                 () -> {
@@ -190,7 +190,7 @@ public final class DiskModelsController implements FeatureController {
     }
 
     private void openSelected() {
-        Summary row = view.list().results().table().getSelectionModel().getSelectedItem();
+        Summary row = view.list().table().getSelectionModel().getSelectedItem();
         if (row != null && !saving.get()) load(row.id(), Sheet.PARAMETERS);
     }
 
@@ -198,19 +198,19 @@ public final class DiskModelsController implements FeatureController {
         if (disposed || editing || saving.get()) return;
         debounce.stop();
         var list = view.list();
-        list.results().loading();
+        list.loading();
         read(
                 "list",
                 () -> service.catalogue(list.search().getText(), list.filter().getValue()),
                 page -> {
                     if (editing) return;
-                    list.results().show(page);
+                    list.showRows(page.rows());
                     page.rows().stream()
                             .filter(r -> r.id() == selectedId)
                             .findFirst()
-                            .ifPresent(r -> list.results().table().getSelectionModel().select(r));
+                            .ifPresent(r -> list.table().getSelectionModel().select(r));
                 },
-                list.results()::error);
+                list::error);
     }
 
     private void load(long id, Sheet sheet) {
@@ -223,7 +223,7 @@ public final class DiskModelsController implements FeatureController {
                 detail -> render(detail, sheet),
                 error -> {
                     view.showList();
-                    view.list().results().error(error);
+                    view.list().error(error);
                 });
     }
 

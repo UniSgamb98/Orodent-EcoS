@@ -13,7 +13,6 @@ import javafx.beans.value.ChangeListener;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyCode;
 import javafx.stage.*;
 import javafx.util.Duration;
 
@@ -46,7 +45,6 @@ public final class DocumentTemplatesController implements FeatureController {
     private boolean editing, updatingVersions, loading;
     private volatile boolean disposed;
     private long generation;
-    private int offset;
 
     public DocumentTemplatesController(
             DocumentTemplatesView view, DocumentTemplateService service, Executor workers) {
@@ -54,24 +52,10 @@ public final class DocumentTemplatesController implements FeatureController {
         this.service = service;
         this.workers = workers;
         view.search.textProperty().addListener(searchListener);
-        debounce.setOnFinished(e -> reloadList(0));
-        view.search.setOnAction(e -> reloadList(0));
-        view.refresh.setOnAction(e -> reloadList(offset));
-        view.previous.setOnAction(
-                e -> reloadList(Math.max(0, offset - DocumentTemplateService.PAGE_SIZE)));
-        view.next.setOnAction(e -> reloadList(offset + DocumentTemplateService.PAGE_SIZE));
-        view.open.setOnAction(e -> openSelected());
-        view.table.setOnMouseClicked(
-                e -> {
-                    if (e.getClickCount() == 2) openSelected();
-                });
-        view.table.setOnKeyPressed(
-                e -> {
-                    if (e.getCode() == KeyCode.ENTER) {
-                        openSelected();
-                        e.consume();
-                    }
-                });
+        debounce.setOnFinished(e -> reloadList());
+        view.search.setOnAction(e -> reloadList());
+        view.refresh.setOnAction(e -> reloadList());
+        view.onOpen(this::openSelected);
         view.create.setOnAction(
                 e -> {
                     if (canLeave()) openEditor(null);
@@ -100,7 +84,7 @@ public final class DocumentTemplatesController implements FeatureController {
                             && confirm(
                                     "Elimina bozza",
                                     "Eliminare questa bozza e le eventuali modifiche locali? Le"
-                                        + " versioni approvate rimangono conservate."))
+                                            + " versioni approvate rimangono conservate."))
                         command(() -> service.delete(original.template()), ignored -> showList());
                 });
         view.versions.setOnAction(
@@ -120,7 +104,7 @@ public final class DocumentTemplatesController implements FeatureController {
     }
 
     public void start() {
-        reloadList(0);
+        reloadList();
     }
 
     @Override
@@ -173,12 +157,12 @@ public final class DocumentTemplatesController implements FeatureController {
         if (selected != null && canLeave()) load(selected.id());
     }
 
-    private void reloadList(int nextOffset) {
+    private void reloadList() {
+        if (disposed || editing || saving.get()) return;
         cancelReads();
-        offset = nextOffset;
         long request = ++generation;
         view.listingBusy(true);
-        var read = service.page(view.search.getText(), offset);
+        var read = service.catalogue(view.search.getText());
         listRead = read;
         read.whenComplete(
                 (page, error) ->
@@ -200,7 +184,7 @@ public final class DocumentTemplatesController implements FeatureController {
         original = null;
         baseline = null;
         view.showList();
-        reloadList(offset);
+        reloadList();
     }
 
     private void load(long id) {
@@ -326,9 +310,8 @@ public final class DocumentTemplatesController implements FeatureController {
                 if (!confirm(
                         "Approva modello",
                         "La versione approvata diventa di sola lettura. L’anteprima usa ancora dati"
-                            + " di esempio: l’emissione dalle produzioni sarà collegata"
-                            + " successivamente."))
-                    return;
+                                + " di esempio: l’emissione dalle produzioni sarà collegata"
+                                + " successivamente.")) return;
             }
             write(
                     () ->
@@ -373,7 +356,7 @@ public final class DocumentTemplatesController implements FeatureController {
                                     .log(
                                             System.Logger.Level.WARNING,
                                             "Operazione modello terminata con errore dopo la"
-                                                + " chiusura",
+                                                    + " chiusura",
                                             error);
                         return;
                     }
@@ -427,7 +410,7 @@ public final class DocumentTemplatesController implements FeatureController {
                         view.editor().restore(content);
                         view.feedback(
                                 "Modello importato nell’editor. Salva la bozza per conservarlo nel"
-                                    + " DB.",
+                                        + " DB.",
                                 false);
                     } catch (RuntimeException invalid) {
                         view.feedback(message(invalid), true);
@@ -510,10 +493,7 @@ public final class DocumentTemplatesController implements FeatureController {
         for (var button :
                 List.of(
                         view.create,
-                        view.open,
                         view.refresh,
-                        view.previous,
-                        view.next,
                         view.back,
                         view.save,
                         view.approve,

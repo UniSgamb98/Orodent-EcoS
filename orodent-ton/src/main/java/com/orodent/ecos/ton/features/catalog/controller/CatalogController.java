@@ -81,27 +81,12 @@ public final class CatalogController implements FeatureController {
                                             kind == CatalogKind.PRODUCTS
                                                     ? list.line().id()
                                                     : list.product().id())));
-        list.table()
-                .setOnMouseClicked(
-                        e -> {
-                            if (e.getClickCount() == 2) openSelected();
-                        });
-        list.table()
-                .setOnKeyPressed(
-                        e -> {
-                            if (e.getCode() == KeyCode.ENTER) {
-                                openSelected();
-                                e.consume();
-                            }
-                        });
+        list.onOpen(this::openSelected);
         cleanup.add(
                 () -> {
                     list.table().setOnMouseClicked(null);
                     list.table().setOnKeyPressed(null);
                 });
-        configureLookup(list.line(), true);
-        configureLookup(list.product(), true);
-        configureLookup(editor.form().parent(), false);
         on(
                 editor.back(),
                 () -> {

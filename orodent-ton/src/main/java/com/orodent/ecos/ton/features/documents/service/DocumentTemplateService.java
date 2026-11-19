@@ -33,6 +33,16 @@ public final class DocumentTemplateService {
                                                         PAGE_SIZE)));
     }
 
+    /** Complete metadata list; document contents are loaded only when a row is opened. */
+    public CompletableFuture<Page> catalogue(String search) {
+        return async(
+                () ->
+                        db.withConnection(
+                                c ->
+                                        new DocumentTemplateRepository(c)
+                                                .page(search.strip(), 0, Integer.MAX_VALUE)));
+    }
+
     public CompletableFuture<Detail> load(long id) {
         return async(() -> db.withConnection(c -> new DocumentTemplateRepository(c).load(id)));
     }
@@ -87,12 +97,12 @@ public final class DocumentTemplateService {
                                             || current.template().state() == State.BOZZA)
                                         throw new IllegalStateException(
                                                 "La versione di partenza è cambiata. Ricarica il"
-                                                    + " modello.");
+                                                        + " modello.");
                                     List<Template> versions = repo.versions(source.code());
                                     if (versions.stream().anyMatch(v -> v.state() == State.BOZZA))
                                         throw new IllegalArgumentException(
                                                 "Esiste già una bozza: aprila dal selettore delle"
-                                                    + " versioni.");
+                                                        + " versioni.");
                                     return repo.insert(
                                             new Draft(source.code(), current.content()),
                                             Math.addExact(versions.getFirst().number(), 1));
@@ -122,7 +132,7 @@ public final class DocumentTemplateService {
                                     && "23505".equals(sql.getSQLState()))
                                 throw new IllegalArgumentException(
                                         "Esiste già un modello con questo codice o questa versione."
-                                            + " Ricarica l’elenco.",
+                                                + " Ricarica l’elenco.",
                                         failure);
                         throw failure;
                     }

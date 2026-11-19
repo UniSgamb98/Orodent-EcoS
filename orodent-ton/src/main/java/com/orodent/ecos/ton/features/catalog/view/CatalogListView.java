@@ -2,57 +2,40 @@ package com.orodent.ecos.ton.features.catalog.view;
 
 import com.orodent.ecos.ton.features.catalog.model.CatalogKind;
 import com.orodent.ecos.ton.features.catalog.model.CatalogModels.*;
+import com.orodent.ecos.ton.features.technical.view.TonListView;
 
-import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
 
 import java.util.*;
 
-public final class CatalogListView extends VBox {
-    private final TextField search, diameter, height;
+public final class CatalogListView extends TonListView<Entry> {
+    private final TextField diameter, height;
     private final CheckBox archived = new CheckBox("Mostra anche archiviati");
-    private final CatalogTable table;
-    private final Button create, refresh, bulk;
-    private final Label feedback;
+    private final Button bulk;
     private final CatalogLookup line, product;
 
     public CatalogListView(CatalogKind kind) {
-        super(12);
-        setMinWidth(0);
-        getStyleClass().addAll("ton-catalogue-page", "ton-catalogue-list");
-        setId("ton-" + kind.pluralId() + "-list");
+        super(
+                "ton-" + kind.pluralId(),
+                switch (kind) {
+                    case LINES -> "Tecnologie del laboratorio e prodotti collegati.";
+                    case PRODUCTS -> "Una linea e un colore commerciale per ogni prodotto.";
+                    case ARTICLES ->
+                            "I formati degli articoli, con linea e colore ereditati dal prodotto.";
+                },
+                "Cerca codice o descrizione",
+                "Nuov" + (kind == CatalogKind.LINES ? "a linea" : "o " + kind.singular()),
+                new CatalogTable(kind, "ton-" + kind.pluralId() + "-table"));
         String base = "ton-" + kind.pluralId();
-        search = CatalogUi.field(base + "-search", "Cerca codice o descrizione");
+        create().setId("ton-" + kind.id() + "-new");
+        feedback().setId(base + "-load-error");
         diameter = CatalogUi.field(base + "-diameter", "Tutti");
         height = CatalogUi.field(base + "-height", "Tutte");
-        create =
-                CatalogUi.button(
-                        "Nuov" + (kind == CatalogKind.LINES ? "a linea" : "o " + kind.singular()),
-                        "ton-" + kind.id() + "-new",
-                        true);
-        refresh = CatalogUi.button("Aggiorna", base + "-refresh", false);
-        Region gap = new Region();
-        HBox.setHgrow(gap, Priority.ALWAYS);
         bulk =
                 kind == CatalogKind.LINES
                         ? null
                         : CatalogUi.button("Inserimento multiplo…", base + "-bulk", false);
-        HBox title = new HBox(12, gap);
-        if (bulk != null) title.getChildren().add(bulk);
-        title.getChildren().add(create);
-        title.setAlignment(Pos.CENTER_LEFT);
-        Label intro =
-                CatalogUi.hint(
-                        switch (kind) {
-                            case LINES -> "Tecnologie del laboratorio e prodotti collegati.";
-                            case PRODUCTS -> "Una linea e un colore commerciale per ogni prodotto.";
-                            case ARTICLES ->
-                                    "I formati degli articoli, con linea e colore ereditati dal"
-                                            + " prodotto.";
-                        });
-        HBox query = new HBox(10, search, refresh);
-        HBox.setHgrow(search, Priority.ALWAYS);
+        if (bulk != null) addAction(bulk);
         line =
                 kind == CatalogKind.LINES
                         ? null
@@ -69,32 +52,17 @@ public final class CatalogListView extends VBox {
             filterFields.add(CatalogUi.field("Altezza · mm", height));
         }
         archived.setId(base + "-include-inactive");
-        table = new CatalogTable(kind, base + "-table");
-        VBox.setVgrow(table, Priority.ALWAYS);
-        feedback = CatalogUi.feedback(base + "-load-error");
-        feedback.getStyleClass().add("ton-error-feedback");
-        title.getChildren().addFirst(intro);
-        HBox.setHgrow(intro, Priority.ALWAYS);
-        VBox card = new VBox(12, query);
-        card.getStyleClass().add("ton-list-card");
-        card.setMinSize(0, 0);
-        VBox.setVgrow(card, Priority.ALWAYS);
-        getChildren().addAll(title, card);
         if (!filterFields.isEmpty()) {
-            TitledPane filters =
-                    new TitledPane(
-                            "Filtri",
-                            CatalogUi.fields(filterFields.toArray(javafx.scene.Node[]::new)));
-            filters.setExpanded(false);
-            filters.setId(base + "-filters");
-            card.getChildren().add(filters);
+            filters(
+                    base + "-filters",
+                    CatalogUi.fields(filterFields.toArray(javafx.scene.Node[]::new)));
         }
-        card.getChildren().addAll(archived, table, feedback);
+        options(archived);
     }
 
     public Filter filter() {
         return new Filter(
-                search.getText(),
+                search().getText(),
                 archived.isSelected(),
                 line == null ? null : line.id(),
                 product == null ? null : product.id(),
@@ -102,23 +70,8 @@ public final class CatalogListView extends VBox {
                 CatalogUi.decimal(height.getText(), "Altezza"));
     }
 
-    public void loading() {
-        table.setDisable(true);
-        refresh.setDisable(true);
-        feedback.setText("");
-    }
-
     public void show(Page page) {
-        table.getItems().setAll(page.rows());
-        table.setDisable(false);
-        refresh.setDisable(false);
-        feedback.setText("");
-    }
-
-    public void error(String text) {
-        feedback.setText(text);
-        table.setDisable(false);
-        refresh.setDisable(false);
+        showRows(page.rows());
     }
 
     public CatalogLookup line() {
@@ -127,10 +80,6 @@ public final class CatalogListView extends VBox {
 
     public CatalogLookup product() {
         return product;
-    }
-
-    public TextField search() {
-        return search;
     }
 
     public TextField diameter() {
@@ -146,18 +95,10 @@ public final class CatalogListView extends VBox {
     }
 
     public CatalogTable table() {
-        return table;
+        return (CatalogTable) super.table();
     }
 
     public Button bulk() {
         return bulk;
-    }
-
-    public Button create() {
-        return create;
-    }
-
-    public Button refresh() {
-        return refresh;
     }
 }

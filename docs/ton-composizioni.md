@@ -6,6 +6,8 @@ già presenti nello schema V6: non introduce una nuova migrazione.
 
 ## Elenco e dati generali
 
+La pagina usa il [componente comune degli elenchi TON](ton-elenchi.md).
+
 L'elenco mostra una riga per prodotto, con linea, colore, numero di strati,
 ultima versione approvata ed eventuale bozza. Ricerca e filtri mostrano tutti
 i risultati in una sola tabella scorrevole; si possono includere anche i prodotti
