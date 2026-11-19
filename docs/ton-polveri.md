@@ -17,6 +17,8 @@ approvata, se presente, altrimenti alla versione più recente.
 L’elenco è unico e scorrevole, senza contatore, frecce di pagina o pulsante di
 apertura. Tutte le polveri che corrispondono ai filtri restano accessibili,
 anche oltre i primi 50 risultati. **Aggiorna** rilegge i dati correnti.
+Ricerca e tabella sono in un pannello bianco con bordi e intestazioni azzurre,
+coerente con le schede e con gli elenchi Linee, Prodotti tecnici e Articoli.
 
 Con **Nuova polvere**, doppio clic sulla riga o Invio si entra nell'editor a quattro schede:
 

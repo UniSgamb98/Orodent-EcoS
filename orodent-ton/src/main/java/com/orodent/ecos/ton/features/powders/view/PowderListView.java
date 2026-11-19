@@ -21,7 +21,7 @@ public final class PowderListView extends VBox {
     public PowderListView() {
         super(14);
         setId("ton-powders-list");
-        getStyleClass().add("ton-powder-page");
+        getStyleClass().addAll("ton-powder-page", "ton-catalogue-list");
         setMinWidth(0);
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -60,14 +60,24 @@ public final class PowderListView extends VBox {
                                         "Polvere",
                                         r -> r.powder().active() ? "Attiva" : "Archiviata",
                                         90)));
-        table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
+        table.getColumns()
+                .forEach(
+                        column -> {
+                            column.setPrefWidth(150);
+                            column.setMinWidth(60);
+                        });
         table.setPlaceholder(new Label("Nessuna polvere. Usa Nuova polvere per iniziare."));
         feedback.setId("ton-powders-feedback");
         feedback.setWrapText(true);
         feedback.getStyleClass().add("ton-error-feedback");
         feedback.visibleProperty().bind(feedback.textProperty().isNotEmpty());
         feedback.managedProperty().bind(feedback.visibleProperty());
-        getChildren().setAll(header, new HBox(10, search, refresh), inactive, table, feedback);
+        VBox card = new VBox(12, new HBox(10, search, refresh), inactive, table, feedback);
+        card.getStyleClass().add("ton-list-card");
+        card.setMinSize(0, 0);
+        VBox.setVgrow(card, Priority.ALWAYS);
+        getChildren().setAll(header, card);
     }
 
     public void showLoading() {

@@ -34,7 +34,7 @@ public final class CatalogController implements FeatureController {
     private Detail original;
     private Specification selectedVersion;
     private List<String> baseline = List.of(), specBaseline = List.of();
-    private int offset, relatedOffset, historyOffset, specOffset;
+    private int offset, historyOffset, specOffset;
     private long selectedId;
     private boolean editing, specLoaded;
     private volatile boolean disposed;
@@ -196,12 +196,12 @@ public final class CatalogController implements FeatureController {
                                     new Navigation(
                                             kind.child(), original.entry().id(), null, true));
                     });
-            on(
-                    related.open(),
+            Runnable openRelated =
                     () -> {
-                        Entry e = related.table().getSelectionModel().getSelectedItem();
-                        if (e != null) navigate.accept(Navigation.open(kind.child(), e.id()));
-                    });
+                        Entry entry = related.table().getSelectionModel().getSelectedItem();
+                        if (entry != null)
+                            navigate.accept(Navigation.open(kind.child(), entry.id()));
+                    };
             related.table()
                     .setRowFactory(
                             ignored -> {
@@ -224,14 +224,10 @@ public final class CatalogController implements FeatureController {
                     .setOnKeyPressed(
                             event -> {
                                 if (event.getCode() == KeyCode.ENTER) {
-                                    related.open().fire();
+                                    openRelated.run();
                                     event.consume();
                                 }
                             });
-            on(
-                    related.previous(),
-                    () -> loadRelated(Math.max(0, relatedOffset - CatalogService.PAGE_SIZE)));
-            on(related.next(), () -> loadRelated(relatedOffset + CatalogService.PAGE_SIZE));
         }
         on(
                 editor.history().previous(),
@@ -301,7 +297,7 @@ public final class CatalogController implements FeatureController {
         selectedVersion = null;
         editing = true;
         specLoaded = false;
-        relatedOffset = historyOffset = specOffset = 0;
+        historyOffset = specOffset = 0;
         view.editor().show(null, context);
         view.editor().sheet(Sheet.GENERAL);
         lastSheet = Sheet.GENERAL;
@@ -372,7 +368,7 @@ public final class CatalogController implements FeatureController {
         selectedId = detail.entry().id();
         selectedVersion = null;
         specLoaded = false;
-        relatedOffset = historyOffset = specOffset = 0;
+        historyOffset = specOffset = 0;
         view.editor().show(detail, null);
         view.editor().sheet(sheet);
         lastSheet = sheet;
@@ -440,7 +436,7 @@ public final class CatalogController implements FeatureController {
         if (original == null) return;
         switch (view.editor().sheet()) {
             case GENERAL -> {}
-            case RELATED -> loadRelated(relatedOffset);
+            case RELATED -> loadRelated();
             case HISTORY -> loadHistory(historyOffset);
             case SPECIFICATIONS -> {
                 if (!specLoaded) loadSpecs(specOffset, false);
@@ -448,9 +444,8 @@ public final class CatalogController implements FeatureController {
         }
     }
 
-    private void loadRelated(int pageOffset) {
+    private void loadRelated() {
         if (original == null) return;
-        relatedOffset = pageOffset;
         var related = view.editor().related();
         related.loading();
         Filter filter =
@@ -459,10 +454,7 @@ public final class CatalogController implements FeatureController {
                         : new Filter("", true, null, original.entry().id(), null, null);
         read(
                 "related",
-                () ->
-                        kind == CatalogKind.LINES
-                                ? service.catalogue(kind.child(), filter)
-                                : service.page(kind.child(), filter, relatedOffset),
+                () -> service.catalogue(kind.child(), filter),
                 related::show,
                 e -> related.error(message(e)));
     }

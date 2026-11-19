@@ -14,13 +14,13 @@ public final class CatalogListView extends VBox {
     private final CheckBox archived = new CheckBox("Mostra anche archiviati");
     private final CatalogTable table;
     private final Button create, open, refresh, previous, next, bulk;
-    private final Label result = new Label(), feedback;
+    private final Label feedback;
     private final CatalogLookup line, product;
 
     public CatalogListView(CatalogKind kind) {
         super(12);
         setMinWidth(0);
-        getStyleClass().add("ton-catalogue-page");
+        getStyleClass().addAll("ton-catalogue-page", "ton-catalogue-list");
         setId("ton-" + kind.pluralId() + "-list");
         String base = "ton-" + kind.pluralId();
         search = CatalogUi.field(base + "-search", "Cerca codice o descrizione");
@@ -81,11 +81,15 @@ public final class CatalogListView extends VBox {
         feedback.getStyleClass().add("ton-error-feedback");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox pages = new HBox(10, result, spacer, previous, next);
+        HBox pages = new HBox(10, open, spacer, previous, next);
         pages.setAlignment(Pos.CENTER_LEFT);
         title.getChildren().addFirst(intro);
         HBox.setHgrow(intro, Priority.ALWAYS);
-        getChildren().addAll(title, query);
+        VBox card = new VBox(12, query);
+        card.getStyleClass().add("ton-list-card");
+        card.setMinSize(0, 0);
+        VBox.setVgrow(card, Priority.ALWAYS);
+        getChildren().addAll(title, card);
         if (!filterFields.isEmpty()) {
             TitledPane filters =
                     new TitledPane(
@@ -93,9 +97,9 @@ public final class CatalogListView extends VBox {
                             CatalogUi.fields(filterFields.toArray(javafx.scene.Node[]::new)));
             filters.setExpanded(false);
             filters.setId(base + "-filters");
-            getChildren().add(filters);
+            card.getChildren().add(filters);
         }
-        getChildren().addAll(archived, table, pages, open, feedback);
+        card.getChildren().addAll(archived, table, pages, feedback);
     }
 
     public Filter filter() {
@@ -114,7 +118,6 @@ public final class CatalogListView extends VBox {
         refresh.setDisable(true);
         previous.setDisable(true);
         next.setDisable(true);
-        result.setText("Caricamento…");
         feedback.setText("");
     }
 
@@ -126,14 +129,6 @@ public final class CatalogListView extends VBox {
         next.setDisable(!page.hasNext());
         open.setDisable(table.getSelectionModel().getSelectedItem() == null);
         feedback.setText("");
-        result.setText(
-                page.total() == 0
-                        ? "0 risultati"
-                        : (page.offset() + 1)
-                                + "–"
-                                + (page.offset() + page.rows().size())
-                                + " di "
-                                + page.total());
     }
 
     public void error(String text) {
@@ -141,7 +136,6 @@ public final class CatalogListView extends VBox {
         table.setDisable(false);
         refresh.setDisable(false);
         open.setDisable(table.getSelectionModel().getSelectedItem() == null);
-        result.setText("Elenco non aggiornato");
     }
 
     public CatalogLookup line() {

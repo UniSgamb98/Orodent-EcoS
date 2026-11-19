@@ -87,6 +87,19 @@ public final class CatalogDetailsUiProbe {
                                 "",
                                 true))
                 .join();
+        for (int i = 0; i < 54; i++) {
+            catalogues
+                    .create(
+                            new ArticleDraft(
+                                    String.format("ZZ-ART%02d", i),
+                                    "Altro formato " + i,
+                                    lastProduct.id(),
+                                    new BigDecimal("98"),
+                                    BigDecimal.valueOf(20 + i),
+                                    "",
+                                    true))
+                    .join();
+        }
         var powders = new PowderService(db, workers);
         var target =
                 powders.create(
@@ -174,6 +187,7 @@ public final class CatalogDetailsUiProbe {
             await(() -> ((TableView<?>) node("ton-powders-table")).getItems().size() == 55);
             fx(
                     () -> {
+                        assertNoCounters();
                         screenshot("target/powders-single-list.png");
                         TableView<?> table = (TableView<?>) node("ton-powders-table");
                         table.getSelectionModel().selectLast();
@@ -281,9 +295,24 @@ public final class CatalogDetailsUiProbe {
             await(
                     () ->
                             node("ton-product-children-table") instanceof TableView<?> table
-                                    && table.getItems().size() == 1);
+                                    && table.getItems().size() == 55);
             fx(
                     () -> {
+                        assertNull(node("ton-product-children-open"));
+                        assertNull(node("ton-product-children-next"));
+                        assertNull(node("ton-product-children-previous"));
+                        assertNoCounters();
+                        assertTrue(
+                                stage.getScene().getRoot().lookupAll(".label").stream()
+                                        .noneMatch(
+                                                n ->
+                                                        n instanceof Label l
+                                                                && l.getText()
+                                                                        .startsWith(
+                                                                                "Gli elementi"
+                                                                                    + " vengono"
+                                                                                    + " creati")));
+                        screenshot("target/product-articles-single-list.png");
                         TableView<?> table = (TableView<?>) node("ton-product-children-table");
                         layout();
                         assertEvenColumns(table);
@@ -325,6 +354,58 @@ public final class CatalogDetailsUiProbe {
             await(() -> node("ton-lines-table") != null);
             fx(
                     () -> {
+                        assertNoCounters();
+                        screenshot("target/lines-list-palette.png");
+                        button("ton-nav-technical").fire();
+                        button("ton-tech-products-button").fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-products-table") instanceof TableView<?> t
+                                    && t.getItems().size() == 50);
+            fx(
+                    () -> {
+                        assertNoCounters();
+                        screenshot("target/products-list-palette.png");
+                        button("ton-products-next").fire();
+                        return null;
+                    });
+            await(() -> ((TableView<?>) node("ton-products-table")).getItems().size() == 5);
+            fx(
+                    () -> {
+                        assertNoCounters();
+                        button("ton-products-previous").fire();
+                        return null;
+                    });
+            await(() -> ((TableView<?>) node("ton-products-table")).getItems().size() == 50);
+            fx(
+                    () -> {
+                        button("ton-nav-technical").fire();
+                        button("ton-tech-articles-button").fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-articles-table") instanceof TableView<?> t
+                                    && t.getItems().size() == 50);
+            fx(
+                    () -> {
+                        assertNoCounters();
+                        screenshot("target/articles-list-palette.png");
+                        button("ton-articles-next").fire();
+                        return null;
+                    });
+            await(() -> ((TableView<?>) node("ton-articles-table")).getItems().size() == 5);
+            fx(
+                    () -> {
+                        button("ton-nav-technical").fire();
+                        button("ton-tech-lines-button").fire();
+                        return null;
+                    });
+            await(() -> node("ton-lines-table") != null);
+            fx(
+                    () -> {
                         button("ton-line-new").fire();
                         return null;
                     });
@@ -361,6 +442,20 @@ public final class CatalogDetailsUiProbe {
             } catch (SQLException expected) {
             }
         }
+    }
+
+    private void assertNoCounters() {
+        assertTrue(
+                stage.getScene().getRoot().lookupAll(".label").stream()
+                        .noneMatch(
+                                n ->
+                                        n instanceof Label label
+                                                && (label.getText()
+                                                                .matches(
+                                                                        "[0-9]+[–-][0-9]+ di"
+                                                                            + " [0-9]+")
+                                                        || label.getText()
+                                                                .equals("Nessun collegamento"))));
     }
 
     private void assertRefreshOnRight(String kind) {
@@ -442,7 +537,12 @@ public final class CatalogDetailsUiProbe {
     }
 
     private <T> T fx(Callable<T> task) throws Exception {
-        var future = new FutureTask<>(task);
+        var future =
+                new FutureTask<T>(
+                        () -> {
+                            if (stage != null && stage.getScene() != null) layout();
+                            return task.call();
+                        });
         Platform.runLater(future);
         return future.get(20, TimeUnit.SECONDS);
     }

@@ -48,7 +48,10 @@ specifiche, ricette o approvazioni implicitamente.
 
 ## Elenchi e collegamenti
 
-Gli elenchi cercano codice o descrizione e sono paginati in gruppi di 50.
+Gli elenchi cercano codice o descrizione e sono paginati in gruppi di 50,
+con frecce di navigazione e senza il contatore «1–… di …». Ricerca, filtri e
+strumenti sono in un pannello bianco sullo sfondo azzurro, con la stessa palette
+delle schede di dettaglio e dell’elenco polveri.
 Percentuale, underscore e barra inversa nella ricerca vengono trattati come
 caratteri letterali. Le colonne sono ordinate dal DB per codice.
 
@@ -67,8 +70,10 @@ associazioni.
 La scheda **Prodotti tecnici** della linea elenca tutti i prodotti collegati in
 un unico elenco scorrevole, anche oltre i primi 50. Non ha contatore, frecce di
 pagina o pulsante di apertura: doppio clic sulla riga o Invio apre il prodotto.
-Permette di crearne uno con la linea già selezionata. La scheda **Articoli** del prodotto
-fa lo stesso per i formati. **Apri linea / Apri prodotto** risale al padre.
+Permette di crearne uno con la linea già selezionata. La scheda **Articoli** del
+prodotto fa lo stesso per i formati: elenco completo scorrevole, senza frase
+introduttiva, contatore, frecce o pulsante di apertura; doppio clic o Invio apre
+la scheda articolo. **Apri linea / Apri prodotto** risale al padre.
 
 Le schede di Linee, Prodotti tecnici e Articoli mostrano codice e nome
 nell’intestazione di TON. Il collegamento **Torna…** è a sinistra e **Aggiorna dati**
