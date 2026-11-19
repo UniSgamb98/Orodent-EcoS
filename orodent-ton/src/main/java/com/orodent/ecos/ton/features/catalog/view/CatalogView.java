@@ -25,18 +25,16 @@ public final class CatalogView extends BorderPane {
                                 .toExternalForm());
         list = new CatalogListView(kind);
         editor = new CatalogEditorView(kind);
-        if (kind == CatalogKind.LINES) {
-            getStylesheets()
-                    .add(
-                            Objects.requireNonNull(
-                                            getClass().getResource("/ton/css/technical-editor.css"))
-                                    .toExternalForm());
-            subpage.bind(
-                    Bindings.createStringBinding(
-                            () -> getCenter() == editor ? editor.headerTitleProperty().get() : "",
-                            centerProperty(),
-                            editor.headerTitleProperty()));
-        }
+        getStylesheets()
+                .add(
+                        Objects.requireNonNull(
+                                        getClass().getResource("/ton/css/technical-editor.css"))
+                                .toExternalForm());
+        subpage.bind(
+                Bindings.createStringBinding(
+                        () -> getCenter() == editor ? editor.headerTitleProperty().get() : "",
+                        centerProperty(),
+                        editor.headerTitleProperty()));
         showList();
     }
 

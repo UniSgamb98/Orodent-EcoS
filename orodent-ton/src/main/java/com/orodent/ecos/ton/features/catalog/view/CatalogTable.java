@@ -14,12 +14,12 @@ public final class CatalogTable extends TableView<Entry> {
         setMinHeight(180);
         setPrefHeight(330);
         setMinWidth(0);
-        column("Codice", Entry::code, 150);
+        column("Codice", Entry::code);
         switch (kind) {
             case LINES -> {
-                column("Nome / tecnologia", e -> e.name(), 210);
-                column("Materia prima", e -> ((Line) e).material(), 100);
-                column("Prodotti", e -> Integer.toString(((Line) e).products()), 80);
+                column("Nome / tecnologia", e -> e.name());
+                column("Materia prima", e -> ((Line) e).material());
+                column("Prodotti", e -> Integer.toString(((Line) e).products()));
             }
             case PRODUCTS -> {
                 column(
@@ -27,11 +27,10 @@ public final class CatalogTable extends TableView<Entry> {
                         e -> {
                             var l = ((Product) e).line();
                             return l == null ? "Da specificare" : l.code();
-                        },
-                        140);
-                column("Colore", e -> ((Product) e).colorLabel(), 100);
-                column("Descrizione", Entry::name, 180);
-                column("Articoli", e -> Integer.toString(((Product) e).articles()), 80);
+                        });
+                column("Colore", e -> ((Product) e).colorLabel());
+                column("Descrizione", Entry::name);
+                column("Articoli", e -> Integer.toString(((Product) e).articles()));
             }
             case ARTICLES -> {
                 column(
@@ -39,27 +38,26 @@ public final class CatalogTable extends TableView<Entry> {
                         e ->
                                 ((Article) e).product().lineCode() == null
                                         ? "Da specificare"
-                                        : ((Article) e).product().lineCode(),
-                        120);
+                                        : ((Article) e).product().lineCode());
                 column(
                         "Colore",
                         e ->
                                 com.orodent.ecos.ton.features.catalog.model.CatalogModels
-                                        .colorLabelOf(((Article) e).product().color()),
-                        90);
-                column("Ø · mm", e -> CatalogUi.number(((Article) e).diameter()), 75);
-                column("H · mm", e -> CatalogUi.number(((Article) e).height()), 75);
-                column("Produzione", e -> ((Article) e).specificationLabel(), 195);
+                                        .colorLabelOf(((Article) e).product().color()));
+                column("Ø · mm", e -> CatalogUi.number(((Article) e).diameter()));
+                column("H · mm", e -> CatalogUi.number(((Article) e).height()));
+                column("Produzione", e -> ((Article) e).specificationLabel());
             }
         }
-        column("Stato", Entry::status, 135);
-        setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        column("Stato", Entry::status);
+        setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
         setPlaceholder(new Label("Nessun risultato."));
     }
 
-    private void column(String title, Function<Entry, String> value, int width) {
+    private void column(String title, Function<Entry, String> value) {
         TableColumn<Entry, String> column = new TableColumn<>(title);
-        column.setPrefWidth(width);
+        column.setPrefWidth(150);
+        column.setMinWidth(60);
         column.setSortable(false);
         column.setCellValueFactory(c -> new ReadOnlyStringWrapper(value.apply(c.getValue())));
         getColumns().add(column);

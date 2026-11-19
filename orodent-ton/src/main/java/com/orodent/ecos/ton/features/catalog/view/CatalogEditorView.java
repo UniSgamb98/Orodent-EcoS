@@ -36,26 +36,25 @@ public final class CatalogEditorView extends VBox {
         String base = "ton-" + kind.id();
         setId(base + "-editor");
         setMinWidth(0);
-        getStyleClass().add("ton-catalogue-page");
+        getStyleClass().addAll("ton-catalogue-page", "ton-catalogue-detail");
         form = new CatalogForm(kind);
         related = kind.child() == null ? null : new CatalogRelatedView(kind);
         history = new CatalogHistoryView(base);
         specifications = kind == CatalogKind.ARTICLES ? new SpecificationsView() : null;
         back =
                 CatalogUi.button(
-                        "← Elenco " + kind.title().toLowerCase(Locale.ITALIAN),
+                        switch (kind) {
+                            case LINES -> "← Torna alle linee";
+                            case PRODUCTS -> "← Torna ai prodotti";
+                            case ARTICLES -> "← Torna agli articoli";
+                        },
                         base + "-back",
                         false);
-        reload =
-                CatalogUi.button(
-                        kind == CatalogKind.LINES ? "Aggiorna dati" : "Ricarica scheda",
-                        base + "-reload",
-                        false);
-        if (kind == CatalogKind.LINES) {
-            back.setText("← Torna alle linee");
-            back.getStyleClass().add("ton-editor-back-link");
-            reload.getStyleClass().add("ton-editor-refresh");
-        }
+        reload = CatalogUi.button("Aggiorna dati", base + "-reload", false);
+        back.getStyleClass().add("ton-editor-back-link");
+        reload.getStyleClass().add("ton-editor-refresh");
+        back.setMinWidth(Region.USE_PREF_SIZE);
+        reload.setMinWidth(Region.USE_PREF_SIZE);
         parent =
                 CatalogUi.button(
                         kind == CatalogKind.ARTICLES ? "Apri prodotto" : "Apri linea",
@@ -70,7 +69,8 @@ public final class CatalogEditorView extends VBox {
         heading.getStyleClass().add("ton-page-heading");
         heading.setWrapText(true);
         status.setId(base + "-status");
-        status.getStyleClass().add("ton-area-status");
+        status.getStyleClass().addAll("ton-area-status", "ton-editor-status");
+        tabs.getStyleClass().add("ton-editor-tabs");
         tabs.setId(base + "-tabs");
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tabs.setMinHeight(250);
@@ -84,11 +84,15 @@ public final class CatalogEditorView extends VBox {
         actions = new FlowPane(10, 8, cancel, save, archive, delete);
         actions.getStyleClass().add("ton-editor-actions");
         feedback = CatalogUi.feedback(base + "-feedback");
-        HBox toolbar = new HBox(10, back, reload, parent);
+        Region toolbarGap = new Region();
+        HBox.setHgrow(toolbarGap, Priority.ALWAYS);
+        HBox toolbar = new HBox(10, back, toolbarGap, reload);
         toolbar.setAlignment(Pos.CENTER_LEFT);
-        if (kind == CatalogKind.LINES)
-            getChildren().setAll(toolbar, status, tabs, actions, feedback);
-        else getChildren().setAll(toolbar, heading, status, tabs, actions, feedback);
+        parent.setMinWidth(Region.USE_PREF_SIZE);
+        CatalogUi.visible(parent, kind.parent() != null);
+        HBox revision = new HBox(12, status, parent);
+        revision.setAlignment(Pos.CENTER_LEFT);
+        getChildren().setAll(toolbar, revision, tabs, actions, feedback);
         tabs.getSelectionModel()
                 .selectedItemProperty()
                 .addListener((o, a, b) -> CatalogUi.visible(actions, sheet() == Sheet.GENERAL));

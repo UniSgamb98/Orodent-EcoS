@@ -70,9 +70,12 @@ pagina o pulsante di apertura: doppio clic sulla riga o Invio apre il prodotto.
 Permette di crearne uno con la linea già selezionata. La scheda **Articoli** del prodotto
 fa lo stesso per i formati. **Apri linea / Apri prodotto** risale al padre.
 
-La scheda della linea mostra codice e nome nell’intestazione di TON, con
-**Torna alle linee** e **Aggiorna dati** a sinistra. Pannelli, campi, schede e
-pulsanti condividono la palette della scheda polvere.
+Le schede di Linee, Prodotti tecnici e Articoli mostrano codice e nome
+nell’intestazione di TON. Il collegamento **Torna…** è a sinistra e **Aggiorna dati**
+a destra. Nei prodotti e negli articoli, **Apri linea / Apri prodotto** è accanto
+al riquadro della revisione. Pannelli, campi, schede e pulsanti condividono la
+palette della scheda polvere. Le colonne dei cataloghi e degli elenchi collegati
+si distribuiscono uniformemente su tutta la larghezza disponibile.
 
 **Tecnologia** è un testo descrittivo facoltativo (massimo 200 caratteri), salvato
 nella linea e nelle revisioni storiche. Può descrivere, per esempio, una famiglia

@@ -7,6 +7,7 @@ import com.orodent.ecos.database.DatabaseSchema;
 import com.orodent.ecos.database.service.*;
 import com.orodent.ecos.module.*;
 import com.orodent.ecos.ton.TonModule;
+import com.orodent.ecos.ton.features.catalog.model.CatalogKind;
 import com.orodent.ecos.ton.features.catalog.model.CatalogModels.*;
 import com.orodent.ecos.ton.features.catalog.service.CatalogService;
 import com.orodent.ecos.ton.features.powders.model.PowderModel;
@@ -68,6 +69,24 @@ public final class CatalogDetailsUiProbe {
             catalogues
                     .create(ProductDraft.configured(line.id(), String.format("A%02d", i), "", true))
                     .join();
+        var products =
+                catalogues
+                        .catalogue(
+                                CatalogKind.PRODUCTS,
+                                new Filter("", true, line.id(), null, null, null))
+                        .join();
+        var lastProduct = products.rows().getLast();
+        catalogues
+                .create(
+                        new ArticleDraft(
+                                "ZR9812MSTA54",
+                                "Thor A54 98 × 12",
+                                lastProduct.id(),
+                                new BigDecimal("98"),
+                                new BigDecimal("12"),
+                                "",
+                                true))
+                .join();
         var powders = new PowderService(db, workers);
         var target =
                 powders.create(
@@ -92,7 +111,7 @@ public final class CatalogDetailsUiProbe {
                     try (var insert =
                             c.prepareStatement(
                                     "INSERT INTO TON.POLVERI(codice,nome,colore,fornitore) VALUES"
-                                        + " (?,?,'BIANCA','Tosoh')")) {
+                                            + " (?,?,'BIANCA','Tosoh')")) {
                         for (int i = 0; i < 54; i++) {
                             insert.setString(1, String.format("P%03d", i));
                             insert.setString(2, "Polvere " + i);
@@ -202,6 +221,7 @@ public final class CatalogDetailsUiProbe {
                         assertEquals("Aggiorna dati", button("ton-line-reload").getText());
                         assertEquals(
                                 "Multistrato", ((TextField) node("ton-line-technology")).getText());
+                        assertRefreshOnRight("line");
                         screenshot("target/line-shared-palette.png");
                         ((TabPane) node("ton-line-tabs")).getSelectionModel().select(1);
                         return null;
@@ -225,6 +245,7 @@ public final class CatalogDetailsUiProbe {
                                                                                 "Gli elementi"
                                                                                     + " vengono"
                                                                                     + " creati")));
+                        assertEvenColumns((TableView<?>) node("ton-line-children-table"));
                         screenshot("target/line-products-single-list.png");
                         TableView<?> table = (TableView<?>) node("ton-line-children-table");
                         table.scrollTo(54);
@@ -246,8 +267,59 @@ public final class CatalogDetailsUiProbe {
             fx(
                     () -> {
                         assertEquals("ZRMSTA54", ((TextField) node("ton-product-code")).getText());
-                        button("ton-nav-technical").fire();
-                        button("ton-tech-lines-button").fire();
+                        assertTrue(
+                                ((Label) node("ton-breadcrumb"))
+                                        .getText()
+                                        .endsWith("Prodotti tecnici › ZRMSTA54 · Thor A54"));
+                        assertNull(node("ton-product-heading"));
+                        assertRefreshOnRight("product");
+                        assertParentBesideStatus("product");
+                        screenshot("target/product-shared-palette.png");
+                        ((TabPane) node("ton-product-tabs")).getSelectionModel().select(1);
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-product-children-table") instanceof TableView<?> table
+                                    && table.getItems().size() == 1);
+            fx(
+                    () -> {
+                        TableView<?> table = (TableView<?>) node("ton-product-children-table");
+                        layout();
+                        assertEvenColumns(table);
+                        TableRow<?> row =
+                                table.lookupAll(".table-row-cell").stream()
+                                        .filter(n -> n instanceof TableRow<?> r && !r.isEmpty())
+                                        .map(n -> (TableRow<?>) n)
+                                        .findFirst()
+                                        .orElseThrow();
+                        row.fireEvent(doubleClick());
+                        return null;
+                    });
+            await(() -> node("ton-article-editor") != null);
+            fx(
+                    () -> {
+                        assertTrue(
+                                ((Label) node("ton-breadcrumb"))
+                                        .getText()
+                                        .contains("Articoli › ZR9812MSTA54"));
+                        assertNull(node("ton-article-heading"));
+                        assertRefreshOnRight("article");
+                        assertParentBesideStatus("article");
+                        screenshot("target/article-shared-palette.png");
+                        button("ton-article-open-parent").fire();
+                        return null;
+                    });
+            await(() -> node("ton-product-editor") != null);
+            fx(
+                    () -> {
+                        button("ton-product-open-parent").fire();
+                        return null;
+                    });
+            await(() -> node("ton-line-editor") != null);
+            fx(
+                    () -> {
+                        button("ton-line-back").fire();
                         return null;
                     });
             await(() -> node("ton-lines-table") != null);
@@ -289,6 +361,35 @@ public final class CatalogDetailsUiProbe {
             } catch (SQLException expected) {
             }
         }
+    }
+
+    private void assertRefreshOnRight(String kind) {
+        layout();
+        var button = node("ton-" + kind + "-reload");
+        var editor = node("ton-" + kind + "-editor");
+        assertTrue(
+                button.localToScene(button.getBoundsInLocal()).getMaxX()
+                        > editor.localToScene(editor.getBoundsInLocal()).getMaxX() - 40);
+    }
+
+    private void assertParentBesideStatus(String kind) {
+        var button = node("ton-" + kind + "-open-parent");
+        var status = node("ton-" + kind + "-status");
+        assertSame(status.getParent(), button.getParent());
+        assertFalse(button.isDisabled());
+        assertTrue(button.getBoundsInParent().getMinX() > status.getBoundsInParent().getMaxX());
+    }
+
+    private void assertEvenColumns(TableView<?> table) {
+        double min =
+                table.getColumns().stream().mapToDouble(TableColumn::getWidth).min().orElseThrow();
+        double max =
+                table.getColumns().stream().mapToDouble(TableColumn::getWidth).max().orElseThrow();
+        double sum = table.getColumns().stream().mapToDouble(TableColumn::getWidth).sum();
+        assertTrue(max - min <= 2, "Columns should share the width evenly: " + min + ".." + max);
+        assertTrue(
+                sum >= table.getWidth() - 25 && sum <= table.getWidth() + 2,
+                "Columns must fill the table: " + sum + " / " + table.getWidth());
     }
 
     private MouseEvent doubleClick() {
