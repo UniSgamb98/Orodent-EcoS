@@ -108,9 +108,14 @@ public final class PowderPricesView extends CostsShell {
         unknown.setWrapText(true);
         unknown.setVisible(false);
         unknown.setManaged(false);
-        catalogue
-                .getChildren()
-                .addAll(colorBar, supplier, new FlowPane(10, 8, inactive, refresh), table, unknown);
+        supplier.setMinWidth(0);
+        inactive.setMinWidth(Region.USE_PREF_SIZE);
+        refresh.setMinWidth(Region.USE_PREF_SIZE);
+        HBox supplierFilters = new HBox(10, supplier, inactive, refresh);
+        supplierFilters.setId("costi-supplier-filters");
+        supplierFilters.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(supplier, Priority.ALWAYS);
+        catalogue.getChildren().addAll(colorBar, supplierFilters, table, unknown);
         catalogue.getStyleClass().add("costs-card");
         catalogue.setMinSize(0, 0);
         VBox.setVgrow(table, Priority.ALWAYS);

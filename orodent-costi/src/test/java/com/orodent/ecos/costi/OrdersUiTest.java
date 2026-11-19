@@ -395,7 +395,43 @@ class OrdersUiTest {
                                 view.table.scrollTo(0);
                                 layout(view);
                                 checkBands(view, true);
-                                view.search.setText("ORDER-C");
+                                // Only order C remains open; filtering must restart the color
+                                // bands.
+                                var delivered =
+                                        stored.stream()
+                                                .map(
+                                                        item -> {
+                                                            if (item.row()
+                                                                    .key()
+                                                                    .order()
+                                                                    .equals("ORDER-C")) return item;
+                                                            Row r = item.row();
+                                                            return new Stored(
+                                                                    item.id(),
+                                                                    item.version(),
+                                                                    item.powderId(),
+                                                                    new Row(
+                                                                            r.key(),
+                                                                            r.orderDate(),
+                                                                            r.expected(),
+                                                                            r.code(),
+                                                                            r.description(),
+                                                                            r.ordered(),
+                                                                            r.ordered(),
+                                                                            BigDecimal.ZERO,
+                                                                            r.price()),
+                                                                    null,
+                                                                    false);
+                                                        })
+                                                .toList();
+                                view.openOnly.setSelected(false);
+                                view.catalogue(
+                                        new OrderService.Catalogue(
+                                                delivered,
+                                                List.of(
+                                                        new Powder(
+                                                                1, "WHITE", "White", "BIANCA"))));
+                                view.openOnly.fire();
                                 layout(view);
                                 assertEquals(3, view.table.getItems().size());
                                 for (var node : view.table.lookupAll(".table-row-cell")) {
@@ -408,7 +444,7 @@ class OrdersUiTest {
                                                                         .getPseudoClass(
                                                                                 "alternate-order")));
                                 }
-                                view.search.clear();
+                                view.openOnly.fire();
                                 layout(view);
                                 checkBands(view, true);
                             } finally {

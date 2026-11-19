@@ -42,3 +42,5 @@
 #costi-orders-module #orders-table .table-row-cell:alternate-order { -fx-background-color: #eaf2f7; }
 #costi-orders-module #orders-table .table-row-cell:selected { -fx-background-color: #cce6ee; }
 #costi-orders-module .orders-help-button { -fx-padding: 4px 8px; -fx-font-weight: bold; -fx-background-radius: 12px; }
+
+#costi-orders-module #orders-table .table-row-cell:alternate-order .table-cell { -fx-border-color: transparent transparent white transparent; }

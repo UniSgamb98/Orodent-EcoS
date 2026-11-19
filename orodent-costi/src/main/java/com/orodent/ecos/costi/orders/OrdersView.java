@@ -22,7 +22,6 @@ public final class OrdersView extends CostsShell {
             cancel = new Button("Chiudi anteprima");
     public final ComboBox<String> encoding = new ComboBox<>();
     public final CheckBox openOnly = new CheckBox("Solo righe da ricevere");
-    public final TextField search = new TextField();
     public final TableView<Stored> table = new TableView<>();
     public final Label feedback = new Label();
     public final OrderImportPreview previewPane = new OrderImportPreview(apply, cancel);
@@ -49,11 +48,8 @@ public final class OrdersView extends CostsShell {
         getStylesheets().add(OrdersView.class.getResource("/costi/orders.css").toExternalForm());
         encoding.getItems().setAll("UTF-8", "windows-1252");
         encoding.setValue("UTF-8");
-        search.setPromptText("Cerca ordine, fornitore o polvere");
-        search.setPrefWidth(280);
         openOnly.setSelected(true);
         openOnly.setOnAction(e -> filter());
-        search.textProperty().addListener((o, b, a) -> filter());
 
         var originalDate = column(table, "Data", 96, s -> s.row().expected(), OrdersView::date);
         originalDate.setComparator(Comparator.nullsLast(Comparator.naturalOrder()));
@@ -127,9 +123,7 @@ public final class OrdersView extends CostsShell {
         Label section = new Label("Polveri in ordine");
         section.getStyleClass().add("orders-section-title");
         orderCount.getStyleClass().add("orders-count");
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox sectionHeader = new HBox(10, section, spacer, orderCount);
+        HBox sectionHeader = new HBox(12, section, openOnly, orderCount);
         sectionHeader.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         importCsv.getStyleClass().add("primary-button");
         encoding.setPrefWidth(120);
@@ -139,13 +133,29 @@ public final class OrdersView extends CostsShell {
         help.setAccessibleText("Formato CSV ordini");
         help.setTooltip(new Tooltip("Colonne e formato del CSV"));
         help.setOnAction(event -> showCsvHelp());
-        FlowPane toolbar = new FlowPane(10, 8, importCsv, encoding, refresh, help);
+        HBox toolbar = new HBox(10, importCsv, encoding, refresh, help);
         toolbar.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
-        toolbar.setPrefWrapLength(450);
+        toolbar.setMinWidth(Region.USE_PREF_SIZE);
+        FlowPane header = new FlowPane(12, 8, sectionHeader, toolbar);
+        header.setId("orders-card-header");
+        header.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        sectionHeader
+                .prefWidthProperty()
+                .bind(
+                        javafx.beans.binding.Bindings.createDoubleBinding(
+                                () ->
+                                        Math.max(
+                                                section.prefWidth(-1)
+                                                        + openOnly.prefWidth(-1)
+                                                        + orderCount.prefWidth(-1)
+                                                        + 24,
+                                                header.getWidth()
+                                                        - toolbar.prefWidth(-1)
+                                                        - header.getHgap()),
+                                header.widthProperty(),
+                                orderCount.textProperty()));
         ordersPane.setId("orders-saved-card");
-        ordersPane
-                .getChildren()
-                .addAll(sectionHeader, toolbar, new FlowPane(10, 8, search, openOnly), table);
+        ordersPane.getChildren().addAll(header, table);
         ordersPane.setMinSize(0, 0);
         previewPane.setId("orders-preview");
         previewPane.setMinSize(0, 0);
@@ -260,7 +270,6 @@ public final class OrdersView extends CostsShell {
     }
 
     private void filter() {
-        String q = search.getText().strip().toLowerCase(Locale.ROOT);
         Stored selected = table.getSelectionModel().getSelectedItem();
         table.getItems()
                 .setAll(
@@ -269,15 +278,6 @@ public final class OrdersView extends CostsShell {
                                         s ->
                                                 !openOnly.isSelected()
                                                         || s.row().remaining().signum() > 0)
-                                .filter(
-                                        s ->
-                                                (s.row().key()
-                                                                + " "
-                                                                + s.row().code()
-                                                                + " "
-                                                                + powders.get(s.powderId()))
-                                                        .toLowerCase(Locale.ROOT)
-                                                        .contains(q))
                                 .toList());
         table.sort();
         if (selected != null && table.getItems().contains(selected))
