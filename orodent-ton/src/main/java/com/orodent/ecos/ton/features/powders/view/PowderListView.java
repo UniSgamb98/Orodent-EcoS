@@ -14,13 +14,9 @@ public final class PowderListView extends VBox {
     private final TextField search = new TextField();
     private final CheckBox inactive = new CheckBox("Mostra anche archiviate");
     private final TableView<Row> table = new TableView<>();
-    private final Label result = new Label();
     private final Label feedback = new Label();
     private final Button create = button("Nuova polvere", "ton-powder-new", "primary-button");
-    private final Button open = button("Apri scheda", "ton-powder-open", "primary-button");
-    private final Button refresh = button("Ricarica", "ton-powders-refresh", "secondary-button");
-    private final Button previous = button("←", "ton-powders-previous", "secondary-button");
-    private final Button next = button("→", "ton-powders-next", "secondary-button");
+    private final Button refresh = button("Aggiorna", "ton-powders-refresh", "secondary-button");
 
     public PowderListView() {
         super(14);
@@ -69,30 +65,14 @@ public final class PowderListView extends VBox {
         feedback.setId("ton-powders-feedback");
         feedback.setWrapText(true);
         feedback.getStyleClass().add("ton-error-feedback");
-        Region gap = new Region();
-        HBox.setHgrow(gap, Priority.ALWAYS);
-        HBox pages = new HBox(10, result, gap, previous, next);
-        pages.setAlignment(Pos.CENTER_LEFT);
-        previous.setAccessibleText("Pagina precedente");
-        next.setAccessibleText("Pagina successiva");
-        open.setDisable(true);
-        getChildren()
-                .setAll(
-                        header,
-                        new HBox(10, search, refresh),
-                        inactive,
-                        table,
-                        pages,
-                        open,
-                        feedback);
+        feedback.visibleProperty().bind(feedback.textProperty().isNotEmpty());
+        feedback.managedProperty().bind(feedback.visibleProperty());
+        getChildren().setAll(header, new HBox(10, search, refresh), inactive, table, feedback);
     }
 
     public void showLoading() {
         table.setDisable(true);
         refresh.setDisable(true);
-        previous.setDisable(true);
-        next.setDisable(true);
-        result.setText("Caricamento…");
         feedback.setText("");
     }
 
@@ -100,23 +80,12 @@ public final class PowderListView extends VBox {
         table.getItems().setAll(page.rows());
         table.setDisable(false);
         refresh.setDisable(false);
-        previous.setDisable(page.offset() == 0);
-        next.setDisable(!page.hasNext());
-        result.setText(
-                page.total() == 0
-                        ? "0 polveri"
-                        : (page.offset() + 1)
-                                + "–"
-                                + (page.offset() + page.rows().size())
-                                + " di "
-                                + page.total());
         feedback.setText("");
     }
 
     public void showError(String message) {
         table.setDisable(false);
         refresh.setDisable(false);
-        result.setText("Elenco non aggiornato");
         feedback.setText(message);
     }
 
@@ -159,19 +128,7 @@ public final class PowderListView extends VBox {
         return create;
     }
 
-    public Button open() {
-        return open;
-    }
-
     public Button refresh() {
         return refresh;
-    }
-
-    public Button previous() {
-        return previous;
-    }
-
-    public Button next() {
-        return next;
     }
 }

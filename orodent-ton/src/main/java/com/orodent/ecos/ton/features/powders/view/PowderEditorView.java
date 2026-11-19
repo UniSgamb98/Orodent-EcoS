@@ -54,8 +54,8 @@ public final class PowderEditorView extends VBox {
         setId("ton-powder-editor");
         getStyleClass().add("ton-powder-page");
         setMinWidth(0);
-        back.getStyleClass().add("ton-powder-back-link");
-        reload.getStyleClass().add("ton-powder-refresh");
+        back.getStyleClass().add("ton-editor-back-link");
+        reload.getStyleClass().add("ton-editor-refresh");
         back.setMinWidth(Region.USE_PREF_SIZE);
         reload.setMinWidth(Region.USE_PREF_SIZE);
         status.setId("ton-powder-state");
@@ -170,7 +170,7 @@ public final class PowderEditorView extends VBox {
         feedback.visibleProperty().bind(feedback.textProperty().isNotEmpty());
         feedback.managedProperty().bind(feedback.visibleProperty());
         FlowPane actions = new FlowPane(10, 8, cancel, save, identitySave, approve, retire);
-        actions.getStyleClass().add("ton-powder-actions");
+        actions.getStyleClass().add("ton-editor-actions");
         Region gap = new Region();
         HBox.setHgrow(gap, Priority.ALWAYS);
         HBox top = new HBox(12, back, gap, reload);
@@ -227,9 +227,9 @@ public final class PowderEditorView extends VBox {
                                 + ": "
                                 + (revision.state() == State.BOZZA
                                         ? "modificabile. La scheda approvata precedente resta"
-                                              + " disponibile."
+                                                + " disponibile."
                                         : "caratteristiche e ossidi in sola lettura. L'anagrafica"
-                                              + " resta modificabile."));
+                                                + " resta modificabile."));
         visible(save, !locked);
         visible(approve, !locked);
         visible(identitySave, locked);

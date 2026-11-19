@@ -36,6 +36,16 @@ public final class CatalogService {
                                                         PAGE_SIZE)));
     }
 
+    /** Complete related catalogue for views without page controls. */
+    public CompletableFuture<Page> catalogue(CatalogKind kind, Filter filter) {
+        return read(
+                () ->
+                        connections.withConnection(
+                                c ->
+                                        new CatalogRepository(c)
+                                                .page(kind, filter, 0, Integer.MAX_VALUE)));
+    }
+
     public CompletableFuture<Detail> load(CatalogKind kind, long id) {
         return read(
                 () ->

@@ -136,6 +136,10 @@ final class TonController {
             return;
         }
         var page = new CatalogView(route.kind());
+        page.subpageProperty()
+                .addListener(
+                        (observable, before, subpage) ->
+                                view.showFeature(page, route.kind().feature(), subpage));
         var controller =
                 new CatalogController(
                         route.kind(), page, catalogues, specifications, this::openCatalogue);

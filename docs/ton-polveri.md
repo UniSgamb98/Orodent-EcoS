@@ -14,7 +14,11 @@ visibile anche nell'elenco. Le colonne distinguono l'ultima versione
 approvata dall'eventuale bozza; la classe Y mostrata appartiene alla scheda
 approvata, se presente, altrimenti alla versione più recente.
 
-Con **Nuova polvere** o **Apri scheda** si entra nell'editor a quattro schede:
+L’elenco è unico e scorrevole, senza contatore, frecce di pagina o pulsante di
+apertura. Tutte le polveri che corrispondono ai filtri restano accessibili,
+anche oltre i primi 50 risultati. **Aggiorna** rilegge i dati correnti.
+
+Con **Nuova polvere**, doppio clic sulla riga o Invio si entra nell'editor a quattro schede:
 
 - **Anagrafica**: codice obbligatorio e univoco (50 caratteri), nome obbligatorio
   (100 caratteri), colore obbligatorio e stato attivo. Questi campi sono

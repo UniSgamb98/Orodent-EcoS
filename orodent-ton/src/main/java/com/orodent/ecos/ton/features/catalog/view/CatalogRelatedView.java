@@ -37,16 +37,20 @@ public final class CatalogRelatedView extends VBox {
         HBox.setHgrow(spacer, Priority.ALWAYS);
         HBox pages = new HBox(10, result, spacer, previous, next);
         pages.setAlignment(Pos.CENTER_LEFT);
-        getChildren()
-                .setAll(
-                        CatalogUi.hint(
-                                "Gli elementi vengono creati con il collegamento a questa scheda"
-                                        + " già selezionato."),
-                        new javafx.scene.layout.FlowPane(10, 8, create, bulk),
-                        table,
-                        pages,
-                        open,
-                        feedback);
+        if (owner == CatalogKind.LINES) {
+            getChildren().setAll(new FlowPane(10, 8, create, bulk), table, feedback);
+        } else {
+            getChildren()
+                    .setAll(
+                            CatalogUi.hint(
+                                    "Gli elementi vengono creati con il collegamento a questa"
+                                        + " scheda già selezionato."),
+                            new FlowPane(10, 8, create, bulk),
+                            table,
+                            pages,
+                            open,
+                            feedback);
+        }
         table.getSelectionModel()
                 .selectedItemProperty()
                 .addListener((o, a, b) -> open.setDisable(b == null));

@@ -64,9 +64,21 @@ catalogo. Per aggiungere un nuovo figlio occorrono padri attivi e completi.
 Un padre archiviato già assegnato resta visibile, senza essere proposto per nuove
 associazioni.
 
-La scheda **Prodotti tecnici** della linea elenca i prodotti collegati e permette
-di crearne uno con la linea già selezionata. La scheda **Articoli** del prodotto
+La scheda **Prodotti tecnici** della linea elenca tutti i prodotti collegati in
+un unico elenco scorrevole, anche oltre i primi 50. Non ha contatore, frecce di
+pagina o pulsante di apertura: doppio clic sulla riga o Invio apre il prodotto.
+Permette di crearne uno con la linea già selezionata. La scheda **Articoli** del prodotto
 fa lo stesso per i formati. **Apri linea / Apri prodotto** risale al padre.
+
+La scheda della linea mostra codice e nome nell’intestazione di TON, con
+**Torna alle linee** e **Aggiorna dati** a sinistra. Pannelli, campi, schede e
+pulsanti condividono la palette della scheda polvere.
+
+**Tecnologia** è un testo descrittivo facoltativo (massimo 200 caratteri), salvato
+nella linea e nelle revisioni storiche. Può descrivere, per esempio, una famiglia
+multistrato. Non imposta ricette, parametri di cottura o formule di costo. Un
+valore già compilato diventa protetto quando la linea è utilizzata; può essere
+compilato se era rimasto vuoto.
 
 ## Anagrafiche e storico
 

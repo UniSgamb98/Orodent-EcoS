@@ -39,6 +39,18 @@ public final class PowderService {
                 workers);
     }
 
+    /** Complete catalogue for the single scrolling list, with filtering on a worker. */
+    public CompletableFuture<Page> findAll(String filter, boolean inactive) {
+        String search = filter == null ? "" : filter.strip();
+        return CompletableFuture.supplyAsync(
+                () ->
+                        connections.withConnection(
+                                c ->
+                                        new PowderRepository(c)
+                                                .findPage(search, inactive, 0, Integer.MAX_VALUE)),
+                workers);
+    }
+
     public CompletableFuture<Detail> load(long id) {
         return CompletableFuture.supplyAsync(
                 () ->

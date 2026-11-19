@@ -26,6 +26,11 @@ public final class PowdersView extends BorderPane {
                         java.util.Objects.requireNonNull(
                                         getClass().getResource("/ton/css/powders.css"))
                                 .toExternalForm());
+        getStylesheets()
+                .add(
+                        java.util.Objects.requireNonNull(
+                                        getClass().getResource("/ton/css/technical-editor.css"))
+                                .toExternalForm());
         showList();
     }
 

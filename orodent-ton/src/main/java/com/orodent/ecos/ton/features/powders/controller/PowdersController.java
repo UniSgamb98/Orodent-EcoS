@@ -29,7 +29,6 @@ public final class PowdersController implements FeatureController {
     private final SimpleBooleanProperty saving = new SimpleBooleanProperty();
     private final PauseTransition debounce = new PauseTransition(Duration.millis(250));
     private final ChangeListener<String> searchListener;
-    private final ChangeListener<Row> selectionListener;
     private final ChangeListener<Revision> versionListener;
     private CompletableFuture<Page> listRead;
     private CompletableFuture<Detail> detailRead;
@@ -38,30 +37,17 @@ public final class PowdersController implements FeatureController {
     private List<String> fingerprint = List.of();
     private boolean editing;
     private volatile boolean disposed;
-    private int offset;
     private long selectedPowder;
 
     public PowdersController(PowdersView view, PowderService service) {
         this.view = view;
         this.service = service;
         searchListener = (observable, before, after) -> debounce.playFromStart();
-        selectionListener =
-                (observable, before, after) -> view.list().open().setDisable(after == null);
         view.list().search().textProperty().addListener(searchListener);
-        view.list()
-                .table()
-                .getSelectionModel()
-                .selectedItemProperty()
-                .addListener(selectionListener);
-        debounce.setOnFinished(event -> reloadList(0));
-        view.list().search().setOnAction(event -> reloadList(0));
-        view.list().inactive().setOnAction(event -> reloadList(0));
-        view.list().refresh().setOnAction(event -> reloadList(offset));
-        view.list()
-                .previous()
-                .setOnAction(event -> reloadList(Math.max(0, offset - PowderService.PAGE_SIZE)));
-        view.list().next().setOnAction(event -> reloadList(offset + PowderService.PAGE_SIZE));
-        view.list().open().setOnAction(event -> openSelected());
+        debounce.setOnFinished(event -> reloadList());
+        view.list().search().setOnAction(event -> reloadList());
+        view.list().inactive().setOnAction(event -> reloadList());
+        view.list().refresh().setOnAction(event -> reloadList());
         view.list()
                 .table()
                 .setOnMouseClicked(
@@ -98,7 +84,7 @@ public final class PowdersController implements FeatureController {
                                 cancelDetail();
                                 editing = false;
                                 view.showList();
-                                reloadList(offset);
+                                reloadList();
                             }
                         });
         editor.reload()
@@ -167,7 +153,7 @@ public final class PowdersController implements FeatureController {
     }
 
     public void loadInitialData() {
-        reloadList(0);
+        reloadList();
     }
 
     @Override
@@ -192,17 +178,14 @@ public final class PowdersController implements FeatureController {
         return alert.showAndWait().orElse(ButtonType.NO) == ButtonType.YES;
     }
 
-    private void reloadList(int nextOffset) {
+    private void reloadList() {
         if (disposed || editing) return;
         debounce.stop();
         if (listRead != null) listRead.cancel(false);
-        offset = nextOffset;
         view.list().showLoading();
         CompletableFuture<Page> future =
-                service.findPage(
-                        view.list().search().getText(),
-                        view.list().inactive().isSelected(),
-                        offset);
+                service.findAll(
+                        view.list().search().getText(), view.list().inactive().isSelected());
         listRead = future;
         future.whenComplete(
                 (page, error) -> {
@@ -213,12 +196,6 @@ public final class PowdersController implements FeatureController {
                                 listRead = null;
                                 if (error != null) {
                                     view.list().showError(message(error));
-                                    return;
-                                }
-                                if (page.rows().isEmpty() && page.total() > 0 && offset > 0) {
-                                    reloadList(
-                                            (int) ((page.total() - 1) / PowderService.PAGE_SIZE)
-                                                    * PowderService.PAGE_SIZE);
                                     return;
                                 }
                                 view.list().showPage(page);
@@ -377,22 +354,14 @@ public final class PowdersController implements FeatureController {
         cancelReads();
         debounce.setOnFinished(null);
         view.list().search().textProperty().removeListener(searchListener);
-        view.list()
-                .table()
-                .getSelectionModel()
-                .selectedItemProperty()
-                .removeListener(selectionListener);
         view.list().search().setOnAction(null);
         view.list().inactive().setOnAction(null);
         view.list().table().setOnMouseClicked(null);
         view.list().table().setOnKeyPressed(null);
         for (var button :
                 List.of(
-                        view.list().open(),
                         view.list().create(),
                         view.list().refresh(),
-                        view.list().previous(),
-                        view.list().next(),
                         view.editor().back(),
                         view.editor().reload(),
                         view.editor().cancel(),

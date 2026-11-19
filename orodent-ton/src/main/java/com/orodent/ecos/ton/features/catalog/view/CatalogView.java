@@ -2,6 +2,9 @@ package com.orodent.ecos.ton.features.catalog.view;
 
 import com.orodent.ecos.ton.features.catalog.model.CatalogKind;
 
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 
@@ -10,6 +13,7 @@ import java.util.Objects;
 public final class CatalogView extends BorderPane {
     private final CatalogListView list;
     private final CatalogEditorView editor;
+    private final ReadOnlyStringWrapper subpage = new ReadOnlyStringWrapper("");
 
     public CatalogView(CatalogKind kind) {
         setId("ton-" + kind.pluralId() + "-view");
@@ -21,7 +25,23 @@ public final class CatalogView extends BorderPane {
                                 .toExternalForm());
         list = new CatalogListView(kind);
         editor = new CatalogEditorView(kind);
+        if (kind == CatalogKind.LINES) {
+            getStylesheets()
+                    .add(
+                            Objects.requireNonNull(
+                                            getClass().getResource("/ton/css/technical-editor.css"))
+                                    .toExternalForm());
+            subpage.bind(
+                    Bindings.createStringBinding(
+                            () -> getCenter() == editor ? editor.headerTitleProperty().get() : "",
+                            centerProperty(),
+                            editor.headerTitleProperty()));
+        }
         showList();
+    }
+
+    public ReadOnlyStringProperty subpageProperty() {
+        return subpage.getReadOnlyProperty();
     }
 
     public CatalogListView list() {

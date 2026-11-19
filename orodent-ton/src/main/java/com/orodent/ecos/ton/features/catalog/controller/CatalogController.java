@@ -202,6 +202,32 @@ public final class CatalogController implements FeatureController {
                         Entry e = related.table().getSelectionModel().getSelectedItem();
                         if (e != null) navigate.accept(Navigation.open(kind.child(), e.id()));
                     });
+            related.table()
+                    .setRowFactory(
+                            ignored -> {
+                                TableRow<Entry> row = new TableRow<>();
+                                row.setOnMouseClicked(
+                                        event -> {
+                                            if (event.getButton()
+                                                            == javafx.scene.input.MouseButton
+                                                                    .PRIMARY
+                                                    && event.getClickCount() == 2
+                                                    && !row.isEmpty()) {
+                                                navigate.accept(
+                                                        Navigation.open(
+                                                                kind.child(), row.getItem().id()));
+                                            }
+                                        });
+                                return row;
+                            });
+            related.table()
+                    .setOnKeyPressed(
+                            event -> {
+                                if (event.getCode() == KeyCode.ENTER) {
+                                    related.open().fire();
+                                    event.consume();
+                                }
+                            });
             on(
                     related.previous(),
                     () -> loadRelated(Math.max(0, relatedOffset - CatalogService.PAGE_SIZE)));
@@ -433,7 +459,10 @@ public final class CatalogController implements FeatureController {
                         : new Filter("", true, null, original.entry().id(), null, null);
         read(
                 "related",
-                () -> service.page(kind.child(), filter, relatedOffset),
+                () ->
+                        kind == CatalogKind.LINES
+                                ? service.catalogue(kind.child(), filter)
+                                : service.page(kind.child(), filter, relatedOffset),
                 related::show,
                 e -> related.error(message(e)));
     }

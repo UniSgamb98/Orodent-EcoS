@@ -3,6 +3,7 @@ package com.orodent.ecos.ton.features.catalog.view;
 import com.orodent.ecos.ton.features.catalog.model.CatalogKind;
 import com.orodent.ecos.ton.features.catalog.model.CatalogModels.*;
 
+import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -45,7 +46,16 @@ public final class CatalogEditorView extends VBox {
                         "← Elenco " + kind.title().toLowerCase(Locale.ITALIAN),
                         base + "-back",
                         false);
-        reload = CatalogUi.button("Ricarica scheda", base + "-reload", false);
+        reload =
+                CatalogUi.button(
+                        kind == CatalogKind.LINES ? "Aggiorna dati" : "Ricarica scheda",
+                        base + "-reload",
+                        false);
+        if (kind == CatalogKind.LINES) {
+            back.setText("← Torna alle linee");
+            back.getStyleClass().add("ton-editor-back-link");
+            reload.getStyleClass().add("ton-editor-refresh");
+        }
         parent =
                 CatalogUi.button(
                         kind == CatalogKind.ARTICLES ? "Apri prodotto" : "Apri linea",
@@ -72,10 +82,13 @@ public final class CatalogEditorView extends VBox {
             tab("Specifiche di produzione", Sheet.SPECIFICATIONS, specifications);
         tab("Storico", Sheet.HISTORY, history);
         actions = new FlowPane(10, 8, cancel, save, archive, delete);
+        actions.getStyleClass().add("ton-editor-actions");
         feedback = CatalogUi.feedback(base + "-feedback");
         HBox toolbar = new HBox(10, back, reload, parent);
         toolbar.setAlignment(Pos.CENTER_LEFT);
-        getChildren().setAll(toolbar, heading, status, tabs, actions, feedback);
+        if (kind == CatalogKind.LINES)
+            getChildren().setAll(toolbar, status, tabs, actions, feedback);
+        else getChildren().setAll(toolbar, heading, status, tabs, actions, feedback);
         tabs.getSelectionModel()
                 .selectedItemProperty()
                 .addListener((o, a, b) -> CatalogUi.visible(actions, sheet() == Sheet.GENERAL));
@@ -110,7 +123,7 @@ public final class CatalogEditorView extends VBox {
             delete.setTooltip(
                     new Tooltip(
                             "Eliminabile solo se mai utilizzato e senza revisioni precedenti. Negli"
-                                + " altri casi usa Archivia."));
+                                    + " altri casi usa Archivia."));
             CatalogUi.visible(parent, kind.parent() != null);
             parent.setDisable(e == null || form.parent() == null || form.parent().id() == null);
             save.setText(e == null ? "Crea " + kind.singular() : "Salva revisione");
@@ -121,6 +134,10 @@ public final class CatalogEditorView extends VBox {
         } finally {
             updating = false;
         }
+    }
+
+    public ReadOnlyStringProperty headerTitleProperty() {
+        return heading.textProperty();
     }
 
     public Sheet sheet() {
