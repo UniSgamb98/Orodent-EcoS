@@ -1,4 +1,4 @@
-.costs-module { -fx-background-color: #f3f6fa; -fx-font-family: "Segoe UI", Arial, sans-serif; -fx-font-size: 13px; }
+.costs-module { -fx-background-color: #e3edf3; -fx-font-family: "Segoe UI", Arial, sans-serif; -fx-font-size: 13px; }
 .costs-module > .app-header { -fx-padding: 12px 24px; }
 .costs-module .costs-sidebar { -fx-min-width: 188px; -fx-pref-width: 208px; -fx-max-width: 208px; -fx-padding: 22px 12px; -fx-background-color: white; -fx-border-color: transparent #dce5ed transparent transparent; }
 .costs-module .costs-nav { -fx-alignment: center-left; -fx-padding: 13px 10px; -fx-background-color: transparent; -fx-background-radius: 7px; -fx-text-fill: #405a71; }

@@ -7,7 +7,7 @@
 #costi-module .costs-nav { -fx-background-color: transparent; -fx-alignment: center-left; -fx-padding: 13px 10px; }
 #costi-module .costs-nav-selected { -fx-background-color: #e0eff3; -fx-text-fill: #176d86; }
 #costi-module .powder-color-filter { -fx-padding: 6px 8px; -fx-background-radius: 5px; -fx-border-radius: 5px; }
-#costi-module .powder-badge { -fx-padding: 6px 7px; -fx-background-radius: 5px; -fx-border-radius: 5px; }
+#costi-module .powder-badge { -fx-padding: 4px 7px; -fx-background-radius: 5px; -fx-border-radius: 5px; }
 #costi-module .powder-detail-identity { -fx-padding: 8px 10px; -fx-background-radius: 6px; -fx-border-radius: 6px; }
 #costi-module .powder-white { -fx-background-color: #f6f6f0; -fx-border-color: #deded2; }
 #costi-module .powder-yellow { -fx-background-color: #fff1b8; -fx-border-color: #eddf9e; }

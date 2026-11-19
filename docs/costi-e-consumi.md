@@ -187,9 +187,12 @@ rimangono nel modulo Costi. Nessuna esportazione modifica ricette, prezzi o scen
 
 ## Ordini di approvvigionamento
 
-Aprire **Ordini in arrivo**, oppure il pulsante in **Polveri e prezzi**.
+Aprire **Ordini in arrivo** dal menu laterale. Il titolo della pagina compare
+nell’intestazione del modulo, come per **Polveri e prezzi**.
 **Importa CSV ordini** legge il formato del gestionale con separatore `;`, UTF-8
 (anche BOM) o Windows-1252, date `gg/mm/aaaa`, quantità KG/KG. e prezzo netto €/kg.
+I comandi di importazione, codifica e aggiornamento sono nel pannello **Polveri
+in ordine**. Il mini pulsante **?** apre le istruzioni del CSV.
 Intestazioni richieste:
 
 ```text
@@ -212,7 +215,12 @@ della riga senza occupare colonne.
 La polvere ha uno sfondo pastello coerente con il colore della scheda TON,
 anche quando il CSV usa un codice fornitore associato. Le schede senza colore
 e i codici ancora da collegare rimangono neutri: non si deduce il colore dal nome.
-La stessa evidenza compare nell'anteprima e nelle scelte di collegamento.
+La stessa evidenza compare nell'anteprima e nelle scelte di collegamento, dove
+il colore riempie tutta la larghezza dell’opzione. Le polveri sono ordinate per
+fornitore TON, poi Bianca, Gialla, Rosa, Grigia e infine codice alfabetico;
+fornitori e colori non specificati restano in fondo ai rispettivi gruppi.
+Lo sfondo dell’elenco alterna bianco e azzurro per ordine (fornitore + numero),
+conservando lo stesso colore per tutte le sue posizioni anche dopo filtri e ordinamenti.
 
 La pagina utilizza l'altezza disponibile della finestra: le tabelle crescono
 insieme ai pannelli e i comandi dell'importazione rimangono visibili in basso.
@@ -236,9 +244,9 @@ le righe cambiate e lascia invariate le identiche, senza duplicarle. Le righe
 assenti dal file restano presenti. Tutta l'importazione è atomica e versionata;
 se nel frattempo i dati cambiano occorre ricaricare l'anteprima.
 
-**Data prevista / esclusione** consente una nuova data concordata o l'esclusione
-dalle simulazioni. Queste scelte sopravvivono alle reimportazioni; selezionare
-**Usa la data del CSV** per rimuovere la data manuale. Il residuo da ricevere è
+La modifica manuale della consegna non è più disponibile nell’interfaccia.
+Le eventuali date manuali ed esclusioni già archiviate restano conservate.
+Le consegne nuove si aggiornano importando i dati del gestionale. Il residuo da ricevere è
 `Da consegn.`: il consegnato non carica automaticamente il magazzino.
 Il file ordini non contiene lotti; la futura importazione dei documenti d'acquisto
 per compilare i lotti del magazzino rimane da definire con un esempio reale.
@@ -290,7 +298,7 @@ consegna dalla data della fotografia in poi. Non c'è un orizzonte temporale di
 costo: la media include tutti gli arrivi futuri scelti. Righe escluse, consegnate,
 scadute o senza data non partecipano. Il popup distingue i singoli contributi,
 riporta documento/posizione e revisione, e segnala righe scadute/senza data omesse.
-Per includerle bisogna aggiornare la data in **Ordini in arrivo** e ricaricare.
+Per includerle bisogna importare date aggiornate dal gestionale e ricaricare.
 La stima non carica il magazzino né altera gli ordini.
 
 Totale sconosciuto, lotti oltre il totale, riferimento mancante per la parte non

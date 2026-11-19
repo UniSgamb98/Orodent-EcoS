@@ -5,6 +5,8 @@ import static com.orodent.ecos.costi.orders.OrderTableSupport.*;
 import com.orodent.ecos.costi.orders.PowderOrders.*;
 import com.orodent.ecos.costi.view.*;
 
+import javafx.collections.ListChangeListener;
+import javafx.css.PseudoClass;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
@@ -17,8 +19,7 @@ public final class OrdersView extends CostsShell {
     public final Button refresh = new Button("Aggiorna"),
             importCsv = new Button("Importa CSV ordini"),
             apply = new Button("Conferma importazione"),
-            cancel = new Button("Chiudi anteprima"),
-            edit = new Button("Data prevista / esclusione");
+            cancel = new Button("Chiudi anteprima");
     public final ComboBox<String> encoding = new ComboBox<>();
     public final CheckBox openOnly = new CheckBox("Solo righe da ricevere");
     public final TextField search = new TextField();
@@ -31,6 +32,12 @@ public final class OrdersView extends CostsShell {
     private final Tab savedTab = new Tab("Ordini salvati"), importTab = new Tab("Importazione CSV");
     private final Label orderCount = new Label();
     private final VBox ordersPane = new VBox(10);
+
+    private record OrderGroup(String supplier, String order) {}
+
+    private static final PseudoClass ALTERNATE_ORDER =
+            PseudoClass.getPseudoClass("alternate-order");
+    private final Map<OrderGroup, Boolean> orderBands = new HashMap<>();
     private List<Stored> rows = List.of();
     private Map<Long, Powder> powders = Map.of();
     private String layoutMode = "";
@@ -50,7 +57,6 @@ public final class OrdersView extends CostsShell {
 
         var originalDate = column(table, "Data", 96, s -> s.row().expected(), OrdersView::date);
         originalDate.setComparator(Comparator.nullsLast(Comparator.naturalOrder()));
-        originalDate.setGraphic(info("Data originale Cons. prev. del CSV."));
         var order =
                 column(
                         table,
@@ -105,12 +111,18 @@ public final class OrdersView extends CostsShell {
                             @Override
                             protected void updateItem(Stored item, boolean empty) {
                                 super.updateItem(item, empty);
+                                pseudoClassStateChanged(
+                                        ALTERNATE_ORDER,
+                                        !empty
+                                                && item != null
+                                                && orderBands.getOrDefault(group(item), false));
                                 setTooltip(
                                         empty || item == null
                                                 ? null
                                                 : new Tooltip(orderDetails(item)));
                             }
                         });
+        table.getItems().addListener((ListChangeListener<Stored>) change -> updateOrderBands());
         ordersPane.getStyleClass().add("orders-card");
         Label section = new Label("Polveri in ordine");
         section.getStyleClass().add("orders-section-title");
@@ -119,11 +131,21 @@ public final class OrdersView extends CostsShell {
         HBox.setHgrow(spacer, Priority.ALWAYS);
         HBox sectionHeader = new HBox(10, section, spacer, orderCount);
         sectionHeader.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-        edit.setText("Modifica consegna");
-        edit.setTooltip(new Tooltip("Data prevista ed esclusione dalle previsioni"));
+        importCsv.getStyleClass().add("primary-button");
+        encoding.setPrefWidth(120);
+        Button help = new Button("?");
+        help.setId("orders-csv-help");
+        help.getStyleClass().add("orders-help-button");
+        help.setAccessibleText("Formato CSV ordini");
+        help.setTooltip(new Tooltip("Colonne e formato del CSV"));
+        help.setOnAction(event -> showCsvHelp());
+        FlowPane toolbar = new FlowPane(10, 8, importCsv, encoding, refresh, help);
+        toolbar.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+        toolbar.setPrefWrapLength(450);
+        ordersPane.setId("orders-saved-card");
         ordersPane
                 .getChildren()
-                .addAll(sectionHeader, new FlowPane(10, 8, search, openOnly, edit), table);
+                .addAll(sectionHeader, toolbar, new FlowPane(10, 8, search, openOnly), table);
         ordersPane.setMinSize(0, 0);
         previewPane.setId("orders-preview");
         previewPane.setMinSize(0, 0);
@@ -142,28 +164,7 @@ public final class OrdersView extends CostsShell {
         feedback.visibleProperty().bind(feedback.textProperty().isNotEmpty());
         feedback.managedProperty().bind(feedback.visibleProperty());
         feedback.getStyleClass().add("orders-feedback");
-        Label title = new Label("Ordini in arrivo");
-        title.getStyleClass().add("costs-title");
-        Label subtitle = new Label("Consegne delle polveri e importazione degli ordini");
-        subtitle.getStyleClass().add("costs-muted");
-        importCsv.getStyleClass().add("primary-button");
-        encoding.setPrefWidth(120);
-        Label help =
-                info(
-                        "Data: Cons. prev. originale del CSV. Data prevista: consegna attesa; *"
-                            + " indica una data manuale.\n"
-                            + "Quantità in kg e prezzi €/kg. Ordinamento iniziale per consegna,"
-                            + " ordine e posizione.\n"
-                            + "Nessun carico automatico di magazzino. L'importazione si conferma"
-                            + " solo dopo l'anteprima.");
-        var toolbar = new FlowPane(10, 8, importCsv, encoding, refresh, help);
-        var heading = new VBox(4, title, subtitle);
-        heading.setPrefWidth(370);
-        toolbar.setPrefWrapLength(450);
-        var top = new FlowPane(18, 10, heading, toolbar);
-        top.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-        top.getStyleClass().add("orders-page-heading");
-        var content = new VBox(14, top, workspace, feedback);
+        var content = new VBox(14, workspace, feedback);
         content.setMinSize(0, 0);
         content.setStyle("-fx-padding: 18 22;");
         VBox.setVgrow(workspace, Priority.ALWAYS);
@@ -206,6 +207,47 @@ public final class OrdersView extends CostsShell {
             workspace.setCenter(compactTabs);
             compactTabs.getSelectionModel().select(importTab);
         }
+    }
+
+    private static OrderGroup group(Stored row) {
+        return new OrderGroup(row.row().key().supplier(), row.row().key().order());
+    }
+
+    private void updateOrderBands() {
+        orderBands.clear();
+        for (Stored row : table.getItems()) {
+            OrderGroup key = group(row);
+            if (!orderBands.containsKey(key)) orderBands.put(key, orderBands.size() % 2 == 1);
+        }
+        table.refresh();
+    }
+
+    private void showCsvHelp() {
+        Alert help = new Alert(Alert.AlertType.INFORMATION);
+        if (getScene() != null) help.initOwner(getScene().getWindow());
+        help.setTitle("Formato CSV ordini");
+        help.setHeaderText("Colonne richieste");
+        String columns =
+                new OrderCsvMapper()
+                        .requiredColumns().stream()
+                                .sorted()
+                                .collect(java.util.stream.Collectors.joining("\n"));
+        TextArea text =
+                new TextArea(
+                        columns
+                                + "\n\n"
+                                + "Separatore: punto e virgola (;).\n"
+                                + "Date: gg/mm/aaaa. Cons. prev. può essere vuota.\n"
+                                + "Un. Mis.: KG. Quantità in kg e UnitValue in €/kg.\n"
+                                + "Decimali con virgola o punto, senza separatori delle migliaia.\n"
+                                + "Seleziona la codifica del file (UTF-8 o windows-1252).\n"
+                                + "L'importazione viene confermata dopo l'anteprima e non carica il"
+                                + " magazzino.");
+        text.setEditable(false);
+        text.setWrapText(true);
+        text.setPrefSize(540, 420);
+        help.getDialogPane().setContent(text);
+        help.showAndWait();
     }
 
     public void catalogue(OrderService.Catalogue catalogue) {
@@ -294,7 +336,6 @@ public final class OrdersView extends CostsShell {
     public void busy(boolean busy) {
         importCsv.setDisable(busy);
         refresh.setDisable(busy);
-        edit.setDisable(busy);
         previewPane.setDisable(busy);
         home.setDisable(busy);
     }

@@ -59,13 +59,34 @@ public final class PowderOrders {
         }
     }
 
-    public record Powder(long id, String code, String name, String color) {
+    public record Powder(long id, String code, String name, String color, String supplier) {
         public Powder {
+            supplier = Objects.toString(supplier, "").strip();
             color = Objects.toString(color, "ALTRE").strip().toUpperCase(Locale.ROOT);
         }
 
+        public Powder(long id, String code, String name, String color) {
+            this(id, code, name, color, "");
+        }
+
         public Powder(long id, String code, String name) {
-            this(id, code, name, "ALTRE");
+            this(id, code, name, "ALTRE", "");
+        }
+
+        public static Comparator<Powder> catalogueOrder() {
+            return Comparator.comparing((Powder p) -> p.supplier().isBlank())
+                    .thenComparing(Powder::supplier, String.CASE_INSENSITIVE_ORDER)
+                    .thenComparingInt(
+                            p ->
+                                    switch (p.color()) {
+                                        case "BIANCA" -> 0;
+                                        case "GIALLA" -> 1;
+                                        case "ROSA" -> 2;
+                                        case "GRIGIA" -> 3;
+                                        default -> 4;
+                                    })
+                    .thenComparing(Powder::code, String.CASE_INSENSITIVE_ORDER)
+                    .thenComparingLong(Powder::id);
         }
 
         @Override

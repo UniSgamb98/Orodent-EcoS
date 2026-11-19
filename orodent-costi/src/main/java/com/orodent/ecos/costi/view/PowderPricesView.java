@@ -27,7 +27,6 @@ public final class PowderPricesView extends CostsShell {
     public final Button save = new Button("Salva"), cancel = new Button("Annulla");
     public final CheckBox inactive = new CheckBox("Includi archiviate");
     public final TableView<Row> table = new TableView<>();
-    public final Button orders = new Button("Ordini in arrivo");
 
     public record Supplier(String name) {
         @Override
@@ -81,18 +80,6 @@ public final class PowderPricesView extends CostsShell {
         setId("costi-module");
         getStylesheets()
                 .add(PowderPricesView.class.getResource("/costi/powders.css").toExternalForm());
-        var heading =
-                new VBox(
-                        4,
-                        label("Polveri e prezzi", "costs-title"),
-                        label(
-                                "Disponibilità, prezzi di riferimento e dettaglio dei lotti",
-                                "costs-muted"));
-        Region headingGap = new Region();
-        HBox.setHgrow(headingGap, Priority.ALWAYS);
-        orders.setId("costi-orders");
-        HBox top = new HBox(12, heading, headingGap, orders);
-        top.setAlignment(Pos.CENTER_LEFT);
         FlowPane colorBar = new FlowPane(12, 8);
         String[] labels = {"Bianche", "Gialle", "Rosa", "Grigie"};
         String[] values = {"BIANCA", "GIALLA", "ROSA", "GRIGIA"};
@@ -163,7 +150,7 @@ public final class PowderPricesView extends CostsShell {
         SVGPath disk = new SVGPath();
         disk.setContent(
                 "M17 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zM12 19c-1.66"
-                    + " 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zM15 9H5V5h10v4z");
+                        + " 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zM15 9H5V5h10v4z");
         disk.setStyle("-fx-fill: white;");
         save.setGraphic(disk);
         save.setAccessibleText("Salva prezzi e disponibilità della polvere selezionata");
@@ -225,7 +212,7 @@ public final class PowderPricesView extends CostsShell {
         workspace.setMinSize(0, 0);
         workspace.widthProperty().addListener((o, b, a) -> layoutWorkspace(false));
         VBox.setVgrow(workspace, Priority.ALWAYS);
-        VBox content = new VBox(14, top, workspace, feedback);
+        VBox content = new VBox(14, workspace, feedback);
         content.setMinSize(0, 0);
         content.setPadding(new Insets(18, 22, 16, 22));
         setCenter(content);
@@ -239,7 +226,7 @@ public final class PowderPricesView extends CostsShell {
 
     private void setupTable() {
         table.setId("costi-powders-table");
-        table.setFixedCellSize(64);
+        table.setFixedCellSize(58);
         table.setMinHeight(100);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         table.setPlaceholder(
@@ -273,7 +260,7 @@ public final class PowderPricesView extends CostsShell {
                                 text.getStyleClass().add("powder-badge-name");
                                 title.setMaxWidth(Double.MAX_VALUE);
                                 text.setMaxWidth(Double.MAX_VALUE);
-                                var box = new VBox(3, title, text);
+                                var box = new VBox(2, title, text);
                                 box.getStyleClass()
                                         .addAll("powder-badge", colorStyle(row.powder().color()));
                                 box.setMaxWidth(Double.MAX_VALUE);

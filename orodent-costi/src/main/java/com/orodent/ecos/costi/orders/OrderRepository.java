@@ -53,11 +53,18 @@ public final class OrderRepository {
         try (var q = connection.createStatement();
                 var r =
                         q.executeQuery(
-                                "SELECT polvere_id,codice,nome,colore FROM TON.POLVERI ORDER BY"
-                                    + " codice")) {
+                                "SELECT polvere_id,codice,nome,colore,fornitore FROM"
+                                    + " TON.POLVERI")) {
             while (r.next())
-                rows.add(new Powder(r.getLong(1), r.getString(2), r.getString(3), r.getString(4)));
+                rows.add(
+                        new Powder(
+                                r.getLong(1),
+                                r.getString(2),
+                                r.getString(3),
+                                r.getString(4),
+                                r.getString(5)));
         }
+        rows.sort(Powder.catalogueOrder());
         return List.copyOf(rows);
     }
 

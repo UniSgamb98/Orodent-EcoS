@@ -27,7 +27,10 @@ public class CostsShell extends BorderPane {
         home.setGraphic(icon);
         home.setId("costi-home");
         home.getStyleClass().add("primary-button");
-        Label title = new Label("Costi e consumi");
+        Label title = new Label("Costi e consumi › " + current);
+        title.setId("costi-breadcrumb");
+        title.setMinWidth(0);
+        title.setTooltip(new Tooltip(title.getText()));
         title.getStyleClass().add("page-title");
         Region gap = new Region();
         HBox.setHgrow(gap, Priority.ALWAYS);

@@ -127,7 +127,7 @@ public final class PowderPricing {
         if (excluded > 0)
             details.append("\nRighe scadute o senza data escluse: ")
                     .append(excluded)
-                    .append(". Aggiornare la data in Ordini in arrivo.");
+                    .append(". Importare un CSV ordini con le date aggiornate.");
         if (error == null && quantity.signum() == 0)
             error = "Nessuna quantità positiva da valorizzare.";
         BigDecimal price = error == null ? value.divide(quantity, 8, RoundingMode.HALF_UP) : null;

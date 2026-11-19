@@ -38,7 +38,6 @@ final class CostiController {
         if (!canLeave.getAsBoolean()) return;
         close.run();
         var view = new PowderPricesView();
-        view.orders.setOnAction(e -> orders());
         var controller =
                 new PowderPricesController(
                         view,

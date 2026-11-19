@@ -43,18 +43,30 @@ final class OrderTableSupport {
 
     static ListCell<Powder> powderOption() {
         return new ListCell<>() {
+            private final Label label = new Label();
+
+            {
+                label.setMaxWidth(Double.MAX_VALUE);
+                label.prefWidthProperty().bind(widthProperty().subtract(16));
+                setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+            }
+
             @Override
             protected void updateItem(Powder item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(null);
                 if (empty || item == null) {
                     setGraphic(null);
                     setTooltip(null);
                 } else {
-                    Label label = new Label();
                     badge(label, item.toString(), item);
                     setGraphic(label);
-                    setTooltip(new Tooltip(item.toString()));
+                    setTooltip(
+                            new Tooltip(
+                                    item
+                                            + "\nFornitore: "
+                                            + (item.supplier().isBlank()
+                                                    ? "Da specificare"
+                                                    : item.supplier())));
                 }
             }
         };
@@ -83,12 +95,6 @@ final class OrderTableSupport {
 
     static String number(BigDecimal n) {
         return PriceFormats.number(n, 0, 4);
-    }
-
-    static Label info(String message) {
-        Label label = new Label("ⓘ");
-        label.setTooltip(new Tooltip(message));
-        return label;
     }
 
     static <T, V> TableColumn<T, V> column(

@@ -28,6 +28,7 @@ public final class OrderImportPreview extends VBox {
     private final TabPane tabs = new TabPane();
     private final Tab rowsTab = new Tab(), mappingTab = new Tab();
     private Preview preview;
+    private List<Powder> options = List.of();
 
     OrderImportPreview(Button apply, Button cancel) {
         this.apply = apply;
@@ -88,6 +89,7 @@ public final class OrderImportPreview extends VBox {
 
     void show(Preview value) {
         preview = value;
+        options = value.powders().stream().sorted(Powder.catalogueOrder()).toList();
         choices.clear();
         choices.putAll(value.mappings());
         powders.clear();
@@ -186,7 +188,7 @@ public final class OrderImportPreview extends VBox {
                         code.setText(item.code().code());
                         code.setTooltip(new Tooltip(item.code().code()));
                         supplier.setText("Fornitore " + item.code().supplier());
-                        choice.getItems().setAll(preview.powders());
+                        choice.getItems().setAll(options);
                         choice.setValue(powders.get(choices.get(item.code())));
                         choice.setId("orders-mapping-" + item.index());
                         choice.setAccessibleText("Polvere TON per " + item.code().code());
@@ -257,6 +259,7 @@ public final class OrderImportPreview extends VBox {
 
     void clear() {
         preview = null;
+        options = List.of();
         choices.clear();
         powders.clear();
         codes.clear();

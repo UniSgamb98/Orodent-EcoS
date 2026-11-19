@@ -76,6 +76,48 @@ class OrdersTest {
     }
 
     @Test
+    void powderCatalogueGroupsSupplierThenColorThenCode() throws Exception {
+        db.withTransaction(
+                c -> {
+                    c.createStatement().executeUpdate("UPDATE TON.POLVERI SET fornitore='Beta'");
+                    try (var insert =
+                            c.prepareStatement(
+                                    "INSERT INTO TON.POLVERI(codice,nome,colore,fornitore) VALUES"
+                                        + " (?,?,?,?)")) {
+                        for (String[] row :
+                                new String[][] {
+                                    {"Z-WHITE", "BIANCA", "Alfa"}, {"A-WHITE", "BIANCA", "Alfa"},
+                                    {"A-GRAY", "GRIGIA", "Alfa"}, {"A-PINK", "ROSA", "Alfa"},
+                                    {"A-YELLOW", "GIALLA", "Alfa"}, {"A-UNKNOWN", null, "Alfa"},
+                                    {"NO-SUPPLIER", "BIANCA", ""}
+                                }) {
+                            insert.setString(1, row[0]);
+                            insert.setString(2, row[0]);
+                            insert.setString(3, row[1]);
+                            insert.setString(4, row[2]);
+                            insert.executeUpdate();
+                        }
+                    }
+                    return null;
+                });
+        var catalogue = service.list().join().powders();
+        assertEquals(
+                List.of(
+                        "A-WHITE",
+                        "Z-WHITE",
+                        "A-YELLOW",
+                        "A-PINK",
+                        "A-GRAY",
+                        "A-UNKNOWN",
+                        "ZST4Y-015OP",
+                        "ZST5Y-025OP",
+                        "NO-SUPPLIER"),
+                catalogue.stream().map(Powder::code).toList());
+        assertEquals("Alfa", catalogue.getFirst().supplier());
+        assertEquals(catalogue, preview(HEADER + A).powders());
+    }
+
+    @Test
     void databaseFailureOnSecondLineRollsBackFirstLineAndAliases() throws Exception {
         db.withTransaction(
                 c -> {

@@ -163,6 +163,32 @@ class OrdersUiTest {
                                 assertTrue(view.previewPane.getHeight() > 650);
                                 ComboBox<Powder> choice = choice(view);
                                 assertTrue(choice.getWidth() <= 300);
+                                assertEquals(
+                                        List.of("BIANCA", "GIALLA", "ROSA", "GRIGIA"),
+                                        choice.getItems().stream().map(Powder::color).toList());
+                                choice.show();
+                                var popupList = (ListView<?>) choice.lookup(".list-view");
+                                if (popupList == null) {
+                                    for (var window : javafx.stage.Window.getWindows())
+                                        if (window instanceof javafx.stage.PopupWindow
+                                                && window.isShowing()) {
+                                            var candidate = window.getScene().lookup(".list-view");
+                                            if (candidate instanceof ListView<?> list)
+                                                popupList = list;
+                                        }
+                                }
+                                assertNotNull(popupList);
+                                popupList.applyCss();
+                                popupList.layout();
+                                for (var node : popupList.lookupAll(".list-cell")) {
+                                    var cell = (ListCell<?>) node;
+                                    if (cell.getItem() instanceof Powder
+                                            && cell.getGraphic() instanceof Label badge)
+                                        assertTrue(
+                                                badge.getWidth() >= cell.getWidth() - 20,
+                                                "Powder color must fill the option width");
+                                }
+                                choice.hide();
                                 var source = view.lookup("#orders-source-1");
                                 double gap =
                                         choice.localToScene(choice.getBoundsInLocal()).getMinX()
@@ -296,6 +322,119 @@ class OrdersUiTest {
                         });
         Platform.runLater(task);
         task.get(60, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void rowBandsFollowOrdersAfterFilteringSortingAndRowReuse() throws Exception {
+        FxTestSupport.start();
+        var task =
+                new FutureTask<Void>(
+                        () -> {
+                            Stage stage = new Stage();
+                            try {
+                                var view = new OrdersView();
+                                stage.setScene(new Scene(view, 1400, 850));
+                                stage.show();
+                                var stored = new ArrayList<Stored>();
+                                for (int i = 0; i < 60; i++) {
+                                    Row base = row("WHITE", i + 1, LocalDate.of(2026, 12, 10));
+                                    Row grouped =
+                                            new Row(
+                                                    new Key(
+                                                            "SUP",
+                                                            "ORDER-" + (char) ('A' + i / 3),
+                                                            i + 1),
+                                                    base.orderDate(),
+                                                    base.expected(),
+                                                    base.code(),
+                                                    base.description(),
+                                                    base.ordered(),
+                                                    base.delivered(),
+                                                    base.remaining(),
+                                                    base.price());
+                                    stored.add(new Stored(i + 1, 1, 1, grouped, null, false));
+                                }
+                                view.catalogue(
+                                        new OrderService.Catalogue(
+                                                stored,
+                                                List.of(
+                                                        new Powder(
+                                                                1, "WHITE", "White", "BIANCA"))));
+                                layout(view);
+                                checkBands(view, false);
+                                snapshot(stage, "target/orders-group-bands.png");
+                                var helpText =
+                                        new java.util.concurrent.atomic.AtomicReference<String>();
+                                Platform.runLater(
+                                        () -> {
+                                            for (var window :
+                                                    javafx.stage.Window.getWindows()
+                                                            .toArray(javafx.stage.Window[]::new)) {
+                                                if (window instanceof Stage dialog
+                                                        && dialog.getScene().getRoot()
+                                                                instanceof DialogPane pane) {
+                                                    helpText.set(
+                                                            ((TextArea) pane.getContent())
+                                                                    .getText());
+                                                    ((Button) pane.lookupButton(ButtonType.OK))
+                                                            .fire();
+                                                }
+                                            }
+                                        });
+                                ((Button) view.lookup("#orders-csv-help")).fire();
+                                assertNotNull(helpText.get());
+                                for (String column : new OrderCsvMapper().requiredColumns())
+                                    assertTrue(helpText.get().contains(column));
+                                view.table.scrollTo(30);
+                                layout(view);
+                                checkBands(view, false);
+                                var order = view.table.getColumns().get(1);
+                                order.setSortType(TableColumn.SortType.DESCENDING);
+                                view.table.getSortOrder().setAll(order);
+                                view.table.sort();
+                                view.table.scrollTo(0);
+                                layout(view);
+                                checkBands(view, true);
+                                view.search.setText("ORDER-C");
+                                layout(view);
+                                assertEquals(3, view.table.getItems().size());
+                                for (var node : view.table.lookupAll(".table-row-cell")) {
+                                    var row = (TableRow<?>) node;
+                                    if (row.getItem() != null)
+                                        assertFalse(
+                                                row.getPseudoClassStates()
+                                                        .contains(
+                                                                javafx.css.PseudoClass
+                                                                        .getPseudoClass(
+                                                                                "alternate-order")));
+                                }
+                                view.search.clear();
+                                layout(view);
+                                checkBands(view, true);
+                            } finally {
+                                stage.close();
+                            }
+                            return null;
+                        });
+        Platform.runLater(task);
+        task.get(30, TimeUnit.SECONDS);
+    }
+
+    private void checkBands(OrdersView view, boolean descending) {
+        int visible = 0;
+        for (var node : view.table.lookupAll(".table-row-cell")) {
+            var row = (TableRow<?>) node;
+            if (!(row.getItem() instanceof Stored item) || row.isEmpty()) continue;
+            int group = (int) (item.id() - 1) / 3;
+            boolean expected = (descending ? 19 - group : group) % 2 == 1;
+            assertEquals(
+                    expected,
+                    row.getPseudoClassStates()
+                            .contains(javafx.css.PseudoClass.getPseudoClass("alternate-order")),
+                    item.row().key().toString());
+            visible++;
+        }
+        assertTrue(visible > 0);
     }
 
     @SuppressWarnings("unchecked")

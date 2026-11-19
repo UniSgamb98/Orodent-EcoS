@@ -2,7 +2,6 @@ package com.orodent.ecos.costi.orders;
 
 import javafx.application.Platform;
 import javafx.scene.control.*;
-import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 
 import java.nio.charset.Charset;
@@ -73,7 +72,6 @@ public final class OrdersController {
                                 loadCatalogue();
                             });
                 });
-        view.edit.setOnAction(e -> edit());
         view.sceneProperty().addListener(sceneChanged);
         attachScene(null, view.getScene());
     }
@@ -98,54 +96,6 @@ public final class OrdersController {
             run(
                     service.preview(file.toPath(), Charset.forName(view.encoding.getValue())),
                     view::preview);
-    }
-
-    private void edit() {
-        var selected = view.table.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            view.feedback.setText("Seleziona una riga ordine.");
-            return;
-        }
-        Dialog<Boolean> dialog = new Dialog<>();
-        if (view.getScene() != null) dialog.initOwner(view.getScene().getWindow());
-        dialog.setTitle("Consegna prevista · " + selected.row().key().order());
-        DatePicker date = new DatePicker(selected.date());
-        date.setEditable(false);
-        CheckBox follow = new CheckBox("Usa la data del CSV");
-        follow.setSelected(selected.overrideDate() == null);
-        date.setDisable(follow.isSelected());
-        follow.setOnAction(e -> date.setDisable(follow.isSelected()));
-        CheckBox excluded = new CheckBox("Escludi questa riga dalle previsioni");
-        excluded.setSelected(selected.excluded());
-        dialog.getDialogPane()
-                .setContent(
-                        new VBox(
-                                10,
-                                new Label(
-                                        "Data CSV: " + OrdersView.date(selected.row().expected())),
-                                follow,
-                                date,
-                                excluded,
-                                new Label(
-                                        "L'esclusione e la data manuale restano valide alle"
-                                                + " successive importazioni.")));
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-        dialog.setResultConverter(b -> b == ButtonType.OK);
-        dialog.showAndWait()
-                .filter(Boolean.TRUE::equals)
-                .ifPresent(
-                        ok ->
-                                run(
-                                        service.edit(
-                                                selected,
-                                                follow.isSelected() ? null : date.getValue(),
-                                                excluded.isSelected()),
-                                        v -> {
-                                            view.feedback.setText(
-                                                    "Riga aggiornata. Nessun movimento di"
-                                                            + " magazzino.");
-                                            loadCatalogue();
-                                        }));
     }
 
     private <T> void run(CompletableFuture<T> future, java.util.function.Consumer<T> success) {
