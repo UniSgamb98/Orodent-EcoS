@@ -61,6 +61,21 @@ public final class CompositionService {
                                                 .choices(query, Math.max(0, offset), PAGE_SIZE)));
     }
 
+    public CompletableFuture<Page<Summary>> catalogue(
+            String query, Filter filter, boolean archived) {
+        return async(
+                () ->
+                        connections.withConnection(
+                                c ->
+                                        new CompositionRepository(c)
+                                                .page(
+                                                        query,
+                                                        filter,
+                                                        archived,
+                                                        0,
+                                                        Integer.MAX_VALUE)));
+    }
+
     public CompletableFuture<Detail> load(long id) {
         return async(
                 () ->

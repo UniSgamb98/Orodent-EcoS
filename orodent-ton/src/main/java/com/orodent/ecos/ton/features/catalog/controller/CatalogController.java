@@ -34,7 +34,7 @@ public final class CatalogController implements FeatureController {
     private Detail original;
     private Specification selectedVersion;
     private List<String> baseline = List.of(), specBaseline = List.of();
-    private int offset, historyOffset, specOffset;
+    private int historyOffset, specOffset;
     private long selectedId;
     private boolean editing, specLoaded;
     private volatile boolean disposed;
@@ -53,16 +53,14 @@ public final class CatalogController implements FeatureController {
         this.navigate = navigate;
         var list = view.list();
         var editor = view.editor();
-        debounce.setOnFinished(e -> loadList(0));
+        debounce.setOnFinished(e -> loadList());
         listen(list.search().textProperty(), (o, a, b) -> debounce.playFromStart());
         listen(list.diameter().textProperty(), (o, a, b) -> debounce.playFromStart());
         listen(list.height().textProperty(), (o, a, b) -> debounce.playFromStart());
-        on(list.refresh(), () -> loadList(offset));
-        on(list.previous(), () -> loadList(Math.max(0, offset - CatalogService.PAGE_SIZE)));
-        on(list.next(), () -> loadList(offset + CatalogService.PAGE_SIZE));
-        list.archived().setOnAction(e -> loadList(0));
+        on(list.refresh(), () -> loadList());
+        list.archived().setOnAction(e -> loadList());
         cleanup.add(() -> list.archived().setOnAction(null));
-        list.search().setOnAction(e -> loadList(0));
+        list.search().setOnAction(e -> loadList());
         cleanup.add(() -> list.search().setOnAction(null));
         on(
                 list.create(),
@@ -83,10 +81,6 @@ public final class CatalogController implements FeatureController {
                                             kind == CatalogKind.PRODUCTS
                                                     ? list.line().id()
                                                     : list.product().id())));
-        on(list.open(), this::openSelected);
-        listen(
-                list.table().getSelectionModel().selectedItemProperty(),
-                (o, a, b) -> list.open().setDisable(b == null || list.table().isDisabled()));
         list.table()
                 .setOnMouseClicked(
                         e -> {
@@ -115,7 +109,7 @@ public final class CatalogController implements FeatureController {
                         cancelReads();
                         editing = false;
                         view.showList();
-                        loadList(offset);
+                        loadList();
                         loadListChoices();
                     }
                 });
@@ -131,7 +125,7 @@ public final class CatalogController implements FeatureController {
                         if (original == null) {
                             editing = false;
                             view.showList();
-                            loadList(offset);
+                            loadList();
                         } else render(original, Sheet.GENERAL);
                     }
                 });
@@ -253,7 +247,7 @@ public final class CatalogController implements FeatureController {
                                             : view.list().product())
                                     .value();
             create(context);
-        } else loadList(0);
+        } else loadList();
     }
 
     private void configureLookup(CatalogLookup lookup, boolean filter) {
@@ -269,7 +263,7 @@ public final class CatalogController implements FeatureController {
             listen(
                     lookup.choices().valueProperty(),
                     (o, a, b) -> {
-                        if (!lookup.updating() && !editing) loadList(0);
+                        if (!lookup.updating() && !editing) loadList();
                     });
     }
 
@@ -311,7 +305,7 @@ public final class CatalogController implements FeatureController {
         if (e != null && !saving.get()) load(e.id(), Sheet.GENERAL);
     }
 
-    private void loadList(int pageOffset) {
+    private void loadList() {
         if (disposed || editing) return;
         debounce.stop();
         Filter filter;
@@ -321,19 +315,12 @@ public final class CatalogController implements FeatureController {
             view.list().error(message(invalid));
             return;
         }
-        offset = pageOffset;
         view.list().loading();
         read(
                 "list",
-                () -> service.page(kind, filter, offset),
+                () -> service.catalogue(kind, filter),
                 page -> {
                     if (editing) return;
-                    if (page.rows().isEmpty() && page.total() > 0 && offset > 0) {
-                        loadList(
-                                (int) ((page.total() - 1) / CatalogService.PAGE_SIZE)
-                                        * CatalogService.PAGE_SIZE);
-                        return;
-                    }
                     view.list().show(page);
                     page.rows().stream()
                             .filter(e -> e.id() == selectedId)
@@ -684,7 +671,7 @@ public final class CatalogController implements FeatureController {
                                     original = null;
                                     selectedId = 0;
                                     view.showList();
-                                    loadList(offset);
+                                    loadList();
                                     loadListChoices();
                                 } else {
                                     render(detail, sheet);

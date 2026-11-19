@@ -36,6 +36,19 @@ public final class DiskModelService {
                                                         PAGE_SIZE)));
     }
 
+    public CompletableFuture<Page<Summary>> catalogue(String search, Filter filter) {
+        return async(
+                () ->
+                        connections.withConnection(
+                                c ->
+                                        new DiskModelRepository(c)
+                                                .page(
+                                                        text(search),
+                                                        Objects.requireNonNull(filter),
+                                                        0,
+                                                        Integer.MAX_VALUE)));
+    }
+
     public CompletableFuture<Detail> load(long id) {
         return async(
                 () ->

@@ -100,7 +100,7 @@ public final class CatalogDetailsUiProbe {
                                     "",
                                     List.of(new BigDecimal("100")),
                                     List.of()),
-                            false)
+                            i == 54)
                     .join();
 
         catalogues
@@ -247,7 +247,7 @@ public final class CatalogDetailsUiProbe {
                     () -> {
                         TableView<?> table = (TableView<?>) node("ton-lines-table");
                         table.getSelectionModel().selectFirst();
-                        button("ton-line-edit").fire();
+                        table.fireEvent(doubleClick());
                         return null;
                     });
             await(() -> node("ton-line-editor") != null);
@@ -382,6 +382,7 @@ public final class CatalogDetailsUiProbe {
             fx(
                     () -> {
                         assertNoCounters();
+                        assertNoFooter("lines");
                         screenshot("target/lines-list-palette.png");
                         button("ton-nav-technical").fire();
                         button("ton-tech-products-button").fire();
@@ -390,22 +391,14 @@ public final class CatalogDetailsUiProbe {
             await(
                     () ->
                             node("ton-products-table") instanceof TableView<?> t
-                                    && t.getItems().size() == 50);
+                                    && t.getItems().size() == 55);
             fx(
                     () -> {
                         assertNoCounters();
                         screenshot("target/products-list-palette.png");
-                        button("ton-products-next").fire();
+                        assertNoFooter("products");
                         return null;
                     });
-            await(() -> ((TableView<?>) node("ton-products-table")).getItems().size() == 5);
-            fx(
-                    () -> {
-                        assertNoCounters();
-                        button("ton-products-previous").fire();
-                        return null;
-                    });
-            await(() -> ((TableView<?>) node("ton-products-table")).getItems().size() == 50);
             fx(
                     () -> {
                         button("ton-nav-technical").fire();
@@ -415,15 +408,14 @@ public final class CatalogDetailsUiProbe {
             await(
                     () ->
                             node("ton-articles-table") instanceof TableView<?> t
-                                    && t.getItems().size() == 50);
+                                    && t.getItems().size() == 55);
             fx(
                     () -> {
                         assertNoCounters();
                         screenshot("target/articles-list-palette.png");
-                        button("ton-articles-next").fire();
+                        assertNoFooter("articles");
                         return null;
                     });
-            await(() -> ((TableView<?>) node("ton-articles-table")).getItems().size() == 5);
             fx(
                     () -> {
                         button("ton-nav-technical").fire();
@@ -489,7 +481,7 @@ public final class CatalogDetailsUiProbe {
         await(
                 () ->
                         node("ton-compositions-table") instanceof TableView<?> table
-                                && table.getItems().size() == 50);
+                                && table.getItems().size() == 55);
         fx(
                 () -> {
                     assertNoCounters();
@@ -509,16 +501,9 @@ public final class CatalogDetailsUiProbe {
         await(() -> ((Label) node("ton-compositions-status")).getText().isEmpty());
         fx(
                 () -> {
-                    button("ton-compositions-next").fire();
+                    assertNoFooter("compositions");
                     return null;
                 });
-        await(() -> ((TableView<?>) node("ton-compositions-table")).getItems().size() == 5);
-        fx(
-                () -> {
-                    button("ton-compositions-previous").fire();
-                    return null;
-                });
-        await(() -> ((TableView<?>) node("ton-compositions-table")).getItems().size() == 50);
         fx(
                 () -> {
                     TextField search = (TextField) node("ton-composition-search");
@@ -553,34 +538,27 @@ public final class CatalogDetailsUiProbe {
         await(
                 () ->
                         node("ton-models-table") instanceof TableView<?> table
-                                && table.getItems().size() == 50);
+                                && table.getItems().size() == 55);
         fx(
                 () -> {
                     assertNoCounters();
                     assertEvenColumns((TableView<?>) node("ton-models-table"));
                     screenshot("target/disk-models-list-palette.png");
-                    button("ton-models-next").fire();
+                    assertNoFooter("models");
                     return null;
                 });
-        await(() -> ((TableView<?>) node("ton-models-table")).getItems().size() == 5);
-        fx(
-                () -> {
-                    button("ton-models-previous").fire();
-                    return null;
-                });
-        await(() -> ((TableView<?>) node("ton-models-table")).getItems().size() == 50);
         fx(
                 () -> {
                     ((ComboBox<?>) node("ton-model-filter")).getSelectionModel().select(2);
                     return null;
                 });
-        await(() -> ((TableView<?>) node("ton-models-table")).getItems().isEmpty());
+        await(() -> ((TableView<?>) node("ton-models-table")).getItems().size() == 1);
         fx(
                 () -> {
                     ((ComboBox<?>) node("ton-model-filter")).getSelectionModel().selectFirst();
                     return null;
                 });
-        await(() -> ((TableView<?>) node("ton-models-table")).getItems().size() == 50);
+        await(() -> ((TableView<?>) node("ton-models-table")).getItems().size() == 55);
         fx(
                 () -> {
                     TextField search = (TextField) node("ton-model-search");
@@ -599,6 +577,45 @@ public final class CatalogDetailsUiProbe {
         await(() -> node("ton-model-editor") != null);
         fx(
                 () -> {
+                    assertTrue(
+                            ((Label) node("ton-breadcrumb"))
+                                    .getText()
+                                    .endsWith("Modelli disco › MODEL-54"));
+                    assertNull(node("ton-model-heading"));
+                    assertNull(node("ton-model-version"));
+                    assertEquals("← Torna ai modelli", button("ton-model-back").getText());
+                    assertRefreshOnRight("model");
+                    assertTrue(node("ton-model-diameter").isDisabled());
+                    screenshot("target/disk-model-detail-approved.png");
+                    button("ton-model-copy").fire();
+                    return null;
+                });
+        await(
+                () ->
+                        node("ton-model-editor") != null
+                                && ((Label) node("ton-model-status")).getText().startsWith("v2"));
+        fx(
+                () -> {
+                    assertFalse(node("ton-model-diameter").isDisabled());
+                    screenshot("target/disk-model-detail-draft.png");
+                    ((TabPane) node("ton-model-tabs")).getSelectionModel().select(4);
+                    return null;
+                });
+        await(
+                () ->
+                        node("ton-model-versions-table") instanceof TableView<?> t
+                                && t.getItems().size() == 2);
+        fx(
+                () -> {
+                    var table = (TableView<?>) node("ton-model-versions-table");
+                    table.getSelectionModel().selectLast();
+                    table.fireEvent(doubleClick());
+                    return null;
+                });
+        await(() -> node("ton-model-diameter") != null && node("ton-model-diameter").isDisabled());
+        fx(
+                () -> {
+                    assertTrue(((Label) node("ton-model-status")).getText().startsWith("v1"));
                     button("ton-model-back").fire();
                     return null;
                 });
@@ -620,6 +637,23 @@ public final class CatalogDetailsUiProbe {
                     stage.setHeight(1000);
                     return null;
                 });
+    }
+
+    private void assertNoFooter(String plural) {
+        assertNull(node("ton-" + plural + "-next"));
+        assertNull(node("ton-" + plural + "-previous"));
+        String singular =
+                switch (plural) {
+                    case "lines" -> "line";
+                    case "products" -> "product";
+                    case "articles" -> "article";
+                    default -> null;
+                };
+        assertNull(
+                node(
+                        "ton-"
+                                + (singular == null ? plural : singular)
+                                + (singular == null ? "-open" : "-edit")));
     }
 
     private void assertNoCounters() {

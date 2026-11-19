@@ -1,5 +1,8 @@
 package com.orodent.ecos.ton.features.diskmodels.view;
 
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 
@@ -9,7 +12,14 @@ public final class DiskModelsView extends BorderPane {
     private final DiskModelListView list = new DiskModelListView();
     private final DiskModelEditorView editor = new DiskModelEditorView();
 
+    private final ReadOnlyStringWrapper subpage = new ReadOnlyStringWrapper("");
+
     public DiskModelsView() {
+        subpage.bind(
+                Bindings.createStringBinding(
+                        () -> getCenter() == editor ? editor.headerCodeProperty().get() : "",
+                        centerProperty(),
+                        editor.headerCodeProperty()));
         setId("ton-models-view");
         setMinWidth(0);
         getStyleClass().add("ton-models");
@@ -23,6 +33,10 @@ public final class DiskModelsView extends BorderPane {
                                         getClass().getResource("/ton/css/technical-editor.css"))
                                 .toExternalForm());
         showList();
+    }
+
+    public ReadOnlyStringProperty subpageProperty() {
+        return subpage.getReadOnlyProperty();
     }
 
     public DiskModelListView list() {

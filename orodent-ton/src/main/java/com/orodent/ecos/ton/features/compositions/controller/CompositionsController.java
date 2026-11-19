@@ -33,7 +33,7 @@ public final class CompositionsController implements FeatureController {
             modelDelay = delay();
     private Detail original;
     private List<String> baseline = List.of();
-    private int offset, versionsOffset, usagesOffset, modelsOffset, powdersOffset;
+    private int versionsOffset, usagesOffset, modelsOffset, powdersOffset;
     private long selectedId;
     private boolean editing;
     private volatile boolean disposed;
@@ -55,17 +55,12 @@ public final class CompositionsController implements FeatureController {
                     drop("list");
                     listDelay.playFromStart();
                 });
-        listDelay.setOnFinished(event -> loadList(0));
-        list.search().setOnAction(event -> loadList(0));
-        list.filter().setOnAction(event -> loadList(0));
-        list.archived().setOnAction(event -> loadList(0));
+        listDelay.setOnFinished(event -> loadList());
+        list.search().setOnAction(event -> loadList());
+        list.filter().setOnAction(event -> loadList());
+        list.archived().setOnAction(event -> loadList());
         on(list.create(), this::create);
-        on(list.results().refresh(), () -> loadList(offset));
-        on(
-                list.results().previous(),
-                () -> loadList(Math.max(0, offset - CompositionService.PAGE_SIZE)));
-        on(list.results().next(), () -> loadList(offset + CompositionService.PAGE_SIZE));
-        on(list.results().open(), this::openSelected);
+        on(list.results().refresh(), () -> loadList());
         tableAction(list.results().table(), this::openSelected);
         listen(
                 e.product().query().textProperty(),
@@ -111,7 +106,7 @@ public final class CompositionsController implements FeatureController {
                         cancelReads();
                         editing = false;
                         view.showList();
-                        loadList(offset);
+                        loadList();
                     }
                 });
         on(
@@ -127,7 +122,7 @@ public final class CompositionsController implements FeatureController {
                             cancelReads();
                             editing = false;
                             view.showList();
-                            loadList(offset);
+                            loadList();
                         } else render(original, e.sheet());
                     }
                 });
@@ -236,7 +231,7 @@ public final class CompositionsController implements FeatureController {
     }
 
     public void start() {
-        loadList(0);
+        loadList();
     }
 
     @Override
@@ -304,28 +299,20 @@ public final class CompositionsController implements FeatureController {
         if (row != null && !saving.get()) load(row.id(), Sheet.DATA);
     }
 
-    private void loadList(int next) {
+    private void loadList() {
         if (disposed || editing || saving.get()) return;
         listDelay.stop();
-        offset = next;
         var list = view.list();
         list.results().loading();
         read(
                 "list",
                 () ->
-                        service.page(
+                        service.catalogue(
                                 list.search().getText(),
                                 list.filter().getValue(),
-                                list.archived().isSelected(),
-                                offset),
+                                list.archived().isSelected()),
                 page -> {
                     if (editing) return;
-                    if (page.rows().isEmpty() && page.total() > 0 && offset > 0) {
-                        loadList(
-                                (int) ((page.total() - 1) / CompositionService.PAGE_SIZE)
-                                        * CompositionService.PAGE_SIZE);
-                        return;
-                    }
                     list.results().show(page);
                     page.rows().stream()
                             .filter(r -> r.id() == selectedId)
@@ -532,7 +519,7 @@ public final class CompositionsController implements FeatureController {
                                     editing = false;
                                     original = null;
                                     view.showList();
-                                    loadList(offset);
+                                    loadList();
                                 } else {
                                     render(detail, sheet);
                                     view.editor().feedback(success, false);

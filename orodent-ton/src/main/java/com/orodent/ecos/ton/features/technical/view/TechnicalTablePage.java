@@ -5,7 +5,7 @@ import com.orodent.ecos.ton.features.technical.model.PageData;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
-/** Bounded pages for versions and incoming article references. */
+/** Shared table for complete catalogues or bounded pages of versions and references. */
 public final class TechnicalTablePage<T> extends VBox {
     private final TableView<T> table = new TableView<>();
     private final Button previous, next, refresh, open;
@@ -40,18 +40,12 @@ public final class TechnicalTablePage<T> extends VBox {
         if (catalogue) {
             setMinHeight(0);
             table.setMinSize(0, 180);
-            open.getStyleClass().remove("secondary-button");
-            open.getStyleClass().add("primary-button");
-            Region gap = new Region();
-            HBox.setHgrow(gap, Priority.ALWAYS);
-            HBox footer = new HBox(10, open, gap, previous, next);
-            footer.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
             result.setId(id + "-status");
             result.setWrapText(true);
             result.setMinHeight(Region.USE_PREF_SIZE);
             result.visibleProperty().bind(result.textProperty().isNotEmpty());
             result.managedProperty().bind(result.visibleProperty());
-            getChildren().addAll(table, footer, result);
+            getChildren().addAll(table, result);
         } else {
             getChildren().addAll(table, new FlowPane(10, 8, previous, next, result, refresh, open));
         }

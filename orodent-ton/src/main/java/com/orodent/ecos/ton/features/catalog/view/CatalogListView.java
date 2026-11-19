@@ -13,7 +13,7 @@ public final class CatalogListView extends VBox {
     private final TextField search, diameter, height;
     private final CheckBox archived = new CheckBox("Mostra anche archiviati");
     private final CatalogTable table;
-    private final Button create, open, refresh, previous, next, bulk;
+    private final Button create, refresh, bulk;
     private final Label feedback;
     private final CatalogLookup line, product;
 
@@ -31,13 +31,7 @@ public final class CatalogListView extends VBox {
                         "Nuov" + (kind == CatalogKind.LINES ? "a linea" : "o " + kind.singular()),
                         "ton-" + kind.id() + "-new",
                         true);
-        open = CatalogUi.button("Apri scheda", "ton-" + kind.id() + "-edit", true);
-        open.setDisable(true);
         refresh = CatalogUi.button("Aggiorna", base + "-refresh", false);
-        previous = CatalogUi.button("←", base + "-previous", false);
-        next = CatalogUi.button("→", base + "-next", false);
-        previous.setAccessibleText("Pagina precedente");
-        next.setAccessibleText("Pagina successiva");
         Region gap = new Region();
         HBox.setHgrow(gap, Priority.ALWAYS);
         bulk =
@@ -79,10 +73,6 @@ public final class CatalogListView extends VBox {
         VBox.setVgrow(table, Priority.ALWAYS);
         feedback = CatalogUi.feedback(base + "-load-error");
         feedback.getStyleClass().add("ton-error-feedback");
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox pages = new HBox(10, open, spacer, previous, next);
-        pages.setAlignment(Pos.CENTER_LEFT);
         title.getChildren().addFirst(intro);
         HBox.setHgrow(intro, Priority.ALWAYS);
         VBox card = new VBox(12, query);
@@ -99,7 +89,7 @@ public final class CatalogListView extends VBox {
             filters.setId(base + "-filters");
             card.getChildren().add(filters);
         }
-        card.getChildren().addAll(archived, table, pages, feedback);
+        card.getChildren().addAll(archived, table, feedback);
     }
 
     public Filter filter() {
@@ -114,10 +104,7 @@ public final class CatalogListView extends VBox {
 
     public void loading() {
         table.setDisable(true);
-        open.setDisable(true);
         refresh.setDisable(true);
-        previous.setDisable(true);
-        next.setDisable(true);
         feedback.setText("");
     }
 
@@ -125,9 +112,6 @@ public final class CatalogListView extends VBox {
         table.getItems().setAll(page.rows());
         table.setDisable(false);
         refresh.setDisable(false);
-        previous.setDisable(page.offset() == 0);
-        next.setDisable(!page.hasNext());
-        open.setDisable(table.getSelectionModel().getSelectedItem() == null);
         feedback.setText("");
     }
 
@@ -135,7 +119,6 @@ public final class CatalogListView extends VBox {
         feedback.setText(text);
         table.setDisable(false);
         refresh.setDisable(false);
-        open.setDisable(table.getSelectionModel().getSelectedItem() == null);
     }
 
     public CatalogLookup line() {
@@ -174,19 +157,7 @@ public final class CatalogListView extends VBox {
         return create;
     }
 
-    public Button open() {
-        return open;
-    }
-
     public Button refresh() {
         return refresh;
-    }
-
-    public Button previous() {
-        return previous;
-    }
-
-    public Button next() {
-        return next;
     }
 }

@@ -154,6 +154,10 @@ final class TonController {
 
     private void installModels(Long id) {
         var page = new DiskModelsView();
+        page.subpageProperty()
+                .addListener(
+                        (observable, before, subpage) ->
+                                view.showFeature(page, TonFeature.MODELS, subpage));
         var controller =
                 new DiskModelsController(
                         page,

@@ -7,11 +7,12 @@ già presenti nello schema V6: non introduce una nuova migrazione.
 ## Elenco e dati generali
 
 L'elenco mostra una riga per prodotto, con linea, colore, numero di strati,
-ultima versione approvata ed eventuale bozza. Ricerca e filtri sono paginati
-per 50 risultati; si possono includere anche i prodotti archiviati.
+ultima versione approvata ed eventuale bozza. Ricerca e filtri mostrano tutti
+i risultati in una sola tabella scorrevole; si possono includere anche i prodotti
+archiviati.
 Ricerca, filtro, tabella e comandi sono in un pannello bianco con la stessa
 palette degli altri elenchi TON. **Aggiorna** è accanto alla ricerca; in basso
-restano **Apri scheda** e le frecce di pagina, senza il contatore «1–… di …».
+non ci sono pulsante di apertura, frecce di pagina o contatore.
 Le colonne riempiono uniformemente lo spazio. Doppio clic o Invio aprono la scheda.
 I contatori di storico e versioni nelle schede mantengono il loro funzionamento.
 
@@ -121,7 +122,8 @@ in `TON.CONFIGURAZIONI_ARTICOLO`.
 Le scritture bloccano linea, prodotto, composizione e polveri in ordine coerente
 con gli altri cataloghi. I controlli di stato e concorrenza avvengono nel servizio,
 anche se la richiesta arriva da una seconda postazione. Le letture del dettaglio
-mantengono coerenti intestazione e figli. Ricerca con debounce, pagine limitate
-e controllo delle richieste superate evitano aggiornamenti tardivi della vista.
+mantengono coerenti intestazione e figli. Ricerca con debounce e controllo delle
+richieste superate evitano aggiornamenti tardivi della vista. Storico e selettori
+mantengono pagine limitate.
 Uscendo vengono rilasciati listener, timer e buffer; query e transazioni non
 girano sul thread grafico.

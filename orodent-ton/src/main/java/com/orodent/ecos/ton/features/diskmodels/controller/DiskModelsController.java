@@ -30,7 +30,7 @@ public final class DiskModelsController implements FeatureController {
     private final List<Runnable> cleanups = new ArrayList<>();
     private Detail original;
     private List<String> baseline = List.of();
-    private int offset, versionsOffset, usagesOffset;
+    private int versionsOffset, usagesOffset;
     private long selectedId;
     private boolean editing;
     private volatile boolean disposed;
@@ -43,16 +43,11 @@ public final class DiskModelsController implements FeatureController {
         var list = view.list();
         var e = view.editor();
         listen(list.search().textProperty(), (o, a, b) -> debounce.playFromStart());
-        debounce.setOnFinished(event -> loadList(0));
-        list.search().setOnAction(event -> loadList(0));
-        list.filter().setOnAction(event -> loadList(0));
+        debounce.setOnFinished(event -> loadList());
+        list.search().setOnAction(event -> loadList());
+        list.filter().setOnAction(event -> loadList());
         on(list.create(), this::create);
-        on(list.results().refresh(), () -> loadList(offset));
-        on(
-                list.results().previous(),
-                () -> loadList(Math.max(0, offset - DiskModelService.PAGE_SIZE)));
-        on(list.results().next(), () -> loadList(offset + DiskModelService.PAGE_SIZE));
-        on(list.results().open(), this::openSelected);
+        on(list.results().refresh(), () -> loadList());
         tableAction(list.results().table(), this::openSelected);
         on(
                 e.back(),
@@ -61,7 +56,7 @@ public final class DiskModelsController implements FeatureController {
                         cancelReads();
                         editing = false;
                         view.showList();
-                        loadList(offset);
+                        loadList();
                     }
                 });
         on(
@@ -76,7 +71,7 @@ public final class DiskModelsController implements FeatureController {
                         if (original == null) {
                             editing = false;
                             view.showList();
-                            loadList(offset);
+                            loadList();
                         } else render(original, e.sheet());
                     }
                 });
@@ -130,24 +125,6 @@ public final class DiskModelsController implements FeatureController {
                             "Sostituire le percentuali correnti con una distribuzione uniforme al"
                                     + " 100%?")) e.layers().distribute();
                 });
-        e.versions()
-                .setOnAction(
-                        event -> {
-                            if (e.updating()
-                                    || !editing
-                                    || e.versions().getValue() == null
-                                    || original == null) return;
-                            Version next = e.versions().getValue();
-                            if (next.id() == original.revision().id()) return;
-                            if (canLeave()) load(next.id(), e.sheet());
-                            else
-                                e.selectVersion(
-                                        new Version(
-                                                original.revision().id(),
-                                                original.revision().number(),
-                                                original.revision().state(),
-                                                original.revision().updated()));
-                        });
         listen(
                 e.tabs().getSelectionModel().selectedItemProperty(),
                 (o, a, b) -> {
@@ -170,7 +147,7 @@ public final class DiskModelsController implements FeatureController {
     }
 
     public void start() {
-        loadList(0);
+        loadList();
     }
 
     public void open(long id) {
@@ -217,23 +194,16 @@ public final class DiskModelsController implements FeatureController {
         if (row != null && !saving.get()) load(row.id(), Sheet.PARAMETERS);
     }
 
-    private void loadList(int nextOffset) {
+    private void loadList() {
         if (disposed || editing || saving.get()) return;
         debounce.stop();
-        offset = nextOffset;
         var list = view.list();
         list.results().loading();
         read(
                 "list",
-                () -> service.page(list.search().getText(), list.filter().getValue(), offset),
+                () -> service.catalogue(list.search().getText(), list.filter().getValue()),
                 page -> {
                     if (editing) return;
-                    if (page.rows().isEmpty() && page.total() > 0 && offset > 0) {
-                        loadList(
-                                (int) ((page.total() - 1) / DiskModelService.PAGE_SIZE)
-                                        * DiskModelService.PAGE_SIZE);
-                        return;
-                    }
                     list.results().show(page);
                     page.rows().stream()
                             .filter(r -> r.id() == selectedId)
@@ -377,7 +347,7 @@ public final class DiskModelsController implements FeatureController {
                                     editing = false;
                                     original = null;
                                     view.showList();
-                                    loadList(offset);
+                                    loadList();
                                 } else {
                                     render(detail, sheet);
                                     view.editor().feedback(success, false);
@@ -466,7 +436,6 @@ public final class DiskModelsController implements FeatureController {
         cleanups.clear();
         view.list().search().setOnAction(null);
         view.list().filter().setOnAction(null);
-        view.editor().versions().setOnAction(null);
         view.dispose();
     }
 }

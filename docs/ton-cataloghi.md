@@ -48,8 +48,9 @@ specifiche, ricette o approvazioni implicitamente.
 
 ## Elenchi e collegamenti
 
-Gli elenchi cercano codice o descrizione e sono paginati in gruppi di 50,
-con frecce di navigazione e senza il contatore «1–… di …». Ricerca, filtri e
+Gli elenchi cercano codice o descrizione e mostrano tutti i risultati filtrati
+in una tabella scorrevole, senza pulsante di apertura, frecce di navigazione
+o contatore in basso. Ricerca, filtri e
 strumenti sono in un pannello bianco sullo sfondo azzurro, con la stessa palette
 delle schede di dettaglio e dell’elenco polveri.
 Percentuale, underscore e barra inversa nella ricerca vengono trattati come
@@ -58,8 +59,8 @@ caratteri letterali. Le colonne sono ordinate dal DB per codice.
 - Prodotti: filtro per linea.
 - Articoli: filtri per linea, prodotto, diametro e altezza.
 - **Mostra anche archiviati** comprende gli elementi disattivati.
-- **Apri scheda** apre l'editor completo. Tornando all'elenco si mantengono
-  filtri e pagina; selezionare una riga non sostituisce un editor aperto.
+- Doppio clic o Invio aprono l'editor completo. Tornando all'elenco si mantengono
+  i filtri; selezionare una riga non sostituisce un editor aperto.
 
 I selettori dei padri hanno una ricerca dedicata e mostrano al massimo 50
 risultati per volta, più l'eventuale valore già selezionato. Non caricano l'intero

@@ -161,7 +161,16 @@ public final class BulkCatalogUiProbe {
                                                 .filter(e -> e.id() == line.id())
                                                 .findFirst()
                                                 .orElseThrow());
-                        button("ton-line-edit").fire();
+                        table.fireEvent(
+                                new javafx.scene.input.KeyEvent(
+                                        javafx.scene.input.KeyEvent.KEY_PRESSED,
+                                        "",
+                                        "",
+                                        javafx.scene.input.KeyCode.ENTER,
+                                        false,
+                                        false,
+                                        false,
+                                        false));
                         return null;
                     });
             await(() -> node("ton-line-editor") != null);

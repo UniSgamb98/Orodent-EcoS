@@ -5,6 +5,7 @@ import static com.orodent.ecos.ton.features.diskmodels.model.DiskModels.*;
 import com.orodent.ecos.ton.features.technical.view.TechnicalTablePage;
 import com.orodent.ecos.ton.features.technical.view.TechnicalUi;
 
+import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -42,8 +43,7 @@ public final class DiskModelEditorView extends VBox {
     private final Label heading = TechnicalUi.label("", "ton-page-heading"),
             status = TechnicalUi.label("", "muted-label"),
             feedback = TechnicalUi.label("", "muted-label"),
-            readonly = TechnicalUi.label("", "ton-model-readonly");
-    private final ComboBox<Version> versions = new ComboBox<>();
+            readonly = TechnicalUi.label("", "muted-label");
     private final TabPane tabs = new TabPane();
     private final Map<Tab, Sheet> sheets = new HashMap<>();
     private final EnumMap<Sheet, GridPane> grids = new EnumMap<>(Sheet.class);
@@ -54,12 +54,12 @@ public final class DiskModelEditorView extends VBox {
             new TechnicalTablePage<>("ton-model-usages", "Apri articolo");
     private final TechnicalTablePage<Version> history =
             new TechnicalTablePage<>("ton-model-versions", "Apri versione");
-    private final Button back = TechnicalUi.button("← Elenco modelli", "ton-model-back", false),
-            reload = TechnicalUi.button("Ricarica scheda", "ton-model-reload", false),
+    private final Button back = TechnicalUi.button("← Torna ai modelli", "ton-model-back", false),
+            reload = TechnicalUi.button("Aggiorna dati", "ton-model-reload", false),
             cancel = TechnicalUi.button("Annulla modifiche", "ton-model-cancel", false),
-            save = TechnicalUi.button("Salva bozza", "ton-model-save", false),
+            save = TechnicalUi.button("Salva bozza", "ton-model-save", true),
             approve = TechnicalUi.button("Salva e approva", "ton-model-approve", true),
-            copy = TechnicalUi.button("Crea nuova versione", "ton-model-copy", true),
+            copy = TechnicalUi.button("Crea nuova versione", "ton-model-copy", false),
             retire = TechnicalUi.button("Ritira versione", "ton-model-retire", false),
             delete = TechnicalUi.button("Elimina bozza", "ton-model-delete", false);
     private final List<Node> editable = new ArrayList<>();
@@ -69,20 +69,17 @@ public final class DiskModelEditorView extends VBox {
         super(12);
         setId("ton-model-editor");
         setMinWidth(0);
-        getStyleClass().add("ton-model-page");
+        getStyleClass().addAll("ton-model-page", "ton-model-detail");
+        back.getStyleClass().add("ton-editor-back-link");
+        reload.getStyleClass().add("ton-editor-refresh");
+        back.setMinWidth(Region.USE_PREF_SIZE);
+        reload.setMinWidth(Region.USE_PREF_SIZE);
         heading.setId("ton-model-heading");
         status.setId("ton-model-status");
         feedback.setId("ton-model-feedback");
         readonly.setId("ton-model-readonly");
         feedback.visibleProperty().bind(feedback.textProperty().isNotEmpty());
         feedback.managedProperty().bind(feedback.visibleProperty());
-        versions.setId("ton-model-version");
-        versions.setPrefWidth(220);
-        versions.setAccessibleText("Versione del modello");
-        var spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        var title = new HBox(15, heading, spacer, new Label("Versione"), versions);
-        title.setAlignment(Pos.CENTER_LEFT);
         notes.setId("ton-model-notes");
         notes.setWrapText(true);
         notes.setPrefRowCount(3);
@@ -172,23 +169,27 @@ public final class DiskModelEditorView extends VBox {
                 v -> v.updated().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
         tab(Sheet.VERSIONS, historyPanel);
         tabs.setId("ton-model-tabs");
+        tabs.getStyleClass().add("ton-editor-tabs");
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tabs.setMinHeight(230);
         VBox.setVgrow(tabs, Priority.ALWAYS);
         tabs.getSelectionModel().selectedItemProperty().addListener((o, a, b) -> movePreview());
         delete.getStyleClass().add("ton-model-danger");
         retire.getStyleClass().add("ton-model-danger");
-        var actions = new FlowPane(10, 8, cancel, save, approve, copy, retire, delete);
-        actions.getStyleClass().add("ton-model-actions");
-        getChildren()
-                .addAll(
-                        new FlowPane(10, 8, back, reload),
-                        title,
-                        status,
-                        readonly,
-                        tabs,
-                        actions,
-                        feedback);
+        var actions = new FlowPane(10, 8, cancel, save, approve, retire, delete);
+        actions.getStyleClass().addAll("ton-model-actions", "ton-editor-actions");
+        Region gap = new Region();
+        HBox.setHgrow(gap, Priority.ALWAYS);
+        HBox toolbar = new HBox(12, back, gap, reload);
+        toolbar.setAlignment(Pos.CENTER_LEFT);
+        VBox state = new VBox(6, status, readonly);
+        state.getStyleClass().add("ton-editor-status");
+        state.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(state, Priority.ALWAYS);
+        copy.setMinWidth(Region.USE_PREF_SIZE);
+        HBox versionRow = new HBox(12, state, copy);
+        versionRow.setAlignment(Pos.CENTER_LEFT);
+        getChildren().addAll(toolbar, versionRow, tabs, actions, feedback);
         editable.addAll(List.of(diameter, pressure, grams, top, bottom, notes, layers, ranges));
         for (TextField field : List.of(diameter, top, bottom))
             field.textProperty().addListener((o, a, b) -> refreshPreview());
@@ -233,6 +234,7 @@ public final class DiskModelEditorView extends VBox {
     }
 
     private void tab(Sheet sheet, Node content) {
+        content.getStyleClass().add("ton-editor-content");
         var tab = new Tab(sheet.title(), TechnicalUi.scroll(content));
         sheets.put(tab, sheet);
         tabs.getTabs().add(tab);
@@ -278,26 +280,6 @@ public final class DiskModelEditorView extends VBox {
                                     + " mm · "
                                     + data.layers().size()
                                     + " strati");
-            var choices = new ArrayList<Version>();
-            if (detail != null) {
-                choices.addAll(detail.versions().rows());
-                if (choices.stream().noneMatch(v -> v.id() == revision.id()))
-                    choices.add(
-                            new Version(
-                                    revision.id(),
-                                    revision.number(),
-                                    revision.state(),
-                                    revision.updated()));
-            }
-            versions.getItems().setAll(choices);
-            versions.setValue(
-                    revision == null
-                            ? null
-                            : choices.stream()
-                                    .filter(v -> v.id() == revision.id())
-                                    .findFirst()
-                                    .orElseThrow());
-            versions.setDisable(revision == null);
             readonly.setText(
                     frozen
                             ? "Versione "
@@ -376,15 +358,6 @@ public final class DiskModelEditorView extends VBox {
         return sheets.getOrDefault(tabs.getSelectionModel().getSelectedItem(), Sheet.PARAMETERS);
     }
 
-    public void selectVersion(Version v) {
-        updating = true;
-        try {
-            versions.setValue(v);
-        } finally {
-            updating = false;
-        }
-    }
-
     public boolean updating() {
         return updating;
     }
@@ -393,8 +366,8 @@ public final class DiskModelEditorView extends VBox {
         return tabs;
     }
 
-    public ComboBox<Version> versions() {
-        return versions;
+    public ReadOnlyStringProperty headerCodeProperty() {
+        return heading.textProperty();
     }
 
     public LayersEditor layers() {
@@ -444,7 +417,6 @@ public final class DiskModelEditorView extends VBox {
     void dispose() {
         layers.dispose();
         ranges.dispose();
-        versions.getItems().clear();
         usages.dispose();
         history.dispose();
     }
