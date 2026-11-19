@@ -168,6 +168,7 @@ public final class PowderEditorView extends VBox {
         feedback.visibleProperty().bind(feedback.textProperty().isNotEmpty());
         feedback.managedProperty().bind(feedback.visibleProperty());
         FlowPane actions = new FlowPane(10, 8, cancel, save, identitySave, approve, retire);
+        actions.getStyleClass().add("ton-powder-actions");
         HBox top = new HBox(12, back, reload);
         top.setAlignment(Pos.CENTER_LEFT);
         FlowPane versionRow =

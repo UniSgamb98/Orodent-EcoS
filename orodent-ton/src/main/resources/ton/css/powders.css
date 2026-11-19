@@ -1,13 +1,135 @@
 .ton-powders .ton-powder-page { -fx-padding: 18px 24px; }
-.ton-powders .ton-powder-tab { -fx-padding: 12px; }
-.ton-powders .tab-pane > .tab-header-area > .tab-header-background { -fx-background-color: #eaf0f5; }
-.ton-powders .tab-pane > .tab-header-area > .headers-region > .tab { -fx-padding: 7px 15px; }
-.ton-powders .tab-pane > .tab-header-area > .headers-region > .tab:selected {
-    -fx-background-color: white;
-    -fx-border-color: transparent transparent #176b87 transparent;
-    -fx-border-width: 0 0 3px 0;
-}
-.ton-powders .ton-powder-total { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #173f5f; }
+.ton-powders .ton-powder-tab { -fx-padding: 20px; }
+.ton-powders .ton-powder-total { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #173f59; }
 .ton-powders .table-cell { -fx-padding: 7px; }
-.ton-powders .table-cell .text-field, .ton-powders .table-cell .combo-box { -fx-background-radius: 5px; }
 .ton-powders .scroll-pane, .ton-powders .scroll-pane > .viewport { -fx-background-color: #e3edf3; -fx-background: #e3edf3; }
+
+/* Same surfaces and action hierarchy as bulk entry, scoped to the powder editor. */
+#ton-powder-editor {
+    -fx-background-color: #e3edf3;
+    -fx-text-fill: #173f59;
+    -fx-font-family: "System";
+    -fx-font-weight: normal;
+}
+#ton-powder-editor .label { -fx-text-fill: #173f59; -fx-font-family: "System"; -fx-font-weight: normal; }
+#ton-powder-editor .ton-page-heading { -fx-font-weight: bold; }
+#ton-powder-editor .muted-label { -fx-text-fill: #526e83; }
+#ton-powder-editor .label:disabled { -fx-opacity: 1; }
+#ton-powder-editor .button {
+    -fx-background-color: white;
+    -fx-background-radius: 7px;
+    -fx-border-color: #cbdce7;
+    -fx-border-radius: 7px;
+    -fx-padding: 9px 14px;
+    -fx-text-fill: #173f59;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+#ton-powder-editor .button:hover { -fx-background-color: #eaf4f7; }
+#ton-powder-editor .button:focused { -fx-border-color: #3196aa; }
+#ton-powder-editor .primary-button {
+    -fx-background-color: #18778c;
+    -fx-border-color: #18778c;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+#ton-powder-editor .primary-button:hover { -fx-background-color: #12677a; -fx-border-color: #12677a; }
+#ton-powder-editor .text-field,
+#ton-powder-editor .text-area,
+#ton-powder-editor .combo-box {
+    -fx-background-color: white;
+    -fx-background-radius: 6px;
+    -fx-border-color: #bed3df;
+    -fx-border-radius: 6px;
+    -fx-padding: 7px 9px;
+    -fx-text-fill: #173f59;
+    -fx-prompt-text-fill: #73899a;
+    -fx-font-family: "System";
+    -fx-font-weight: normal;
+}
+#ton-powder-editor .text-field:focused,
+#ton-powder-editor .text-area:focused,
+#ton-powder-editor .combo-box:focused { -fx-border-color: #3196aa; }
+#ton-powder-editor .text-area .content { -fx-background-color: white; }
+#ton-powder-editor .combo-box .list-cell { -fx-background-color: transparent; -fx-text-fill: #173f59; }
+#ton-powder-editor .combo-box .text-field { -fx-padding: 0; -fx-border-width: 0; }
+#ton-powder-editor .combo-box > .arrow-button { -fx-background-color: transparent; }
+#ton-powder-editor .check-box:selected .box { -fx-background-color: #18778c; }
+#ton-powder-editor .check-box:selected .mark { -fx-background-color: white; }
+#ton-powder-editor .text-field:disabled,
+#ton-powder-editor .text-area:disabled,
+#ton-powder-editor .combo-box:disabled {
+    -fx-opacity: 1;
+    -fx-background-color: #f0f6f9;
+    -fx-text-fill: #526e83;
+}
+#ton-powder-editor .text-area:disabled .content { -fx-background-color: #f0f6f9; }
+#ton-powder-state,
+#ton-powder-editor .ton-powder-actions {
+    -fx-background-color: white;
+    -fx-background-radius: 11px;
+    -fx-border-color: #cbdce7;
+    -fx-border-radius: 11px;
+    -fx-padding: 12px 15px;
+}
+#ton-powder-state { -fx-text-fill: #47677e; }
+#ton-powder-tabs {
+    -fx-background-color: white;
+    -fx-background-radius: 11px;
+    -fx-border-color: #cbdce7;
+    -fx-border-radius: 11px;
+    -fx-padding: 0;
+}
+#ton-powder-tabs > .tab-header-area { -fx-padding: 5px 5px 0 5px; }
+#ton-powder-tabs > .tab-header-area > .tab-header-background {
+    -fx-background-color: #d1e2eb;
+    -fx-background-radius: 10px 10px 0 0;
+    -fx-background-insets: 0;
+}
+#ton-powder-tabs > .tab-header-area > .headers-region > .tab {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 7px 7px 0 0;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 3px 0;
+    -fx-padding: 10px 18px;
+}
+#ton-powder-tabs .tab .tab-label { -fx-text-fill: #173f59; -fx-font-weight: bold; }
+#ton-powder-tabs > .tab-header-area > .headers-region > .tab:hover { -fx-background-color: #eaf4f7; }
+#ton-powder-tabs > .tab-header-area > .headers-region > .tab:selected {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #18778c transparent;
+}
+#ton-powder-tabs .tab:selected .tab-label { -fx-text-fill: #18778c; }
+#ton-powder-tabs .scroll-pane,
+#ton-powder-tabs .scroll-pane > .viewport,
+#ton-powder-tabs .ton-powder-tab {
+    -fx-background-color: white;
+    -fx-background: white;
+    -fx-background-radius: 0 0 10px 10px;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+}
+#ton-powder-tabs .ton-powder-tab { -fx-padding: 20px; }
+#ton-powder-editor .table-view {
+    -fx-background-color: white;
+    -fx-border-color: #cbdce7;
+    -fx-border-radius: 7px;
+    -fx-background-radius: 7px;
+    -fx-padding: 0;
+}
+#ton-powder-editor .table-view .column-header,
+#ton-powder-editor .table-view .filler,
+#ton-powder-editor .table-view .column-header-background {
+    -fx-background-color: #eaf2f7;
+    -fx-border-width: 0;
+}
+#ton-powder-editor .table-view .column-header .label { -fx-text-fill: #47677e; -fx-padding: 7px; }
+#ton-powder-editor .table-row-cell { -fx-background-color: white; -fx-background-insets: 0; }
+#ton-powder-editor .table-row-cell:selected { -fx-background-color: #edf6fa; }
+#ton-powder-editor .table-cell {
+    -fx-text-fill: #173f59;
+    -fx-border-color: transparent transparent #e6eef4 transparent;
+}
+#ton-powder-editor .table-cell .button { -fx-padding: 5px 10px; }
+#ton-powder-editor .ton-error-feedback { -fx-text-fill: #a52d48; }
