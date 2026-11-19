@@ -11,6 +11,12 @@ codice, diametro/strati della versione più recente, ultima approvata ed eventua
 bozza. La ricerca tratta `%`, `_` e `\` come caratteri letterali. I filtri
 permettono di cercare modelli con una bozza o con versioni approvate.
 
+L’elenco condivide pannelli bianchi, campi bordati e intestazioni azzurre con gli
+altri cataloghi TON. **Aggiorna** è accanto alla ricerca; **Apri scheda** e frecce
+di pagina sono in basso, senza contatore «1–… di …». Le colonne occupano tutta
+la larghezza in modo uniforme. Doppio clic o Invio aprono il modello.
+Storico, versioni e riferimenti negli editor conservano la propria paginazione.
+
 **Nuovo modello** prepara la prima versione. Sono richiesti codice, diametro di
 pressatura, pressione e peso per millimetro; i sovramateriali partono da zero.
 Il codice è normalizzato in maiuscolo e identifica tutte le versioni del modello.

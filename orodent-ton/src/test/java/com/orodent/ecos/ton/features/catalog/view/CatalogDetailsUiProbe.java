@@ -76,6 +76,33 @@ public final class CatalogDetailsUiProbe {
                                 new Filter("", true, line.id(), null, null, null))
                         .join();
         var lastProduct = products.rows().getLast();
+        var compositions =
+                new com.orodent.ecos.ton.features.compositions.service.CompositionService(
+                        db, workers);
+        var models =
+                new com.orodent.ecos.ton.features.diskmodels.service.DiskModelService(db, workers);
+        for (var product : products.rows())
+            compositions
+                    .create(
+                            new com.orodent.ecos.ton.features.compositions.model.Compositions.Draft(
+                                    product.id(), "", List.of()),
+                            false)
+                    .join();
+        for (int i = 0; i < 55; i++)
+            models.create(
+                            new com.orodent.ecos.ton.features.diskmodels.model.DiskModels.Draft(
+                                    String.format("MODEL-%02d", i),
+                                    new BigDecimal("98"),
+                                    new BigDecimal("100"),
+                                    BigDecimal.ONE,
+                                    BigDecimal.ZERO,
+                                    BigDecimal.ZERO,
+                                    "",
+                                    List.of(new BigDecimal("100")),
+                                    List.of()),
+                            false)
+                    .join();
+
         catalogues
                 .create(
                         new ArticleDraft(
@@ -404,6 +431,14 @@ public final class CatalogDetailsUiProbe {
                         return null;
                     });
             await(() -> node("ton-lines-table") != null);
+            verifyTechnicalLists();
+            fx(
+                    () -> {
+                        button("ton-nav-technical").fire();
+                        button("ton-tech-lines-button").fire();
+                        return null;
+                    });
+            await(() -> node("ton-lines-table") != null);
             fx(
                     () -> {
                         button("ton-line-new").fire();
@@ -444,6 +479,149 @@ public final class CatalogDetailsUiProbe {
         }
     }
 
+    private void verifyTechnicalLists() throws Exception {
+        fx(
+                () -> {
+                    button("ton-nav-technical").fire();
+                    button("ton-tech-compositions-button").fire();
+                    return null;
+                });
+        await(
+                () ->
+                        node("ton-compositions-table") instanceof TableView<?> table
+                                && table.getItems().size() == 50);
+        fx(
+                () -> {
+                    assertNoCounters();
+                    assertEvenColumns((TableView<?>) node("ton-compositions-table"));
+                    screenshot("target/compositions-list-palette.png");
+                    var view =
+                            (com.orodent.ecos.ton.features.compositions.view.CompositionsView)
+                                    node("ton-compositions-view");
+                    view.list().results().error("Errore di caricamento simulato");
+                    assertTrue(node("ton-compositions-status").isVisible());
+                    assertEquals(
+                            "Errore di caricamento simulato",
+                            ((Label) node("ton-compositions-status")).getText());
+                    button("ton-compositions-refresh").fire();
+                    return null;
+                });
+        await(() -> ((Label) node("ton-compositions-status")).getText().isEmpty());
+        fx(
+                () -> {
+                    button("ton-compositions-next").fire();
+                    return null;
+                });
+        await(() -> ((TableView<?>) node("ton-compositions-table")).getItems().size() == 5);
+        fx(
+                () -> {
+                    button("ton-compositions-previous").fire();
+                    return null;
+                });
+        await(() -> ((TableView<?>) node("ton-compositions-table")).getItems().size() == 50);
+        fx(
+                () -> {
+                    TextField search = (TextField) node("ton-composition-search");
+                    search.setText("ZRMSTA54");
+                    search.getOnAction().handle(new javafx.event.ActionEvent());
+                    return null;
+                });
+        await(() -> ((TableView<?>) node("ton-compositions-table")).getItems().size() == 1);
+        fx(
+                () -> {
+                    var table = (TableView<?>) node("ton-compositions-table");
+                    table.getSelectionModel().selectFirst();
+                    table.fireEvent(doubleClick());
+                    return null;
+                });
+        await(() -> node("ton-composition-editor") != null);
+        fx(
+                () -> {
+                    button("ton-composition-back").fire();
+                    return null;
+                });
+        await(
+                () ->
+                        node("ton-compositions-table") instanceof TableView<?> table
+                                && table.getItems().size() == 1);
+        fx(
+                () -> {
+                    button("ton-nav-technical").fire();
+                    button("ton-tech-models-button").fire();
+                    return null;
+                });
+        await(
+                () ->
+                        node("ton-models-table") instanceof TableView<?> table
+                                && table.getItems().size() == 50);
+        fx(
+                () -> {
+                    assertNoCounters();
+                    assertEvenColumns((TableView<?>) node("ton-models-table"));
+                    screenshot("target/disk-models-list-palette.png");
+                    button("ton-models-next").fire();
+                    return null;
+                });
+        await(() -> ((TableView<?>) node("ton-models-table")).getItems().size() == 5);
+        fx(
+                () -> {
+                    button("ton-models-previous").fire();
+                    return null;
+                });
+        await(() -> ((TableView<?>) node("ton-models-table")).getItems().size() == 50);
+        fx(
+                () -> {
+                    ((ComboBox<?>) node("ton-model-filter")).getSelectionModel().select(2);
+                    return null;
+                });
+        await(() -> ((TableView<?>) node("ton-models-table")).getItems().isEmpty());
+        fx(
+                () -> {
+                    ((ComboBox<?>) node("ton-model-filter")).getSelectionModel().selectFirst();
+                    return null;
+                });
+        await(() -> ((TableView<?>) node("ton-models-table")).getItems().size() == 50);
+        fx(
+                () -> {
+                    TextField search = (TextField) node("ton-model-search");
+                    search.setText("MODEL-54");
+                    search.getOnAction().handle(new javafx.event.ActionEvent());
+                    return null;
+                });
+        await(() -> ((TableView<?>) node("ton-models-table")).getItems().size() == 1);
+        fx(
+                () -> {
+                    var table = (TableView<?>) node("ton-models-table");
+                    table.getSelectionModel().selectFirst();
+                    table.fireEvent(doubleClick());
+                    return null;
+                });
+        await(() -> node("ton-model-editor") != null);
+        fx(
+                () -> {
+                    button("ton-model-back").fire();
+                    return null;
+                });
+        await(
+                () ->
+                        node("ton-models-table") instanceof TableView<?> table
+                                && table.getItems().size() == 1);
+        fx(
+                () -> {
+                    stage.setWidth(1000);
+                    stage.setHeight(720);
+                    return null;
+                });
+        Thread.sleep(150);
+        fx(
+                () -> {
+                    screenshot("target/disk-models-list-compact.png");
+                    stage.setWidth(1600);
+                    stage.setHeight(1000);
+                    return null;
+                });
+    }
+
     private void assertNoCounters() {
         assertTrue(
                 stage.getScene().getRoot().lookupAll(".label").stream()
@@ -453,7 +631,7 @@ public final class CatalogDetailsUiProbe {
                                                 && (label.getText()
                                                                 .matches(
                                                                         "[0-9]+[–-][0-9]+ di"
-                                                                            + " [0-9]+")
+                                                                                + " [0-9]+")
                                                         || label.getText()
                                                                 .equals("Nessun collegamento"))));
     }

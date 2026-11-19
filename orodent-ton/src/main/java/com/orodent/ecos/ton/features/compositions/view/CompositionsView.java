@@ -17,6 +17,11 @@ public final class CompositionsView extends BorderPane {
                 .add(
                         Objects.requireNonNull(getClass().getResource("/ton/css/compositions.css"))
                                 .toExternalForm());
+        getStylesheets()
+                .add(
+                        Objects.requireNonNull(
+                                        getClass().getResource("/ton/css/technical-editor.css"))
+                                .toExternalForm());
         showList();
     }
 

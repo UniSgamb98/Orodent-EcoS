@@ -9,6 +9,11 @@ già presenti nello schema V6: non introduce una nuova migrazione.
 L'elenco mostra una riga per prodotto, con linea, colore, numero di strati,
 ultima versione approvata ed eventuale bozza. Ricerca e filtri sono paginati
 per 50 risultati; si possono includere anche i prodotti archiviati.
+Ricerca, filtro, tabella e comandi sono in un pannello bianco con la stessa
+palette degli altri elenchi TON. **Aggiorna** è accanto alla ricerca; in basso
+restano **Apri scheda** e le frecce di pagina, senza il contatore «1–… di …».
+Le colonne riempiono uniformemente lo spazio. Doppio clic o Invio aprono la scheda.
+I contatori di storico e versioni nelle schede mantengono il loro funzionamento.
 
 **Nuova composizione** sceglie un prodotto attivo con linea e colore già definiti.
 Linea e colore sono ereditati in sola lettura. Non occorre inventare un codice

@@ -14,19 +14,19 @@ public final class CompositionListView extends VBox {
     private final Button create =
             TechnicalUi.button("+ Nuova composizione", "ton-composition-new", true);
     private final TechnicalTablePage<Summary> results =
-            new TechnicalTablePage<>("ton-compositions", "Apri scheda");
+            TechnicalTablePage.catalogue("ton-compositions", "Apri scheda");
 
     CompositionListView() {
         super(16);
         setId("ton-composition-list");
         setMinWidth(0);
-        getStyleClass().add("ton-comp-page");
+        getStyleClass().addAll("ton-comp-page", "ton-catalogue-list");
         var spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         var intro =
                 TechnicalUi.label(
                         "Una ricetta per prodotto, con revisioni precise delle polveri in ogni"
-                            + " strato.",
+                                + " strato.",
                         "muted-label");
         HBox.setHgrow(intro, Priority.ALWAYS);
         var heading = new HBox(15, intro, spacer, create);
@@ -36,7 +36,12 @@ public final class CompositionListView extends VBox {
         filter.setValue(Filter.ALL);
         filter.setAccessibleText("Filtra stato della composizione");
         archived.setId("ton-composition-archived");
-        var filters = new HBox(12, search, filter);
+        search.setMinWidth(0);
+        filter.setMinWidth(Region.USE_PREF_SIZE);
+        results.refresh().setMinWidth(Region.USE_PREF_SIZE);
+        create.setMinWidth(Region.USE_PREF_SIZE);
+        var filters = new HBox(12, search, filter, results.refresh());
+        filters.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         HBox.setHgrow(search, Priority.ALWAYS);
         TechnicalUi.column(results.table(), "Prodotto", 180, Summary::code);
         TechnicalUi.column(results.table(), "Descrizione", 180, Summary::name);
@@ -60,8 +65,19 @@ public final class CompositionListView extends VBox {
                 "Bozza",
                 80,
                 r -> r.draftVersion() == null ? "—" : "v" + r.draftVersion());
+        results.table()
+                .getColumns()
+                .forEach(
+                        column -> {
+                            column.setPrefWidth(150);
+                            column.setMinWidth(60);
+                        });
         VBox.setVgrow(results, Priority.ALWAYS);
-        getChildren().addAll(heading, filters, archived, results);
+        VBox card = new VBox(12, filters, archived, results);
+        card.getStyleClass().add("ton-list-card");
+        card.setMinSize(0, 0);
+        VBox.setVgrow(card, Priority.ALWAYS);
+        getChildren().addAll(heading, card);
     }
 
     public TextField search() {

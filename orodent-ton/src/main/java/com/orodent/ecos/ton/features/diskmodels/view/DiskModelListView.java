@@ -12,13 +12,13 @@ public final class DiskModelListView extends VBox {
             TechnicalUi.input("ton-model-search", "Cerca per codice modello");
     private final ComboBox<Filter> filter = new ComboBox<>();
     private final TechnicalTablePage<Summary> results =
-            new TechnicalTablePage<>("ton-models", "Apri scheda");
+            TechnicalTablePage.catalogue("ton-models", "Apri scheda");
     private final Button create = TechnicalUi.button("+ Nuovo modello", "ton-model-new", true);
 
     DiskModelListView() {
         super(18);
         setId("ton-model-list");
-        getStyleClass().add("ton-model-page");
+        getStyleClass().addAll("ton-model-page", "ton-catalogue-list");
         filter.setId("ton-model-filter");
         filter.getItems().setAll(Filter.values());
         filter.setValue(Filter.ALL);
@@ -26,12 +26,19 @@ public final class DiskModelListView extends VBox {
         var intro =
                 TechnicalUi.label(
                         "Geometria, strati e parametri di pressatura. Una riga per modello, con"
-                            + " tutte le versioni nella scheda.",
+                                + " tutte le versioni nella scheda.",
                         "muted-label");
         HBox.setHgrow(intro, Priority.ALWAYS);
-        var heading = new HBox(15, intro, create);
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        var heading = new HBox(15, intro, spacer, create);
         heading.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-        var filters = new HBox(12, search, filter);
+        search.setMinWidth(0);
+        filter.setMinWidth(Region.USE_PREF_SIZE);
+        results.refresh().setMinWidth(Region.USE_PREF_SIZE);
+        create.setMinWidth(Region.USE_PREF_SIZE);
+        var filters = new HBox(12, search, filter, results.refresh());
+        filters.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         HBox.setHgrow(search, Priority.ALWAYS);
         TechnicalUi.column(results.table(), "Modello", 180, Summary::code);
         TechnicalUi.column(
@@ -50,8 +57,19 @@ public final class DiskModelListView extends VBox {
                 "Bozza",
                 100,
                 r -> r.draftVersion() == null ? "—" : "v" + r.draftVersion());
+        results.table()
+                .getColumns()
+                .forEach(
+                        column -> {
+                            column.setPrefWidth(150);
+                            column.setMinWidth(60);
+                        });
         VBox.setVgrow(results, Priority.ALWAYS);
-        getChildren().addAll(heading, filters, results);
+        VBox card = new VBox(12, filters, results);
+        card.getStyleClass().add("ton-list-card");
+        card.setMinSize(0, 0);
+        VBox.setVgrow(card, Priority.ALWAYS);
+        getChildren().addAll(heading, card);
     }
 
     public TextField search() {
