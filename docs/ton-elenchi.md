@@ -38,7 +38,7 @@ I nuovi elenchi riutilizzano questo componente senza copiare il layout o il CSS.
 Gli elenchi principali mostrano tutti i risultati filtrati. Nei documenti viene
 caricata solo l'anagrafica dell'ultima versione di ciascun codice; il contenuto
 completo e il WebView vengono caricati all'apertura della scheda.
-Le schede Versioni e Revisioni di Dati tecnici usano il componente dedicato
+Le schede Versioni, Revisioni e Utilizzi di Dati tecnici usano il componente dedicato
 `TechnicalRecordsView<T>`, descritto nelle [schede tecniche](ton-schede-tecniche.md),
 con tutte le righe e senza controlli di pagina. Gli altri riferimenti interni
 agli editor conservano il componente paginato `TechnicalTablePage`.

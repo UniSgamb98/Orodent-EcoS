@@ -335,7 +335,83 @@ public final class ProductionUiProbe {
                                         .noneMatch(c -> c.getText().equals("Articolo")));
                         screenshot("target/model-product-usages.png");
                         table.getSelectionModel().selectFirst();
-                        button("ton-model-usages-open").fire();
+                        assertSharedUsages("ton-model-usages", "ton-model-tabs");
+                        table.fireEvent(doubleClick());
+                        assertNotNull(node("ton-model-editor"));
+                        var row =
+                                table.lookupAll(".table-row-cell").stream()
+                                        .filter(
+                                                n ->
+                                                        n instanceof TableRow<?> tr
+                                                                && !tr.isEmpty()
+                                                                && tr.getIndex() == 0)
+                                        .findFirst()
+                                        .orElseThrow();
+                        row.fireEvent(doubleClick());
+                        return null;
+                    });
+            await(() -> node("ton-product-editor") != null);
+            fx(
+                    () -> {
+                        assertEquals(
+                                fixture.product.code(),
+                                ((TextField) node("ton-product-code")).getText());
+                        return null;
+                    });
+            fx(
+                    () -> {
+                        button("ton-nav-technical").fire();
+                        button("ton-tech-compositions-button").fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-compositions-table") instanceof TableView<?> t
+                                    && !t.getItems().isEmpty());
+            fx(
+                    () -> {
+                        var table = (TableView<?>) node("ton-compositions-table");
+                        table.getSelectionModel().selectFirst();
+                        table.fireEvent(doubleClick());
+                        return null;
+                    });
+            await(() -> node("ton-composition-tabs") != null);
+            fx(
+                    () -> {
+                        var tabs = (TabPane) node("ton-composition-tabs");
+                        tabs.getSelectionModel()
+                                .select(
+                                        tabs.getTabs().stream()
+                                                .filter(t -> t.getText().equals("Utilizzi"))
+                                                .findFirst()
+                                                .orElseThrow());
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-composition-usages-table") instanceof TableView<?> t
+                                    && !t.getItems().isEmpty());
+            fx(
+                    () -> {
+                        assertSharedUsages("ton-composition-usages", "ton-composition-tabs");
+                        var table = (TableView<?>) node("ton-composition-usages-table");
+                        var usage =
+                                (com.orodent.ecos.ton.features.compositions.model.Compositions
+                                                .Usage)
+                                        table.getItems().getFirst();
+                        assertEquals(fixture.product.id(), usage.productId());
+                        screenshot("target/composition-product-usages.png");
+                        table.getSelectionModel().selectFirst();
+                        table.fireEvent(
+                                new javafx.scene.input.KeyEvent(
+                                        javafx.scene.input.KeyEvent.KEY_PRESSED,
+                                        "",
+                                        "",
+                                        javafx.scene.input.KeyCode.ENTER,
+                                        false,
+                                        false,
+                                        false,
+                                        false));
                         return null;
                     });
             await(() -> node("ton-product-editor") != null);
@@ -362,6 +438,26 @@ public final class ProductionUiProbe {
             } catch (SQLException ignored) {
             }
         }
+    }
+
+    private void assertSharedUsages(String id, String tabsId) {
+        layout();
+        assertTrue(
+                node(id + "-table").getParent()
+                        instanceof
+                        com.orodent.ecos.ton.features.technical.view.TechnicalRecordsView<?>);
+        assertNull(node(id + "-open"));
+        assertNull(node(id + "-previous"));
+        assertNull(node(id + "-next"));
+        var table = (TableView<?>) node(id + "-table");
+        var scroll =
+                (ScrollPane)
+                        ((TabPane) node(tabsId)).getSelectionModel().getSelectedItem().getContent();
+        assertTrue(table.getHeight() > scroll.getViewportBounds().getHeight() * .65);
+        var title = node(id + "-title").localToScene(node(id + "-title").getBoundsInLocal());
+        var refresh = node(id + "-refresh").localToScene(node(id + "-refresh").getBoundsInLocal());
+        assertEquals(title.getCenterY(), refresh.getCenterY(), 2);
+        assertEquals(table.localToScene(table.getBoundsInLocal()).getMaxX(), refresh.getMaxX(), 3);
     }
 
     ProductionView view() {

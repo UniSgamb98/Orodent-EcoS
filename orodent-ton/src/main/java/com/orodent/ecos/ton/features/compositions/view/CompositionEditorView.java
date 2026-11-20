@@ -50,8 +50,13 @@ public final class CompositionEditorView extends TechnicalDetailView {
     private final CheckBox matching = new CheckBox("Solo strati corrispondenti");
     private final TechnicalTablePage<ModelMatch> models =
             new TechnicalTablePage<>("ton-composition-models", "Apri modello");
-    private final TechnicalTablePage<Usage> usages =
-            new TechnicalTablePage<>("ton-composition-usages", "Apri prodotto");
+    private final TechnicalRecordsView<Usage> usages =
+            new TechnicalRecordsView<>(
+                    "ton-composition-usages",
+                    "Prodotti che utilizzano questa composizione",
+                    "Le specifiche dei prodotti conservano questa versione precisa della"
+                        + " composizione. Approvare una nuova ricetta non aggiorna quelle"
+                        + " esistenti.");
     private final TechnicalRecordsView<Version> history =
             new TechnicalRecordsView<>(
                     "ton-composition-versions",
@@ -154,13 +159,7 @@ public final class CompositionEditorView extends TechnicalDetailView {
                                 + (u.preferred() ? " · predefinita" : ""));
         TechnicalUi.column(
                 usages.table(), "Modello", 150, u -> u.modelCode() + " · v" + u.modelVersion());
-        tab(
-                Sheet.USAGES,
-                TechnicalUi.panel(
-                        "Specifiche che utilizzano questa versione",
-                        "Approvare una nuova ricetta non modifica i riferimenti degli articoli già"
-                                + " configurati.",
-                        usages));
+        tab(Sheet.USAGES, usages);
         TechnicalUi.column(history.table(), "Versione", 100, v -> "v" + v.number());
         TechnicalUi.column(history.table(), "Stato", 130, v -> v.state().toString());
         TechnicalUi.column(
@@ -191,7 +190,10 @@ public final class CompositionEditorView extends TechnicalDetailView {
 
     private void tab(Sheet sheet, Node content) {
         var tab =
-                addSheet(sheet.title(), content, sheet == Sheet.RECIPE || sheet == Sheet.VERSIONS);
+                addSheet(
+                        sheet.title(),
+                        content,
+                        sheet == Sheet.RECIPE || sheet == Sheet.VERSIONS || sheet == Sheet.USAGES);
         sheets.put(tab, sheet);
     }
 
@@ -346,7 +348,7 @@ public final class CompositionEditorView extends TechnicalDetailView {
         return models;
     }
 
-    public TechnicalTablePage<Usage> usages() {
+    public TechnicalRecordsView<Usage> usages() {
         return usages;
     }
 

@@ -332,6 +332,36 @@ class DiskModelServiceTest {
         assertEquals(1, service.page("", Filter.ALL, 0).join().total());
     }
 
+    @Test
+    void completeUsagesRemainAccessibleBeyondTheFormerPageLimit() {
+        var model =
+                service.create(draft("USAGES", List.of(n("100")), List.of()), true)
+                        .join()
+                        .revision()
+                        .id();
+        seedUsage(model);
+        long composition = 1;
+        var statements = new ArrayList<String>();
+        for (int version = 2; version <= 52; version++)
+            statements.add(
+                    "INSERT INTO"
+                        + " TON.CONFIGURAZIONI_PRODOTTO(prodotto_id,numero_versione,composizione_id,modello_id,versione_calcolo)"
+                        + " VALUES (1,"
+                            + version
+                            + ","
+                            + composition
+                            + ","
+                            + model
+                            + ",'test')");
+        execute(statements.toArray(String[]::new));
+        var rows = service.allUsages(model).join();
+        assertEquals(52, rows.size());
+        assertEquals(52, rows.getFirst().specification());
+        assertEquals(1, rows.getLast().specification());
+        assertTrue(rows.stream().allMatch(u -> u.productId() == 1));
+        assertTrue(service.allUsages(Long.MAX_VALUE).join().isEmpty());
+    }
+
     private Draft draft(String code, List<BigDecimal> layers, List<Range> ranges) {
         return new Draft(
                 code,

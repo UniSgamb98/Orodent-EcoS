@@ -22,8 +22,7 @@ L’elenco condivide pannelli bianchi, campi bordati e intestazioni azzurre con 
 altri cataloghi TON. **Aggiorna** è accanto alla ricerca; non ci sono pulsante
 di apertura, frecce di pagina o contatore in basso. Le colonne occupano tutta
 la larghezza in modo uniforme. Doppio clic o Invio aprono il modello.
-La scheda Versioni usa l'elenco completo; i riferimenti negli editor conservano
-la propria paginazione.
+Le schede Versioni e Utilizzi usano l’elenco completo e scorrevole.
 
 La scheda modello usa la stessa palette della scheda polvere: codice
 nell'intestazione del modulo, **Torna ai modelli** a sinistra e **Aggiorna dati**
@@ -59,8 +58,10 @@ modello. Il numero della versione viene assegnato dal servizio.
   gruppo confrontato; ogni gruppo ha il proprio riferimento, sempre incluso. Nessuna
   tolleranza o regola seleziona automaticamente gli stampi.
 - **Utilizzi**: specifiche dei prodotti collegate alla versione selezionata,
-  con stato e indicazione della predefinita. **Apri prodotto** apre la scheda
-  reale del prodotto, che condivide modello e composizione tra tutti gli articoli.
+  con stato e indicazione della predefinita. Doppio clic o Invio apre la scheda
+  del prodotto, che condivide modello e composizione tra tutti gli articoli.
+  Usa la stessa struttura degli Utilizzi delle polveri: Aggiorna a destra del
+  titolo, tabella a tutta altezza e lista completa senza controlli in basso.
 - **Versioni**: elenco completo con stato e data, esteso all'altezza disponibile.
   Doppio clic o Invio carica la versione selezionata. **Aggiorna** affianca il
   titolo a destra, senza pulsante di apertura, frecce o contatore in basso.

@@ -126,6 +126,16 @@ public final class CompositionService {
                                                         product, Math.max(0, offset), PAGE_SIZE)));
     }
 
+    public CompletableFuture<List<Usage>> allUsages(long id) {
+        return async(
+                () ->
+                        connections.withConnection(
+                                c ->
+                                        new CompositionRepository(c)
+                                                .usages(id, 0, Integer.MAX_VALUE)
+                                                .rows()));
+    }
+
     public CompletableFuture<Page<Usage>> usages(long id, int offset) {
         return async(
                 () ->

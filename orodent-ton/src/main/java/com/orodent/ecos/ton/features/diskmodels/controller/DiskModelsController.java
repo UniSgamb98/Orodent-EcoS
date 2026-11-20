@@ -12,7 +12,6 @@ import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.beans.value.*;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyCode;
 import javafx.util.Duration;
 
 import java.util.*;
@@ -30,7 +29,6 @@ public final class DiskModelsController implements FeatureController {
     private final List<Runnable> cleanups = new ArrayList<>();
     private Detail original;
     private List<String> baseline = List.of();
-    private int usagesOffset;
     private long selectedId;
     private boolean editing;
     private volatile boolean disposed;
@@ -133,13 +131,8 @@ public final class DiskModelsController implements FeatureController {
                 });
         on(e.history().refresh(), this::loadVersions);
         e.history().onOpen(this::openVersion);
-        on(e.usages().refresh(), () -> loadUsages(usagesOffset));
-        on(
-                e.usages().previous(),
-                () -> loadUsages(Math.max(0, usagesOffset - DiskModelService.PAGE_SIZE)));
-        on(e.usages().next(), () -> loadUsages(usagesOffset + DiskModelService.PAGE_SIZE));
-        on(e.usages().open(), this::openUsage);
-        tableAction(e.usages().table(), this::openUsage);
+        on(e.usages().refresh(), this::loadUsages);
+        e.usages().onOpen(this::openUsage);
     }
 
     public void start() {
@@ -178,7 +171,6 @@ public final class DiskModelsController implements FeatureController {
         cancelReads();
         original = null;
         editing = true;
-        usagesOffset = 0;
         view.editor().show(null);
         view.editor().sheet(Sheet.PARAMETERS);
         baseline = view.editor().fingerprint();
@@ -229,7 +221,6 @@ public final class DiskModelsController implements FeatureController {
         original = detail;
         selectedId = detail.revision().id();
         editing = true;
-        usagesOffset = 0;
         view.editor().show(detail);
         view.editor().sheet(sheet);
         baseline = view.editor().fingerprint();
@@ -251,7 +242,7 @@ public final class DiskModelsController implements FeatureController {
         if (original == null || saving.get()) return;
         switch (view.editor().sheet()) {
             case VERSIONS -> loadVersions();
-            case USAGES -> loadUsages(usagesOffset);
+            case USAGES -> loadUsages();
             default -> {}
         }
     }
@@ -267,16 +258,11 @@ public final class DiskModelsController implements FeatureController {
                 page::error);
     }
 
-    private void loadUsages(int offset) {
+    private void loadUsages() {
         if (original == null || saving.get()) return;
-        usagesOffset = offset;
         var page = view.editor().usages();
         page.loading();
-        read(
-                "usages",
-                () -> service.usages(original.revision().id(), offset),
-                page::show,
-                page::error);
+        read("usages", () -> service.allUsages(original.revision().id()), page::show, page::error);
     }
 
     private void openVersion() {
@@ -404,25 +390,6 @@ public final class DiskModelsController implements FeatureController {
     private void on(Button button, Runnable action) {
         button.setOnAction(event -> action.run());
         cleanups.add(() -> button.setOnAction(null));
-    }
-
-    private <T> void tableAction(TableView<T> table, Runnable action) {
-        table.setOnMouseClicked(
-                event -> {
-                    if (event.getClickCount() == 2) action.run();
-                });
-        table.setOnKeyPressed(
-                event -> {
-                    if (event.getCode() == KeyCode.ENTER) {
-                        action.run();
-                        event.consume();
-                    }
-                });
-        cleanups.add(
-                () -> {
-                    table.setOnMouseClicked(null);
-                    table.setOnKeyPressed(null);
-                });
     }
 
     private static String message(Throwable error) {

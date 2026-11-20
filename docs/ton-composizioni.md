@@ -130,6 +130,9 @@ approvata di modello. Il servizio verifica anche strati e totali.
 **Utilizzi** elenca le specifiche che puntano alla versione selezionata e permette
 di aprire il prodotto, anche se archiviato. Approvare una nuova ricetta non
 sostituisce i riferimenti già salvati nelle specifiche precedenti.
+La scheda riusa il componente degli Utilizzi delle polveri: titolo e Aggiorna
+in alto, tabella a tutta altezza, lista completa senza paginazione o pulsante
+di apertura. Doppio clic su una riga o Invio apre il prodotto.
 
 ## Organizzazione del codice
 
@@ -144,8 +147,8 @@ Le scritture bloccano linea, prodotto, composizione e polveri in ordine coerente
 con gli altri cataloghi. I controlli di stato e concorrenza avvengono nel servizio,
 anche se la richiesta arriva da una seconda postazione. Le letture del dettaglio
 mantengono coerenti intestazione e figli. Ricerca con debounce e controllo delle
-richieste superate evitano aggiornamenti tardivi della vista. La scheda Versioni
-carica la lista completa; gli altri riferimenti e selettori mantengono i propri
+richieste superate evitano aggiornamenti tardivi della vista. Le schede Versioni e Utilizzi
+caricano la lista completa; Modelli e gli altri selettori mantengono i propri
 limiti di pagina.
 Uscendo vengono rilasciati listener, timer e buffer; query e transazioni non
 girano sul thread grafico.

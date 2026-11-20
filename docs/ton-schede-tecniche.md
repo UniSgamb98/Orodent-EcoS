@@ -57,5 +57,12 @@ salvataggio effettivo e aprono una finestra in sola lettura con lo snapshot.
 Il componente comune non modifica questi cicli di vita.
 
 Anche le liste di prodotti della Linea e di articoli del Prodotto occupano
-l'altezza disponibile. La scheda **Utilizzi** delle Polveri riusa la struttura
-comune per mostrare i prodotti collegati tramite le composizioni.
+l'altezza disponibile. Le schede **Utilizzi** di Polveri, Composizioni e Modelli
+disco riusano lo stesso
+`TechnicalRecordsView<T>` per mostrare i prodotti collegati. Condividono titolo
+e Aggiorna sulla stessa riga, tabella a tutta altezza, caricamento/errori e apertura
+con doppio clic su una riga o Invio. Non hanno pulsanti in basso, frecce o contatore;
+tutti gli utilizzi si raggiungono scorrendo, anche oltre il precedente limite di
+50 righe. Le singole funzioni configurano solo colonne, descrizione e lettura dei
+riferimenti. Gli Utilizzi di composizioni e modelli rimangono legati alla versione
+precisa selezionata, comprese le specifiche storiche.

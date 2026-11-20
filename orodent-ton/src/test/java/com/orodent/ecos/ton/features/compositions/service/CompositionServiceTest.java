@@ -321,6 +321,32 @@ class CompositionServiceTest {
     }
 
     @Test
+    void completeUsagesRemainAccessibleBeyondTheFormerPageLimit() {
+        var composition = service.create(recipe(1), true).join().revision().id();
+        seedUsage(composition);
+        long model = 1;
+        var statements = new ArrayList<String>();
+        for (int version = 2; version <= 52; version++)
+            statements.add(
+                    "INSERT INTO"
+                        + " TON.CONFIGURAZIONI_PRODOTTO(prodotto_id,numero_versione,composizione_id,modello_id,versione_calcolo)"
+                        + " VALUES (1,"
+                            + version
+                            + ","
+                            + composition
+                            + ","
+                            + model
+                            + ",'test')");
+        execute(statements.toArray(String[]::new));
+        var rows = service.allUsages(composition).join();
+        assertEquals(52, rows.size());
+        assertEquals(52, rows.getFirst().specification());
+        assertEquals(1, rows.getLast().specification());
+        assertTrue(rows.stream().allMatch(u -> u.productId() == 1));
+        assertTrue(service.allUsages(Long.MAX_VALUE).join().isEmpty());
+    }
+
+    @Test
     void versionsArePagedPerProductWithoutHidingPinnedOldPowderReferences() {
         Revision first = service.create(recipe(1), true).join().revision();
         service.create(recipe(2), false).join();

@@ -32,7 +32,7 @@ public final class CompositionsController implements FeatureController {
             modelDelay = delay();
     private Detail original;
     private List<String> baseline = List.of();
-    private int usagesOffset, modelsOffset;
+    private int modelsOffset;
     private long selectedId;
     private boolean editing;
     private volatile boolean disposed;
@@ -195,13 +195,8 @@ public final class CompositionsController implements FeatureController {
         tableAction(e.models().table(), this::openModel);
         on(e.history().refresh(), this::loadVersions);
         e.history().onOpen(this::openVersion);
-        on(e.usages().refresh(), () -> loadUsages(usagesOffset));
-        on(
-                e.usages().previous(),
-                () -> loadUsages(Math.max(0, usagesOffset - CompositionService.PAGE_SIZE)));
-        on(e.usages().next(), () -> loadUsages(usagesOffset + CompositionService.PAGE_SIZE));
-        on(e.usages().open(), this::openUsage);
-        tableAction(e.usages().table(), this::openUsage);
+        on(e.usages().refresh(), this::loadUsages);
+        e.usages().onOpen(this::openUsage);
     }
 
     private static PauseTransition delay() {
@@ -263,7 +258,7 @@ public final class CompositionsController implements FeatureController {
         cancelReads();
         original = null;
         editing = true;
-        usagesOffset = modelsOffset = 0;
+        modelsOffset = 0;
         view.editor().show(null);
         view.editor().sheet(Sheet.DATA);
         baseline = view.editor().fingerprint();
@@ -339,7 +334,7 @@ public final class CompositionsController implements FeatureController {
         original = detail;
         selectedId = detail.revision().id();
         editing = true;
-        usagesOffset = modelsOffset = 0;
+        modelsOffset = 0;
         view.editor().show(detail);
         view.editor().sheet(sheet);
         baseline = view.editor().fingerprint();
@@ -353,7 +348,7 @@ public final class CompositionsController implements FeatureController {
         switch (view.editor().sheet()) {
             case MODELS -> loadModels(modelsOffset);
             case USAGES -> {
-                if (original != null) loadUsages(usagesOffset);
+                if (original != null) loadUsages();
             }
             case VERSIONS -> {
                 if (original != null) loadVersions();
@@ -393,16 +388,11 @@ public final class CompositionsController implements FeatureController {
                 page::error);
     }
 
-    private void loadUsages(int next) {
+    private void loadUsages() {
         if (original == null || saving.get()) return;
-        usagesOffset = next;
         var page = view.editor().usages();
         page.loading();
-        read(
-                "usages",
-                () -> service.usages(original.revision().id(), next),
-                page::show,
-                page::error);
+        read("usages", () -> service.allUsages(original.revision().id()), page::show, page::error);
     }
 
     private void openVersion() {

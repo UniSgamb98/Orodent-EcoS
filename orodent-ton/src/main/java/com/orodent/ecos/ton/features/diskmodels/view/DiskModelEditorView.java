@@ -4,7 +4,6 @@ import static com.orodent.ecos.ton.features.diskmodels.model.DiskModels.*;
 
 import com.orodent.ecos.ton.features.technical.view.TechnicalDetailView;
 import com.orodent.ecos.ton.features.technical.view.TechnicalRecordsView;
-import com.orodent.ecos.ton.features.technical.view.TechnicalTablePage;
 import com.orodent.ecos.ton.features.technical.view.TechnicalUi;
 
 import javafx.beans.property.ReadOnlyStringProperty;
@@ -48,8 +47,12 @@ public final class DiskModelEditorView extends TechnicalDetailView {
     private final ModelDiametersEditor diameters = new ModelDiametersEditor(this::refreshPreview);
     private final LayersEditor layers = new LayersEditor(this::refreshPreview);
     private final RangesEditor ranges = new RangesEditor(this::refreshPreview);
-    private final TechnicalTablePage<Usage> usages =
-            new TechnicalTablePage<>("ton-model-usages", "Apri prodotto");
+    private final TechnicalRecordsView<Usage> usages =
+            new TechnicalRecordsView<>(
+                    "ton-model-usages",
+                    "Prodotti che utilizzano questo modello",
+                    "Le specifiche dei prodotti conservano questa versione precisa del modello."
+                        + " Approvare una nuova versione non aggiorna quelle esistenti.");
     private final TechnicalRecordsView<Version> history =
             new TechnicalRecordsView<>(
                     "ton-model-versions",
@@ -116,12 +119,6 @@ public final class DiskModelEditorView extends TechnicalDetailView {
         tabWithPreview(Sheet.LAYERS, layerPanel);
         tabWithPreview(Sheet.RANGES, rangePanel);
         tab(Sheet.MOULDS, diameters.comparisons());
-        var usagePanel =
-                TechnicalUi.panel(
-                        "Specifiche che utilizzano questa versione",
-                        "Ogni collegamento conserva il modello preciso. Approvare una nuova"
-                                + " versione non aggiorna automaticamente le specifiche esistenti.",
-                        usages);
         TechnicalUi.column(usages.table(), "Prodotto", 180, Usage::productCode);
         TechnicalUi.column(usages.table(), "Descrizione", 180, Usage::productName);
         TechnicalUi.column(
@@ -134,7 +131,7 @@ public final class DiskModelEditorView extends TechnicalDetailView {
                                 + " · "
                                 + u.state()
                                 + (u.preferred() ? " · predefinita" : ""));
-        tab(Sheet.USAGES, usagePanel);
+        tab(Sheet.USAGES, usages);
         TechnicalUi.column(history.table(), "Versione", 100, v -> "v" + v.number());
         TechnicalUi.column(history.table(), "Stato", 130, v -> v.state().toString());
         TechnicalUi.column(
@@ -193,7 +190,8 @@ public final class DiskModelEditorView extends TechnicalDetailView {
     }
 
     private void tab(Sheet sheet, Node content) {
-        var tab = addSheet(sheet.title(), content, sheet == Sheet.VERSIONS);
+        var tab =
+                addSheet(sheet.title(), content, sheet == Sheet.VERSIONS || sheet == Sheet.USAGES);
         sheets.put(tab, sheet);
     }
 
@@ -342,7 +340,7 @@ public final class DiskModelEditorView extends TechnicalDetailView {
         return layers;
     }
 
-    public TechnicalTablePage<Usage> usages() {
+    public TechnicalRecordsView<Usage> usages() {
         return usages;
     }
 
