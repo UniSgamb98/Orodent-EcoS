@@ -6,7 +6,6 @@ import com.orodent.ecos.ton.features.technical.view.TechnicalUi;
 
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.util.StringConverter;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -17,7 +16,8 @@ public final class ModelDiametersEditor extends VBox {
     private final VBox rowBox = new VBox(12),
             comparisons = new VBox(14),
             comparisonBody = new VBox();
-    private final ComboBox<Row> selected = new ComboBox<>();
+    private final TabPane selected = new TabPane();
+    private static final double[] WIDTHS = {23, 54, 23};
     private final Button
             add = TechnicalUi.button("+ Aggiungi diametro", "ton-model-add-diameter", false),
             refresh =
@@ -39,36 +39,35 @@ public final class ModelDiametersEditor extends VBox {
         setId("ton-model-diameters");
         selected.setId("ton-model-diameter-group");
         selected.setMinWidth(0);
-        selected.setMaxWidth(Double.MAX_VALUE);
-        selected.setConverter(
-                new StringConverter<>() {
-                    public String toString(Row r) {
-                        return r == null ? "" : r.caption();
-                    }
-
-                    public Row fromString(String s) {
-                        throw new UnsupportedOperationException();
-                    }
-                });
-        selected.valueProperty()
+        selected.setMinHeight(0);
+        selected.setMaxHeight(Region.USE_PREF_SIZE);
+        selected.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        selected.getStyleClass().addAll("ton-editor-tabs", "ton-model-diameter-tabs");
+        selected.getSelectionModel()
+                .selectedItemProperty()
                 .addListener(
                         (o, a, b) -> {
-                            if (b != null) comparisonBody.getChildren().setAll(b.moulds);
+                            var row = selectedRow();
+                            if (row != null) comparisonBody.getChildren().setAll(row.moulds);
                             else comparisonBody.getChildren().clear();
                             if (!updating) changed.run();
                         });
-        var spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        var actions =
-                new HBox(
-                        12,
-                        TechnicalUi.field("Diametro articolo da confrontare", selected),
-                        spacer,
-                        refresh);
-        actions.setAlignment(javafx.geometry.Pos.BOTTOM_LEFT);
+        HBox.setHgrow(selected, Priority.ALWAYS);
+        var actions = new HBox(12, selected, refresh);
+        actions.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         comparisons.getChildren().addAll(actions, comparisonBody);
         comparisons.setMinWidth(0);
-        getChildren().addAll(legacy, rowBox, add);
+        getChildren()
+                .addAll(
+                        legacy,
+                        ModelInputRows.headings(
+                                "ton-model-diameter-headings",
+                                WIDTHS,
+                                "Diametro articolo · mm *",
+                                "Stampo di riferimento *",
+                                "Peso · g/mm *"),
+                        rowBox,
+                        add);
         add.setOnAction(
                 e -> {
                     addRow(null, null, null, null);
@@ -80,7 +79,8 @@ public final class ModelDiametersEditor extends VBox {
     private final class Row {
         final TextField diameter, grams;
         final ModelMouldsPane moulds;
-        final VBox box;
+        final HBox box;
+        final Tab tab;
         final Button remove;
         final BigDecimal historical;
 
@@ -100,45 +100,21 @@ public final class ModelDiametersEditor extends VBox {
             TechnicalUi.visible(moulds.refresh(), false);
             moulds.choices(available);
             moulds.grams(dose);
-            remove =
-                    TechnicalUi.button(
-                            "Rimuovi diametro", "ton-model-remove-diameter" + suffix, false);
-            var fields = new GridPane();
-            fields.setHgap(12);
-            fields.setVgap(10);
-            fields.setMinWidth(0);
-            var nominalField = TechnicalUi.field("Diametro articolo · mm *", diameter);
-            var mouldField = TechnicalUi.field("Stampo di riferimento *", moulds.reference());
-            var doseField = TechnicalUi.field("Peso · g/mm *", grams);
-            // Keep the three values together; stack at narrow widths instead of clipping controls.
-            Runnable layout =
-                    () -> {
-                        boolean wide = fields.getWidth() >= 650;
-                        fields.getChildren().clear();
-                        fields.getColumnConstraints().clear();
-                        if (wide) {
-                            for (double width : new double[] {23, 54, 23}) {
-                                var col = new ColumnConstraints();
-                                col.setPercentWidth(width);
-                                fields.getColumnConstraints().add(col);
-                            }
-                            fields.add(nominalField, 0, 0);
-                            fields.add(mouldField, 1, 0);
-                            fields.add(doseField, 2, 0);
-                        } else {
-                            var col = new ColumnConstraints();
-                            col.setPercentWidth(100);
-                            fields.getColumnConstraints().add(col);
-                            fields.add(nominalField, 0, 0);
-                            fields.add(mouldField, 0, 1);
-                            fields.add(doseField, 0, 2);
-                        }
-                    };
-            fields.widthProperty().addListener((o, a, b) -> layout.run());
-            layout.run();
-            box = new VBox(10, fields, remove);
-            box.setMinWidth(0);
-            box.getStyleClass().add("ton-technical-panel");
+            remove = TechnicalUi.button("×", "ton-model-remove-diameter" + suffix, false);
+            remove.setAccessibleText("Rimuovi diametro articolo");
+            remove.setTooltip(new Tooltip("Rimuovi diametro"));
+            box =
+                    ModelInputRows.row(
+                            "ton-model-diameter-row" + suffix,
+                            WIDTHS,
+                            List.of(diameter, moulds.reference(), grams),
+                            remove);
+            tab = new Tab();
+            tab.setUserData(this);
+            tab.textProperty()
+                    .bind(
+                            javafx.beans.binding.Bindings.createStringBinding(
+                                    this::caption, diameter.textProperty()));
             remove.setOnAction(
                     e -> {
                         if (frozen || rows.size() == 1) return;
@@ -158,21 +134,13 @@ public final class ModelDiametersEditor extends VBox {
                 control.focusedProperty()
                         .addListener(
                                 (o, a, b) -> {
-                                    if (b && !updating) selected.setValue(this);
+                                    if (b && !updating) selected.getSelectionModel().select(tab);
                                 });
         }
 
         void onChange() {
             if (updating) return;
             moulds.grams(TechnicalUi.preview(grams.getText()));
-            // Reset the button cell so the caption also follows edits to the selected diameter.
-            selected.setButtonCell(
-                    new ListCell<>() {
-                        protected void updateItem(Row r, boolean empty) {
-                            super.updateItem(r, empty);
-                            setText(empty || r == null ? "" : r.caption());
-                        }
-                    });
             changed.run();
         }
 
@@ -194,13 +162,13 @@ public final class ModelDiametersEditor extends VBox {
         var row = new Row(nominal, dose, moulds, historical, ++sequence);
         rows.add(row);
         rowBox.getChildren().add(row.box);
-        for (var r : rows) TechnicalUi.visible(r.remove, !frozen && rows.size() > 1);
+        for (var r : rows) r.remove.setDisable(frozen || rows.size() <= 1);
     }
 
     private void updateSelector(Row prefer) {
-        selected.getItems().setAll(rows);
-        selected.setValue(prefer);
-        for (var r : rows) TechnicalUi.visible(r.remove, !frozen && rows.size() > 1);
+        selected.getTabs().setAll(rows.stream().map(r -> r.tab).toList());
+        selected.getSelectionModel().select(prefer.tab);
+        for (var r : rows) r.remove.setDisable(frozen || rows.size() <= 1);
     }
 
     public void show(Draft data, boolean frozen) {
@@ -210,7 +178,7 @@ public final class ModelDiametersEditor extends VBox {
             rows.clear();
             rowBox.getChildren().clear();
             comparisonBody.getChildren().clear();
-            selected.getItems().clear();
+            selected.getTabs().clear();
             sequence = 0;
             available = List.of();
             this.frozen = frozen;
@@ -252,8 +220,13 @@ public final class ModelDiametersEditor extends VBox {
         return values;
     }
 
+    private Row selectedRow() {
+        var tab = selected.getSelectionModel().getSelectedItem();
+        return tab == null ? null : (Row) tab.getUserData();
+    }
+
     public BigDecimal previewDiameter() {
-        var row = selected.getValue();
+        var row = selectedRow();
         return row == null
                 ? null
                 : row.moulds.reference().getValue() == null
@@ -270,7 +243,7 @@ public final class ModelDiametersEditor extends VBox {
     }
 
     public ModelMouldsPane selectedMoulds() {
-        return selected.getValue().moulds;
+        return selectedRow().moulds;
     }
 
     public void dispose() {

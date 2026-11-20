@@ -134,10 +134,59 @@ public final class ModelMouldUiProbe {
                                                 .filter(m -> m.code().equals("S99"))
                                                 .findFirst()
                                                 .orElseThrow());
+                        assertAligned(
+                                "ton-model-article-diameter",
+                                "ton-model-reference-mould",
+                                "ton-model-grams",
+                                "ton-model-remove-diameter");
+                        assertEquals("×", button("ton-model-remove-diameter").getText());
+                        assertNotNull(node("ton-model-diameter-headings"));
+                        sheet("Sovramateriali");
+                        for (int row = 1; row <= 2; row++) {
+                            button("ton-model-range-add").fire();
+                            field("ton-model-range-" + row + "-from")
+                                    .setText(row == 1 ? "10" : "15");
+                            field("ton-model-range-" + row + "-to").setText(row == 1 ? "15" : "30");
+                            field("ton-model-range-" + row + "-top").setText("1,5");
+                            field("ton-model-range-" + row + "-bottom").setText("0,5");
+                        }
+                        button("ton-model-range-add").fire();
+                        button("ton-model-range-remove-3").fire();
+                        assertNotNull(node("ton-model-range-headings"));
+                        assertEquals(
+                                4, node("ton-model-range-headings").lookupAll(".label").size());
+                        for (int row = 1; row <= 2; row++) {
+                            assertAligned(
+                                    "ton-model-range-" + row + "-from",
+                                    "ton-model-range-" + row + "-to",
+                                    "ton-model-range-" + row + "-top",
+                                    "ton-model-range-" + row + "-bottom",
+                                    "ton-model-range-remove-" + row);
+                            assertTrue(
+                                    node("ton-model-range-row-" + row)
+                                            .getStyleClass()
+                                            .contains("ton-model-input-row"));
+                        }
+                        screenshot("target/model-ranges-compact.png");
+                        sheet("Parametri");
                         screenshot("target/model-mould-parameters.png");
                         sheet("Stampi ammissibili");
                         layout();
                         assertEquals(3, table().getItems().size());
+                        assertTrue(node("ton-model-diameter-group") instanceof TabPane);
+                        assertTrue(
+                                table().getHeight() < 180,
+                                "Table must size to its three real moulds");
+                        assertNoEmptyScrolling();
+                        assertTrue(
+                                stage.getScene().getRoot().lookupAll(".label").stream()
+                                        .filter(n -> n instanceof Label)
+                                        .map(n -> ((Label) n).getText())
+                                        .noneMatch(
+                                                t ->
+                                                        t.startsWith("Riferimento:")
+                                                                || t.startsWith(
+                                                                        "Stime geometriche")));
                         assertTrue(check("S99").isSelected());
                         assertTrue(check("S99").isDisabled());
                         assertFalse(check("S992").isSelected());
@@ -226,9 +275,21 @@ public final class ModelMouldUiProbe {
                                         .orElseThrow());
                         button("ton-model-add-diameter").fire();
                         button("ton-model-remove-diameter-3").fire();
+                        assertAligned(
+                                "ton-model-article-diameter-2",
+                                "ton-model-reference-mould-2",
+                                "ton-model-grams-2",
+                                "ton-model-remove-diameter-2");
+                        assertEquals(
+                                3, node("ton-model-diameter-headings").lookupAll(".label").size());
+                        assertEquals(
+                                0, node("ton-model-diameter-row-2").lookupAll(".label").size());
                         screenshot("target/model-diameters-parameters.png");
                         sheet("Stampi ammissibili");
-                        var groups = (ComboBox<?>) node("ton-model-diameter-group");
+                        var groups = (TabPane) node("ton-model-diameter-group");
+                        assertEquals(2, groups.getTabs().size());
+                        assertTrue(groups.getTabs().get(0).getText().contains("98"));
+                        assertTrue(groups.getTabs().get(1).getText().contains("95"));
                         groups.getSelectionModel().select(1);
                         layout();
                         assertTrue(check("S988").isSelected());
@@ -240,7 +301,59 @@ public final class ModelMouldUiProbe {
                         assertTrue(check("S99").isSelected());
                         assertTrue(check("S992").isSelected());
                         assertFalse(check("S988").isSelected());
+                        assertNoEmptyScrolling();
                         screenshot("target/model-diameters-comparison.png");
+                        return null;
+                    });
+            await(
+                    () -> {
+                        var tabs = (TabPane) node("ton-model-diameter-group");
+                        var headers = tabs.lookup(".headers-region");
+                        if (headers == null) return false;
+                        var clip = headers.getClip();
+                        double right =
+                                tabs.lookupAll(".tab").stream()
+                                        .mapToDouble(n -> n.getBoundsInParent().getMaxX())
+                                        .max()
+                                        .orElse(Double.MAX_VALUE);
+                        return clip == null || clip.getBoundsInLocal().getMaxX() + 1 >= right;
+                    });
+            fx(
+                    () -> {
+                        assertNoEmptyScrolling();
+                        screenshot("target/model-diameters-comparison.png");
+                        return null;
+                    });
+            db.withTransaction(
+                    c -> {
+                        try (var q =
+                                c.prepareStatement(
+                                        "INSERT INTO TON.STAMPI(codice,nome,diametro_mm) VALUES"
+                                                + " (?,?,99)")) {
+                            for (int i = 0; i < 30; i++) {
+                                q.setString(1, String.format("EXTRA-%02d", i));
+                                q.setString(2, "Stampo aggiuntivo " + i);
+                                q.addBatch();
+                            }
+                            q.executeBatch();
+                        }
+                        return null;
+                    });
+            fx(
+                    () -> {
+                        button("ton-model-moulds-refresh").fire();
+                        return null;
+                    });
+            await(() -> table().getItems().size() == 33);
+            fx(
+                    () -> {
+                        layout();
+                        var scroll = activeSheetScroll();
+                        assertTrue(
+                                scroll.getContent().getLayoutBounds().getHeight()
+                                        > scroll.getViewportBounds().getHeight(),
+                                "Real mould rows should require scrolling when numerous");
+                        screenshot("target/model-moulds-many.png");
                         Platform.runLater(this::answer);
                         button("ton-model-approve").fire();
                         return null;
@@ -341,6 +454,36 @@ public final class ModelMouldUiProbe {
                 DriverManager.getConnection(url + ";drop=true", "APP", "pw");
             } catch (SQLException ignored) {
             }
+        }
+    }
+
+    ScrollPane activeSheetScroll() {
+        return (ScrollPane)
+                ((TabPane) node("ton-model-tabs"))
+                        .getSelectionModel()
+                        .getSelectedItem()
+                        .getContent();
+    }
+
+    void assertNoEmptyScrolling() {
+        layout();
+        var scroll = activeSheetScroll();
+        assertTrue(
+                scroll.getContent().getLayoutBounds().getHeight()
+                        <= scroll.getViewportBounds().getHeight() + 1,
+                "A few moulds must not force scrolling over blank space: "
+                        + scroll.getContent().getLayoutBounds()
+                        + " vs "
+                        + scroll.getViewportBounds());
+    }
+
+    void assertAligned(String... ids) {
+        layout();
+        double y = node(ids[0]).localToScene(0, 0).getY();
+        for (var id : ids) {
+            var n = node(id);
+            assertEquals(34, ((javafx.scene.layout.Region) n).getHeight(), 0.75, id);
+            assertEquals(y, n.localToScene(0, 0).getY(), 0.75, id);
         }
     }
 

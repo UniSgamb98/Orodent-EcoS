@@ -14,3 +14,19 @@
 .ton-models .tab-pane > .tab-header-area > .headers-region > .tab:selected { -fx-background-color: white; -fx-border-color: transparent transparent #176d86 transparent; -fx-border-width: 0 0 3px 0; }
 .ton-models .scroll-pane, .ton-models .scroll-pane > .viewport { -fx-background-color: #e3edf3; -fx-background: #e3edf3; }
 .ton-models .tab-content-area { -fx-padding: 16px 0; }
+
+/* Shared column headings stay outside the compact diameter and excess-band cards. */
+.ton-technical-detail .ton-model-input-headings { -fx-padding: 0 11px; }
+.ton-technical-detail .ton-model-input-row {
+    -fx-background-color: #f8fbfd;
+    -fx-border-color: #dce5ee;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-padding: 8px 10px;
+}
+.ton-technical-detail .ton-model-input-row .combo-box { -fx-padding: 0; }
+.ton-technical-detail .ton-model-input-row .combo-box > .list-cell { -fx-padding: 3px 10px; }
+.ton-technical-detail .ton-model-input-row .ton-model-row-action { -fx-padding: 0; -fx-alignment: center; }
+.ton-technical-detail .ton-model-diameter-tabs { -fx-background-radius: 8px; -fx-border-radius: 8px; }
+.ton-technical-detail .ton-model-diameter-tabs > .tab-header-area { -fx-padding: 4px 4px 0 4px; }
+.ton-technical-detail .ton-model-diameter-tabs > .tab-header-area > .headers-region > .tab { -fx-padding: 8px 16px; }

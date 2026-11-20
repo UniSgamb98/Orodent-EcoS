@@ -21,8 +21,7 @@ public final class ModelMouldsPane extends VBox {
     private final TableView<Row> table = new TableView<>();
     private final Button refresh =
             TechnicalUi.button("Aggiorna elenco stampi", "ton-model-moulds-refresh", false);
-    private final Label referenceLabel = TechnicalUi.label("", "muted-label"),
-            count = TechnicalUi.label("", "muted-label");
+    private final Label count = TechnicalUi.label("", "muted-label");
     private final Map<Long, Mould> admitted = new TreeMap<>();
     private List<Mould> available = List.of();
     private boolean updating, frozen;
@@ -50,9 +49,10 @@ public final class ModelMouldsPane extends VBox {
                 };
         reference.valueProperty().addListener(referenceChanged);
         table.setId("ton-model-moulds-table");
-        table.setMinHeight(220);
-        table.setPrefHeight(440);
-        VBox.setVgrow(table, Priority.ALWAYS);
+        table.setFixedCellSize(30);
+        table.setMinHeight(Region.USE_PREF_SIZE);
+        table.setMaxHeight(Region.USE_PREF_SIZE);
+        VBox.setVgrow(table, Priority.NEVER);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
         var choice = new TableColumn<Row, Row>("Ammesso");
         choice.setMinWidth(85);
@@ -118,16 +118,39 @@ public final class ModelMouldsPane extends VBox {
                                 "Seleziona manualmente gli altri stampi ammessi per questa"
                                         + " versione. Lo stampo di riferimento è già incluso.",
                                 "muted-label"),
-                        referenceLabel,
                         refresh,
                         table,
-                        count,
-                        TechnicalUi.label(
-                                "Stime geometriche a parità di altezza e densità. Un valore"
-                                        + " positivo indica polvere teorica in più, uno negativo"
-                                        + " polvere in meno. Le pesate standard del modello restano"
-                                        + " invariate.",
-                                "muted-label"));
+                        count);
+    }
+
+    /**
+     * Grow only for real rows. The containing sheet scrolls when those rows exceed its viewport.
+     */
+    @Override
+    protected void layoutChildren() {
+        super.layoutChildren();
+        var header = table.lookup(".column-header-background");
+        double headerHeight =
+                header == null || header.getLayoutBounds().getHeight() <= 0
+                        ? 40
+                        : header.getLayoutBounds().getHeight();
+        double horizontalBar =
+                table.lookupAll(".scroll-bar").stream()
+                        .filter(
+                                n ->
+                                        n instanceof ScrollBar b
+                                                && b.getOrientation()
+                                                        == javafx.geometry.Orientation.HORIZONTAL
+                                                && b.isVisible())
+                        .mapToDouble(n -> n.getLayoutBounds().getHeight())
+                        .max()
+                        .orElse(0);
+        double height =
+                headerHeight
+                        + Math.max(1, table.getItems().size()) * table.getFixedCellSize()
+                        + horizontalBar
+                        + 2;
+        if (Math.abs(table.getPrefHeight() - height) > 0.5) table.setPrefHeight(height);
     }
 
     private void column(String title, Function<Row, String> value, int width) {
@@ -210,10 +233,6 @@ public final class ModelMouldsPane extends VBox {
 
     private void render() {
         var ref = reference.getValue();
-        referenceLabel.setText(
-                ref == null
-                        ? "Scegli lo stampo di riferimento in Parametri per vedere gli scostamenti."
-                        : "Riferimento: " + ref);
         var current = new HashMap<Long, Mould>();
         available.forEach(m -> current.put(m.id(), m));
         var visible = new HashMap<Long, Mould>();
@@ -233,6 +252,8 @@ public final class ModelMouldsPane extends VBox {
                                                         ref != null && ref.id() == m.id(),
                                                         m.equals(current.get(m.id()))))
                                 .toList());
+        table.setPrefHeight(
+                40 + Math.max(1, table.getItems().size()) * table.getFixedCellSize() + 2);
         count.setText(
                 ref == null
                         ? "Nessuno stampo di riferimento selezionato."

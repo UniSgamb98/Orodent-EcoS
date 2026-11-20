@@ -38,8 +38,10 @@ modello. Il numero della versione viene assegnato dal servizio.
 
 - **Parametri**: codice, pressione target in kg/cm² e note comuni; una o più
   righe con **diametro articolo → stampo di riferimento → g/mm**.
-  **+ Aggiungi diametro** crea una riga indipendente; **Rimuovi diametro** la
-  elimina dalla bozza, mantenendo almeno una riga. Il diametro fisico deriva
+  **+ Aggiungi diametro** crea una riga indipendente; il pulsante **×** la
+  elimina dalla bozza, mantenendo almeno una riga. Le intestazioni compaiono
+  una sola volta sopra tutte le righe; campi e × hanno la stessa altezza.
+  Il diametro fisico deriva
   dallo stampo registrato in [Macchinari e attrezzature](ton-macchinari.md);
   quello nominale è inserito esplicitamente. I valori non devono coincidere.
 - **Strati**: percentuali di altezza, totale e anteprima in sezione. Aggiungere,
@@ -49,9 +51,10 @@ modello. Il numero della versione viene assegnato dal servizio.
 - **Sovramateriali**: valori superiore/inferiore predefiniti e fasce opzionali
   `[da, fino a)`. I limiti iniziali sono inclusi, quelli finali esclusi.
   Le fasce adiacenti sono ammesse; le sovrapposte sono rifiutate anche dal servizio.
-  Fuori dalle fasce restano i default. Tutte le misure sono in mm.
+  Fuori dalle fasce restano i default. Tutte le misure sono in mm. Le quattro
+  intestazioni compaiono una volta sopra le righe bordate, con campi e × allineati.
 - **Stampi ammissibili**: scelta manuale degli altri stampi utilizzabili per
-  ciascun diametro articolo di questa versione. Il selettore in alto cambia il
+  ciascun diametro articolo di questa versione. Le schede per diametro cambiano il
   gruppo confrontato; ogni gruppo ha il proprio riferimento, sempre incluso. Nessuna
   tolleranza o regola seleziona automaticamente gli stampi.
 - **Utilizzi**: specifiche degli articoli collegate alla versione selezionata,
@@ -97,6 +100,9 @@ Il selettore di ogni riga in **Parametri** propone gli stampi attivi, senza una 
 In **Stampi ammissibili** ogni altro stampo ha una spunta indipendente, inizialmente
 vuota. Cambiare riferimento non ammette automaticamente quello precedente.
 **Aggiorna elenco stampi** rilegge il catalogo senza modificare le scelte.
+Le schede mostrano tutti i diametri da configurare. La tabella occupa l’altezza
+delle righe effettive: lo scorrimento compare quando gli stampi superano lo
+spazio disponibile, senza una coda vuota di altezza fissa.
 
 La tabella mostra diametro, differenza di diametro, scostamento della sezione,
 differenza di peso in g/mm e in g ogni 100 g di polvere di riferimento. Sono stime

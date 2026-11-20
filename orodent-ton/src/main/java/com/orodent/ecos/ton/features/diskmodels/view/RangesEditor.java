@@ -11,6 +11,15 @@ import java.util.*;
 final class RangesEditor extends VBox {
     private final List<List<TextField>> rows = new ArrayList<>();
     private final VBox content = new VBox(10);
+    private static final double[] WIDTHS = {25, 25, 25, 25};
+    private final HBox headings =
+            ModelInputRows.headings(
+                    "ton-model-range-headings",
+                    WIDTHS,
+                    "Da, incluso · mm",
+                    "Fino a, escluso · mm",
+                    "Superiore · mm",
+                    "Inferiore · mm");
     private final Label feedback = TechnicalUi.label("", "muted-label");
     private final Button add =
             TechnicalUi.button("+ Aggiungi fascia", "ton-model-range-add", false);
@@ -21,7 +30,7 @@ final class RangesEditor extends VBox {
         super(15);
         this.changed = changed;
         feedback.setId("ton-model-range-feedback");
-        getChildren().addAll(content, add, feedback);
+        getChildren().addAll(headings, content, add, feedback);
         add.setOnAction(
                 e -> {
                     append(List.of("", "", "", ""));
@@ -49,6 +58,14 @@ final class RangesEditor extends VBox {
         for (int i = 0; i < 4; i++) {
             var field = TechnicalUi.input("", "Valore in mm");
             field.setText(values.get(i));
+            field.setAccessibleText(
+                    new String[] {
+                                "Altezza da inclusa, mm",
+                                "Altezza fino a esclusa, mm",
+                                "Sovramateriale superiore, mm",
+                                "Sovramateriale inferiore, mm"
+                            }
+                            [i]);
             field.setMinWidth(45);
             field.textProperty()
                     .addListener(
@@ -65,22 +82,10 @@ final class RangesEditor extends VBox {
         content.getChildren().clear();
         for (int row = 0; row < rows.size(); row++) {
             var fields = rows.get(row);
-            var grid = new GridPane();
-            grid.setHgap(10);
-            grid.setVgap(7);
-            grid.setMinWidth(0);
-            String[] titles = {
-                "Da, incluso · mm", "Fino a, escluso · mm", "Superiore · mm", "Inferiore · mm"
-            };
             String[] keys = {"from", "to", "top", "bottom"};
             for (int i = 0; i < 4; i++) {
-                var c = new ColumnConstraints();
-                c.setPercentWidth(23);
-                c.setHgrow(Priority.ALWAYS);
-                grid.getColumnConstraints().add(c);
                 fields.get(i).setId("ton-model-range-" + (row + 1) + "-" + keys[i]);
                 fields.get(i).setDisable(frozen);
-                grid.add(TechnicalUi.field(titles[i], fields.get(i)), i, 0);
             }
             var remove = TechnicalUi.button("×", "ton-model-range-remove-" + (row + 1), false);
             remove.setAccessibleText("Rimuovi fascia");
@@ -91,9 +96,13 @@ final class RangesEditor extends VBox {
                         layoutRows();
                         changed.run();
                     });
-            grid.add(remove, 4, 0);
-            content.getChildren().add(grid);
+            remove.setTooltip(new Tooltip("Rimuovi fascia"));
+            content.getChildren()
+                    .add(
+                            ModelInputRows.row(
+                                    "ton-model-range-row-" + (row + 1), WIDTHS, fields, remove));
         }
+        TechnicalUi.visible(headings, !rows.isEmpty());
         validate();
     }
 
