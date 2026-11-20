@@ -107,11 +107,17 @@ public final class ProductionRepository {
                                 0,
                                 Integer.MAX_VALUE)
                         .rows();
+        var pinnedSpecifications = new HashSet<>(pinned.values());
+        if (pinnedSpecifications.size() > 1)
+            throw invalid(
+                    "La produzione contiene specifiche diverse: ricarica la specifica comune del"
+                            + " prodotto.");
+        Long selectedSpecification =
+                pinnedSpecifications.isEmpty() ? null : pinnedSpecifications.iterator().next();
         var articles = new ArrayList<ArticleChoice>();
         for (var entry : entries) {
             var article = (CatalogModels.Article) entry;
-            articles.add(
-                    article(article, p.available() && line.active(), pinned.get(article.id())));
+            articles.add(article(article, p, selectedSpecification));
         }
         return new Workspace(product, diameter, articles);
     }
@@ -135,36 +141,29 @@ public final class ProductionRepository {
                 List.of());
     }
 
-    private ArticleChoice article(CatalogModels.Article a, boolean productAvailable, Long pinned)
+    private ArticleChoice article(
+            CatalogModels.Article a, CatalogModels.Product product, Long pinned)
             throws SQLException {
-        Long id = pinned != null ? pinned : a.defaultSpecification();
-        if (id == null) {
-            var choices = new ArrayList<Long>();
-            try (var q =
-                    c.prepareStatement(
-                            "SELECT configurazione_id FROM TON.CONFIGURAZIONI_ARTICOLO WHERE"
-                                + " articolo_id=? AND stato='APPROVATA'")) {
-                q.setLong(1, a.id());
-                try (var r = q.executeQuery()) {
-                    while (r.next()) choices.add(r.getLong(1));
-                }
-            }
-            if (choices.size() != 1)
-                return unavailable(
-                        a,
-                        choices.isEmpty()
-                                ? "Specifica da approvare"
-                                : "Seleziona una specifica predefinita");
-            id = choices.getFirst();
-        }
+        if (product.specificationConflict())
+            return unavailable(
+                    a,
+                    "Specifiche del prodotto da verificare: scegli la predefinita nella scheda"
+                            + " prodotto");
+        Long id = pinned != null ? pinned : product.defaultSpecification();
+        if (id == null)
+            return unavailable(
+                    a, "Specifica del prodotto da approvare e impostare come predefinita");
         var spec = new SpecificationRepository(c).load(id);
-        if (spec.articleId() != a.id()) throw invalid("Specifica non coerente con l'articolo.");
+        if (spec.productId() != product.id())
+            throw invalid("Specifica non coerente con il prodotto.");
+        if (!spec.recorded())
+            return unavailable(a, "Specifica precedente da verificare nella scheda prodotto");
         var compRepo = new CompositionRepository(c);
         var comp = compRepo.load(spec.compositionId());
         var model = new DiskModelRepository(c).load(spec.modelId());
         var m = model.data();
         String reason =
-                !productAvailable || !a.active()
+                !product.available() || !a.active()
                         ? "Articolo, prodotto o linea archiviati"
                         : !"APPROVATA".equals(spec.state())
                                 ? "Specifica non più approvata"
@@ -280,9 +279,9 @@ public final class ProductionRepository {
                         .toList())
             try (var q =
                     c.prepareStatement(
-                            "UPDATE TON.CONFIGURAZIONI_ARTICOLO SET"
-                                + " versione_modifica=versione_modifica WHERE"
-                                + " configurazione_id=?")) {
+                            "UPDATE TON.CONFIGURAZIONI_PRODOTTO SET"
+                                    + " versione_modifica=versione_modifica WHERE"
+                                    + " configurazione_id=?")) {
                 q.setLong(1, id);
                 q.executeUpdate();
             }
@@ -335,23 +334,28 @@ public final class ProductionRepository {
                             "La bozza è stata modificata da un'altra postazione. Ricarica i dati"
                                 + " prima di salvare.");
             }
-            try (var q =
-                    c.prepareStatement("DELETE FROM TON.PIANO_PRODUZIONE_RIGHE WHERE piano_id=?")) {
-                q.setLong(1, id);
-                q.executeUpdate();
-            }
+            for (String table : List.of("PIANO_PRODUZIONE_RIGHE", "PIANO_PRODOTTO_RIGHE"))
+                try (var q = c.prepareStatement("DELETE FROM TON." + table + " WHERE piano_id=?")) {
+                    q.setLong(1, id);
+                    q.executeUpdate();
+                }
         }
         try (var q =
                 c.prepareStatement(
                         "INSERT INTO"
-                            + " TON.PIANO_PRODUZIONE_RIGHE(piano_id,numero_riga,configurazione_id,quantita_richiesta)"
-                            + " VALUES (?,?,?,?)")) {
+                            + " TON.PIANO_PRODOTTO_RIGHE(piano_id,numero_riga,configurazione_id,quantita_richiesta,articolo_id,prodotto_id,articolo_revisione)"
+                            + " VALUES (?,?,?,?,?,?,?)")) {
             int n = 0;
             for (var f : plan.formats()) {
                 q.setLong(1, id);
                 q.setInt(2, ++n);
                 q.setLong(3, f.article().specificationId());
                 q.setInt(4, f.quantity());
+                q.setLong(5, f.article().id());
+                q.setLong(6, plan.product().id());
+                var article = new CatalogRepository(c).load(CatalogKind.ARTICLES, f.article().id());
+                new CatalogHistoryRepository(c).verifyCurrent(article);
+                q.setInt(7, article.revision());
                 q.addBatch();
             }
             q.executeBatch();
@@ -387,7 +391,8 @@ public final class ProductionRepository {
             try (var r = q.executeQuery()) {
                 if (!r.next()) throw invalid("Produzione non trovata.");
                 var plan = JSON.fromJson(r.getString("contenuto_piano"), Plan.class);
-                if (plan.schemaVersion() != 1 || !RULE.equals(plan.calculation()))
+                if ((plan.schemaVersion() != 1 && plan.schemaVersion() != 2)
+                        || !RULE.equals(plan.calculation()))
                     throw invalid("Versione del piano non supportata.");
                 return new Saved(
                         id,

@@ -301,11 +301,9 @@ public final class DiskModels {
     }
 
     public record Usage(
-            long articleId,
-            String articleCode,
+            long productId,
             String productCode,
-            BigDecimal diameter,
-            BigDecimal height,
+            String productName,
             int specification,
             String state,
             boolean preferred) {}

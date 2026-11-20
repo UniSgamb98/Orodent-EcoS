@@ -13,38 +13,40 @@ public final class SpecificationsView extends VBox {
             model = new ComboBox<>();
     private final TextField
             compositionQuery =
-                    CatalogUi.field("ton-article-spec-composition-search", "Numero versione"),
-            modelQuery = CatalogUi.field("ton-article-spec-model-search", "Codice del modello"),
+                    CatalogUi.field("ton-product-spec-composition-search", "Numero versione"),
+            modelQuery = CatalogUi.field("ton-product-spec-model-search", "Codice del modello"),
             calculation =
                     CatalogUi.field(
-                            "ton-article-spec-calculation",
+                            "ton-product-spec-calculation",
                             "Riferimento al metodo di calcolo validato");
     private final TextArea notes = new TextArea();
-    private final Button save = CatalogUi.button("Salva bozza", "ton-article-spec-save", true),
-            approve = CatalogUi.button("Salva e approva", "ton-article-spec-approve", true),
-            copy = CatalogUi.button("Crea nuova versione", "ton-article-spec-copy", false),
-            prefer = CatalogUi.button("Imposta predefinita", "ton-article-spec-prefer", false),
-            retire = CatalogUi.button("Ritira versione", "ton-article-spec-retire", false),
-            previous = CatalogUi.button("←", "ton-article-spec-previous", false),
-            next = CatalogUi.button("→", "ton-article-spec-next", false),
-            refresh = CatalogUi.button("Aggiorna versioni", "ton-article-spec-refresh", false);
+    private final Button save = CatalogUi.button("Salva bozza", "ton-product-spec-save", true),
+            approve = CatalogUi.button("Salva e approva", "ton-product-spec-approve", true),
+            copy = CatalogUi.button("Crea nuova versione", "ton-product-spec-copy", false),
+            prefer = CatalogUi.button("Imposta predefinita", "ton-product-spec-prefer", false),
+            retire = CatalogUi.button("Ritira versione", "ton-product-spec-retire", false),
+            previous = CatalogUi.button("←", "ton-product-spec-previous", false),
+            next = CatalogUi.button("→", "ton-product-spec-next", false),
+            refresh = CatalogUi.button("Aggiorna versioni", "ton-product-spec-refresh", false);
+    private final Label configurationNotice =
+            CatalogUi.feedback("ton-product-spec-configuration-notice");
     private final Label state = CatalogUi.hint(""),
             result = new Label(),
-            feedback = CatalogUi.feedback("ton-article-spec-feedback");
+            feedback = CatalogUi.feedback("ton-product-spec-feedback");
     private final VBox fields;
     private boolean updating, available;
 
     public SpecificationsView() {
         super(12);
         getStyleClass().add("ton-catalogue-tab");
-        versions.setId("ton-article-spec-version");
+        versions.setId("ton-product-spec-version");
         versions.setPromptText("Prima versione");
         versions.setPrefWidth(260);
-        composition.setId("ton-article-spec-composition");
+        composition.setId("ton-product-spec-composition");
         composition.setMaxWidth(Double.MAX_VALUE);
-        model.setId("ton-article-spec-model");
+        model.setId("ton-product-spec-model");
         model.setMaxWidth(Double.MAX_VALUE);
-        notes.setId("ton-article-spec-notes");
+        notes.setId("ton-product-spec-notes");
         notes.setWrapText(true);
         notes.setPrefRowCount(3);
         fields =
@@ -61,12 +63,14 @@ public final class SpecificationsView extends VBox {
         previous.setAccessibleText("Versioni più recenti");
         next.setAccessibleText("Versioni precedenti");
         feedback.getStyleClass().add("ton-error-feedback");
+        configurationNotice.getStyleClass().add("ton-error-feedback");
         getChildren()
                 .setAll(
                         CatalogUi.hint(
                                 "Ogni produzione userà una versione precisa di composizione e"
-                                    + " modello. Le versioni approvate sono di sola lettura."),
+                                        + " modello. Le versioni approvate sono di sola lettura."),
                         new FlowPane(10, 8, versions, previous, next, result, refresh),
+                        configurationNotice,
                         state,
                         fields,
                         new FlowPane(10, 8, save, approve, copy, prefer, retire),
@@ -94,7 +98,8 @@ public final class SpecificationsView extends VBox {
             state.setText(
                     saved
                             ? "Carica le versioni dalla scheda Specifiche di produzione."
-                            : "Salva prima l'anagrafica dell'articolo.");
+                            : "Salva prima l'anagrafica del prodotto.");
+            configurationNotice(false);
             result.setText("");
             feedback.setText("");
         } finally {
@@ -130,6 +135,14 @@ public final class SpecificationsView extends VBox {
         } finally {
             updating = false;
         }
+    }
+
+    public void configurationNotice(boolean conflict) {
+        configurationNotice.setText(
+                conflict
+                        ? "Specifiche importate dagli articoli da verificare: scegli e imposta"
+                                + " esplicitamente la versione predefinita comune al prodotto."
+                        : "");
     }
 
     public void choices(SpecificationPage page) {
@@ -182,9 +195,9 @@ public final class SpecificationsView extends VBox {
             retire.setDisable(selected == null);
             state.setText(
                     selected == null
-                            ? "Articolo da configurare. Per iniziare servono una composizione e un"
-                                  + " modello approvati. Puoi mantenere l'anagrafica senza"
-                                  + " configurazione."
+                            ? "Prodotto da configurare. Per iniziare servono una composizione e un"
+                                    + " modello approvati. Puoi mantenere l'anagrafica senza"
+                                    + " configurazione."
                             : !selected.recorded() && "APPROVATA".equals(selected.state())
                                     ? "Versione precedente senza revisioni anagrafiche registrate:"
                                           + " crea e approva una nuova versione prima di usarla per"

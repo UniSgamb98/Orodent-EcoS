@@ -116,7 +116,10 @@ final class TonController {
                                 productions,
                                 article ->
                                         openCatalogue(
-                                                Navigation.open(CatalogKind.ARTICLES, article)));
+                                                Navigation.open(CatalogKind.ARTICLES, article)),
+                                product ->
+                                        openCatalogue(
+                                                Navigation.open(CatalogKind.PRODUCTS, product)));
                 install(feature, page, controller, controller::start);
             }
             case PRODUCTS -> {
@@ -153,7 +156,7 @@ final class TonController {
                         new CompositionsController(
                                 page,
                                 compositions,
-                                id -> openCatalogue(Navigation.open(CatalogKind.ARTICLES, id)),
+                                id -> openCatalogue(Navigation.open(CatalogKind.PRODUCTS, id)),
                                 this::openModel);
                 install(feature, page, controller, controller::start);
             }
@@ -209,7 +212,7 @@ final class TonController {
                 new DiskModelsController(
                         page,
                         models,
-                        article -> openCatalogue(Navigation.open(CatalogKind.ARTICLES, article)));
+                        product -> openCatalogue(Navigation.open(CatalogKind.PRODUCTS, product)));
         install(
                 TonFeature.MODELS,
                 page,

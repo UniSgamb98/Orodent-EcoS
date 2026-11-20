@@ -268,8 +268,8 @@ public final class CatalogRepository {
             case ARTICLES ->
                     " FROM TON.ARTICOLI b JOIN TON.PRODOTTI p ON p.prodotto_id=b.prodotto_id LEFT"
                             + " JOIN TON.LINEE l ON l.linea_id=p.linea_id LEFT JOIN"
-                            + " TON.CONFIGURAZIONI_ARTICOLO cfg ON"
-                            + " cfg.configurazione_id=b.configurazione_predefinita_id";
+                            + " TON.CONFIGURAZIONI_PRODOTTO cfg ON"
+                            + " cfg.configurazione_id=p.configurazione_predefinita_id";
         };
     }
 
@@ -293,15 +293,17 @@ public final class CatalogRepository {
  +(SELECT COUNT(*) FROM TON.ARTICOLI_REVISIONI c WHERE c.prodotto_id=b.prodotto_id)
  +(SELECT COUNT(*) FROM TON.COMPOSIZIONI c WHERE c.prodotto_id=b.prodotto_id)
  +(SELECT COUNT(*) FROM TON.LINEE_PRODOTTI c WHERE c.prodotto_id=b.prodotto_id)
- +(SELECT COUNT(*) FROM TON.PIANI_PRODUZIONE c WHERE c.prodotto_id=b.prodotto_id)) AS uses_count
+ +(SELECT COUNT(*) FROM TON.PIANI_PRODUZIONE c WHERE c.prodotto_id=b.prodotto_id)
+ +(SELECT COUNT(*) FROM TON.CONFIGURAZIONI_PRODOTTO c WHERE c.prodotto_id=b.prodotto_id)) AS uses_count
 """;
                     case ARTICLES ->
                             """
 ,p.codice AS product_code,p.descrizione AS product_name,p.attivo AS product_active
 ,p.linea_id AS parent_line_id,p.colore_commerciale AS parent_color
 ,l.codice AS line_code,l.attivo AS line_active
-,cfg.numero_versione AS spec_number,cfg.stato AS spec_state,cfg.articolo_revisione AS spec_recorded
-,(SELECT COUNT(*) FROM TON.CONFIGURAZIONI_ARTICOLO c WHERE c.articolo_id=b.articolo_id) AS uses_count
+,cfg.numero_versione AS spec_number,cfg.stato AS spec_state,cfg.prodotto_revisione AS spec_recorded,p.configurazione_predefinita_id AS inherited_spec,p.specifiche_da_verificare AS spec_conflict
+,((SELECT COUNT(*) FROM TON.CONFIGURAZIONI_ARTICOLO c WHERE c.articolo_id=b.articolo_id)
+ +(SELECT COUNT(*) FROM TON.PIANO_PRODOTTO_RIGHE c WHERE c.articolo_id=b.articolo_id)) AS uses_count
 """;
                 };
         return "SELECT b.*" + derived + from(kind);
@@ -381,7 +383,9 @@ public final class CatalogRepository {
                         line,
                         rows.getString("colore_commerciale"),
                         rows.getInt("child_count"),
-                        used);
+                        used,
+                        (Long) rows.getObject("configurazione_predefinita_id"),
+                        rows.getBoolean("specifiche_da_verificare"));
             }
             case ARTICLES -> {
                 Long line = (Long) rows.getObject("parent_line_id");
@@ -403,7 +407,9 @@ public final class CatalogRepository {
                 Integer spec = (Integer) rows.getObject("spec_number");
                 String label =
                         spec == null
-                                ? "Da configurare"
+                                ? (rows.getBoolean("spec_conflict")
+                                        ? "Specifiche prodotto da verificare"
+                                        : "Prodotto da configurare")
                                 : rows.getObject("spec_recorded") == null
                                         ? "Specifica precedente · da verificare"
                                         : "v"
@@ -416,7 +422,7 @@ public final class CatalogRepository {
                         product,
                         rows.getBigDecimal("diametro_mm").stripTrailingZeros(),
                         rows.getBigDecimal("altezza_mm").stripTrailingZeros(),
-                        (Long) rows.getObject("configurazione_predefinita_id"),
+                        (Long) rows.getObject("inherited_spec"),
                         label,
                         used);
             }

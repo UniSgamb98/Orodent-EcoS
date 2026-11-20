@@ -43,10 +43,12 @@ public final class ProductionController implements FeatureController {
     public ProductionController(
             ProductionView view,
             ProductionService service,
-            java.util.function.LongConsumer openArticle) {
+            java.util.function.LongConsumer openArticle,
+            java.util.function.LongConsumer openProduct) {
         this.view = view;
         this.service = service;
         view.onArticle(openArticle);
+        view.onProductSpecifications(openProduct);
         view.listing.search().textProperty().addListener(searchListener);
         searchDelay.setOnFinished(e -> loadList());
         view.listing.search().setOnAction(e -> loadList());
@@ -325,6 +327,10 @@ public final class ProductionController implements FeatureController {
                     }
                     formVersion++;
                     recalculate();
+                    if (saved != null && saved.plan().schemaVersion() == 1)
+                        view.feedback(
+                                "Bozza precedente ricalcolata con le specifiche del prodotto:"
+                                        + " verifica le quantità prima di salvarla o prepararla.");
                 });
     }
 
@@ -390,12 +396,13 @@ public final class ProductionController implements FeatureController {
                         controls();
                     } else {
                         var pinned = new HashMap<Long, Long>();
-                        plan.formats()
-                                .forEach(
-                                        f ->
-                                                pinned.put(
-                                                        f.article().id(),
-                                                        f.article().specificationId()));
+                        if (plan.schemaVersion() >= 2)
+                            plan.formats()
+                                    .forEach(
+                                            f ->
+                                                    pinned.put(
+                                                            f.article().id(),
+                                                            f.article().specificationId()));
                         loadWorkspace(plan.quantities(), pinned);
                     }
                 });

@@ -382,8 +382,8 @@ class DiskModelServiceTest {
                         + " ('ARTICLE',1,98,16)",
                 "INSERT INTO TON.COMPOSIZIONI(prodotto_id,numero_versione) VALUES (1,1)",
                 "INSERT INTO"
-                    + " TON.CONFIGURAZIONI_ARTICOLO(articolo_id,prodotto_id,numero_versione,composizione_id,modello_id,versione_calcolo)"
-                    + " VALUES (1,1,1,1,"
+                    + " TON.CONFIGURAZIONI_PRODOTTO(prodotto_id,numero_versione,composizione_id,modello_id,versione_calcolo)"
+                    + " VALUES (1,1,1,"
                         + model
                         + ",'test')");
     }

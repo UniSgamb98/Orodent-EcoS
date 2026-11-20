@@ -464,7 +464,7 @@ public final class CatalogController implements FeatureController {
                         write(
                                 () ->
                                         specifications.copy(
-                                                (Article) original.entry(), selectedVersion),
+                                                (Product) original.entry(), selectedVersion),
                                 "Nuova bozza creata.",
                                 Sheet.SPECIFICATIONS);
                 });
@@ -475,7 +475,7 @@ public final class CatalogController implements FeatureController {
                         write(
                                 () ->
                                         specifications.prefer(
-                                                (Article) original.entry(), selectedVersion),
+                                                (Product) original.entry(), selectedVersion),
                                 "Versione predefinita aggiornata.",
                                 Sheet.SPECIFICATIONS);
                 });
@@ -491,7 +491,7 @@ public final class CatalogController implements FeatureController {
                         write(
                                 () ->
                                         specifications.retire(
-                                                (Article) original.entry(), selectedVersion),
+                                                (Product) original.entry(), selectedVersion),
                                 "Versione ritirata.",
                                 Sheet.SPECIFICATIONS);
                 });
@@ -565,7 +565,7 @@ public final class CatalogController implements FeatureController {
     }
 
     private void loadSpecs(int pageOffset, boolean choicesOnly) {
-        if (original == null || !(original.entry() instanceof Article article)) return;
+        if (original == null || !(original.entry() instanceof Product product)) return;
         specOffset = pageOffset;
         var s = view.editor().specifications();
         if (!choicesOnly) s.loading();
@@ -573,7 +573,7 @@ public final class CatalogController implements FeatureController {
                 "specifications",
                 () ->
                         specifications.page(
-                                article,
+                                product,
                                 specOffset,
                                 s.compositionQuery().getText(),
                                 s.modelQuery().getText()),
@@ -584,6 +584,7 @@ public final class CatalogController implements FeatureController {
                     }
                     s.versions().setDisable(false);
                     s.show(page, null);
+                    s.configurationNotice(product.specificationConflict());
                     selectedVersion = s.versions().getValue();
                     specLoaded = true;
                     specBaseline = s.fingerprint();
@@ -604,7 +605,7 @@ public final class CatalogController implements FeatureController {
             write(
                     () ->
                             specifications.save(
-                                    (Article) original.entry(), selectedVersion, draft, approve),
+                                    (Product) original.entry(), selectedVersion, draft, approve),
                     approve ? "Versione approvata." : "Bozza salvata.",
                     Sheet.SPECIFICATIONS);
         } catch (RuntimeException invalid) {

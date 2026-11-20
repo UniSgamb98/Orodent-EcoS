@@ -486,6 +486,16 @@ public final class CatalogDetailsUiProbe {
                         assertNull(node("ton-product-heading"));
                         assertRefreshOnRight("product");
                         assertParentBesideStatus("product");
+                        assertEquals(
+                                List.of(
+                                        "Anagrafica",
+                                        "Articoli",
+                                        "Specifiche di produzione",
+                                        "Revisioni"),
+                                ((TabPane) node("ton-product-tabs"))
+                                        .getTabs().stream().map(Tab::getText).toList());
+                        selectSheet("ton-product-tabs", "Specifiche di produzione");
+                        screenshot("target/product-production-specifications.png");
                         screenshot("target/product-shared-palette.png");
                         ((TabPane) node("ton-product-tabs")).getSelectionModel().select(1);
                         return null;
@@ -534,6 +544,11 @@ public final class CatalogDetailsUiProbe {
                         assertNull(node("ton-article-heading"));
                         assertRefreshOnRight("article");
                         assertParentBesideStatus("article");
+                        assertEquals(
+                                List.of("Anagrafica", "Revisioni"),
+                                ((TabPane) node("ton-article-tabs"))
+                                        .getTabs().stream().map(Tab::getText).toList());
+                        assertNull(node("ton-article-spec-version"));
                         screenshot("target/article-shared-palette.png");
                         button("ton-article-open-parent").fire();
                         return null;

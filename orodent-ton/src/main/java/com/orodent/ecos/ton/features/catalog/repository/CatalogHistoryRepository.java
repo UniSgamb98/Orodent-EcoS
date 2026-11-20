@@ -20,7 +20,7 @@ public final class CatalogHistoryRepository {
                     case LINES ->
                             "b.linea_id,b.versione_modifica,b.codice,b.nome,b.tecnologia,b.materia_prima,b.note,b.attivo";
                     case PRODUCTS ->
-                            "b.prodotto_id,b.versione_modifica,b.codice,b.descrizione,b.linea_id,l.codice,b.colore_commerciale,b.note,b.attivo";
+                            "b.prodotto_id,b.versione_modifica,b.codice,b.descrizione,b.linea_id,l.codice,b.colore_commerciale,b.note,b.attivo,b.configurazione_predefinita_id,b.specifiche_da_verificare";
                     case ARTICLES ->
                             "b.articolo_id,b.versione_modifica,b.codice,b.descrizione,b.prodotto_id,p.codice,p.linea_id,l.codice,p.colore_commerciale,b.diametro_mm,b.altezza_mm,b.configurazione_predefinita_id,b.note,b.attivo";
                 };
@@ -107,7 +107,7 @@ public final class CatalogHistoryRepository {
             case LINES ->
                     "linea_id,numero_revisione,codice,nome,tecnologia,materia_prima,note,attivo";
             case PRODUCTS ->
-                    "prodotto_id,numero_revisione,codice,descrizione,linea_id,linea_codice,colore_commerciale,note,attivo";
+                    "prodotto_id,numero_revisione,codice,descrizione,linea_id,linea_codice,colore_commerciale,note,attivo,configurazione_predefinita_id,specifiche_da_verificare";
             case ARTICLES ->
                     "articolo_id,numero_revisione,codice,descrizione,prodotto_id,prodotto_codice,linea_id,linea_codice,colore_commerciale,diametro_mm,altezza_mm,configurazione_predefinita_id,note,attivo";
         };
@@ -151,7 +151,9 @@ public final class CatalogHistoryRepository {
                                                 null),
                                 r.getString("colore_commerciale"),
                                 0,
-                                false);
+                                false,
+                                (Long) r.getObject("configurazione_predefinita_id"),
+                                r.getBoolean("specifiche_da_verificare"));
                     }
                     case ARTICLES -> {
                         Long line = (Long) r.getObject("linea_id");

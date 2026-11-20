@@ -77,6 +77,7 @@ public final class ProductionView extends BorderPane {
     private Catalogues catalogues = new Catalogues(List.of(), List.of(), List.of());
     private Consumer<ProductChoice> onProduct = p -> {};
     private java.util.function.LongConsumer onArticle = id -> {};
+    private java.util.function.LongConsumer onProductSpecifications = id -> {};
     private Runnable onInput = () -> {};
     private boolean populating;
     private Plan displayedPlan;
@@ -241,7 +242,15 @@ public final class ProductionView extends BorderPane {
                                 if (!row.article.available()) {
                                     var link = new Hyperlink("Apri articolo ↗");
                                     link.setOnAction(e -> onArticle.accept(row.article.id()));
-                                    content.getChildren().add(link);
+                                    var productLink = new Hyperlink("Specifiche del prodotto ↗");
+                                    productLink.setOnAction(
+                                            e -> {
+                                                if (selectedProduct != null)
+                                                    onProductSpecifications.accept(
+                                                            selectedProduct.id());
+                                            });
+                                    content.getChildren()
+                                            .add(new FlowPane(8, 4, productLink, link));
                                 }
                                 setGraphic(content);
                             }
@@ -384,6 +393,10 @@ public final class ProductionView extends BorderPane {
         for (Node n : List.of(line, diameter, template, date, notes, palette))
             n.disableProperty().bind(locked);
         showList();
+    }
+
+    public void onProductSpecifications(java.util.function.LongConsumer action) {
+        onProductSpecifications = action;
     }
 
     public void onArticle(java.util.function.LongConsumer action) {

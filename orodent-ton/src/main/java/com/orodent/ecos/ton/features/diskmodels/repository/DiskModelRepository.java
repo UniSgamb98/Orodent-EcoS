@@ -168,17 +168,15 @@ public final class DiskModelRepository {
 
     public Page<Usage> usages(long id, int offset, int limit) throws SQLException {
         long total =
-                count("SELECT COUNT(*) FROM TON.CONFIGURAZIONI_ARTICOLO WHERE modello_id=?", id);
+                count("SELECT COUNT(*) FROM TON.CONFIGURAZIONI_PRODOTTO WHERE modello_id=?", id);
         var rows = new ArrayList<Usage>();
         try (var q =
                 connection.prepareStatement(
-                        "SELECT"
-                            + " a.articolo_id,a.codice,p.codice,a.diametro_mm,a.altezza_mm,c.numero_versione,c.stato,CASE"
-                            + " WHEN a.configurazione_predefinita_id=c.configurazione_id THEN 1"
-                            + " ELSE 0 END FROM TON.CONFIGURAZIONI_ARTICOLO c JOIN TON.ARTICOLI a"
-                            + " ON a.articolo_id=c.articolo_id JOIN TON.PRODOTTI p ON"
-                            + " p.prodotto_id=a.prodotto_id WHERE c.modello_id=? ORDER BY"
-                            + " a.codice,c.numero_versione DESC OFFSET ? ROWS FETCH NEXT ? ROWS"
+                        "SELECT p.prodotto_id,p.codice,p.descrizione,c.numero_versione,c.stato,CASE"
+                            + " WHEN p.configurazione_predefinita_id=c.configurazione_id THEN 1"
+                            + " ELSE 0 END FROM TON.CONFIGURAZIONI_PRODOTTO c JOIN TON.PRODOTTI p"
+                            + " ON p.prodotto_id=c.prodotto_id WHERE c.modello_id=? ORDER BY"
+                            + " p.codice,c.numero_versione DESC OFFSET ? ROWS FETCH NEXT ? ROWS"
                             + " ONLY")) {
             q.setLong(1, id);
             q.setInt(2, offset);
@@ -190,17 +188,14 @@ public final class DiskModelRepository {
                                     r.getLong(1),
                                     r.getString(2),
                                     r.getString(3),
-                                    r.getBigDecimal(4),
-                                    r.getBigDecimal(5),
-                                    r.getInt(6),
-                                    r.getString(7),
-                                    r.getInt(8) == 1));
+                                    r.getInt(4),
+                                    r.getString(5),
+                                    r.getInt(6) == 1));
             }
         }
         return new Page<>(rows, total, offset, limit);
     }
 
-    /** Existing families use a stable approved/oldest row. Initial creation is guarded by UQ. */
     public boolean lockCode(String code) throws SQLException {
         long first = firstId(code);
         if (first == 0) return false;
@@ -275,7 +270,12 @@ public final class DiskModelRepository {
     }
 
     public boolean used(long id) throws SQLException {
-        return count("SELECT COUNT(*) FROM TON.CONFIGURAZIONI_ARTICOLO WHERE modello_id=?", id) > 0;
+        return (count("SELECT COUNT(*) FROM TON.CONFIGURAZIONI_ARTICOLO WHERE modello_id=?", id)
+                        + count(
+                                "SELECT COUNT(*) FROM TON.CONFIGURAZIONI_PRODOTTO WHERE"
+                                        + " modello_id=?",
+                                id))
+                > 0;
     }
 
     public long insert(Draft d, int number, boolean approve) throws SQLException {

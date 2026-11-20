@@ -551,8 +551,8 @@ class CompositionServiceTest {
                 "INSERT INTO TON.ARTICOLI(codice,prodotto_id,diametro_mm,altezza_mm) VALUES"
                         + " ('ARTICLE',1,98,16)",
                 "INSERT INTO"
-                    + " TON.CONFIGURAZIONI_ARTICOLO(articolo_id,prodotto_id,numero_versione,composizione_id,modello_id,versione_calcolo)"
-                    + " VALUES (1,1,1,"
+                    + " TON.CONFIGURAZIONI_PRODOTTO(prodotto_id,numero_versione,composizione_id,modello_id,versione_calcolo)"
+                    + " VALUES (1,1,"
                         + comp
                         + ",1,'test')");
     }

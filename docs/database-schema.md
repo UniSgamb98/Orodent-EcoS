@@ -8,7 +8,7 @@ EcoS usa un solo database Derby, organizzato per dominio dei dati.
 | `ANAGRAFICHE` | `CLIENTI` | Anagrafica condivisa tra i moduli |
 | `VENDITE` | `VENDITE_DETTAGLIO` | Vendite e rettifiche condivise |
 | `COSTI` | `POLVERI_PREZZI`, `POLVERI_LOTTI` | Fotografie manuali dei prezzi e delle quantità delle polveri, con revisioni economiche |
-| `TON` | 37 tabelle: cataloghi, specifiche versionate, piani e produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
+| `TON` | 40 tabelle: cataloghi, specifiche versionate, piani e produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
 
 Statistiche legge clienti e vendite dagli schemi condivisi; TON gestisce il proprio
 catalogo tecnico in `TON.PRODOTTI`. Lo schema `STATISTICHE` sarà creato soltanto
@@ -346,3 +346,21 @@ Le nuove versioni richiedono gruppi espliciti, senza diametri duplicati.
 I calcoli V20 scelgono il gruppo esatto e segnalano i diametri mancanti.
 Backup HOST e verifica CLIENT seguono la procedura condivisa. Vedere
 [gruppi dei modelli disco](ton-modelli-disco.md#gruppi-per-diametro-articolo).
+
+## Specifiche di produzione del prodotto — V21
+
+`V21__ton_product_specifications.sql` aggiunge `TON.CONFIGURAZIONI_PRODOTTO`,
+`TON.CONFIGURAZIONI_MIGRATE` e `TON.PIANO_PRODOTTO_RIGHE`. Il prodotto conserva
+la predefinita e l'eventuale stato di verifica; entrambi fanno parte delle sue
+revisioni anagrafiche. Le FK composte impediscono di scegliere specifiche o
+articoli di un altro prodotto. Le nuove righe dei piani conservano anche la
+revisione dell'articolo con diametro e altezza.
+
+`ProductSpecificationMigration` riunisce solo configurazioni equivalenti,
+conservando la mappa di ogni riferimento originale. Una divergenza o una
+predefinita senza snapshot completi lascia la scelta all'utente. La migrazione
+registra nuove revisioni dei prodotti senza alterare le precedenti. Le tabelle
+legacy delle configurazioni articolo, delle produzioni fisiche e delle righe
+dei piani anteriori restano valide per consultare lo storico. JSON e documenti
+dei piani preparati rimangono intatti. Tutta la V21 è atomica e usa il backup
+preventivo dell'HOST; il CLIENT richiede l'aggiornamento dell'HOST.

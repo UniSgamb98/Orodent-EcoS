@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.orodent.ecos.core.ConnectionProvider;
 import com.orodent.ecos.database.DatabaseSchema;
+import com.orodent.ecos.ton.features.catalog.model.CatalogKind;
+import com.orodent.ecos.ton.features.catalog.model.CatalogModels.*;
+import com.orodent.ecos.ton.features.catalog.service.*;
 import com.orodent.ecos.ton.features.diskmodels.service.DiskModelService;
 
 import org.junit.jupiter.api.*;
@@ -109,7 +112,7 @@ class ProductionServiceTest {
                                     var r =
                                             q.executeQuery(
                                                     "SELECT composizione_id FROM"
-                                                        + " TON.CONFIGURAZIONI_ARTICOLO FETCH FIRST"
+                                                        + " TON.CONFIGURAZIONI_PRODOTTO FETCH FIRST"
                                                         + " ROW ONLY")) {
                                 r.next();
                                 return r.getLong(1);
@@ -130,11 +133,27 @@ class ProductionServiceTest {
                                 .join()
                                 .entry();
         specs.save(
-                        a95,
+                        (com.orodent.ecos.ton.features.catalog.model.CatalogModels.Product)
+                                catalog.load(
+                                                com.orodent.ecos.ton.features.catalog.model
+                                                        .CatalogKind.PRODUCTS,
+                                                fixture.product.id())
+                                        .join()
+                                        .entry(),
                         null,
                         new com.orodent.ecos.ton.features.catalog.model.CatalogModels
                                 .SpecificationDraft(comp, approved.id(), "COSTI-NOMINALE-1", ""),
                         true)
+                .join();
+        var updatedProduct =
+                (com.orodent.ecos.ton.features.catalog.model.CatalogModels.Product)
+                        catalog.load(
+                                        com.orodent.ecos.ton.features.catalog.model.CatalogKind
+                                                .PRODUCTS,
+                                        fixture.product.id())
+                                .join()
+                                .entry();
+        specs.prefer(updatedProduct, specs.page(updatedProduct, 0, "", "").join().rows().getFirst())
                 .join();
         var workspace =
                 fixture.service
@@ -175,21 +194,13 @@ class ProductionServiceTest {
                                 .join()
                                 .entry();
         var missing =
-                assertThrows(
-                        CompletionException.class,
-                        () ->
-                                specs.save(
-                                                a97,
-                                                null,
-                                                new com.orodent.ecos.ton.features.catalog.model
-                                                        .CatalogModels.SpecificationDraft(
-                                                        comp,
-                                                        approved.id(),
-                                                        "COSTI-NOMINALE-1",
-                                                        ""),
-                                                true)
-                                        .join());
-        assertTrue(missing.getCause().getMessage().contains("non configurato"));
+                fixture.service
+                        .workspace(fixture.product.id(), new BigDecimal("97"), Map.of())
+                        .join()
+                        .articles()
+                        .getFirst();
+        assertFalse(missing.available());
+        assertTrue(missing.reason().contains("non configurato"));
     }
 
     @Test
@@ -218,13 +229,91 @@ class ProductionServiceTest {
     }
 
     @Test
+    void allFormatsShareOneProductSpecificationWhilePreparedPlansKeepTheOriginalVersion() {
+        var workspace = fixture.workspace();
+        long first = workspace.articles().getFirst().specificationId();
+        assertTrue(first > 0);
+        assertEquals(
+                1,
+                workspace.articles().stream()
+                        .map(ArticleChoice::specificationId)
+                        .distinct()
+                        .count());
+        var prepared = fixture.service.save(null, workspace, fixture.request(false), true).join();
+        assertEquals(2, prepared.plan().schemaVersion());
+        var catalog = new CatalogService(db, workers);
+        var specifications = new SpecificationService(db, workers);
+        var product =
+                (Product) catalog.load(CatalogKind.PRODUCTS, fixture.product.id()).join().entry();
+        var original = specifications.page(product, 0, "", "").join().rows().getFirst();
+        specifications.copy(product, original).join();
+        var draft = specifications.page(product, 0, "", "").join().rows().getFirst();
+        specifications
+                .save(
+                        product,
+                        draft,
+                        new SpecificationDraft(
+                                original.compositionId(), original.modelId(), "v2", "Next"),
+                        true)
+                .join();
+        var next = specifications.page(product, 0, "", "").join().rows().getFirst();
+        specifications.prefer(product, next).join();
+        assertTrue(
+                fixture.workspace().articles().stream()
+                        .allMatch(a -> a.specificationId() == next.id()));
+        assertEquals(prepared, fixture.service.load(prepared.id()).join());
+        assertTrue(
+                prepared.plan().formats().stream()
+                        .allMatch(f -> f.article().specificationId() == first));
+        assertEquals(0, count("PIANO_PRODUZIONE_RIGHE"));
+        assertEquals(3, count("PIANO_PRODOTTO_RIGHE"));
+    }
+
+    @Test
+    void ambiguousImportedSpecificationsBlockProductionUntilTheUserChoosesTheProductDefault() {
+        var catalog = new CatalogService(db, workers);
+        var specifications = new SpecificationService(db, workers);
+        db.withTransaction(
+                c -> {
+                    try (var q =
+                            c.prepareStatement(
+                                    "UPDATE TON.PRODOTTI SET"
+                                        + " configurazione_predefinita_id=NULL,specifiche_da_verificare=TRUE,versione_modifica=versione_modifica+1"
+                                        + " WHERE prodotto_id=?")) {
+                        q.setLong(1, fixture.product.id());
+                        q.executeUpdate();
+                    }
+                    var product =
+                            new com.orodent.ecos.ton.features.catalog.repository.CatalogRepository(
+                                            c)
+                                    .load(CatalogKind.PRODUCTS, fixture.product.id());
+                    new com.orodent.ecos.ton.features.catalog.repository.CatalogHistoryRepository(c)
+                            .record(product, "MIGRAZIONE");
+                    return null;
+                });
+        var blocked = fixture.workspace();
+        assertTrue(blocked.articles().stream().noneMatch(ArticleChoice::available));
+        assertTrue(blocked.articles().getFirst().reason().contains("da verificare"));
+        assertThrows(
+                CompletionException.class,
+                () -> fixture.service.save(null, blocked, fixture.request(false), true).join());
+        var product =
+                (Product) catalog.load(CatalogKind.PRODUCTS, fixture.product.id()).join().entry();
+        var version = specifications.page(product, 0, "", "").join().rows().getFirst();
+        var selected = (Product) specifications.prefer(product, version).join().entry();
+        assertFalse(selected.specificationConflict());
+        assertEquals(version.id(), selected.defaultSpecification());
+        assertTrue(fixture.workspace().articles().getFirst().available());
+    }
+
+    @Test
     void savesReopensAndFreezesPlanWithoutRecordingPhysicalStock() {
         var first =
                 fixture.service
                         .save(null, fixture.workspace(), fixture.request(true), false)
                         .join();
         assertEquals(State.BOZZA, first.state());
-        assertEquals(3, count("PIANO_PRODUZIONE_RIGHE"));
+        assertEquals(3, count("PIANO_PRODOTTO_RIGHE"));
         var prepared =
                 fixture.service
                         .save(first, fixture.workspace(), fixture.request(true), true)
@@ -251,6 +340,44 @@ class ProductionServiceTest {
     }
 
     @Test
+    void legacyPreparedSnapshotsAreReadWithoutResolvingTheirArticleSpecificationIds() {
+        var prepared =
+                fixture.service
+                        .save(null, fixture.workspace(), fixture.request(false), true)
+                        .join();
+        String legacy =
+                new com.google.gson.Gson()
+                        .toJson(prepared.plan())
+                        .replace("\"schemaVersion\":2", "\"schemaVersion\":1");
+        for (var format : prepared.plan().formats()) {
+            legacy =
+                    legacy.replace(
+                            "\"specificationId\":" + format.article().specificationId(),
+                            "\"specificationId\":987654321");
+        }
+        final String snapshot = legacy;
+        db.withTransaction(
+                c -> {
+                    try (var q =
+                            c.prepareStatement(
+                                    "UPDATE TON.PIANI_PRODUZIONE SET contenuto_piano=? WHERE"
+                                        + " piano_id=?")) {
+                        q.setString(1, snapshot);
+                        q.setLong(2, prepared.id());
+                        q.executeUpdate();
+                    }
+                    return null;
+                });
+        new DiskModelService(db, workers).retire(fixture.model.revision()).join();
+        var reopened = fixture.service.load(prepared.id()).join();
+        assertEquals(State.PREPARATA, reopened.state());
+        assertEquals(1, reopened.plan().schemaVersion());
+        assertEquals(987654321L, reopened.plan().formats().getFirst().article().specificationId());
+        assertEquals(prepared.plan().needed(), reopened.plan().needed());
+        assertEquals(prepared.plan().mixtures(), reopened.plan().mixtures());
+    }
+
+    @Test
     void rejectsStaleDraftAndPreservesCurrentRows() {
         var a =
                 fixture.service
@@ -264,7 +391,7 @@ class ProductionServiceTest {
                                 .save(a, fixture.workspace(), fixture.request(false), false)
                                 .join());
         assertEquals(b, fixture.service.load(a.id()).join());
-        assertEquals(3, count("PIANO_PRODUZIONE_RIGHE"));
+        assertEquals(3, count("PIANO_PRODOTTO_RIGHE"));
     }
 
     @Test

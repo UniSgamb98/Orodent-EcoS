@@ -28,11 +28,12 @@ public final class ProductionCalculator {
                 throw invalid("Un articolo non appartiene al prodotto o al diametro selezionati.");
             if (!a.available()) throw invalid(a.code() + ": " + a.reason());
             if (reference == null) reference = a;
-            if (a.compositionId() != reference.compositionId()
+            if (a.specificationId() != reference.specificationId()
+                    || a.compositionId() != reference.compositionId()
                     || a.modelId() != reference.modelId())
                 throw invalid(
                         "I formati selezionati usano composizioni o modelli diversi. Seleziona"
-                            + " specifiche compatibili.");
+                                + " specifiche compatibili.");
             try {
                 count = Math.addExact(count, q.getValue());
             } catch (ArithmeticException e) {
@@ -64,7 +65,7 @@ public final class ProductionCalculator {
                                 distribute(prepared, reference.doses().get(layer).powders())));
             }
         return new Plan(
-                1,
+                2,
                 RULE,
                 workspace.product(),
                 request.diameter(),

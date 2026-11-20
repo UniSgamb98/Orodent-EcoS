@@ -26,19 +26,19 @@ public final class SpecificationService {
     }
 
     public CompletableFuture<SpecificationPage> page(
-            Article article, int offset, String compositionQuery, String modelQuery) {
+            Product product, int offset, String compositionQuery, String modelQuery) {
         return async(
                 () ->
                         connections.withConnection(
                                 c ->
                                         new SpecificationRepository(c)
                                                 .page(
-                                                        (Article)
+                                                        (Product)
                                                                 new CatalogRepository(c)
                                                                         .load(
                                                                                 CatalogKind
-                                                                                        .ARTICLES,
-                                                                                article.id()),
+                                                                                        .PRODUCTS,
+                                                                                product.id()),
                                                         Math.max(0, offset),
                                                         CatalogService.PAGE_SIZE,
                                                         compositionQuery,
@@ -46,22 +46,16 @@ public final class SpecificationService {
     }
 
     public CompletableFuture<Detail> save(
-            Article expected, Specification version, SpecificationDraft draft, boolean approve) {
-        if (version != null && (version.articleId() != expected.id() || version.frozen()))
-            throw invalid("Solo le bozze dell'articolo selezionato sono modificabili.");
+            Product expected, Specification version, SpecificationDraft draft, boolean approve) {
+        if (version != null && (version.productId() != expected.id() || version.frozen()))
+            throw invalid("Solo le bozze del prodotto selezionato sono modificabili.");
         return async(
                 () ->
                         connections.withTransaction(
                                 c -> {
-                                    Article article = lock(c, expected);
+                                    Product product = lock(c, expected);
                                     var repo = new SpecificationRepository(c);
-                                    repo.validateTechnical(article, draft, approve);
-                                    Product product =
-                                            (Product)
-                                                    new CatalogRepository(c)
-                                                            .load(
-                                                                    CatalogKind.PRODUCTS,
-                                                                    article.product().id());
+                                    repo.validateTechnical(product, draft, approve);
                                     Line line =
                                             (Line)
                                                     new CatalogRepository(c)
@@ -69,50 +63,51 @@ public final class SpecificationService {
                                                                     CatalogKind.LINES,
                                                                     product.line().id());
                                     var history = new CatalogHistoryRepository(c);
-                                    history.verifyCurrent(article);
                                     history.verifyCurrent(product);
                                     history.verifyCurrent(line);
                                     Specification current =
                                             version == null
-                                                    ? repo.load(repo.insert(article, draft))
+                                                    ? repo.load(repo.insert(product, draft))
                                                     : repo.load(version.id());
-                                    if (current.articleId() != article.id())
+                                    if (current.productId() != product.id())
                                         throw invalid(
-                                                "La versione non appartiene all’articolo"
+                                                "La versione non appartiene al prodotto"
                                                         + " selezionato.");
                                     if (version != null && current.revision() != version.revision())
                                         throw new Conflict();
-                                    repo.update(current, draft, approve, line, product, article);
-                                    if (approve && article.defaultSpecification() == null) {
-                                        repo.preferred(article, current.id());
-                                        article =
-                                                (Article)
+                                    repo.update(current, draft, approve, line, product);
+                                    if (approve
+                                            && product.defaultSpecification() == null
+                                            && !product.specificationConflict()) {
+                                        repo.preferred(product, current.id());
+                                        product =
+                                                (Product)
                                                         new CatalogRepository(c)
                                                                 .load(
-                                                                        CatalogKind.ARTICLES,
-                                                                        article.id());
-                                        history.record(article, "MODIFICA");
+                                                                        CatalogKind.PRODUCTS,
+                                                                        product.id());
+                                        history.record(product, "MODIFICA");
                                     }
                                     return CatalogService.detail(
                                             c,
                                             new CatalogRepository(c)
-                                                    .load(CatalogKind.ARTICLES, article.id()));
+                                                    .load(CatalogKind.PRODUCTS, product.id()));
                                 }));
     }
 
-    public CompletableFuture<Detail> copy(Article expected, Specification source) {
-        if (source.articleId() != expected.id() || !source.frozen())
+    public CompletableFuture<Detail> copy(Product expected, Specification source) {
+        if (source.productId() != expected.id() || !source.frozen())
             throw invalid("Crea una nuova versione a partire da una scheda approvata o ritirata.");
         return async(
                 () ->
                         connections.withTransaction(
                                 c -> {
-                                    Article article = lock(c, expected);
+                                    Product product = lock(c, expected);
                                     var repo = new SpecificationRepository(c);
                                     Specification current = repo.load(source.id());
-                                    if (current.articleId() != article.id())
+                                    if (current.productId() != product.id())
                                         throw invalid(
-                                                "La versione non appartiene all’articolo"
+                                                "La versione non appartiene al prodotto"
                                                         + " selezionato.");
                                     if (current.revision() != source.revision())
                                         throw new Conflict();
@@ -122,16 +117,16 @@ public final class SpecificationService {
                                                     current.modelId(),
                                                     current.calculation(),
                                                     current.notes());
-                                    repo.insert(article, draft);
+                                    repo.insert(product, draft);
                                     return CatalogService.detail(
                                             c,
                                             new CatalogRepository(c)
-                                                    .load(CatalogKind.ARTICLES, article.id()));
+                                                    .load(CatalogKind.PRODUCTS, product.id()));
                                 }));
     }
 
-    public CompletableFuture<Detail> prefer(Article expected, Specification selected) {
-        if (selected.articleId() != expected.id()
+    public CompletableFuture<Detail> prefer(Product expected, Specification selected) {
+        if (selected.productId() != expected.id()
                 || !"APPROVATA".equals(selected.state())
                 || !selected.recorded())
             throw invalid("Seleziona una versione approvata con lo storico completo.");
@@ -139,12 +134,12 @@ public final class SpecificationService {
                 () ->
                         connections.withTransaction(
                                 c -> {
-                                    Article article = lock(c, expected);
+                                    Product product = lock(c, expected);
                                     var repo = new SpecificationRepository(c);
                                     Specification current = repo.load(selected.id());
-                                    if (current.articleId() != article.id())
+                                    if (current.productId() != product.id())
                                         throw invalid(
-                                                "La versione non appartiene all’articolo"
+                                                "La versione non appartiene al prodotto"
                                                         + " selezionato.");
                                     if (current.revision() != selected.revision()
                                             || !"APPROVATA".equals(current.state()))
@@ -152,10 +147,10 @@ public final class SpecificationService {
                                     if (!current.recorded())
                                         throw invalid(
                                                 "La versione precedente non ha lo storico"
-                                                    + " anagrafico completo. Crea e approva una"
-                                                    + " nuova versione.");
+                                                        + " anagrafico completo. Crea e approva una"
+                                                        + " nuova versione.");
                                     repo.validateTechnical(
-                                            article,
+                                            product,
                                             new SpecificationDraft(
                                                     current.compositionId(),
                                                     current.modelId(),
@@ -163,74 +158,74 @@ public final class SpecificationService {
                                                     current.notes()),
                                             true);
                                     if (!Objects.equals(
-                                            article.defaultSpecification(), current.id())) {
-                                        new CatalogHistoryRepository(c).verifyCurrent(article);
-                                        repo.preferred(article, current.id());
-                                        article =
-                                                (Article)
+                                            product.defaultSpecification(), current.id())) {
+                                        new CatalogHistoryRepository(c).verifyCurrent(product);
+                                        repo.preferred(product, current.id());
+                                        product =
+                                                (Product)
                                                         new CatalogRepository(c)
                                                                 .load(
-                                                                        CatalogKind.ARTICLES,
-                                                                        article.id());
-                                        new CatalogHistoryRepository(c).record(article, "MODIFICA");
+                                                                        CatalogKind.PRODUCTS,
+                                                                        product.id());
+                                        new CatalogHistoryRepository(c).record(product, "MODIFICA");
                                     }
                                     return CatalogService.detail(
                                             c,
                                             new CatalogRepository(c)
-                                                    .load(CatalogKind.ARTICLES, article.id()));
+                                                    .load(CatalogKind.PRODUCTS, product.id()));
                                 }));
     }
 
-    public CompletableFuture<Detail> retire(Article expected, Specification selected) {
-        if (selected.articleId() != expected.id() || !"APPROVATA".equals(selected.state()))
+    public CompletableFuture<Detail> retire(Product expected, Specification selected) {
+        if (selected.productId() != expected.id() || !"APPROVATA".equals(selected.state()))
             throw invalid("Puoi ritirare solo una versione approvata.");
         return async(
                 () ->
                         connections.withTransaction(
                                 c -> {
-                                    Article article = lock(c, expected, false);
+                                    Product product = lock(c, expected, false);
                                     var repo = new SpecificationRepository(c);
                                     Specification current = repo.load(selected.id());
-                                    if (current.articleId() != article.id())
+                                    if (current.productId() != product.id())
                                         throw invalid(
-                                                "La versione non appartiene all’articolo"
+                                                "La versione non appartiene al prodotto"
                                                         + " selezionato.");
                                     if (current.revision() != selected.revision())
                                         throw new Conflict();
                                     repo.retire(current);
                                     if (Objects.equals(
-                                            article.defaultSpecification(), selected.id())) {
-                                        new CatalogHistoryRepository(c).verifyCurrent(article);
-                                        repo.preferred(article, null);
-                                        article =
-                                                (Article)
+                                            product.defaultSpecification(), selected.id())) {
+                                        new CatalogHistoryRepository(c).verifyCurrent(product);
+                                        repo.preferred(product, null);
+                                        product =
+                                                (Product)
                                                         new CatalogRepository(c)
                                                                 .load(
-                                                                        CatalogKind.ARTICLES,
-                                                                        article.id());
-                                        new CatalogHistoryRepository(c).record(article, "MODIFICA");
+                                                                        CatalogKind.PRODUCTS,
+                                                                        product.id());
+                                        new CatalogHistoryRepository(c).record(product, "MODIFICA");
                                     }
                                     return CatalogService.detail(
                                             c,
                                             new CatalogRepository(c)
-                                                    .load(CatalogKind.ARTICLES, article.id()));
+                                                    .load(CatalogKind.PRODUCTS, product.id()));
                                 }));
     }
 
-    private static Article lock(Connection c, Article expected) throws SQLException {
+    private static Product lock(Connection c, Product expected) throws SQLException {
         return lock(c, expected, true);
     }
 
-    private static Article lock(Connection c, Article expected, boolean requireAvailable)
+    private static Product lock(Connection c, Product expected, boolean requireAvailable)
             throws SQLException {
         var repo = new CatalogRepository(c);
         CatalogService.lockParents(repo, expected, draft(expected));
-        repo.lock(CatalogKind.ARTICLES, expected.id());
-        Article current = (Article) repo.load(CatalogKind.ARTICLES, expected.id());
+        repo.lock(CatalogKind.PRODUCTS, expected.id());
+        Product current = (Product) repo.load(CatalogKind.PRODUCTS, expected.id());
         CatalogService.verifyExpected(current, expected);
         if (requireAvailable && !current.available())
             throw invalid(
-                    "Completa e riattiva articolo, prodotto e linea prima di configurare una nuova"
+                    "Completa e riattiva prodotto e linea prima di configurare una nuova"
                             + " produzione.");
         return current;
     }

@@ -116,7 +116,7 @@ non salvate. Durante le scritture editor e navigazione sono bloccati. I conflitt
 mantengono i campi locali e richiedono una ricarica esplicita; nessun salvataggio
 interrotto viene ripetuto automaticamente dopo il ripristino della connessione.
 
-## Modelli e articoli
+## Modelli e prodotti
 
 **Modelli** cerca le versioni approvate e confronta numero e numerazione degli
 strati con la ricetta corrente, anche se ancora in modifica. Il filtro **Solo
@@ -124,11 +124,11 @@ strati corrispondenti** mostra la corrispondenza strutturale; non certifica da s
 la compatibilità del formato o del processo. **Apri modello** apre la versione
 precisa. La composizione non memorizza un modello esclusivo.
 
-L'abbinamento effettivo avviene in **Articoli → Specifiche di produzione**:
-articolo + versione approvata di composizione dello stesso prodotto + versione
+L'abbinamento effettivo avviene in **Prodotti tecnici → Specifiche di produzione**:
+prodotto + versione approvata di composizione dello stesso prodotto + versione
 approvata di modello. Il servizio verifica anche strati e totali.
 **Utilizzi** elenca le specifiche che puntano alla versione selezionata e permette
-di aprire l'articolo, anche se archiviato. Approvare una nuova ricetta non
+di aprire il prodotto, anche se archiviato. Approvare una nuova ricetta non
 sostituisce i riferimenti già salvati nelle specifiche precedenti.
 
 ## Organizzazione del codice
@@ -138,7 +138,7 @@ sostituisce i riferimenti già salvati nelle specifiche precedenti.
 conservano le percentuali fisiche. Croma e tinta sono calcoli della vista,
 ricostruiti dalle percentuali salvate. Il bilancio nominale viene derivato dalle revisioni delle
 polveri, senza colonne aggiuntive di medie. L'abbinamento con il modello rimane
-in `TON.CONFIGURAZIONI_ARTICOLO`.
+in `TON.CONFIGURAZIONI_PRODOTTO` dalla V21.
 
 Le scritture bloccano linea, prodotto, composizione e polveri in ordine coerente
 con gli altri cataloghi. I controlli di stato e concorrenza avvengono nel servizio,

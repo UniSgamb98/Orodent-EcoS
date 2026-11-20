@@ -102,8 +102,19 @@ public final class CatalogModels {
         }
     }
 
-    public record Product(Metadata meta, Choice line, String color, int articles, boolean used)
+    public record Product(
+            Metadata meta,
+            Choice line,
+            String color,
+            int articles,
+            boolean used,
+            Long defaultSpecification,
+            boolean specificationConflict)
             implements Entry {
+        public Product(Metadata meta, Choice line, String color, int articles, boolean used) {
+            this(meta, line, color, articles, used, null, false);
+        }
+
         @Override
         public CatalogKind kind() {
             return CatalogKind.PRODUCTS;
@@ -331,7 +342,7 @@ public final class CatalogModels {
 
     public record Specification(
             long id,
-            long articleId,
+            long productId,
             int number,
             int revision,
             String state,
@@ -344,14 +355,13 @@ public final class CatalogModels {
             LocalDateTime approvedAt,
             Integer lineRevision,
             Integer productRevision,
-            Integer articleRevision,
             boolean preferred) {
         public boolean frozen() {
             return !"BOZZA".equals(state);
         }
 
         public boolean recorded() {
-            return lineRevision != null && productRevision != null && articleRevision != null;
+            return lineRevision != null && productRevision != null;
         }
 
         @Override

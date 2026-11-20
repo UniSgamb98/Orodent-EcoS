@@ -67,7 +67,13 @@ public final class CatalogHistoryView extends TechnicalRecordsView<Audit> {
                     text.append("\nLinea: ")
                             .append(p.line() == null ? "Da specificare" : p.line().code())
                             .append("\nColore: ")
-                            .append(p.colorLabel());
+                            .append(p.colorLabel())
+                            .append("\nConfigurazione predefinita: ")
+                            .append(
+                                    p.defaultSpecification() == null
+                                            ? "Nessuna"
+                                            : "ID " + p.defaultSpecification())
+                            .append(p.specificationConflict() ? " · da verificare" : "");
             case Article a ->
                     text.append("\nProdotto: ")
                             .append(a.product().code())

@@ -51,7 +51,7 @@ public final class CompositionEditorView extends TechnicalDetailView {
     private final TechnicalTablePage<ModelMatch> models =
             new TechnicalTablePage<>("ton-composition-models", "Apri modello");
     private final TechnicalTablePage<Usage> usages =
-            new TechnicalTablePage<>("ton-composition-usages", "Apri articolo");
+            new TechnicalTablePage<>("ton-composition-usages", "Apri prodotto");
     private final TechnicalRecordsView<Version> history =
             new TechnicalRecordsView<>(
                     "ton-composition-versions",
@@ -135,22 +135,13 @@ public final class CompositionEditorView extends TechnicalDetailView {
                 Sheet.MODELS,
                 TechnicalUi.panel(
                         "Modelli per struttura degli strati",
-                        "L'abbinamento con il modello si salva nella specifica dell'articolo. La"
+                        "L'abbinamento con il modello si salva nella specifica del prodotto. La"
                                 + " corrispondenza degli strati non certifica la compatibilità del"
                                 + " formato.",
                         modelSearch,
                         matching,
                         models));
-        TechnicalUi.column(usages.table(), "Articolo", 180, Usage::articleCode);
-        TechnicalUi.column(
-                usages.table(),
-                "Formato",
-                125,
-                u ->
-                        TechnicalUi.number(u.diameter())
-                                + " × "
-                                + TechnicalUi.number(u.height())
-                                + " mm");
+        TechnicalUi.column(usages.table(), "Prodotto", 180, Usage::productCode);
         TechnicalUi.column(
                 usages.table(),
                 "Specifica",

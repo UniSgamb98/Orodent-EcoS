@@ -110,6 +110,11 @@ public final class DatabaseSchema {
                     20,
                     "TON model configurations by nominal article diameter",
                     "/database/migrations/V20__ton_model_diameters.sql");
+    private static final SchemaMigration TON_PRODUCT_SPECIFICATIONS =
+            new SchemaMigration(
+                    21,
+                    "TON product-owned production specifications",
+                    "/database/migrations/V21__ton_product_specifications.sql");
     private static final List<SchemaMigration> MIGRATIONS =
             List.of(
                     BASELINE,
@@ -131,7 +136,8 @@ public final class DatabaseSchema {
                     TON_DERIVED_COMPOSITION_CHROMA,
                     TON_EQUIPMENT,
                     TON_MODEL_MOULDS,
-                    TON_MODEL_DIAMETERS);
+                    TON_MODEL_DIAMETERS,
+                    TON_PRODUCT_SPECIFICATIONS);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS =
             List.of(
@@ -226,6 +232,8 @@ public final class DatabaseSchema {
                             migration.apply(connection, false);
                             if (migration.version() == WAREHOUSE_ORDERS.version())
                                 WarehouseMigration.apply(connection);
+                            if (migration.version() == TON_PRODUCT_SPECIFICATIONS.version())
+                                ProductSpecificationMigration.apply(connection);
                             recordMigration(connection, "ECOS", migration);
                         }
                     }
@@ -298,6 +306,8 @@ public final class DatabaseSchema {
             if (version >= TON_EQUIPMENT.version()) EquipmentSchema.verify(connection);
             if (version >= TON_MODEL_MOULDS.version()) ModelMouldSchema.verify(connection);
             if (version >= TON_MODEL_DIAMETERS.version()) ModelDiameterSchema.verify(connection);
+            if (version >= TON_PRODUCT_SPECIFICATIONS.version())
+                ProductSpecificationSchema.verify(connection);
             return version;
         }
         if (tableExists(connection, "APP", HISTORY)) {

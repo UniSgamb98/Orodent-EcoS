@@ -39,7 +39,7 @@ public final class CatalogEditorView extends TechnicalDetailView {
         form = new CatalogForm(kind);
         related = kind.child() == null ? null : new CatalogRelatedView(kind);
         history = new CatalogHistoryView(base, kind);
-        specifications = kind == CatalogKind.ARTICLES ? new SpecificationsView() : null;
+        specifications = kind == CatalogKind.PRODUCTS ? new SpecificationsView() : null;
         parent =
                 CatalogUi.button(
                         kind == CatalogKind.ARTICLES ? "Apri prodotto" : "Apri linea",

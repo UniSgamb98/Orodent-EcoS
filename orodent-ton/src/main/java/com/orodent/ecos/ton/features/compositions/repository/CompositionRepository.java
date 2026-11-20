@@ -369,7 +369,14 @@ public final class CompositionRepository {
     }
 
     public boolean used(long id) throws SQLException {
-        return count("SELECT COUNT(*) FROM TON.CONFIGURAZIONI_ARTICOLO WHERE composizione_id=?", id)
+        return (count(
+                                "SELECT COUNT(*) FROM TON.CONFIGURAZIONI_ARTICOLO WHERE"
+                                        + " composizione_id=?",
+                                id)
+                        + count(
+                                "SELECT COUNT(*) FROM TON.CONFIGURAZIONI_PRODOTTO WHERE"
+                                        + " composizione_id=?",
+                                id))
                 > 0;
     }
 
@@ -400,18 +407,18 @@ public final class CompositionRepository {
     public Page<Usage> usages(long id, int offset, int limit) throws SQLException {
         long total =
                 count(
-                        "SELECT COUNT(*) FROM TON.CONFIGURAZIONI_ARTICOLO WHERE composizione_id=?",
+                        "SELECT COUNT(*) FROM TON.CONFIGURAZIONI_PRODOTTO WHERE composizione_id=?",
                         id);
         var rows = new ArrayList<Usage>();
         try (var q =
                 connection.prepareStatement(
                         "SELECT"
-                            + " a.articolo_id,a.codice,a.diametro_mm,a.altezza_mm,c.numero_versione,c.stato,m.codice,m.numero_versione,CASE"
-                            + " WHEN a.configurazione_predefinita_id=c.configurazione_id THEN 1"
-                            + " ELSE 0 END FROM TON.CONFIGURAZIONI_ARTICOLO c JOIN TON.ARTICOLI a"
-                            + " ON a.articolo_id=c.articolo_id JOIN TON.MODELLI_DISCO m ON"
+                            + " p.prodotto_id,p.codice,c.numero_versione,c.stato,m.codice,m.numero_versione,CASE"
+                            + " WHEN p.configurazione_predefinita_id=c.configurazione_id THEN 1"
+                            + " ELSE 0 END FROM TON.CONFIGURAZIONI_PRODOTTO c JOIN TON.PRODOTTI p"
+                            + " ON p.prodotto_id=c.prodotto_id JOIN TON.MODELLI_DISCO m ON"
                             + " m.modello_id=c.modello_id WHERE c.composizione_id=? ORDER BY"
-                            + " a.codice,c.numero_versione DESC OFFSET ? ROWS FETCH NEXT ? ROWS"
+                            + " p.codice,c.numero_versione DESC OFFSET ? ROWS FETCH NEXT ? ROWS"
                             + " ONLY")) {
             q.setLong(1, id);
             q.setInt(2, offset);
@@ -422,13 +429,11 @@ public final class CompositionRepository {
                             new Usage(
                                     r.getLong(1),
                                     r.getString(2),
-                                    r.getBigDecimal(3),
-                                    r.getBigDecimal(4),
-                                    r.getInt(5),
-                                    r.getString(6),
-                                    r.getString(7),
-                                    r.getInt(8),
-                                    r.getInt(9) == 1));
+                                    r.getInt(3),
+                                    r.getString(4),
+                                    r.getString(5),
+                                    r.getInt(6),
+                                    r.getInt(7) == 1));
             }
         }
         return new Page<>(rows, total, offset, limit);

@@ -166,10 +166,10 @@ class TonSchemaTest {
         execute(
                 "ALTER TABLE TON.PRODOTTI ALTER COLUMN prodotto_id RESTART WITH 42",
                 "INSERT INTO TON.PRODOTTI(codice,descrizione,attivo,versione_modifica) VALUES"
-                    + " ('OLD','Già presente',FALSE,7)",
+                        + " ('OLD','Già presente',FALSE,7)",
                 "ALTER TABLE TON.PRODOTTI ALTER COLUMN prodotto_id RESTART WITH 100",
                 "INSERT INTO ANAGRAFICHE.CLIENTI(codice_cliente,ragione_sociale) VALUES"
-                    + " ('KEEP','Cliente da conservare')",
+                        + " ('KEEP','Cliente da conservare')",
                 "INSERT INTO"
                     + " VENDITE.VENDITE_DETTAGLIO(sorgente,documento_id,numero_riga,data_vendita,codice_cliente,codice_prodotto,quantita)"
                     + " VALUES ('TEST','KEEP',1,DATE('2026-01-01'),'KEEP','OLD',2)");
@@ -210,7 +210,7 @@ class TonSchemaTest {
                 history,
                 rows("SELECT * FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version <= 3 ORDER BY version"));
         assertEquals(identity, connections.withConnection(DatabaseIdentity::read));
-        assertEquals(37, tonTableCount());
+        assertEquals(40, tonTableCount());
         execute("INSERT INTO TON.PRODOTTI(codice) VALUES ('NEXT')");
         assertEquals(100, scalar("SELECT prodotto_id FROM TON.PRODOTTI WHERE codice='NEXT'"));
     }
@@ -253,7 +253,7 @@ class TonSchemaTest {
         assertEquals(2, tonTableCount());
         execute("DROP TABLE TON.DOCUMENTI");
         migrate();
-        assertEquals(37, tonTableCount());
+        assertEquals(40, tonTableCount());
     }
 
     @Test
@@ -261,7 +261,7 @@ class TonSchemaTest {
         seedWorkflow();
         execute(
                 "INSERT INTO TON.SCARTI_PRODUZIONE(produzione_riga_id,quantita,motivo) VALUES"
-                    + " (1,5,'Difetto prima del forno')",
+                        + " (1,5,'Difetto prima del forno')",
                 "INSERT INTO TON.LOTTI_COTTURA(codice,ciclo_id) VALUES ('L-001',1)",
                 "INSERT INTO"
                     + " TON.CARICHI_COTTURA(ciclo_id,produzione_riga_id,quantita_caricata,quantita_buona,quantita_scartata,lotto_id)"
@@ -285,7 +285,7 @@ FROM TON.PRODUZIONE_RIGHE r WHERE r.produzione_riga_id=1
 """));
         execute(
                 "INSERT INTO TON.COMPOSIZIONI(prodotto_id,numero_versione,stato,approvato_il)"
-                    + " VALUES (1,4,'APPROVATA',CURRENT_TIMESTAMP)",
+                        + " VALUES (1,4,'APPROVATA',CURRENT_TIMESTAMP)",
                 "INSERT INTO TON.COMPOSIZIONE_STRATI VALUES (2,1,'Strato unico')",
                 "INSERT INTO TON.COMPOSIZIONE_INGREDIENTI VALUES (2,1,1,100)",
                 "INSERT INTO"
@@ -492,14 +492,14 @@ JOIN TON.MODELLI_DISCO m ON m.modello_id=cfg.modello_id
                 "INSERT INTO TON.LINEE(codice,nome) VALUES ('ML','Multistrato')",
                 "INSERT INTO TON.LINEE_PRODOTTI VALUES (1,1)",
                 "INSERT INTO TON.ARTICOLI(codice,prodotto_id,diametro_mm,altezza_mm) VALUES"
-                    + " ('ZR-A2-D98-H14',1,98,14)",
+                        + " ('ZR-A2-D98-H14',1,98,14)",
                 "INSERT INTO TON.POLVERI(codice,nome) VALUES ('BIANCA','Polvere bianca')",
                 "INSERT INTO"
                     + " TON.POLVERI_REVISIONI(polvere_id,numero_versione,resistenza_mpa,stato,approvato_il)"
                     + " VALUES (1,1,1200,'APPROVATA',CURRENT_TIMESTAMP)",
                 "INSERT INTO TON.POLVERE_OSSIDI VALUES (1,'ZRO2',95)",
                 "INSERT INTO TON.COMPOSIZIONI(prodotto_id,numero_versione,stato,approvato_il)"
-                    + " VALUES (1,3,'APPROVATA',CURRENT_TIMESTAMP)",
+                        + " VALUES (1,3,'APPROVATA',CURRENT_TIMESTAMP)",
                 "INSERT INTO TON.COMPOSIZIONE_STRATI VALUES (1,1,'Strato unico')",
                 "INSERT INTO TON.COMPOSIZIONE_INGREDIENTI VALUES (1,1,1,100)",
                 "INSERT INTO"
@@ -514,16 +514,16 @@ JOIN TON.MODELLI_DISCO m ON m.modello_id=cfg.modello_id
                     + " VALUES (1,1,1,1,1,'dosi-v1','APPROVATA',CURRENT_TIMESTAMP)",
                 "UPDATE TON.ARTICOLI SET configurazione_predefinita_id=1",
                 "INSERT INTO TON.PRODUZIONI(numero,linea_id,data_produzione,stato,confermata_il)"
-                    + " VALUES ('PR-001',1,CURRENT_DATE,'CONFERMATA',CURRENT_TIMESTAMP)",
+                        + " VALUES ('PR-001',1,CURRENT_DATE,'CONFERMATA',CURRENT_TIMESTAMP)",
                 "INSERT INTO"
                     + " TON.PRODUZIONE_RIGHE(produzione_id,numero_riga,configurazione_id,quantita_prodotta,dosi_calcolate)"
                     + " VALUES (1,1,1,100,'{\"version\":1,\"unit\":\"g\",\"doses\":[320]}')",
                 "INSERT INTO TON.FORNI(codice,nome) VALUES ('F01','Forno 1')",
                 "INSERT INTO TON.PROGRAMMI_COTTURA(codice,numero_versione,nome,stato,approvato_il)"
-                    + " VALUES ('PRE-A',2,'Presinterizzazione','APPROVATA',CURRENT_TIMESTAMP)",
+                        + " VALUES ('PRE-A',2,'Presinterizzazione','APPROVATA',CURRENT_TIMESTAMP)",
                 "INSERT INTO TON.PROGRAMMA_PASSI VALUES (1,1,1000,120,30)",
                 "INSERT INTO TON.CICLI_COTTURA(numero,forno_id,programma_id,data_prevista) VALUES"
-                    + " ('C-001',1,1,CURRENT_DATE)");
+                        + " ('C-001',1,1,CURRENT_DATE)");
     }
 
     private void migrate() {

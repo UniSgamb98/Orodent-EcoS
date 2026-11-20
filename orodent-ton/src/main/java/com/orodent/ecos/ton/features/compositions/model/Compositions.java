@@ -279,10 +279,8 @@ public final class Compositions {
     }
 
     public record Usage(
-            long articleId,
-            String articleCode,
-            BigDecimal diameter,
-            BigDecimal height,
+            long productId,
+            String productCode,
             int specification,
             String state,
             String modelCode,

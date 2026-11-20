@@ -8,7 +8,7 @@ Questo documento descrive
 anche regole applicative previste per i flussi ancora da costruire. Il cubaggio
 rimane fuori da questo passaggio. Vedere [uso delle polveri](ton-polveri.md).
 Le evoluzioni successive, comprese le anagrafiche delle attrezzature V18 e gli
-stampi dei modelli V19 e i gruppi per diametro articolo V20, sono descritte nello [schema corrente](database-schema.md).
+stampi dei modelli V19, i gruppi per diametro articolo V20 e le specifiche di prodotto V21, sono descritte nello [schema corrente](database-schema.md).
 
 L'obiettivo è mantenere il percorso di TON-V2 — cataloghi, composizioni, modelli,
 produzioni, forni, lotti e documenti — rendendo espliciti i dati tecnici storici e
@@ -282,6 +282,11 @@ Intervalli `[da, a)`, con `a > da`, nessuna sovrapposizione per lo stesso modell
 Se nessuna fascia corrisponde si applicano i default. Sovramateriali >= 0.
 
 ### 14. `TON.CONFIGURAZIONI_ARTICOLO`
+
+Dalla V21 questa tabella conserva i riferimenti storici. Le nuove specifiche
+appartengono al prodotto in `TON.CONFIGURAZIONI_PRODOTTO`; si veda lo
+[schema corrente](database-schema.md) per migrazione, conflitti e nuovi piani.
+
 
 | Campo | Tipo | Significato |
 |---|---|---|

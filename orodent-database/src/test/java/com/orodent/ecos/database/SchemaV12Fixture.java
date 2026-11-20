@@ -8,6 +8,17 @@ import java.util.regex.Pattern;
 /** Reconstruct the actual pre-CRM schema when testing older upgrade paths. */
 final class SchemaV12Fixture {
     static void removeCrm(Connection c) throws SQLException {
+        ModelMouldFixtures.beforeV19(c);
+        try (var q = c.createStatement()) {
+            for (String t :
+                    new String[] {
+                        "PRESSE",
+                        "STAMPI",
+                        "PIANI_DOCUMENTI",
+                        "PIANO_PRODUZIONE_RIGHE",
+                        "PIANI_PRODUZIONE"
+                    }) q.executeUpdate("DROP TABLE TON." + t);
+        }
         String sql;
         try (var input =
                 DatabaseSchema.class.getResourceAsStream("/database/migrations/V13__crm.sql")) {

@@ -245,6 +245,107 @@ public final class ProductionUiProbe {
                         assertNotNull(node("ton-production-quantities"));
                         return null;
                     });
+            fx(
+                    () -> {
+                        Platform.runLater(() -> answer(ButtonType.OK));
+                        button("ton-nav-technical").fire();
+                        button("ton-tech-products-button").fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-products-table") instanceof TableView<?> t
+                                    && !t.getItems().isEmpty());
+            fx(
+                    () -> {
+                        var table = (TableView<?>) node("ton-products-table");
+                        table.getSelectionModel().selectFirst();
+                        table.fireEvent(doubleClick());
+                        return null;
+                    });
+            await(() -> node("ton-product-tabs") != null);
+            fx(
+                    () -> {
+                        var tabs = (TabPane) node("ton-product-tabs");
+                        assertEquals(
+                                java.util.List.of(
+                                        "Anagrafica",
+                                        "Articoli",
+                                        "Specifiche di produzione",
+                                        "Revisioni"),
+                                tabs.getTabs().stream().map(Tab::getText).toList());
+                        tabs.getSelectionModel().select(2);
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-product-spec-version") instanceof ComboBox<?> b
+                                    && !b.getItems().isEmpty());
+            fx(
+                    () -> {
+                        var selected =
+                                (com.orodent.ecos.ton.features.catalog.model.CatalogModels
+                                                .Specification)
+                                        ((ComboBox<?>) node("ton-product-spec-version")).getValue();
+                        assertEquals(fixture.product.id(), selected.productId());
+                        assertTrue(selected.preferred());
+                        assertTrue(node("ton-product-spec-composition").isDisabled());
+                        screenshot("target/product-shared-production-specifications.png");
+                        button("ton-nav-technical").fire();
+                        button("ton-tech-models-button").fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-models-table") instanceof TableView<?> t
+                                    && !t.getItems().isEmpty());
+            fx(
+                    () -> {
+                        var table = (TableView<?>) node("ton-models-table");
+                        table.getSelectionModel().selectFirst();
+                        table.fireEvent(doubleClick());
+                        return null;
+                    });
+            await(() -> node("ton-model-tabs") != null);
+            fx(
+                    () -> {
+                        var tabs = (TabPane) node("ton-model-tabs");
+                        tabs.getSelectionModel()
+                                .select(
+                                        tabs.getTabs().stream()
+                                                .filter(t -> t.getText().equals("Utilizzi"))
+                                                .findFirst()
+                                                .orElseThrow());
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-model-usages-table") instanceof TableView<?> t
+                                    && !t.getItems().isEmpty());
+            fx(
+                    () -> {
+                        var table = (TableView<?>) node("ton-model-usages-table");
+                        assertEquals(1, table.getItems().size());
+                        var usage =
+                                (com.orodent.ecos.ton.features.diskmodels.model.DiskModels.Usage)
+                                        table.getItems().getFirst();
+                        assertEquals(fixture.product.id(), usage.productId());
+                        assertTrue(
+                                table.getColumns().stream()
+                                        .noneMatch(c -> c.getText().equals("Articolo")));
+                        screenshot("target/model-product-usages.png");
+                        table.getSelectionModel().selectFirst();
+                        button("ton-model-usages-open").fire();
+                        return null;
+                    });
+            await(() -> node("ton-product-editor") != null);
+            fx(
+                    () -> {
+                        assertEquals(
+                                fixture.product.code(),
+                                ((TextField) node("ton-product-code")).getText());
+                        return null;
+                    });
             assertTrue(errors.isEmpty(), errors::toString);
         } finally {
             fx(

@@ -49,7 +49,7 @@ public final class DiskModelEditorView extends TechnicalDetailView {
     private final LayersEditor layers = new LayersEditor(this::refreshPreview);
     private final RangesEditor ranges = new RangesEditor(this::refreshPreview);
     private final TechnicalTablePage<Usage> usages =
-            new TechnicalTablePage<>("ton-model-usages", "Apri articolo");
+            new TechnicalTablePage<>("ton-model-usages", "Apri prodotto");
     private final TechnicalRecordsView<Version> history =
             new TechnicalRecordsView<>(
                     "ton-model-versions",
@@ -122,17 +122,8 @@ public final class DiskModelEditorView extends TechnicalDetailView {
                         "Ogni collegamento conserva il modello preciso. Approvare una nuova"
                                 + " versione non aggiorna automaticamente le specifiche esistenti.",
                         usages);
-        TechnicalUi.column(usages.table(), "Articolo", 170, Usage::articleCode);
-        TechnicalUi.column(usages.table(), "Prodotto", 120, Usage::productCode);
-        TechnicalUi.column(
-                usages.table(),
-                "Formato",
-                120,
-                u ->
-                        TechnicalUi.number(u.diameter())
-                                + " × "
-                                + TechnicalUi.number(u.height())
-                                + " mm");
+        TechnicalUi.column(usages.table(), "Prodotto", 180, Usage::productCode);
+        TechnicalUi.column(usages.table(), "Descrizione", 180, Usage::productName);
         TechnicalUi.column(
                 usages.table(),
                 "Specifica",

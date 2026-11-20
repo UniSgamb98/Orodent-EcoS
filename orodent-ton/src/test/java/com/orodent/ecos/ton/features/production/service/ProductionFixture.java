@@ -135,10 +135,11 @@ public final class ProductionFixture {
                                     .join()
                                     .entry();
             articles.put(height, a.id());
-            if (height != 22)
+            if (height == 22) catalog.setActive(a, false).join();
+            if (height == 12)
                 new SpecificationService(db, workers)
                         .save(
-                                a,
+                                product,
                                 null,
                                 new CatalogModels.SpecificationDraft(
                                         comp.revision().id(),

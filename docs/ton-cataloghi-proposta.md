@@ -5,7 +5,8 @@ Stato: **cataloghi implementati con schema V6**. Vedere la
 L'[anteprima HTML originale](mockups/ton-cataloghi.html) resta un riferimento
 navigabile con dati dimostrativi, senza accesso al DB dell'applicazione.
 I [modelli disco](ton-modelli-disco.md) e le [composizioni](ton-composizioni.md)
-sono operativi. Le versioni approvate si usano dentro Articoli.
+sono operativi. Dalla V21 le versioni approvate si associano al Prodotto tecnico;
+gli articoli ne ereditano le specifiche.
 
 Le sezioni seguenti conservano il disegno concordato; i dettagli d'uso correnti,
 le regole della migrazione e i limiti operativi sono nella guida.

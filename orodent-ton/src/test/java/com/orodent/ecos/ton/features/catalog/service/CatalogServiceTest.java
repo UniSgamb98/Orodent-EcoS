@@ -573,15 +573,15 @@ class CatalogServiceTest {
     void approvalFreezesTechnicalVersionsAndCapturesOriginalCatalogueSnapshots() {
         Line l = line();
         Product p = product(l, "A2");
-        Article a = article(p, "ONE");
+        Product a = p;
         technical(p.id());
         Detail approved =
                 specs.save(a, null, new SpecificationDraft(1, 1, "dosi-v1", "Prima"), true).join();
-        Article current = (Article) approved.entry();
+        Product current = (Product) approved.entry();
         Specification version = specs.page(current, 0, "", "").join().rows().getFirst();
         assertTrue(version.recorded());
         assertTrue(version.preferred());
-        assertEquals(1, version.articleRevision());
+        assertEquals(1, version.productRevision());
         assertThrows(
                 IllegalArgumentException.class,
                 () ->
@@ -590,24 +590,23 @@ class CatalogServiceTest {
                                 version,
                                 new SpecificationDraft(1, 1, "other", ""),
                                 false));
-        Article renamed =
-                (Article)
+        Product renamed =
+                (Product)
                         service.save(
                                         current,
-                                        new ArticleDraft(
+                                        new ProductDraft(
                                                 current.code(),
                                                 "Descrizione nuova",
-                                                p.id(),
-                                                a.diameter(),
-                                                a.height(),
+                                                l.id(),
+                                                p.color(),
                                                 "",
                                                 true))
                                 .join()
                                 .entry();
         assertEquals(
-                "",
-                service.history(CatalogKind.ARTICLES, a.id(), 0).join().rows().stream()
-                        .filter(x -> x.number() == version.articleRevision())
+                p.name(),
+                service.history(CatalogKind.PRODUCTS, a.id(), 0).join().rows().stream()
+                        .filter(x -> x.number() == version.productRevision())
                         .findFirst()
                         .orElseThrow()
                         .snapshot()
@@ -618,7 +617,7 @@ class CatalogServiceTest {
         assertEquals("Prima", rows.get(1).notes());
         assertThrows(CompletionException.class, () -> specs.copy(renamed, version).join());
         specs.retire(renamed, version).join();
-        Article retired = (Article) service.load(CatalogKind.ARTICLES, a.id()).join().entry();
+        Product retired = (Product) service.load(CatalogKind.PRODUCTS, a.id()).join().entry();
         assertNull(retired.defaultSpecification());
         assertEquals(2, specs.page(retired, 0, "", "").join().total());
     }
@@ -627,7 +626,7 @@ class CatalogServiceTest {
     void invalidDependenciesPreventApprovalAndRollBackNewVersions() {
         Line l = line();
         Product p = product(l, "A2");
-        Article a = article(p, "ONE");
+        Product a = p;
         technical(p.id());
         execute("UPDATE TON.MODELLO_STRATI SET percentuale_altezza=90");
         assertThrows(
@@ -647,10 +646,10 @@ class CatalogServiceTest {
     void concurrentVersionCreationAllocatesOnlyOneDraft() throws Exception {
         Line l = line();
         Product p = product(l, "A2");
-        Article a = article(p, "ONE");
+        Product a = p;
         technical(p.id());
-        Article current =
-                (Article)
+        Product current =
+                (Product)
                         specs.save(a, null, new SpecificationDraft(1, 1, "v1", ""), true)
                                 .join()
                                 .entry();
@@ -679,30 +678,18 @@ class CatalogServiceTest {
     }
 
     @Test
-    void commandsCannotUseAnotherArticlesVersionEvenWithAForgedClientSnapshot() {
+    void commandsCannotUseAnotherProductsVersionEvenWithAForgedClientSnapshot() {
         Line l = line();
         Product p = product(l, "A2");
-        Article one = article(p, "ONE");
+        Product one = p;
         technical(p.id());
-        Article approved =
-                (Article)
+        Product approved =
+                (Product)
                         specs.save(one, null, new SpecificationDraft(1, 1, "v1", ""), true)
                                 .join()
                                 .entry();
         Specification v = specs.page(approved, 0, "", "").join().rows().getFirst();
-        Article other =
-                (Article)
-                        service.create(
-                                        new ArticleDraft(
-                                                "OTHER",
-                                                "",
-                                                p.id(),
-                                                new BigDecimal("95"),
-                                                new BigDecimal("16"),
-                                                "",
-                                                true))
-                                .join()
-                                .entry();
+        Product other = product(l, "A3");
         Specification forged =
                 new Specification(
                         v.id(),
@@ -719,7 +706,6 @@ class CatalogServiceTest {
                         v.approvedAt(),
                         v.lineRevision(),
                         v.productRevision(),
-                        v.articleRevision(),
                         false);
         assertThrows(CompletionException.class, () -> specs.retire(other, forged).join());
         assertThrows(CompletionException.class, () -> specs.copy(other, forged).join());
@@ -732,21 +718,21 @@ class CatalogServiceTest {
     void layerNumbersMustMatchAndRetirementIsAllowedAfterArchiving() {
         Line l = line();
         Product p = product(l, "A2");
-        Article a = article(p, "ONE");
+        Product a = p;
         technical(p.id());
         execute("UPDATE TON.MODELLO_STRATI SET numero_strato=2");
         assertThrows(
                 CompletionException.class,
                 () -> specs.save(a, null, new SpecificationDraft(1, 1, "v1", ""), true).join());
         execute("UPDATE TON.MODELLO_STRATI SET numero_strato=1");
-        Article approved =
-                (Article)
+        Product approved =
+                (Product)
                         specs.save(a, null, new SpecificationDraft(1, 1, "v1", ""), true)
                                 .join()
                                 .entry();
         Specification v = specs.page(approved, 0, "", "").join().rows().getFirst();
-        Article archived = (Article) service.setActive(approved, false).join().entry();
-        Article retired = (Article) specs.retire(archived, v).join().entry();
+        Product archived = (Product) service.setActive(approved, false).join().entry();
+        Product retired = (Product) specs.retire(archived, v).join().entry();
         assertFalse(retired.active());
         assertNull(retired.defaultSpecification());
         assertEquals("RITIRATA", specs.page(retired, 0, "", "").join().rows().getFirst().state());
@@ -756,14 +742,12 @@ class CatalogServiceTest {
     void legacySpecificationsNeedANewApprovalAndCannotTrustInventedClientReferences() {
         Line l = line();
         Product p = product(l, "A2");
-        Article a = article(p, "ONE");
+        Product a = p;
         technical(p.id());
         execute(
                 "INSERT INTO"
-                    + " TON.CONFIGURAZIONI_ARTICOLO(articolo_id,prodotto_id,numero_versione,composizione_id,modello_id,versione_calcolo,stato,approvato_il)"
+                    + " TON.CONFIGURAZIONI_PRODOTTO(prodotto_id,numero_versione,composizione_id,modello_id,versione_calcolo,stato,approvato_il)"
                     + " VALUES ("
-                        + a.id()
-                        + ","
                         + p.id()
                         + ",1,1,1,'legacy','APPROVATA',CURRENT_TIMESTAMP)");
         Specification old = specs.page(a, 0, "", "").join().rows().getFirst();
@@ -771,7 +755,7 @@ class CatalogServiceTest {
         Specification invented =
                 new Specification(
                         old.id(),
-                        old.articleId(),
+                        old.productId(),
                         old.number(),
                         old.revision(),
                         old.state(),
@@ -784,16 +768,15 @@ class CatalogServiceTest {
                         old.approvedAt(),
                         1,
                         1,
-                        1,
                         false);
         assertThrows(CompletionException.class, () -> specs.prefer(a, invented).join());
         assertNull(
-                ((Article) service.load(CatalogKind.ARTICLES, a.id()).join().entry())
+                ((Product) service.load(CatalogKind.PRODUCTS, a.id()).join().entry())
                         .defaultSpecification());
         specs.copy(a, old).join();
         Specification draft = specs.page(a, 0, "", "").join().rows().getFirst();
-        Article current =
-                (Article)
+        Product current =
+                (Product)
                         specs.save(a, draft, new SpecificationDraft(1, 1, "v1", "Verificata"), true)
                                 .join()
                                 .entry();
@@ -802,6 +785,63 @@ class CatalogServiceTest {
         assertTrue(approved.preferred());
         assertEquals(2, approved.number());
         assertFalse(specs.page(current, 0, "", "").join().rows().get(1).recorded());
+    }
+
+    @Test
+    void productSpecificationsAreInheritedByAllHeightsAndDefaultChangesReachEveryArticle() {
+        var l = line();
+        var p = product(l, "A2");
+        var a = article(p, "ONE");
+        var b =
+                (Article)
+                        service.create(
+                                        new ArticleDraft(
+                                                "TWO",
+                                                "",
+                                                p.id(),
+                                                new BigDecimal("98"),
+                                                new BigDecimal("20"),
+                                                "",
+                                                true))
+                                .join()
+                                .entry();
+        technical(p.id());
+        var current =
+                (Product)
+                        specs.save(p, null, new SpecificationDraft(1, 1, "v1", ""), true)
+                                .join()
+                                .entry();
+        var first = specs.page(current, 0, "", "").join().rows().getFirst();
+        assertEquals(
+                first.id(),
+                ((Article) service.load(CatalogKind.ARTICLES, a.id()).join().entry())
+                        .defaultSpecification());
+        assertEquals(
+                first.id(),
+                ((Article) service.load(CatalogKind.ARTICLES, b.id()).join().entry())
+                        .defaultSpecification());
+        specs.copy(current, first).join();
+        var draft = specs.page(current, 0, "", "").join().rows().getFirst();
+        specs.save(current, draft, new SpecificationDraft(1, 1, "v2", "Changed"), true).join();
+        var next = specs.page(current, 0, "", "").join().rows().getFirst();
+        var preferred = (Product) specs.prefer(current, next).join().entry();
+        assertEquals(next.id(), preferred.defaultSpecification());
+        assertEquals(
+                next.id(),
+                ((Article) service.load(CatalogKind.ARTICLES, a.id()).join().entry())
+                        .defaultSpecification());
+        assertEquals(
+                next.id(),
+                ((Article) service.load(CatalogKind.ARTICLES, b.id()).join().entry())
+                        .defaultSpecification());
+        var snapshot =
+                (Product)
+                        service.history(CatalogKind.PRODUCTS, p.id(), 0)
+                                .join()
+                                .rows()
+                                .get(1)
+                                .snapshot();
+        assertEquals(first.id(), snapshot.defaultSpecification());
     }
 
     private Line line() {

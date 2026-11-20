@@ -138,38 +138,57 @@ mostrato con **Padre archiviato** e non è disponibile per nuove configurazioni.
 collegamenti. Il servizio ricontrolla riferimenti correnti e storici nella stessa
 transazione. Altrimenti si usa Archivia. Non esistono cancellazioni a cascata.
 
-## Articoli e specifiche di produzione
+## Prodotti e specifiche di produzione
 
-Un articolo si salva anche senza composizione o modello: rimane **Da configurare**.
-La scheda **Specifiche di produzione** gestisce i riferimenti versionati già
-previsti dal DB, senza un catalogo principale separato per le configurazioni.
+La scheda **Specifiche di produzione** appartiene al **Prodotto tecnico**, tra
+**Articoli** e **Revisioni**. Tutti gli articoli del prodotto ereditano la stessa
+specifica predefinita: composizione, modello e metodo di calcolo. Nell'articolo
+restano anagrafica, diametro e altezza; la sua colonna Produzione mostra la
+configurazione ereditata. Le anagrafiche si salvano anche senza specifiche.
 
 Occorrono una composizione approvata dello stesso prodotto, un modello approvato
-e un riferimento al metodo di calcolo. Il riferimento identifica il metodo:
-questa schermata non implementa il calcolo delle dosi o il flusso delle produzioni.
-I [modelli disco](ton-modelli-disco.md) e le [composizioni](ton-composizioni.md)
-si creano nei rispettivi cataloghi dedicati. In assenza di una
-composizione approvata l'anagrafica dell'articolo resta utilizzabile.
+e un riferimento al metodo di calcolo. Questa schermata non calcola le dosi:
+la Produzione usa il gruppo del modello corrispondente al diametro dell'articolo
+e l'altezza del formato. Un diametro non configurato viene segnalato nella
+Produzione e non riceve una specifica autonoma.
 
-- **Salva bozza** crea o aggiorna una versione modificabile. È ammessa una sola
-  bozza per articolo; la numerazione viene assegnata sotto blocco dell'articolo.
-- **Salva e approva** verifica prodotto, stato dei riferimenti, numero e numeri
-  degli strati, totali al 100%, polveri attive e revisioni di polvere approvate.
-  Congela anche i riferimenti alle revisioni di linea, prodotto e articolo.
-- La prima versione approvata diventa predefinita. **Imposta predefinita** sceglie
-  un'altra versione approvata con storico completo e riferimenti ancora validi.
-  Il cambio è registrato anche nello storico dell'articolo.
-- Una versione approvata è di sola lettura. **Crea nuova versione** copia i valori
-  salvati in una nuova bozza, conservando la precedente.
-- **Ritira versione** conserva contenuti e collegamenti. Se era predefinita,
-  l'articolo torna senza predefinita; le produzioni precedenti mantengono il loro
-  riferimento preciso. È possibile ritirare anche dopo l'archiviazione.
-- Le versioni e i selettori sono paginati; le ricerche dedicate individuano
-  composizioni per numero di versione e modelli per codice.
+- **Salva bozza** crea o aggiorna una versione modificabile. La creazione è
+  serializzata sul prodotto e non aggiunge una seconda bozza ordinaria.
+- **Salva e approva** verifica stato dei riferimenti, corrispondenza degli strati,
+  totali al 100% e polveri attive con revisioni approvate. Congela i riferimenti
+  alle revisioni di linea e prodotto. Le revisioni degli articoli vengono fissate
+  quando si salva il piano di produzione.
+- La prima versione approvata diventa predefinita per un prodotto nuovo.
+  **Imposta predefinita** sceglie un'altra approvata con storico completo e
+  riferimenti validi; il cambio è registrato nelle Revisioni del prodotto.
+- Una versione approvata è di sola lettura. **Crea nuova versione** conserva la
+  precedente e copia i valori in una bozza.
+- **Ritira versione** conserva contenuti e collegamenti. Se era predefinita, il
+  prodotto torna senza predefinita; i piani preparati mantengono la fotografia
+  originale. È possibile ritirare anche dopo l'archiviazione.
+- Le versioni e i selettori mantengono la propria paginazione e ricerca.
 
-Le configurazioni precedenti a V6 non ricevono retroattivamente snapshot
-anagrafici inventati: sono mostrate come **da verificare**. Possono essere lette,
-copiate e approvate in una nuova versione dopo aver completato le anagrafiche.
+### Migrazione V21
+
+`TON.CONFIGURAZIONI_PRODOTTO` è il nuovo proprietario delle specifiche.
+La migrazione riunisce soltanto contenuti e snapshot equivalenti delle vecchie
+configurazioni articolo; `TON.CONFIGURAZIONI_MIGRATE` conserva la corrispondenza
+per ogni ID precedente. Stati, riferimenti tecnici e note distinti rimangono
+versioni separate. Le configurazioni articolo originali restano intatte per i
+riferimenti storici.
+
+Se le predefinite precedenti convergono su una sola specifica approvata con
+snapshot completi, questa diventa la predefinita del prodotto. In caso contrario
+il prodotto è **da verificare**: tutte le versioni importate sono consultabili,
+ma una scelta esplicita con **Imposta predefinita** è necessaria per produrre.
+Non viene selezionata arbitrariamente una variante. Anche l'approvazione di una
+nuova versione lascia tale scelta manuale quando c'è una verifica in sospeso.
+Le configurazioni precedenti senza snapshot anagrafici devono essere copiate
+e approvate nuovamente; non si inventano revisioni mancanti.
+
+Migrazione, nuove associazioni e Revisioni dei prodotti vengono salvate nella
+stessa transazione, dopo il backup previsto dall'HOST. Piani preparati,
+documenti e produzioni fisiche precedenti non vengono riscritti.
 
 ## Migrazione V6
 

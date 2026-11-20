@@ -58,9 +58,9 @@ modello. Il numero della versione viene assegnato dal servizio.
   ciascun diametro articolo di questa versione. Le schede per diametro cambiano il
   gruppo confrontato; ogni gruppo ha il proprio riferimento, sempre incluso. Nessuna
   tolleranza o regola seleziona automaticamente gli stampi.
-- **Utilizzi**: specifiche degli articoli collegate alla versione selezionata,
-  con formato, stato e indicazione della predefinita. **Apri articolo** apre la
-  scheda reale, anche per consultare un articolo archiviato.
+- **Utilizzi**: specifiche dei prodotti collegate alla versione selezionata,
+  con stato e indicazione della predefinita. **Apri prodotto** apre la scheda
+  reale del prodotto, che condivide modello e composizione tra tutti gli articoli.
 - **Versioni**: elenco completo con stato e data, esteso all'altezza disponibile.
   Doppio clic o Invio carica la versione selezionata. **Aggiorna** affianca il
   titolo a destra, senza pulsante di apertura, frecce o contatore in basso.
@@ -95,8 +95,8 @@ configurazione mancante senza usare il primo coefficiente disponibile.
 Produzione, costi e scenari usano i g/mm del diametro interessato. Negli scenari
 si seleziona il diametro prima di modificare il coefficiente; gli altri gruppi
 restano conservati anche nel salvataggio della fotografia economica.
-L’associazione delle specifiche all’articolo rimane invariata in questo passo;
-il trasferimento al prodotto tecnico sarà un intervento successivo.
+Dalla V21 le specifiche appartengono al prodotto tecnico e sono ereditate
+da tutti i suoi articoli.
 
 ## Stampi e scostamenti teorici
 
@@ -166,14 +166,14 @@ non salvate. Durante le scritture sono bloccati editor e navigazione TON.
 Un conflitto concorrente mantiene i campi locali e propone la ricarica esplicita.
 Le scritture fallite o interrotte non vengono ripetute automaticamente.
 
-## Collegamento agli articoli
+## Collegamento ai prodotti
 
-Dentro **Articoli → Specifiche di produzione** sono selezionabili i modelli
+Dentro **Prodotti tecnici → Specifiche di produzione** sono selezionabili i modelli
 approvati, con codice e versione. La specifica collega un `modello_id` preciso:
 approvare v3 non sostituisce il modello v2 già usato da una specifica.
 Il servizio delle specifiche verifica che composizione e modello abbiano strati
-corrispondenti, totali validi e presenza del diametro articolo nei modelli con
-gruppi espliciti. La produzione usa il coefficiente e il diametro dello stampo
+corrispondenti e totali validi. La produzione verifica il diametro articolo nei
+modelli con gruppi espliciti e usa il coefficiente e il diametro dello stampo
 del gruppo corretto; l’altezza continua ad appartenere all’articolo.
 
 ## Organizzazione del codice

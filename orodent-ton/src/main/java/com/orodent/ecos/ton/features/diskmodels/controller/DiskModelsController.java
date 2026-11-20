@@ -23,7 +23,7 @@ import java.util.function.*;
 public final class DiskModelsController implements FeatureController {
     private final DiskModelsView view;
     private final DiskModelService service;
-    private final LongConsumer openArticle;
+    private final LongConsumer openProduct;
     private final SimpleBooleanProperty saving = new SimpleBooleanProperty();
     private final PauseTransition debounce = new PauseTransition(Duration.millis(250));
     private final Map<String, CompletableFuture<?>> reads = new HashMap<>();
@@ -36,10 +36,10 @@ public final class DiskModelsController implements FeatureController {
     private volatile boolean disposed;
 
     public DiskModelsController(
-            DiskModelsView view, DiskModelService service, LongConsumer openArticle) {
+            DiskModelsView view, DiskModelService service, LongConsumer openProduct) {
         this.view = view;
         this.service = service;
-        this.openArticle = openArticle;
+        this.openProduct = openProduct;
         var list = view.list();
         var e = view.editor();
         listen(list.search().textProperty(), (o, a, b) -> debounce.playFromStart());
@@ -286,7 +286,7 @@ public final class DiskModelsController implements FeatureController {
 
     private void openUsage() {
         Usage next = view.editor().usages().table().getSelectionModel().getSelectedItem();
-        if (next != null && !saving.get()) openArticle.accept(next.articleId());
+        if (next != null && !saving.get()) openProduct.accept(next.productId());
     }
 
     private void save(boolean approve) {

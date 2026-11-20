@@ -23,7 +23,7 @@ import java.util.function.*;
 public final class CompositionsController implements FeatureController {
     private final CompositionsView view;
     private final CompositionService service;
-    private final LongConsumer openArticle, openModel;
+    private final LongConsumer openProduct, openModel;
     private final SimpleBooleanProperty saving = new SimpleBooleanProperty();
     private final Map<String, CompletableFuture<?>> reads = new HashMap<>();
     private final List<Runnable> cleanups = new ArrayList<>();
@@ -40,11 +40,11 @@ public final class CompositionsController implements FeatureController {
     public CompositionsController(
             CompositionsView view,
             CompositionService service,
-            LongConsumer openArticle,
+            LongConsumer openProduct,
             LongConsumer openModel) {
         this.view = view;
         this.service = service;
-        this.openArticle = openArticle;
+        this.openProduct = openProduct;
         this.openModel = openModel;
         var list = view.list();
         var e = view.editor();
@@ -412,7 +412,7 @@ public final class CompositionsController implements FeatureController {
 
     private void openUsage() {
         var selected = view.editor().usages().table().getSelectionModel().getSelectedItem();
-        if (selected != null && !saving.get()) openArticle.accept(selected.articleId());
+        if (selected != null && !saving.get()) openProduct.accept(selected.productId());
     }
 
     private void openModel() {

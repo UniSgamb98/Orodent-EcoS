@@ -17,10 +17,12 @@ pezzi già prodotti e non movimenta magazzino, scarti, lotti o cotture.
 
 Una produzione comprende un solo prodotto/colore e più formati dello stesso
 diametro. I formati devono utilizzare la stessa versione di composizione e
-modello disco. Ogni articolo usa la propria specifica approvata predefinita;
-se ne esiste una sola approvata viene scelta quella. In caso di più specifiche
-senza predefinita occorre sceglierla nei Dati tecnici. Articoli non disponibili
-restano visibili con il motivo e il collegamento alla relativa scheda.
+modello disco, ereditati dalla specifica approvata predefinita del prodotto.
+Non vengono selezionate specifiche separate per altezza. In assenza di una
+predefinita, o se il prodotto importato è da verificare, occorre configurarlo
+nei Dati tecnici. Il diametro dell’articolo sceglie stampo di riferimento e g/mm
+nel modello; un gruppo mancante impedisce di usare quel formato. Gli articoli
+non disponibili mostrano il motivo e i collegamenti a prodotto e articolo.
 
 La configurazione a sinistra e i contenuti delle schede scorrono separatamente.
 La barra delle azioni resta raggiungibile senza far scorrere l'intera pagina.
@@ -53,7 +55,9 @@ postazione non può sovrascrivere una modifica concorrente. Prima di salvare o
 preparare, i riferimenti tecnici selezionati vengono riletti e verificati nella
 stessa transazione. Composizione, modello, specifiche e polveri devono essere
 approvati/disponibili. Tornando su una bozza si ricaricano le specifiche che aveva
-selezionato; un riferimento ritirato viene segnalato e impedisce la preparazione.
+selezionato per il prodotto; un riferimento ritirato viene segnalato e impedisce
+la preparazione. Le bozze anteriori alla V21 ricaricano invece la specifica
+condivisa corrente, con un avviso di verifica prima del nuovo salvataggio.
 
 La produzione preparata è di sola lettura. Si riapre dalla fotografia conservata,
 senza cambiare dosi se successivamente vengono aggiornati i cataloghi. **Duplica**
@@ -72,7 +76,10 @@ non è ancora implementata l'archiviazione automatica di un PDF.
 
 V15 aggiunge `TON.PIANI_PRODUZIONE`, `TON.PIANO_PRODUZIONE_RIGHE` e
 `TON.PIANI_DOCUMENTI`. Le tabelle delle produzioni fisiche preesistenti rimangono
-distinte dai piani richiesti. Nessun dato dimostrativo viene inserito nei DB reali.
+distinte dai piani richiesti. Dalla V21 i nuovi piani (fotografia JSON versione 2)
+registrano le righe in `TON.PIANO_PRODOTTO_RIGHE`, con articolo e sua revisione,
+prodotto e specifica condivisa. I piani già preparati mantengono JSON, righe e
+documenti originali. Nessun dato dimostrativo viene inserito nei DB reali.
 
 ## Verifiche di sviluppo
 
