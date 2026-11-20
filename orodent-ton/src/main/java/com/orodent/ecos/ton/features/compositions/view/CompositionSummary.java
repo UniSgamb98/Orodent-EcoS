@@ -115,8 +115,15 @@ final class CompositionSummary extends VBox {
                     });
             oxides.getColumns().add(oxide);
         }
+        var included = new HashSet<Long>();
+        known.stream()
+                .filter(Objects::nonNull)
+                .flatMap(l -> l.ingredients().stream())
+                .forEach(i -> included.add(i.powderRevisionId()));
+        boolean completeInputs = known.stream().allMatch(Objects::nonNull);
         var powders =
                 refs.values().stream()
+                        .filter(p -> !completeInputs || included.contains(p.id()))
                         .sorted(
                                 Comparator.comparing(
                                                 PowderRef::appearance, PowderAppearance.order())
@@ -127,7 +134,7 @@ final class CompositionSummary extends VBox {
         matrix.setPrefHeight(Math.min(380, 65 + powders.size() * 34));
         matrix.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
         var codes = new TreeSet<String>();
-        for (PowderRef p : refs.values()) codes.addAll(p.oxides().keySet());
+        for (PowderRef p : powders) codes.addAll(p.oxides().keySet());
         oxides.getItems().setAll(codes);
         oxides.setPrefHeight(Math.min(400, 65 + codes.size() * 34));
         oxides.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);

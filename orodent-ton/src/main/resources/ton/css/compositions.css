@@ -17,3 +17,8 @@
 .ton-compositions .tab-pane > .tab-header-area > .headers-region > .tab:selected { -fx-background-color: white; -fx-border-color: transparent transparent #176d86 transparent; -fx-border-width: 0 0 3px 0; }
 .ton-compositions .scroll-pane, .ton-compositions .scroll-pane > .viewport { -fx-background-color: #e3edf3; -fx-background: #e3edf3; }
 .ton-compositions .tab-content-area { -fx-padding: 16px 0; }
+.ton-compositions .ton-comp-chroma-panel { -fx-background-color:#edf6fa; -fx-background-radius:8px; -fx-padding:14px; }
+.ton-compositions .ton-comp-ppm-row { -fx-background-color:#f8fbfd; -fx-border-color:#dce5ee; -fx-border-radius:8px; -fx-background-radius:8px; -fx-padding:12px; }
+.ton-compositions .ton-comp-result-value { -fx-font-size:18px; -fx-font-weight:bold; -fx-padding:6px 10px; }
+.ton-compositions .ton-comp-white-hint { -fx-text-fill:#176d86; -fx-font-weight:bold; }
+.ton-compositions .ton-comp-chroma-value { -fx-font-size:15px; -fx-font-weight:bold; }

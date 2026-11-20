@@ -8,7 +8,7 @@ EcoS usa un solo database Derby, organizzato per dominio dei dati.
 | `ANAGRAFICHE` | `CLIENTI` | Anagrafica condivisa tra i moduli |
 | `VENDITE` | `VENDITE_DETTAGLIO` | Vendite e rettifiche condivise |
 | `COSTI` | `POLVERI_PREZZI`, `POLVERI_LOTTI` | Fotografie manuali dei prezzi e delle quantità delle polveri, con revisioni economiche |
-| `TON` | 31 tabelle: cataloghi, specifiche versionate, piani e produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
+| `TON` | 33 tabelle: cataloghi, specifiche versionate, piani e produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
 
 Statistiche legge clienti e vendite dagli schemi condivisi; TON gestisce il proprio
 catalogo tecnico in `TON.PRODOTTI`. Lo schema `STATISTICHE` sarà creato soltanto
@@ -263,3 +263,20 @@ lotti o cotture e non aggiunge dati dimostrativi. Un piano preparato si riapre d
 fotografia conservata, anche se in seguito vengono ritirate le specifiche.
 La procedura HOST/CLIENT e il backup prima delle migrazioni restano quelli
 condivisi. Vedere la [guida alla produzione](ton-produzione.md).
+
+
+## Migrazione dalla versione 15 alla 16
+
+`V16__ton_composition_chroma.sql` aggiunge `TON.COMPOSIZIONE_CROMA` e
+`TON.COMPOSIZIONE_CROMA_POLVERI`. Conservano per ogni strato il croma obiettivo,
+le revisioni precise delle polveri, il gruppo di colore e le quote inserite:
+rapporto fra rosa/gialle oppure percentuale effettiva per bianche/grigie.
+Il croma usa `DECIMAL(7,3)` entro 0–2000; le quote usano quattro decimali.
+
+Le ricette esistenti restano manuali. Gli ingredienti fisici continuano a usare
+le percentuali positive già previste: un candidato configurato allo 0% rimane
+nei soli parametri e non partecipa a pesate, costi o consumi. Parametri e
+percentuali sono salvati nella stessa transazione e copiati nella nuova versione.
+Non vengono modificate produzioni, scorte o approvazioni esistenti. Backup HOST,
+verifica CLIENT e aggiornamento seguono la procedura condivisa.
+Vedere [calcolo del croma](ton-composizioni-croma.md).

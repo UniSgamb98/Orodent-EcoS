@@ -168,6 +168,7 @@ public final class CompositionRepository {
                             .add(new Ingredient(r.getLong(2), r.getBigDecimal(3)));
             }
         }
+        var chroma = chroma(id);
         var result = new ArrayList<Layer>();
         try (var q =
                 connection.prepareStatement(
@@ -180,7 +181,44 @@ public final class CompositionRepository {
                             new Layer(
                                     r.getInt(1),
                                     r.getString(2),
-                                    ingredients.getOrDefault(r.getInt(1), List.of())));
+                                    ingredients.getOrDefault(r.getInt(1), List.of()),
+                                    chroma.get(r.getInt(1))));
+            }
+        }
+        return result;
+    }
+
+    private Map<Integer, Chroma> chroma(long id) throws SQLException {
+        var parts = new HashMap<Integer, List<ChromaPart>>();
+        try (var q =
+                connection.prepareStatement(
+                        "SELECT numero_strato,polvere_revisione_id,gruppo,quota FROM"
+                                + " TON.COMPOSIZIONE_CROMA_POLVERI WHERE composizione_id=? ORDER BY"
+                                + " numero_strato,polvere_revisione_id")) {
+            q.setLong(1, id);
+            try (var r = q.executeQuery()) {
+                while (r.next())
+                    parts.computeIfAbsent(r.getInt(1), k -> new ArrayList<>())
+                            .add(
+                                    new ChromaPart(
+                                            r.getLong(2),
+                                            ChromaGroup.valueOf(r.getString(3)),
+                                            r.getBigDecimal(4)));
+            }
+        }
+        var result = new HashMap<Integer, Chroma>();
+        try (var q =
+                connection.prepareStatement(
+                        "SELECT numero_strato,ppm_obiettivo FROM TON.COMPOSIZIONE_CROMA WHERE"
+                                + " composizione_id=?")) {
+            q.setLong(1, id);
+            try (var r = q.executeQuery()) {
+                while (r.next())
+                    result.put(
+                            r.getInt(1),
+                            new Chroma(
+                                    r.getBigDecimal(2),
+                                    parts.getOrDefault(r.getInt(1), List.of())));
             }
         }
         return result;
@@ -572,7 +610,12 @@ public final class CompositionRepository {
     }
 
     private void deleteChildren(long id) throws SQLException {
-        for (String table : List.of("COMPOSIZIONE_INGREDIENTI", "COMPOSIZIONE_STRATI"))
+        for (String table :
+                List.of(
+                        "COMPOSIZIONE_CROMA_POLVERI",
+                        "COMPOSIZIONE_CROMA",
+                        "COMPOSIZIONE_INGREDIENTI",
+                        "COMPOSIZIONE_STRATI"))
             try (var q =
                     connection.prepareStatement(
                             "DELETE FROM TON." + table + " WHERE composizione_id=?")) {
@@ -607,6 +650,37 @@ public final class CompositionRepository {
                     q.setBigDecimal(4, i.mass());
                     q.addBatch();
                 }
+            q.executeBatch();
+        }
+        try (var q =
+                connection.prepareStatement(
+                        "INSERT INTO"
+                            + " TON.COMPOSIZIONE_CROMA(composizione_id,numero_strato,ppm_obiettivo)"
+                            + " VALUES (?,?,?)")) {
+            for (var l : d.layers())
+                if (l.chroma() != null) {
+                    q.setLong(1, id);
+                    q.setInt(2, l.number());
+                    q.setBigDecimal(3, l.chroma().ppm());
+                    q.addBatch();
+                }
+            q.executeBatch();
+        }
+        try (var q =
+                connection.prepareStatement(
+                        "INSERT INTO"
+                            + " TON.COMPOSIZIONE_CROMA_POLVERI(composizione_id,numero_strato,polvere_revisione_id,gruppo,quota)"
+                            + " VALUES (?,?,?,?,?)")) {
+            for (var l : d.layers())
+                if (l.chroma() != null)
+                    for (var p : l.chroma().parts()) {
+                        q.setLong(1, id);
+                        q.setInt(2, l.number());
+                        q.setLong(3, p.powderRevisionId());
+                        q.setString(4, p.group().name());
+                        q.setBigDecimal(5, p.value());
+                        q.addBatch();
+                    }
             q.executeBatch();
         }
     }

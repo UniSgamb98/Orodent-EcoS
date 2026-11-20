@@ -4,6 +4,7 @@ import com.orodent.ecos.core.PowderAppearance;
 import com.orodent.ecos.module.view.PowderCells;
 import com.orodent.ecos.ton.features.compositions.model.Compositions.*;
 import com.orodent.ecos.ton.features.compositions.service.CompositionChemistry;
+import com.orodent.ecos.ton.features.compositions.service.CompositionChroma;
 import com.orodent.ecos.ton.features.technical.view.TechnicalUi;
 
 import javafx.geometry.Pos;
@@ -27,6 +28,15 @@ public final class RecipeEditor extends GridPane {
             search =
                     TechnicalUi.input(
                             "ton-composition-powder-search", "Cerca polvere per codice o nome");
+    private final CheckBox ppmEnabled = new CheckBox("Calcola rosa e gialle dai ppm");
+    private final TextField ppm = TechnicalUi.input("ton-composition-ppm", "Da 0 a 2000");
+    private final Label whiteHint = TechnicalUi.label("", "ton-comp-white-hint"),
+            ratiosHint = TechnicalUi.label("", "muted-label"),
+            chromaSummary = TechnicalUi.label("", "ton-comp-chroma-value");
+    private final VBox chromaPanel = new VBox(8);
+    private final List<Label> finalValues = new ArrayList<>();
+    private final List<javafx.beans.property.StringProperty> amountBindings = new ArrayList<>();
+    private boolean updatingChroma;
     private final HBox mix = new HBox(2);
     private final Button
             powderPrevious = TechnicalUi.button("←", "ton-composition-powders-previous", false),
@@ -75,6 +85,44 @@ public final class RecipeEditor extends GridPane {
         powderNext.setAccessibleText("Schede polveri successive");
         powderPrevious.setDisable(true);
         powderNext.setDisable(true);
+        ppmEnabled.setId("ton-composition-ppm-enabled");
+        ppmEnabled.setTooltip(
+                new Tooltip(
+                        "Disattivando i ppm mantieni le percentuali finali e vengono escluse le"
+                                + " quote a zero."));
+        ppm.setMaxWidth(180);
+        whiteHint.setId("ton-composition-white-remaining");
+        chromaSummary.setId("ton-composition-chroma-summary");
+        chromaPanel.getStyleClass().add("ton-comp-chroma-panel");
+        var inputPpm = TechnicalUi.field("Croma dello strato · ppm", ppm);
+        inputPpm.setMinWidth(180);
+        var indicators = new VBox(6, ratiosHint, whiteHint);
+        HBox.setHgrow(indicators, Priority.ALWAYS);
+        var settings = new HBox(18, inputPpm, indicators);
+        settings.setAlignment(Pos.CENTER_LEFT);
+        chromaPanel
+                .getChildren()
+                .setAll(
+                        settings,
+                        TechnicalUi.label(
+                                "Rosa e gialle: rapporti fra loro con somma 100%. Bianche e grigie:"
+                                        + " % sull'intero strato (1 = 1%).",
+                                "muted-label"));
+        ppmEnabled.setOnAction(
+                e -> {
+                    if (updatingChroma) return;
+                    try {
+                        state.ppmMode(selected, ppmEnabled.isSelected());
+                        renderRows();
+                    } catch (IllegalArgumentException invalid) {
+                        updatingChroma = true;
+                        ppmEnabled.setSelected(state.layers().get(selected).ppmMode());
+                        updatingChroma = false;
+                        total.setText(invalid.getMessage());
+                        if (!total.getStyleClass().contains("ton-comp-invalid"))
+                            total.getStyleClass().add("ton-comp-invalid");
+                    }
+                });
         var powderSearch = new HBox(6, search, powderPrevious, powderNext);
         HBox.setHgrow(search, Priority.ALWAYS);
         search.setMinWidth(80);
@@ -83,6 +131,8 @@ public final class RecipeEditor extends GridPane {
                         12,
                         title,
                         TechnicalUi.field("Nome dello strato", name),
+                        ppmEnabled,
+                        chromaPanel,
                         powderSearch,
                         powderPage,
                         rows,
@@ -99,6 +149,7 @@ public final class RecipeEditor extends GridPane {
                 TechnicalUi.panel(
                         "Riepilogo miscela",
                         "Strato selezionato",
+                        chromaSummary,
                         mix,
                         legend,
                         new Label("Y₂O₃ nominale"),
@@ -218,14 +269,19 @@ public final class RecipeEditor extends GridPane {
     }
 
     private void unbind() {
-        if (bound != null) name.textProperty().unbindBidirectional(bound.name());
+        if (bound != null) {
+            name.textProperty().unbindBidirectional(bound.name());
+            ppm.textProperty().unbindBidirectional(bound.ppm());
+        }
         for (int i = 0; i < shown.size(); i++) {
-            amounts.get(i).textProperty().unbindBidirectional(shown.get(i).mass());
+            amounts.get(i).textProperty().unbindBidirectional(amountBindings.get(i));
             boxes.get(i).setOnAction(null);
         }
         bound = null;
         shown.clear();
         amounts.clear();
+        amountBindings.clear();
+        finalValues.clear();
         boxes.clear();
         rowMessages.clear();
     }
@@ -241,6 +297,16 @@ public final class RecipeEditor extends GridPane {
             return;
         }
         bound = state.layers().get(selected);
+        updatingChroma = true;
+        try {
+            ppmEnabled.setSelected(bound.ppmMode());
+        } finally {
+            updatingChroma = false;
+        }
+        ppmEnabled.setDisable(frozen);
+        ppm.setDisable(frozen);
+        TechnicalUi.visible(chromaPanel, bound.ppmMode());
+        ppm.textProperty().bindBidirectional(bound.ppm());
         name.textProperty().bindBidirectional(bound.name());
         name.setDisable(frozen);
         search.setDisable(frozen);
@@ -264,7 +330,13 @@ public final class RecipeEditor extends GridPane {
             amount.setPrefWidth(85);
             amount.setMinWidth(65);
             amount.setMaxWidth(100);
-            amount.textProperty().bindBidirectional(item.mass());
+            boolean chromatic =
+                    bound.ppmMode()
+                            && item.powder().get() != null
+                            && item.group() == ChromaGroup.CROMATICA;
+            var source = chromatic ? item.share() : item.mass();
+            amountBindings.add(source);
+            amount.textProperty().bindBidirectional(source);
             amount.setDisable(frozen);
             amounts.add(amount);
             var delete =
@@ -282,12 +354,44 @@ public final class RecipeEditor extends GridPane {
             var row = new HBox(8, box, amount, unit, delete);
             row.setAlignment(Pos.CENTER_LEFT);
             HBox.setHgrow(box, Priority.ALWAYS);
+            var result =
+                    PowderCells.badge(
+                            "—", item.powder().get() == null ? null : item.powder().get().color());
+            result.setId("ton-composition-ingredient-" + (i + 1) + "-final");
+            result.getStyleClass().add("ton-comp-result-value");
+            finalValues.add(result);
             var warning = TechnicalUi.label("", "ton-comp-warning");
             rowMessages.add(warning);
-            rows.getChildren().add(new VBox(5, row, warning));
+            if (bound.ppmMode()) {
+                String caption = chromatic ? "Rosa/gialle · %" : "Sul totale · %";
+                amount.setPromptText(chromatic ? "Rapporto %" : "% sullo strato");
+                amount.setAccessibleText(caption + " ingrediente " + (i + 1));
+                var input = new VBox(4, TechnicalUi.label(caption, "muted-label"), amount);
+                input.setMinWidth(100);
+                input.setPrefWidth(120);
+                var output =
+                        new VBox(4, TechnicalUi.label("Finale sul totale", "muted-label"), result);
+                output.setMinWidth(100);
+                output.setPrefWidth(120);
+                var values = new HBox(10, box, input, output, delete);
+                values.setAlignment(Pos.CENTER_LEFT);
+                var card = new VBox(5, values, warning);
+                card.getStyleClass().add("ton-comp-ppm-row");
+                rows.getChildren().add(card);
+            } else rows.getChildren().add(new VBox(5, row, warning));
             box.setOnAction(
                     e -> {
-                        if (!updatingChoices) item.powder().set(box.getValue());
+                        if (!updatingChoices) {
+                            try {
+                                state.choosePowder(selected, item, box.getValue());
+                                if (bound.ppmMode()) renderRows();
+                            } catch (IllegalArgumentException invalid) {
+                                updatingChoices = true;
+                                box.setValue(item.powder().get());
+                                updatingChoices = false;
+                                total.setText(invalid.getMessage());
+                            }
+                        }
                     });
         }
         choices(choices);
@@ -370,10 +474,61 @@ public final class RecipeEditor extends GridPane {
         mix.getChildren().clear();
         legend.getChildren().clear();
         yttria.setText("—");
+        chromaSummary.setText("");
+        whiteHint.setText("");
+        ratiosHint.setText("");
+        finalValues.forEach(l -> l.setText("—"));
         if (state.layers().isEmpty()) return;
         title.setText(state.layers().get(selected).label());
         try {
             Layer layer = state.layer(selected);
+            if (layer.chroma() != null) {
+                var preview = CompositionChroma.calculate(layer.chroma());
+                var missing = preview.whiteTarget().subtract(preview.whiteActual());
+                whiteHint.setText(
+                        "Bianche necessarie: "
+                                + TechnicalUi.number(preview.whiteTarget())
+                                + "% · Inserite: "
+                                + TechnicalUi.number(preview.whiteActual())
+                                + "% · "
+                                + (missing.signum() < 0 ? "In eccesso: " : "Da aggiungere: ")
+                                + TechnicalUi.number(missing.abs())
+                                + "%");
+                ratiosHint.setText(
+                        "Rapporti rosa/gialle: "
+                                + TechnicalUi.number(preview.hpTotal())
+                                + "% · Grigio sullo strato: "
+                                + TechnicalUi.number(preview.gray())
+                                + "%");
+                chromaSummary.setText(
+                        "Croma impostato: " + TechnicalUi.number(layer.chroma().ppm()) + " ppm");
+                for (int n = 0; n < shown.size(); n++)
+                    if (shown.get(n).powder().get() != null)
+                        finalValues
+                                .get(n)
+                                .setText(
+                                        TechnicalUi.number(
+                                                        preview.percentages()
+                                                                .getOrDefault(
+                                                                        shown.get(n)
+                                                                                .powder()
+                                                                                .get()
+                                                                                .id(),
+                                                                        BigDecimal.ZERO))
+                                                + "%");
+            } else if (!layer.complete()) {
+                chromaSummary.setText("Completa le percentuali per leggere il croma.");
+            } else {
+                try {
+                    chromaSummary.setText(
+                            "Croma della ricetta: "
+                                    + TechnicalUi.number(CompositionChroma.ppm(layer, refs))
+                                    + " ppm");
+                } catch (IllegalArgumentException unknown) {
+                    chromaSummary.setText(
+                            "Croma non determinabile: specifica i colori delle polveri.");
+                }
+            }
             boolean valid = CompositionChemistry.complete(layer, refs);
             total.setText(
                     (valid ? "✓ Miscela completa · " : "Miscela da completare · ")

@@ -4,7 +4,7 @@ Le schede usano il [contenitore comune di Dati tecnici](ton-schede-tecniche.md).
 
 Aprire **TON → Dati tecnici → Composizioni**, oppure **Apri composizioni**
 dalla Panoramica TON. Il catalogo usa provider ed executor di EcoS e le tabelle
-già presenti nello schema V6: non introduce una nuova migrazione.
+dei cataloghi TON. La V16 aggiunge i parametri opzionali del calcolo del croma.
 
 ## Elenco e dati generali
 
@@ -55,6 +55,11 @@ La barra della miscela e il totale si aggiornano durante la compilazione.
 Solo i controlli dello strato selezionato vengono costruiti; gli altri dati
 restano nel buffer della ricetta, comprese le modifiche ancora da correggere.
 
+La modalità opzionale **Calcola rosa e gialle dai ppm** ricava le percentuali
+finali delle polveri rosa e gialle dal croma dello strato e dai rapporti fra loro.
+Le percentuali delle bianche e delle grigie restano manuali; il riepilogo indica
+la quota bianca da completare. Vedere [calcolo, esempio e limiti](ton-composizioni-croma.md).
+
 ## Riepilogo e ossidi
 
 **Riepilogo** mostra la matrice ingredienti/strati, i totali e il bilancio chimico
@@ -74,7 +79,7 @@ automaticamente fino a 100%.
 La classe 3Y/4Y/5Y/6Y resta distinta da wt% Y₂O₃. Non si calcolano medie di queste
 etichette, proprietà meccaniche della miscela o un valore chimico globale del
 disco: quest'ultimo richiederebbe le masse effettive dei diversi strati.
-Il futuro strumento di progettazione assistita con dosi/ppm resta da realizzare.
+Il calcolo assistito del croma è descritto nella [guida ppm](ton-composizioni-croma.md).
 
 ## Versioni e salvataggio
 
@@ -123,7 +128,9 @@ sostituisce i riferimenti già salvati nelle specifiche precedenti.
 
 `features/compositions` separa dati immutabili, SQL, transazioni, controller e viste.
 `TON.COMPOSIZIONI`, `TON.COMPOSIZIONE_STRATI` e `TON.COMPOSIZIONE_INGREDIENTI`
-conservano i dati; il bilancio nominale viene derivato dalle revisioni delle
+conservano le percentuali fisiche; `TON.COMPOSIZIONE_CROMA` e
+`TON.COMPOSIZIONE_CROMA_POLVERI` conservano gli eventuali parametri ppm e rapporti.
+Il bilancio nominale viene derivato dalle revisioni delle
 polveri, senza colonne aggiuntive di medie. L'abbinamento con il modello rimane
 in `TON.CONFIGURAZIONI_ARTICOLO`.
 

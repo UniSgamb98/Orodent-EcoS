@@ -59,7 +59,55 @@ public final class Compositions {
         }
     }
 
-    public record Layer(int number, String name, List<Ingredient> ingredients) {
+    public enum ChromaGroup {
+        BIANCA,
+        CROMATICA,
+        GRIGIA
+    }
+
+    /** Value is Hp percent for pink/yellow; mass percent for white/grey. */
+    public record ChromaPart(long powderRevisionId, ChromaGroup group, BigDecimal value) {
+        public ChromaPart {
+            if (powderRevisionId <= 0
+                    || group == null
+                    || value == null
+                    || value.signum() < 0
+                    || value.compareTo(new BigDecimal("100")) > 0)
+                throw invalid("Quote croma: usa percentuali da 0 a 100.");
+            try {
+                value = value.setScale(4, RoundingMode.UNNECESSARY).stripTrailingZeros();
+            } catch (ArithmeticException e) {
+                throw invalid("Quote croma: massimo quattro decimali.");
+            }
+        }
+    }
+
+    public record Chroma(BigDecimal ppm, List<ChromaPart> parts) {
+        public Chroma {
+            if (ppm == null || ppm.signum() < 0 || ppm.compareTo(new BigDecimal("2000")) > 0)
+                throw invalid("Il croma deve essere compreso tra 0 e 2000 ppm.");
+            try {
+                ppm = ppm.setScale(3, RoundingMode.UNNECESSARY).stripTrailingZeros();
+                ppm.divide(new BigDecimal("20")).setScale(4, RoundingMode.UNNECESSARY);
+            } catch (ArithmeticException e) {
+                throw invalid("Il croma deve usare multipli di 0,002 ppm.");
+            }
+            parts =
+                    parts.stream()
+                            .sorted(Comparator.comparingLong(ChromaPart::powderRevisionId))
+                            .toList();
+            var ids = new HashSet<Long>();
+            for (var p : parts)
+                if (!ids.add(p.powderRevisionId()))
+                    throw invalid("La stessa polvere compare più volte nel calcolo del croma.");
+        }
+    }
+
+    public record Layer(int number, String name, List<Ingredient> ingredients, Chroma chroma) {
+        public Layer(int number, String name, List<Ingredient> ingredients) {
+            this(number, name, ingredients, null);
+        }
+
         public Layer {
             if (number <= 0) throw invalid("Il numero dello strato deve essere positivo.");
             name = text(name);

@@ -256,8 +256,11 @@ public final class CompositionService {
 
     public static Set<Long> references(Draft draft) {
         var result = new TreeSet<Long>();
-        for (Layer l : draft.layers())
+        for (Layer l : draft.layers()) {
             for (Ingredient i : l.ingredients()) result.add(i.powderRevisionId());
+            if (l.chroma() != null)
+                l.chroma().parts().forEach(p -> result.add(p.powderRevisionId()));
+        }
         return result;
     }
 
@@ -268,8 +271,12 @@ public final class CompositionService {
         Map<Long, PowderRef> refs = repo.powders(ids);
         for (Layer layer : draft.layers()) {
             var families = new HashSet<Long>();
-            for (Ingredient i : layer.ingredients()) {
-                PowderRef p = refs.get(i.powderRevisionId());
+            var layerIds = new TreeSet<Long>();
+            layer.ingredients().forEach(i -> layerIds.add(i.powderRevisionId()));
+            if (layer.chroma() != null)
+                layer.chroma().parts().forEach(p -> layerIds.add(p.powderRevisionId()));
+            for (long powderId : layerIds) {
+                PowderRef p = refs.get(powderId);
                 if (p == null)
                     throw invalid("Una revisione di polvere non esiste più. Ricarica la scheda.");
                 if (!families.add(p.powderId()))
@@ -286,6 +293,7 @@ public final class CompositionService {
                                     + p.label()
                                     + " non è una revisione approvata di una polvere attiva.");
             }
+            CompositionChroma.verify(layer, refs);
         }
     }
 
