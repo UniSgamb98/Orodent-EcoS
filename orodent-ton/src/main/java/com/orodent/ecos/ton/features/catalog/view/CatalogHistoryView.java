@@ -1,65 +1,52 @@
 package com.orodent.ecos.ton.features.catalog.view;
 
+import com.orodent.ecos.ton.features.catalog.model.CatalogKind;
 import com.orodent.ecos.ton.features.catalog.model.CatalogModels.*;
+import com.orodent.ecos.ton.features.technical.view.TechnicalRecordsView;
+import com.orodent.ecos.ton.features.technical.view.TechnicalUi;
 
-import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
 
-import java.util.*;
-import java.util.function.Function;
+/** Catalogue revisions use the shared sheet while retaining their read-only audit snapshots. */
+public final class CatalogHistoryView extends TechnicalRecordsView<Audit> {
+    private final String base;
+    private Dialog<Void> snapshot;
 
-public final class CatalogHistoryView extends VBox {
-    private final TableView<Audit> table = new TableView<>();
-    private final Label result = new Label(), feedback, values = new Label();
-    private final Button previous, next;
+    public CatalogHistoryView(String base, CatalogKind kind) {
+        super(
+                base + "-history",
+                "Revisioni "
+                        + switch (kind) {
+                            case LINES -> "della linea";
+                            case PRODUCTS -> "del prodotto";
+                            case ARTICLES -> "dell'articolo";
+                        },
+                "Ogni revisione conserva i dati dell’anagrafica al momento del salvataggio, in sola"
+                    + " lettura.");
+        this.base = base;
+        TechnicalUi.column(table(), "Revisione", 120, a -> "Rev. " + a.number());
+        TechnicalUi.column(table(), "Data", 180, a -> a.recordedAt().format(CatalogUi.DATE));
+        TechnicalUi.column(table(), "Operazione", 150, Audit::sourceLabel);
+        onOpen(this::openSnapshot);
+    }
 
-    public CatalogHistoryView(String base) {
-        super(12);
-        getStyleClass().add("ton-catalogue-tab");
-        table.setId(base + "-history-table");
-        table.setMinHeight(140);
-        table.setPrefHeight(210);
-        column("Revisione", a -> "Rev. " + a.number());
-        column("Data", a -> a.recordedAt().format(CatalogUi.DATE));
-        column("Operazione", Audit::sourceLabel);
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        table.getSelectionModel().selectedItemProperty().addListener((o, a, b) -> snapshot(b));
+    private void openSnapshot() {
+        var audit = table().getSelectionModel().getSelectedItem();
+        if (audit == null) return;
+        var values = TechnicalUi.label(snapshotText(audit), "muted-label");
         values.setId(base + "-history-snapshot");
-        values.setWrapText(true);
-        values.setMinHeight(Region.USE_PREF_SIZE);
-        previous = CatalogUi.button("←", base + "-history-previous", false);
-        next = CatalogUi.button("→", base + "-history-next", false);
-        previous.setAccessibleText("Revisioni precedenti nella lista");
-        next.setAccessibleText("Altre revisioni");
-        feedback = CatalogUi.feedback(base + "-history-feedback");
-        feedback.getStyleClass().add("ton-error-feedback");
-        Region gap = new Region();
-        HBox.setHgrow(gap, Priority.ALWAYS);
-        getChildren()
-                .setAll(
-                        CatalogUi.hint(
-                                "Revisioni complete dell'anagrafica, in sola lettura. Lo stato"
-                                    + " iniziale disponibile non ricostruisce modifiche precedenti"
-                                    + " alla migrazione."),
-                        table,
-                        new HBox(10, result, gap, previous, next),
-                        values,
-                        feedback);
+        var content = TechnicalUi.scroll(values);
+        content.setPrefViewportWidth(620);
+        content.setPrefViewportHeight(420);
+        snapshot = new Dialog<>();
+        snapshot.setTitle("Revisione " + audit.number() + " · " + audit.snapshot().code());
+        if (getScene() != null) snapshot.initOwner(getScene().getWindow());
+        snapshot.getDialogPane().setContent(content);
+        snapshot.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        snapshot.show();
     }
 
-    private void column(String label, Function<Audit, String> f) {
-        TableColumn<Audit, String> c = new TableColumn<>(label);
-        c.setCellValueFactory(v -> new ReadOnlyStringWrapper(f.apply(v.getValue())));
-        c.setSortable(false);
-        table.getColumns().add(c);
-    }
-
-    private void snapshot(Audit audit) {
-        if (audit == null) {
-            values.setText("");
-            return;
-        }
+    private String snapshotText(Audit audit) {
         Entry e = audit.snapshot();
         var text =
                 new StringBuilder("Revisione ")
@@ -101,50 +88,20 @@ public final class CatalogHistoryView extends VBox {
                             .append(a.specificationLabel());
         }
         text.append("\nNote: ").append(e.meta().notes());
-        values.setText(text.toString());
+        return text.toString();
     }
 
     public void reset() {
-        table.getItems().clear();
-        values.setText("");
-        result.setText("Salva prima l'anagrafica.");
-        previous.setDisable(true);
-        next.setDisable(true);
-        feedback.setText("");
-    }
-
-    public void loading() {
-        table.setDisable(true);
-        result.setText("Caricamento…");
+        reset(false);
     }
 
     public void show(HistoryPage page) {
-        table.getItems().setAll(page.rows());
-        table.setDisable(false);
-        table.getSelectionModel().selectFirst();
-        previous.setDisable(page.offset() == 0);
-        next.setDisable(!page.hasNext());
-        result.setText(
-                page.total() == 0
-                        ? "Nessuna revisione"
-                        : (page.offset() + 1)
-                                + "–"
-                                + (page.offset() + page.rows().size())
-                                + " di "
-                                + page.total());
-        feedback.setText("");
+        show(page.rows());
     }
 
-    public void error(String message) {
-        feedback.setText(message);
-        table.setDisable(false);
-    }
-
-    public Button previous() {
-        return previous;
-    }
-
-    public Button next() {
-        return next;
+    @Override
+    public void dispose() {
+        if (snapshot != null) snapshot.close();
+        super.dispose();
     }
 }

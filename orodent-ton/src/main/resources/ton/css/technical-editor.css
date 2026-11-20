@@ -141,3 +141,6 @@
 .ton-technical-detail .ton-editor-danger { -fx-text-fill: #a22b2b; -fx-background-color: #fff1ef; }
 .ton-technical-detail .ton-editor-tabs > .tab-content-area { -fx-padding: 0; }
 .ton-technical-detail .ton-editor-content { -fx-padding: 20px; -fx-background-color: white; }
+
+/* Version, revision and usage sheets share the same full-height table shell. */
+.ton-technical-detail .ton-technical-records .ton-technical-panel-title { -fx-font-size: 17px; }

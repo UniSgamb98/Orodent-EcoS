@@ -170,6 +170,15 @@ public final class PowderModel {
         }
     }
 
+    public record Usage(
+            long productId,
+            String productCode,
+            String productName,
+            String lineCode,
+            String color,
+            boolean active,
+            int compositions) {}
+
     public record Detail(Powder powder, List<Revision> revisions) {
         public Detail {
             revisions = List.copyOf(revisions);

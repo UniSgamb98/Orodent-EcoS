@@ -18,7 +18,7 @@ Ricerca, filtro, tabella e comandi sono in un pannello bianco con la stessa
 palette degli altri elenchi TON. **Aggiorna** è accanto alla ricerca; in basso
 non ci sono pulsante di apertura, frecce di pagina o contatore.
 Le colonne riempiono uniformemente lo spazio. Doppio clic o Invio aprono la scheda.
-I contatori di storico e versioni nelle schede mantengono il loro funzionamento.
+Anche la scheda Versioni mostra un elenco completo senza contatore o frecce.
 
 **Nuova composizione** sceglie un prodotto attivo con linea e colore già definiti.
 Linea e colore sono ereditati in sola lettura. Non occorre inventare un codice
@@ -107,7 +107,9 @@ della nuova approvazione.
 **Ritira versione** conserva la ricetta e gli utilizzi storici, escludendola dalle
 nuove selezioni. **Elimina bozza** è consentito soltanto se mai utilizzata,
 ricontrollando i riferimenti nella transazione. La scheda **Versioni** permette
-di raggiungere anche le revisioni più vecchie tramite paginazione.
+di raggiungere anche le versioni più vecchie scorrendo l'elenco completo.
+Doppio clic o Invio apre la versione; **Aggiorna** è allineato a destra del titolo
+e la tabella occupa l'altezza disponibile, usando la struttura comune di Dati tecnici.
 
 Uscita, ricarica e cambio versione chiedono conferma in presenza di modifiche
 non salvate. Durante le scritture editor e navigazione sono bloccati. I conflitti
@@ -142,7 +144,8 @@ Le scritture bloccano linea, prodotto, composizione e polveri in ordine coerente
 con gli altri cataloghi. I controlli di stato e concorrenza avvengono nel servizio,
 anche se la richiesta arriva da una seconda postazione. Le letture del dettaglio
 mantengono coerenti intestazione e figli. Ricerca con debounce e controllo delle
-richieste superate evitano aggiornamenti tardivi della vista. Storico e selettori
-mantengono pagine limitate.
+richieste superate evitano aggiornamenti tardivi della vista. La scheda Versioni
+carica la lista completa; gli altri riferimenti e selettori mantengono i propri
+limiti di pagina.
 Uscendo vengono rilasciati listener, timer e buffer; query e transazioni non
 girano sul thread grafico.

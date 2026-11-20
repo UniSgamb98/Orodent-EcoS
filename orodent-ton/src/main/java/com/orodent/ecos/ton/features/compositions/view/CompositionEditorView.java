@@ -52,8 +52,12 @@ public final class CompositionEditorView extends TechnicalDetailView {
             new TechnicalTablePage<>("ton-composition-models", "Apri modello");
     private final TechnicalTablePage<Usage> usages =
             new TechnicalTablePage<>("ton-composition-usages", "Apri articolo");
-    private final TechnicalTablePage<Version> history =
-            new TechnicalTablePage<>("ton-composition-versions", "Apri versione");
+    private final TechnicalRecordsView<Version> history =
+            new TechnicalRecordsView<>(
+                    "ton-composition-versions",
+                    "Versioni della composizione",
+                    "Ogni versione conserva ricetta, note e riferimenti precisi alle schede delle"
+                        + " polveri.");
     private final Button
             cancel = TechnicalUi.button("Annulla modifiche", "ton-composition-cancel", false),
             save = TechnicalUi.button("Salva bozza", "ton-composition-save", true),
@@ -173,13 +177,7 @@ public final class CompositionEditorView extends TechnicalDetailView {
                 "Aggiornata il",
                 180,
                 v -> v.updated().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
-        tab(
-                Sheet.VERSIONS,
-                TechnicalUi.panel(
-                        "Versioni della composizione",
-                        "Ogni versione conserva ricetta, note e riferimenti precisi alle schede"
-                                + " delle polveri.",
-                        history));
+        tab(Sheet.VERSIONS, history);
         tabs.getSelectionModel()
                 .selectedItemProperty()
                 .addListener(
@@ -201,7 +199,8 @@ public final class CompositionEditorView extends TechnicalDetailView {
     }
 
     private void tab(Sheet sheet, Node content) {
-        var tab = addSheet(sheet.title(), content, sheet == Sheet.RECIPE);
+        var tab =
+                addSheet(sheet.title(), content, sheet == Sheet.RECIPE || sheet == Sheet.VERSIONS);
         sheets.put(tab, sheet);
     }
 
@@ -360,7 +359,7 @@ public final class CompositionEditorView extends TechnicalDetailView {
         return usages;
     }
 
-    public TechnicalTablePage<Version> history() {
+    public TechnicalRecordsView<Version> history() {
         return history;
     }
 

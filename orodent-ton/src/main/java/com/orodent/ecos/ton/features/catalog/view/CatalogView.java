@@ -60,6 +60,7 @@ public final class CatalogView extends BorderPane {
     }
 
     public void dispose() {
+        editor.history().dispose();
         setCenter(null);
     }
 }

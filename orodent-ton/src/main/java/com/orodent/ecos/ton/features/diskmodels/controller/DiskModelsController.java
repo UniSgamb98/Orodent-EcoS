@@ -30,7 +30,7 @@ public final class DiskModelsController implements FeatureController {
     private final List<Runnable> cleanups = new ArrayList<>();
     private Detail original;
     private List<String> baseline = List.of();
-    private int versionsOffset, usagesOffset;
+    private int usagesOffset;
     private long selectedId;
     private boolean editing;
     private volatile boolean disposed;
@@ -131,13 +131,8 @@ public final class DiskModelsController implements FeatureController {
                 (o, a, b) -> {
                     if (!e.updating() && editing && original != null) loadSheet();
                 });
-        on(e.history().refresh(), () -> loadVersions(versionsOffset));
-        on(
-                e.history().previous(),
-                () -> loadVersions(Math.max(0, versionsOffset - DiskModelService.PAGE_SIZE)));
-        on(e.history().next(), () -> loadVersions(versionsOffset + DiskModelService.PAGE_SIZE));
-        on(e.history().open(), this::openVersion);
-        tableAction(e.history().table(), this::openVersion);
+        on(e.history().refresh(), this::loadVersions);
+        e.history().onOpen(this::openVersion);
         on(e.usages().refresh(), () -> loadUsages(usagesOffset));
         on(
                 e.usages().previous(),
@@ -183,7 +178,7 @@ public final class DiskModelsController implements FeatureController {
         cancelReads();
         original = null;
         editing = true;
-        versionsOffset = usagesOffset = 0;
+        usagesOffset = 0;
         view.editor().show(null);
         view.editor().sheet(Sheet.PARAMETERS);
         baseline = view.editor().fingerprint();
@@ -234,7 +229,7 @@ public final class DiskModelsController implements FeatureController {
         original = detail;
         selectedId = detail.revision().id();
         editing = true;
-        versionsOffset = usagesOffset = 0;
+        usagesOffset = 0;
         view.editor().show(detail);
         view.editor().sheet(sheet);
         baseline = view.editor().fingerprint();
@@ -255,20 +250,19 @@ public final class DiskModelsController implements FeatureController {
     private void loadSheet() {
         if (original == null || saving.get()) return;
         switch (view.editor().sheet()) {
-            case VERSIONS -> loadVersions(versionsOffset);
+            case VERSIONS -> loadVersions();
             case USAGES -> loadUsages(usagesOffset);
             default -> {}
         }
     }
 
-    private void loadVersions(int offset) {
+    private void loadVersions() {
         if (original == null || saving.get()) return;
-        versionsOffset = offset;
         var page = view.editor().history();
         page.loading();
         read(
                 "versions",
-                () -> service.versions(original.revision().data().code(), offset),
+                () -> service.allVersions(original.revision().data().code()),
                 page::show,
                 page::error);
     }

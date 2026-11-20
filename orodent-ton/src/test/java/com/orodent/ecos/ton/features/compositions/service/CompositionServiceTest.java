@@ -329,6 +329,9 @@ class CompositionServiceTest {
             Revision copy = service.copy(current).join().revision();
             current = service.save(copy, copy.data(), true).join().revision();
         }
+        var complete = service.allVersions(1).join();
+        assertEquals(52, complete.size());
+        assertEquals(first.id(), complete.getLast().id());
         var recent = service.versions(1, 0).join();
         var older = service.versions(1, 50).join();
         assertEquals(52, recent.total());

@@ -40,3 +40,22 @@ stato. Polveri e Modelli disco conservano l'accesso alle versioni dalla scheda
 Versioni. Le anteprime del modello e il contenuto della ricetta mantengono i
 propri componenti e adattamenti alla larghezza.
 Non cambiano schema del database o formati dei dati salvati.
+
+## Versioni e Revisioni
+
+`TechnicalRecordsView<T>` fornisce la struttura comune delle schede **Versioni**
+di Polveri, Composizioni e Modelli disco e delle schede **Revisioni** di Linee,
+Prodotti tecnici e Articoli. Il titolo e **Aggiorna** sono sulla stessa riga,
+con il pulsante a destra; la tabella occupa l'altezza disponibile. Tutte le righe
+si consultano scorrendo, senza contatore, frecce di pagina o pulsante di apertura.
+Doppio clic sulla riga o Invio apre il contenuto selezionato.
+
+I nomi distinguono due comportamenti conservati dai servizi: le **Versioni**
+tecniche hanno stato Bozza/Approvata/Ritirata e riferimenti precisi nelle ricette
+e nelle specifiche; le **Revisioni** anagrafiche registrano i dati a ogni
+salvataggio effettivo e aprono una finestra in sola lettura con lo snapshot.
+Il componente comune non modifica questi cicli di vita.
+
+Anche le liste di prodotti della Linea e di articoli del Prodotto occupano
+l'altezza disponibile. La scheda **Utilizzi** delle Polveri riusa la struttura
+comune per mostrare i prodotti collegati tramite le composizioni.

@@ -93,16 +93,22 @@ multistrato. Non imposta ricette, parametri di cottura o formule di costo. Un
 valore già compilato diventa protetto quando la linea è utilizzata; può essere
 compilato se era rimasto vuoto.
 
-## Anagrafiche e storico
+## Anagrafiche e Revisioni
 
 **Crea** salva la prima revisione. **Salva revisione** registra i valori correnti
 e conserva le revisioni precedenti nella stessa transazione. Un salvataggio senza
 cambiamenti non aggiunge una revisione fittizia.
 
-La scheda **Storico** è paginata e in sola lettura: mostra revisione, data,
-operazione e valori completi, inclusi codice, attributi, note e stato.
+La scheda **Revisioni** usa la struttura comune di Dati tecnici: titolo e
+**Aggiorna** sulla stessa riga e tabella estesa all'altezza disponibile.
+Mostra tutte le revisioni, con data e operazione, senza paginazione o pulsante
+di apertura. Doppio clic o Invio apre una finestra in sola lettura con i valori
+completi, inclusi codice, attributi, note e stato.
 I riferimenti ai padri conservano il codice disponibile al momento della revisione.
 Le informazioni che non erano disponibili prima della migrazione non vengono inventate.
+
+Le liste **Prodotti tecnici** nella Linea e **Articoli** nel Prodotto si estendono
+anch'esse fino al fondo della scheda.
 
 Il contatore per la concorrenza e lo storico sono legati: ogni scrittura del
 catalogo passa dal servizio. Scritture SQL esterne che avanzano il contatore

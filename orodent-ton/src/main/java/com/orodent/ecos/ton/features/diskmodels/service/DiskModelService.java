@@ -69,6 +69,16 @@ public final class DiskModelService {
                                 }));
     }
 
+    public CompletableFuture<List<Version>> allVersions(String code) {
+        return async(
+                () ->
+                        connections.withConnection(
+                                c ->
+                                        new DiskModelRepository(c)
+                                                .versions(code, 0, Integer.MAX_VALUE)
+                                                .rows()));
+    }
+
     public CompletableFuture<Page<Version>> versions(String code, int offset) {
         return async(
                 () ->

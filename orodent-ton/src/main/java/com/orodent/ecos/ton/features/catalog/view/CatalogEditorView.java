@@ -38,7 +38,7 @@ public final class CatalogEditorView extends TechnicalDetailView {
         String base = "ton-" + kind.id();
         form = new CatalogForm(kind);
         related = kind.child() == null ? null : new CatalogRelatedView(kind);
-        history = new CatalogHistoryView(base);
+        history = new CatalogHistoryView(base, kind);
         specifications = kind == CatalogKind.ARTICLES ? new SpecificationsView() : null;
         parent =
                 CatalogUi.button(
@@ -55,7 +55,7 @@ public final class CatalogEditorView extends TechnicalDetailView {
         if (related != null) tab(kind.child().title(), Sheet.RELATED, related);
         if (specifications != null)
             tab("Specifiche di produzione", Sheet.SPECIFICATIONS, specifications);
-        tab("Storico", Sheet.HISTORY, history);
+        tab("Revisioni", Sheet.HISTORY, history);
         actions(cancel, save, archive, delete);
         status(false, status);
         CatalogUi.visible(parent, kind.parent() != null);
@@ -66,7 +66,7 @@ public final class CatalogEditorView extends TechnicalDetailView {
     }
 
     private void tab(String title, Sheet sheet, javafx.scene.Node content) {
-        Tab tab = addSheet(title, content);
+        Tab tab = addSheet(title, content, sheet == Sheet.RELATED || sheet == Sheet.HISTORY);
         sheets.put(tab, sheet);
     }
 
@@ -99,7 +99,7 @@ public final class CatalogEditorView extends TechnicalDetailView {
             save.setText(e == null ? "Crea " + kind.singular() : "Salva revisione");
             feedback.setText("");
             if (related != null) related.reset(e != null, e != null && e.available());
-            history.reset();
+            history.reset(e != null);
             if (specifications != null) specifications.reset(e != null, e != null && e.available());
         } finally {
             updating = false;

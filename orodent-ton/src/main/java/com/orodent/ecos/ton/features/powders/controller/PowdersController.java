@@ -13,9 +13,13 @@ import javafx.beans.value.ChangeListener;
 import javafx.scene.control.*;
 import javafx.util.Duration;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 import java.util.function.Supplier;
 
 /**
@@ -28,7 +32,8 @@ public final class PowdersController implements FeatureController {
     private final SimpleBooleanProperty saving = new SimpleBooleanProperty();
     private final PauseTransition debounce = new PauseTransition(Duration.millis(250));
     private final ChangeListener<String> searchListener;
-    private final ChangeListener<Revision> versionListener;
+    private final Map<String, CompletableFuture<?>> auxiliaryReads = new HashMap<>();
+    private final LongConsumer openProduct;
     private CompletableFuture<Page> listRead;
     private CompletableFuture<Detail> detailRead;
     private Detail original;
@@ -38,9 +43,10 @@ public final class PowdersController implements FeatureController {
     private volatile boolean disposed;
     private long selectedPowder;
 
-    public PowdersController(PowdersView view, PowderService service) {
+    public PowdersController(PowdersView view, PowderService service, LongConsumer openProduct) {
         this.view = view;
         this.service = service;
+        this.openProduct = openProduct;
         searchListener = (observable, before, after) -> debounce.playFromStart();
         view.list().search().textProperty().addListener(searchListener);
         debounce.setOnFinished(event -> reloadList());
@@ -127,14 +133,86 @@ public final class PowdersController implements FeatureController {
                                         selected.id(),
                                         "Versione ritirata.");
                         });
-        versionListener =
-                (observable, before, next) -> {
-                    if (editor.updating() || !editing || next == null || next.equals(selected))
-                        return;
-                    if (canLeave()) render(original, next.id());
-                    else editor.selectVersion(selected);
-                };
-        editor.selectedVersionProperty().addListener(versionListener);
+        editor.versions()
+                .onOpen(
+                        () -> {
+                            var next =
+                                    editor.versions().table().getSelectionModel().getSelectedItem();
+                            if (next != null && original != null && canLeave()) {
+                                editor.showTechnical();
+                                load(original.powder().id(), next.id());
+                            }
+                        });
+        editor.versions().refresh().setOnAction(e -> reloadVersions());
+        editor.usages().refresh().setOnAction(e -> reloadUsages());
+        editor.usages()
+                .onOpen(
+                        () -> {
+                            var next =
+                                    editor.usages().table().getSelectionModel().getSelectedItem();
+                            if (next != null && !saving.get()) openProduct.accept(next.productId());
+                        });
+        editor.tabs()
+                .getSelectionModel()
+                .selectedItemProperty()
+                .addListener(
+                        (o, a, b) -> {
+                            if (!editor.updating() && editing && editor.showingUsages())
+                                reloadUsages();
+                        });
+    }
+
+    private void reloadVersions() {
+        if (original == null || saving.get()) return;
+        view.editor().versions().loading();
+        readAuxiliary(
+                "versions",
+                () -> service.load(original.powder().id()),
+                d -> view.editor().versions().show(d.revisions()),
+                view.editor().versions()::error);
+    }
+
+    private void reloadUsages() {
+        if (original == null || saving.get()) return;
+        view.editor().usages().loading();
+        readAuxiliary(
+                "usages",
+                () -> service.usages(original.powder().id()),
+                view.editor().usages()::show,
+                view.editor().usages()::error);
+    }
+
+    private <T> void readAuxiliary(
+            String slot,
+            Supplier<CompletableFuture<T>> operation,
+            Consumer<T> success,
+            Consumer<String> failure) {
+        var old = auxiliaryReads.remove(slot);
+        if (old != null) old.cancel(false);
+        CompletableFuture<T> future;
+        try {
+            future = operation.get();
+        } catch (RuntimeException error) {
+            failure.accept(message(error));
+            return;
+        }
+        auxiliaryReads.put(slot, future);
+        future.whenComplete(
+                (value, error) -> {
+                    if (disposed) return;
+                    Platform.runLater(
+                            () -> {
+                                if (disposed || auxiliaryReads.get(slot) != future) return;
+                                auxiliaryReads.remove(slot);
+                                if (error == null) success.accept(value);
+                                else failure.accept(message(error));
+                            });
+                });
+    }
+
+    private void cancelAuxiliary() {
+        auxiliaryReads.values().forEach(f -> f.cancel(false));
+        auxiliaryReads.clear();
     }
 
     public void loadInitialData() {
@@ -229,6 +307,7 @@ public final class PowdersController implements FeatureController {
     }
 
     private void render(Detail detail, long version) {
+        cancelAuxiliary();
         selectedPowder = detail.powder().id();
         original = detail;
         selected =
@@ -242,6 +321,7 @@ public final class PowdersController implements FeatureController {
         view.editor().show(detail, selected);
         fingerprint = view.editor().fingerprint();
         view.showEditor();
+        if (view.editor().showingUsages()) reloadUsages();
     }
 
     private void save(boolean approve) {
@@ -275,6 +355,7 @@ public final class PowdersController implements FeatureController {
     private void write(
             Supplier<CompletableFuture<Detail>> operation, long version, String success) {
         if (disposed || saving.get()) return;
+        cancelAuxiliary();
         saving.set(true);
         view.editor().saving(true);
         CompletableFuture<Detail> command;
@@ -314,6 +395,7 @@ public final class PowdersController implements FeatureController {
     }
 
     private void cancelDetail() {
+        cancelAuxiliary();
         if (detailRead != null) detailRead.cancel(false);
         detailRead = null;
     }
@@ -355,7 +437,6 @@ public final class PowdersController implements FeatureController {
                         view.editor().identitySave(),
                         view.editor().newVersion(),
                         view.editor().retire())) button.setOnAction(null);
-        view.editor().selectedVersionProperty().removeListener(versionListener);
         view.dispose();
     }
 }

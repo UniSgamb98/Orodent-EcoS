@@ -66,6 +66,31 @@ class CatalogServiceTest {
     }
 
     @Test
+    void completeRevisionSheetIncludesSnapshotsBeyondTheFirstPage() {
+        Line current = line();
+        long id = current.id();
+        for (int number = 2; number <= 52; number++)
+            current =
+                    (Line)
+                            service.save(
+                                            current,
+                                            new LineDraft(
+                                                    current.code(),
+                                                    "Nome " + number,
+                                                    current.technology(),
+                                                    current.material(),
+                                                    "Nota " + number,
+                                                    true))
+                                    .join()
+                                    .entry();
+        var complete = service.allHistory(CatalogKind.LINES, id).join();
+        assertEquals(52, complete.rows().size());
+        assertEquals("Nome 52", complete.rows().getFirst().snapshot().name());
+        assertEquals("Linea", complete.rows().getLast().snapshot().name());
+        assertEquals(50, service.history(CatalogKind.LINES, id, 0).join().rows().size());
+    }
+
+    @Test
     void generatesProductIdentityFromTheCurrentLineAndCanonicalColor() {
         Line line =
                 (Line)

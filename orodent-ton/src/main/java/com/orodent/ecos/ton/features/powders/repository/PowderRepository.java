@@ -109,6 +109,38 @@ public final class PowderRepository {
         return new Page(result, count, offset, limit);
     }
 
+    /** One product per row, considering every technical revision of this powder. */
+    public List<Usage> usages(long powderId) throws SQLException {
+        var rows = new ArrayList<Usage>();
+        try (var q =
+                connection.prepareStatement(
+                        "SELECT p.prodotto_id,p.codice,COALESCE(p.descrizione,l.nome || ' ' ||"
+                            + " p.colore_commerciale),l.codice,p.colore_commerciale,p.attivo,COUNT(DISTINCT"
+                            + " c.composizione_id) FROM TON.COMPOSIZIONE_INGREDIENTI i JOIN"
+                            + " TON.POLVERI_REVISIONI r ON"
+                            + " r.polvere_revisione_id=i.polvere_revisione_id JOIN TON.COMPOSIZIONI"
+                            + " c ON c.composizione_id=i.composizione_id JOIN TON.PRODOTTI p ON"
+                            + " p.prodotto_id=c.prodotto_id LEFT JOIN TON.LINEE l ON"
+                            + " l.linea_id=p.linea_id WHERE r.polvere_id=? GROUP BY"
+                            + " p.prodotto_id,p.codice,p.descrizione,l.nome,l.codice,p.colore_commerciale,p.attivo"
+                            + " ORDER BY p.codice")) {
+            q.setLong(1, powderId);
+            try (var r = q.executeQuery()) {
+                while (r.next())
+                    rows.add(
+                            new Usage(
+                                    r.getLong(1),
+                                    r.getString(2),
+                                    r.getString(3),
+                                    r.getString(4),
+                                    r.getString(5),
+                                    r.getBoolean(6),
+                                    r.getInt(7)));
+            }
+        }
+        return List.copyOf(rows);
+    }
+
     public Detail load(long id) throws SQLException {
         Powder powder;
         try (var query =

@@ -62,6 +62,52 @@ class PowderServiceTest {
     }
 
     @Test
+    void usagesListProductsOnceAcrossPowderAndCompositionVersions() {
+        var powder = service.create(identity("USED"), data("5.150", 3), true).join();
+        var second = service.newVersion(powder, powder.latest()).join();
+        var unused = service.create(identity("UNUSED"), data("5.150", 3), true).join();
+        database.withTransaction(
+                c -> {
+                    try (var q = c.createStatement()) {
+                        q.executeUpdate(
+                                "INSERT INTO TON.PRODOTTI(codice,descrizione) VALUES"
+                                    + " ('P1','Prodotto uno'),('P2','Prodotto due'),('P3','Altro"
+                                    + " prodotto')");
+                        q.executeUpdate(
+                                "INSERT INTO TON.COMPOSIZIONI(prodotto_id,numero_versione) VALUES"
+                                    + " (1,1),(1,2),(2,1),(3,1)");
+                        q.executeUpdate(
+                                "INSERT INTO TON.COMPOSIZIONE_STRATI(composizione_id,numero_strato)"
+                                    + " VALUES (1,1),(1,2),(2,1),(3,1),(4,1)");
+                        q.executeUpdate(
+                                "INSERT INTO TON.COMPOSIZIONE_INGREDIENTI VALUES (1,1,"
+                                        + powder.latest().id()
+                                        + ",100),(1,2,"
+                                        + powder.latest().id()
+                                        + ",100),(2,1,"
+                                        + second.latest().id()
+                                        + ",100),(3,1,"
+                                        + powder.latest().id()
+                                        + ",100),(4,1,"
+                                        + unused.latest().id()
+                                        + ",100)");
+                    }
+                    return null;
+                });
+        var rows = service.usages(powder.powder().id()).join();
+        assertEquals(List.of("P1", "P2"), rows.stream().map(Usage::productCode).toList());
+        assertEquals(2, rows.getFirst().compositions());
+        assertEquals(1, rows.getLast().compositions());
+        assertEquals("Prodotto uno", rows.getFirst().productName());
+        assertEquals(
+                List.of("P3"),
+                service.usages(unused.powder().id()).join().stream()
+                        .map(Usage::productCode)
+                        .toList());
+        assertTrue(service.usages(9999).join().isEmpty());
+    }
+
+    @Test
     void colorsDetermineTheOrderBeforeCodeAndUnspecifiedLegacyRowsComeLast() {
         for (var entry :
                 List.of(

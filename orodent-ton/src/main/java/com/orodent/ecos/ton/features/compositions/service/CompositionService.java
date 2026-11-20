@@ -106,6 +106,16 @@ public final class CompositionService {
                                 }));
     }
 
+    public CompletableFuture<List<Version>> allVersions(long product) {
+        return async(
+                () ->
+                        connections.withConnection(
+                                c ->
+                                        new CompositionRepository(c)
+                                                .versions(product, 0, Integer.MAX_VALUE)
+                                                .rows()));
+    }
+
     public CompletableFuture<Page<Version>> versions(long product, int offset) {
         return async(
                 () ->

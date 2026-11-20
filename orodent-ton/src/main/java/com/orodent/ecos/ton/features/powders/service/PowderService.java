@@ -51,6 +51,12 @@ public final class PowderService {
                 workers);
     }
 
+    public CompletableFuture<java.util.List<Usage>> usages(long powderId) {
+        return CompletableFuture.supplyAsync(
+                () -> connections.withConnection(c -> new PowderRepository(c).usages(powderId)),
+                workers);
+    }
+
     public CompletableFuture<Detail> load(long id) {
         return CompletableFuture.supplyAsync(
                 () ->

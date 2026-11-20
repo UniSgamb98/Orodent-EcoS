@@ -317,6 +317,9 @@ class DiskModelServiceTest {
             Revision copy = service.copy(current).join().revision();
             current = service.save(copy, copy.data(), true).join().revision();
         }
+        var complete = service.allVersions("M").join();
+        assertEquals(52, complete.size());
+        assertEquals(first, complete.getLast().id());
         var firstPage = service.versions("M", 0).join();
         var older = service.versions("M", 50).join();
         assertEquals(52, firstPage.total());

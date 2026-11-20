@@ -53,6 +53,15 @@ public final class CatalogService {
                                 c -> detail(c, new CatalogRepository(c).load(kind, id))));
     }
 
+    public CompletableFuture<HistoryPage> allHistory(CatalogKind kind, long id) {
+        return read(
+                () ->
+                        connections.withConnection(
+                                c ->
+                                        new CatalogHistoryRepository(c)
+                                                .page(kind, id, 0, Integer.MAX_VALUE)));
+    }
+
     public CompletableFuture<HistoryPage> history(CatalogKind kind, long id, int offset) {
         return read(
                 () ->

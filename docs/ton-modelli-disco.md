@@ -22,7 +22,8 @@ L’elenco condivide pannelli bianchi, campi bordati e intestazioni azzurre con 
 altri cataloghi TON. **Aggiorna** è accanto alla ricerca; non ci sono pulsante
 di apertura, frecce di pagina o contatore in basso. Le colonne occupano tutta
 la larghezza in modo uniforme. Doppio clic o Invio aprono il modello.
-Storico, versioni e riferimenti negli editor conservano la propria paginazione.
+La scheda Versioni usa l'elenco completo; i riferimenti negli editor conservano
+la propria paginazione.
 
 La scheda modello usa la stessa palette della scheda polvere: codice
 nell'intestazione del modulo, **Torna ai modelli** a sinistra e **Aggiorna dati**
@@ -60,9 +61,12 @@ modello. Il numero della versione viene assegnato dal servizio.
 - **Utilizzi**: specifiche degli articoli collegate alla versione selezionata,
   con formato, stato e indicazione della predefinita. **Apri articolo** apre la
   scheda reale, anche per consultare un articolo archiviato.
-- **Versioni**: storico paginato, stato e data. Aprire una riga carica la versione
-  completa. Tutte le versioni, anche le più vecchie, si raggiungono da questa
-  tabella; non è presente un secondo selettore in alto.
+- **Versioni**: elenco completo con stato e data, esteso all'altezza disponibile.
+  Doppio clic o Invio carica la versione selezionata. **Aggiorna** affianca il
+  titolo a destra, senza pulsante di apertura, frecce o contatore in basso.
+  Tutte le versioni, anche le più vecchie, si raggiungono da questa tabella;
+  non è presente un secondo selettore in alto. La struttura è condivisa con
+  Versioni e Revisioni delle altre pagine di Dati tecnici.
 
 L'anteprima usa colori illustrativi e sovramateriali schematici. Non calcola pesi
 o altezze produttive. Il totale non valido viene segnalato; un totale inferiore

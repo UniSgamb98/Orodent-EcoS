@@ -56,6 +56,7 @@ public final class PowdersView extends BorderPane {
     }
 
     public void dispose() {
+        editor.dispose();
         setCenter(null);
     }
 }

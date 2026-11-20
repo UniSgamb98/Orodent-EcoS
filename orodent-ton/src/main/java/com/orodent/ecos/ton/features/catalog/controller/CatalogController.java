@@ -34,7 +34,7 @@ public final class CatalogController implements FeatureController {
     private Detail original;
     private Specification selectedVersion;
     private List<String> baseline = List.of(), specBaseline = List.of();
-    private int historyOffset, specOffset;
+    private int specOffset;
     private long selectedId;
     private boolean editing, specLoaded;
     private volatile boolean disposed;
@@ -208,10 +208,7 @@ public final class CatalogController implements FeatureController {
                                 }
                             });
         }
-        on(
-                editor.history().previous(),
-                () -> loadHistory(Math.max(0, historyOffset - CatalogService.PAGE_SIZE)));
-        on(editor.history().next(), () -> loadHistory(historyOffset + CatalogService.PAGE_SIZE));
+        on(editor.history().refresh(), this::loadHistory);
         if (editor.specifications() != null) configureSpecifications();
     }
 
@@ -276,7 +273,7 @@ public final class CatalogController implements FeatureController {
         selectedVersion = null;
         editing = true;
         specLoaded = false;
-        historyOffset = specOffset = 0;
+        specOffset = 0;
         view.editor().show(null, context);
         view.editor().sheet(Sheet.GENERAL);
         lastSheet = Sheet.GENERAL;
@@ -340,7 +337,7 @@ public final class CatalogController implements FeatureController {
         selectedId = detail.entry().id();
         selectedVersion = null;
         specLoaded = false;
-        historyOffset = specOffset = 0;
+        specOffset = 0;
         view.editor().show(detail, null);
         view.editor().sheet(sheet);
         lastSheet = sheet;
@@ -409,7 +406,7 @@ public final class CatalogController implements FeatureController {
         switch (view.editor().sheet()) {
             case GENERAL -> {}
             case RELATED -> loadRelated();
-            case HISTORY -> loadHistory(historyOffset);
+            case HISTORY -> loadHistory();
             case SPECIFICATIONS -> {
                 if (!specLoaded) loadSpecs(specOffset, false);
             }
@@ -431,13 +428,12 @@ public final class CatalogController implements FeatureController {
                 e -> related.error(message(e)));
     }
 
-    private void loadHistory(int pageOffset) {
+    private void loadHistory() {
         if (original == null) return;
-        historyOffset = pageOffset;
         view.editor().history().loading();
         read(
                 "history",
-                () -> service.history(kind, original.entry().id(), historyOffset),
+                () -> service.allHistory(kind, original.entry().id()),
                 view.editor().history()::show,
                 e -> view.editor().history().error(message(e)));
     }

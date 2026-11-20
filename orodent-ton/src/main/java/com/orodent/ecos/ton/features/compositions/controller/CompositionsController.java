@@ -32,7 +32,7 @@ public final class CompositionsController implements FeatureController {
             modelDelay = delay();
     private Detail original;
     private List<String> baseline = List.of();
-    private int versionsOffset, usagesOffset, modelsOffset;
+    private int usagesOffset, modelsOffset;
     private long selectedId;
     private boolean editing;
     private volatile boolean disposed;
@@ -193,13 +193,8 @@ public final class CompositionsController implements FeatureController {
         on(e.models().next(), () -> loadModels(modelsOffset + CompositionService.PAGE_SIZE));
         on(e.models().open(), this::openModel);
         tableAction(e.models().table(), this::openModel);
-        on(e.history().refresh(), () -> loadVersions(versionsOffset));
-        on(
-                e.history().previous(),
-                () -> loadVersions(Math.max(0, versionsOffset - CompositionService.PAGE_SIZE)));
-        on(e.history().next(), () -> loadVersions(versionsOffset + CompositionService.PAGE_SIZE));
-        on(e.history().open(), this::openVersion);
-        tableAction(e.history().table(), this::openVersion);
+        on(e.history().refresh(), this::loadVersions);
+        e.history().onOpen(this::openVersion);
         on(e.usages().refresh(), () -> loadUsages(usagesOffset));
         on(
                 e.usages().previous(),
@@ -268,7 +263,7 @@ public final class CompositionsController implements FeatureController {
         cancelReads();
         original = null;
         editing = true;
-        versionsOffset = usagesOffset = modelsOffset = 0;
+        usagesOffset = modelsOffset = 0;
         view.editor().show(null);
         view.editor().sheet(Sheet.DATA);
         baseline = view.editor().fingerprint();
@@ -344,7 +339,7 @@ public final class CompositionsController implements FeatureController {
         original = detail;
         selectedId = detail.revision().id();
         editing = true;
-        versionsOffset = usagesOffset = modelsOffset = 0;
+        usagesOffset = modelsOffset = 0;
         view.editor().show(detail);
         view.editor().sheet(sheet);
         baseline = view.editor().fingerprint();
@@ -361,7 +356,7 @@ public final class CompositionsController implements FeatureController {
                 if (original != null) loadUsages(usagesOffset);
             }
             case VERSIONS -> {
-                if (original != null) loadVersions(versionsOffset);
+                if (original != null) loadVersions();
             }
             default -> {}
         }
@@ -387,14 +382,13 @@ public final class CompositionsController implements FeatureController {
                 e.models()::error);
     }
 
-    private void loadVersions(int next) {
+    private void loadVersions() {
         if (original == null || saving.get()) return;
-        versionsOffset = next;
         var page = view.editor().history();
         page.loading();
         read(
                 "versions",
-                () -> service.versions(original.product().id(), next),
+                () -> service.allVersions(original.product().id()),
                 page::show,
                 page::error);
     }

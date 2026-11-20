@@ -22,7 +22,7 @@ anche oltre i primi 50 risultati. **Aggiorna** rilegge i dati correnti.
 Ricerca e tabella sono in un pannello bianco con bordi e intestazioni azzurre,
 coerente con le schede e con gli elenchi Linee, Prodotti tecnici e Articoli.
 
-Con **Nuova polvere**, doppio clic sulla riga o Invio si entra nell'editor a quattro schede:
+Con **Nuova polvere**, doppio clic sulla riga o Invio si entra nell'editor a cinque schede:
 
 - **Anagrafica**: codice obbligatorio e univoco (50 caratteri), nome obbligatorio
   (100 caratteri), colore obbligatorio e stato attivo. Questi campi sono
@@ -37,7 +37,16 @@ Con **Nuova polvere**, doppio clic sulla riga o Invio si entra nell'editor a qua
   calcolata dalla percentuale in peso di Y₂O₃. Se si dichiara la traslucenza,
   prima dell'approvazione occorre riportarne metodo e scala nelle note.
 - **Ossidi**: una formula e una percentuale in peso per riga, con totale visibile.
-- **Versioni**: storico con stato e date; da qui si aprono bozze e versioni precedenti.
+- **Utilizzi**: prodotti distinti che usano la polvere tramite le composizioni,
+  comprese quelle storiche e quelle che riferiscono altre versioni della stessa
+  polvere. Ogni prodotto compare una volta, con il numero di composizioni
+  collegate. Doppio clic o Invio apre la scheda del prodotto.
+- **Versioni**: elenco completo con stato e date; doppio clic o Invio apre bozze
+  e versioni precedenti. **Aggiorna** ricarica la lista senza sovrascrivere i
+  campi modificati ma non salvati nell'editor.
+
+Utilizzi e Versioni condividono il titolo con **Aggiorna** a destra e la tabella
+estesa all'altezza disponibile, senza pulsanti di apertura, contatore o frecce.
 
 Il codice della polvere compare nel percorso dell’intestazione. Il riquadro sopra
 le schede riporta codice, versione e stato, con **Crea nuova versione** a fianco.

@@ -3,6 +3,7 @@ package com.orodent.ecos.ton.features.diskmodels.view;
 import static com.orodent.ecos.ton.features.diskmodels.model.DiskModels.*;
 
 import com.orodent.ecos.ton.features.technical.view.TechnicalDetailView;
+import com.orodent.ecos.ton.features.technical.view.TechnicalRecordsView;
 import com.orodent.ecos.ton.features.technical.view.TechnicalTablePage;
 import com.orodent.ecos.ton.features.technical.view.TechnicalUi;
 
@@ -49,8 +50,12 @@ public final class DiskModelEditorView extends TechnicalDetailView {
     private final RangesEditor ranges = new RangesEditor(this::refreshPreview);
     private final TechnicalTablePage<Usage> usages =
             new TechnicalTablePage<>("ton-model-usages", "Apri articolo");
-    private final TechnicalTablePage<Version> history =
-            new TechnicalTablePage<>("ton-model-versions", "Apri versione");
+    private final TechnicalRecordsView<Version> history =
+            new TechnicalRecordsView<>(
+                    "ton-model-versions",
+                    "Versioni del modello",
+                    "Le versioni approvate e ritirate conservano parametri, strati e sovramateriali"
+                        + " in sola lettura.");
     private final Button
             cancel = TechnicalUi.button("Annulla modifiche", "ton-model-cancel", false),
             save = TechnicalUi.button("Salva bozza", "ton-model-save", true),
@@ -139,12 +144,6 @@ public final class DiskModelEditorView extends TechnicalDetailView {
                                 + u.state()
                                 + (u.preferred() ? " · predefinita" : ""));
         tab(Sheet.USAGES, usagePanel);
-        var historyPanel =
-                TechnicalUi.panel(
-                        "Versioni del modello",
-                        "Le versioni approvate e ritirate conservano parametri, strati e"
-                                + " sovramateriali in sola lettura.",
-                        history);
         TechnicalUi.column(history.table(), "Versione", 100, v -> "v" + v.number());
         TechnicalUi.column(history.table(), "Stato", 130, v -> v.state().toString());
         TechnicalUi.column(
@@ -152,7 +151,7 @@ public final class DiskModelEditorView extends TechnicalDetailView {
                 "Ultimo aggiornamento",
                 170,
                 v -> v.updated().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
-        tab(Sheet.VERSIONS, historyPanel);
+        tab(Sheet.VERSIONS, history);
         tabs.getSelectionModel().selectedItemProperty().addListener((o, a, b) -> movePreview());
         delete.getStyleClass().add("ton-editor-danger");
         retire.getStyleClass().add("ton-editor-danger");
@@ -203,7 +202,7 @@ public final class DiskModelEditorView extends TechnicalDetailView {
     }
 
     private void tab(Sheet sheet, Node content) {
-        var tab = addSheet(sheet.title(), content);
+        var tab = addSheet(sheet.title(), content, sheet == Sheet.VERSIONS);
         sheets.put(tab, sheet);
     }
 
@@ -356,7 +355,7 @@ public final class DiskModelEditorView extends TechnicalDetailView {
         return usages;
     }
 
-    public TechnicalTablePage<Version> history() {
+    public TechnicalRecordsView<Version> history() {
         return history;
     }
 

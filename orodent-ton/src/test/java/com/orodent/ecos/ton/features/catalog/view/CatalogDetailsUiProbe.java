@@ -320,6 +320,60 @@ public final class CatalogDetailsUiProbe {
                         layout();
                         assertTrue(((TextField) node("ton-oxide-percent-0")).isDisabled());
                         screenshot("target/powder-shared-palette.png");
+                        selectSheet("ton-powder-tabs", "Versioni");
+                        assertRecords(
+                                "ton-powder-versions", "ton-powder-history", "ton-powder-tabs");
+                        assertNull(node("ton-powder-open-version"));
+                        openRecord((TableView<?>) node("ton-powder-history"), 0);
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-powder-editor") != null
+                                    && ((TabPane) node("ton-powder-tabs"))
+                                            .getSelectionModel()
+                                            .getSelectedItem()
+                                            .getText()
+                                            .equals("Dati tecnici"));
+            fx(
+                    () -> {
+                        selectSheet("ton-powder-tabs", "Versioni");
+                        screenshot("target/powder-shared-versions.png");
+                        // Refreshing the version list must leave local identity edits intact.
+                        ((TextField) node("ton-powder-name")).setText("Nome locale non salvato");
+                        button("ton-powder-versions-refresh").fire();
+                        return null;
+                    });
+            await(() -> !button("ton-powder-versions-refresh").isDisabled());
+            fx(
+                    () -> {
+                        assertEquals(
+                                "Nome locale non salvato",
+                                ((TextField) node("ton-powder-name")).getText());
+                        ((TextField) node("ton-powder-name")).setText(target.powder().name());
+                        selectSheet("ton-powder-tabs", "Utilizzi");
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-powder-usages-table") instanceof TableView<?> t
+                                    && t.getItems().size() == 1);
+            fx(
+                    () -> {
+                        var uses = (TableView<?>) node("ton-powder-usages-table");
+                        assertEquals(
+                                "ZRMSTA54",
+                                uses.getColumns().getFirst().getCellObservableValue(0).getValue());
+                        assertRecords(
+                                "ton-powder-usages", "ton-powder-usages-table", "ton-powder-tabs");
+                        screenshot("target/powder-product-usages.png");
+                        openRecord(uses, 0);
+                        return null;
+                    });
+            await(() -> node("ton-product-editor") != null);
+            fx(
+                    () -> {
+                        assertEquals("ZRMSTA54", ((TextField) node("ton-product-code")).getText());
                         button("ton-overview-button").fire();
                         button("ton-lines-button").fire();
                         return null;
@@ -349,6 +403,37 @@ public final class CatalogDetailsUiProbe {
                                 "Multistrato", ((TextField) node("ton-line-technology")).getText());
                         assertRefreshOnRight("line");
                         screenshot("target/line-shared-palette.png");
+                        selectSheet("ton-line-tabs", "Revisioni");
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-line-history-table") instanceof TableView<?> t
+                                    && !t.getItems().isEmpty());
+            fx(
+                    () -> {
+                        assertRecords(
+                                "ton-line-history", "ton-line-history-table", "ton-line-tabs");
+                        screenshot("target/line-shared-revisions.png");
+                        openRecord((TableView<?>) node("ton-line-history-table"), 0);
+                        var dialog =
+                                javafx.stage.Window.getWindows().stream()
+                                        .filter(
+                                                w ->
+                                                        w.isShowing()
+                                                                && w.getScene().getRoot()
+                                                                        instanceof DialogPane)
+                                        .findFirst()
+                                        .orElseThrow();
+                        assertTrue(
+                                ((Label)
+                                                dialog.getScene()
+                                                        .getRoot()
+                                                        .lookup("#ton-line-history-snapshot"))
+                                        .getText()
+                                        .contains("Multistrato"));
+                        var pane = (DialogPane) dialog.getScene().getRoot();
+                        ((Button) pane.lookupButton(ButtonType.CLOSE)).fire();
                         ((TabPane) node("ton-line-tabs")).getSelectionModel().select(1);
                         return null;
                     });
@@ -372,6 +457,7 @@ public final class CatalogDetailsUiProbe {
                                                                                     + " vengono"
                                                                                     + " creati")));
                         assertEvenColumns((TableView<?>) node("ton-line-children-table"));
+                        assertStretchTable("ton-line-children-table", "ton-line-tabs");
                         screenshot("target/line-products-single-list.png");
                         TableView<?> table = (TableView<?>) node("ton-line-children-table");
                         table.scrollTo(54);
@@ -424,6 +510,7 @@ public final class CatalogDetailsUiProbe {
                                                                                 "Gli elementi"
                                                                                     + " vengono"
                                                                                     + " creati")));
+                        assertStretchTable("ton-product-children-table", "ton-product-tabs");
                         screenshot("target/product-articles-single-list.png");
                         TableView<?> table = (TableView<?>) node("ton-product-children-table");
                         layout();
@@ -752,9 +839,12 @@ public final class CatalogDetailsUiProbe {
                                 && t.getItems().size() == 2);
         fx(
                 () -> {
+                    assertRecords(
+                            "ton-model-versions", "ton-model-versions-table", "ton-model-tabs");
+                    screenshot("target/model-shared-versions.png");
                     var table = (TableView<?>) node("ton-model-versions-table");
                     table.getSelectionModel().selectLast();
-                    table.fireEvent(doubleClick());
+                    openRecord(table, table.getItems().size() - 1);
                     return null;
                 });
         await(
@@ -971,6 +1061,56 @@ public final class CatalogDetailsUiProbe {
     private void layout() {
         stage.getScene().getRoot().applyCss();
         stage.getScene().getRoot().layout();
+    }
+
+    private void selectSheet(String id, String title) {
+        var tabs = (TabPane) node(id);
+        tabs.getSelectionModel()
+                .select(
+                        tabs.getTabs().stream()
+                                .filter(t -> t.getText().equals(title))
+                                .findFirst()
+                                .orElseThrow());
+        layout();
+    }
+
+    private void openRecord(TableView<?> table, int index) {
+        table.scrollTo(index);
+        layout();
+        var row =
+                table.lookupAll(".table-row-cell").stream()
+                        .filter(
+                                n ->
+                                        n instanceof TableRow<?> r
+                                                && !r.isEmpty()
+                                                && r.getIndex() == index)
+                        .findFirst()
+                        .orElseThrow();
+        row.fireEvent(doubleClick());
+    }
+
+    private void assertStretchTable(String tableId, String tabsId) {
+        layout();
+        var scroll =
+                (ScrollPane)
+                        ((TabPane) node(tabsId)).getSelectionModel().getSelectedItem().getContent();
+        assertTrue(
+                ((TableView<?>) node(tableId)).getHeight()
+                        > scroll.getViewportBounds().getHeight() * 0.65,
+                tableId + " must use the sheet height");
+    }
+
+    private void assertRecords(String base, String table, String tabs) {
+        assertStretchTable(table, tabs);
+        assertNull(node(base + "-previous"));
+        assertNull(node(base + "-next"));
+        assertNull(node(base + "-open"));
+        var refresh =
+                node(base + "-refresh").localToScene(node(base + "-refresh").getBoundsInLocal());
+        var title = node(base + "-title").localToScene(node(base + "-title").getBoundsInLocal());
+        var bounds = node(table).localToScene(node(table).getBoundsInLocal());
+        assertEquals(title.getCenterY(), refresh.getCenterY(), 2, base + " title and refresh");
+        assertEquals(bounds.getMaxX(), refresh.getMaxX(), 3, base + " refresh at right edge");
     }
 
     private void screenshot(String path) throws Exception {

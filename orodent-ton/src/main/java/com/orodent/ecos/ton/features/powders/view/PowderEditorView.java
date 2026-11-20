@@ -2,6 +2,8 @@ package com.orodent.ecos.ton.features.powders.view;
 
 import com.orodent.ecos.ton.features.powders.model.PowderModel.*;
 import com.orodent.ecos.ton.features.technical.view.TechnicalDetailView;
+import com.orodent.ecos.ton.features.technical.view.TechnicalRecordsView;
+import com.orodent.ecos.ton.features.technical.view.TechnicalUi;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
@@ -39,7 +41,19 @@ public final class PowderEditorView extends TechnicalDetailView {
     private final ComboBox<String> yttria = new ComboBox<>();
     private final TextArea notes = new TextArea();
     private final OxidesEditor oxides = new OxidesEditor();
-    private final TableView<Revision> history = new TableView<>();
+    private final TechnicalRecordsView<Revision> history =
+            new TechnicalRecordsView<>(
+                    "ton-powder-versions",
+                    "Versioni della scheda polvere",
+                    "Le versioni approvate conservano le caratteristiche e i riferimenti delle"
+                        + " ricette precedenti.");
+    private final TechnicalRecordsView<Usage> usages =
+            new TechnicalRecordsView<>(
+                    "ton-powder-usages",
+                    "Prodotti che utilizzano questa polvere",
+                    "Prodotti collegati alla polvere tramite le loro composizioni, comprese quelle"
+                        + " storiche.");
+    private final Tab usagesSheet;
     private final VBox technical;
     private boolean updating;
 
@@ -95,10 +109,9 @@ public final class PowderEditorView extends TechnicalDetailView {
                         form("Note della versione", notes));
         technical.getStyleClass().add("ton-powder-tab");
         oxides.getStyleClass().add("ton-powder-tab");
-        history.setId("ton-powder-history");
-        history.setMinHeight(200);
-        history.setPrefHeight(280);
-        history.getColumns()
+        history.table().setId("ton-powder-history");
+        history.table()
+                .getColumns()
                 .setAll(
                         List.of(
                                 historyColumn("Versione", r -> "v" + r.number()),
@@ -120,30 +133,24 @@ public final class PowderEditorView extends TechnicalDetailView {
                                                                         DateTimeFormatter.ofPattern(
                                                                                 "dd/MM/yyyy"
                                                                                     + " HH:mm")))));
-        history.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        Button openHistory =
-                button("Apri versione selezionata", "ton-powder-open-version", "secondary-button");
-        openHistory.setOnAction(
-                event -> {
-                    if (history.getSelectionModel().getSelectedItem() != null) {
-                        selectedVersion.set(history.getSelectionModel().getSelectedItem());
-                        tabs.getSelectionModel().select(1);
-                    }
-                });
-        VBox historyPane =
-                new VBox(
-                        12,
-                        hint(
-                                "Le schede approvate non vengono riscritte. Le nuove versioni"
-                                        + " conservano lo storico e i riferimenti delle ricette"
-                                        + " precedenti."),
-                        history,
-                        openHistory);
-        historyPane.getStyleClass().add("ton-powder-tab");
+        TechnicalUi.column(usages.table(), "Prodotto", 160, Usage::productCode);
+        TechnicalUi.column(usages.table(), "Descrizione", 180, Usage::productName);
+        TechnicalUi.column(
+                usages.table(), "Linea", 120, u -> u.lineCode() == null ? "—" : u.lineCode());
+        TechnicalUi.column(
+                usages.table(),
+                "Colore",
+                100,
+                u ->
+                        com.orodent.ecos.ton.features.catalog.model.CatalogModels.colorLabelOf(
+                                u.color()));
+        TechnicalUi.column(usages.table(), "Composizioni", 100, u -> "" + u.compositions());
+        TechnicalUi.column(usages.table(), "Stato", 100, u -> u.active() ? "Attivo" : "Archiviato");
         addSheet("Anagrafica", identity, true);
         addSheet("Dati tecnici", technical, true);
         addSheet("Ossidi", oxides, true);
-        addSheet("Versioni", historyPane, true);
+        usagesSheet = addSheet("Utilizzi", usages, true);
+        addSheet("Versioni", history, true);
         status(true, status);
         addStatusAction(newVersion);
         actions(cancel, save, identitySave, approve, retire);
@@ -172,7 +179,9 @@ public final class PowderEditorView extends TechnicalDetailView {
             boolean locked = revision != null && revision.state() != State.BOZZA;
             technical.setDisable(locked);
             oxides.show(data.oxides(), locked);
-            history.getItems().setAll(detail == null ? List.of() : detail.revisions());
+            if (detail == null) history.reset(false);
+            else history.show(detail.revisions());
+            usages.reset(detail != null);
             state(locked, detail, revision);
             feedback.setText("");
         } finally {
@@ -261,6 +270,27 @@ public final class PowderEditorView extends TechnicalDetailView {
         } finally {
             updating = false;
         }
+    }
+
+    public TechnicalRecordsView<Revision> versions() {
+        return history;
+    }
+
+    public TechnicalRecordsView<Usage> usages() {
+        return usages;
+    }
+
+    public boolean showingUsages() {
+        return tabs.getSelectionModel().getSelectedItem() == usagesSheet;
+    }
+
+    public void showTechnical() {
+        tabs.getSelectionModel().select(1);
+    }
+
+    public void dispose() {
+        history.dispose();
+        usages.dispose();
     }
 
     public Button save() {

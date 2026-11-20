@@ -130,7 +130,11 @@ final class TonController {
                         .addListener(
                                 (observable, before, subpage) ->
                                         view.showFeature(page, feature, subpage));
-                var controller = new PowdersController(page, powders);
+                var controller =
+                        new PowdersController(
+                                page,
+                                powders,
+                                id -> openCatalogue(Navigation.open(CatalogKind.PRODUCTS, id)));
                 install(feature, page, controller, controller::loadInitialData);
             }
             case MODELS -> installModels(null);
