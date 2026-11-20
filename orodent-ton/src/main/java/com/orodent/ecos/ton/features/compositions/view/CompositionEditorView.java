@@ -193,7 +193,7 @@ public final class CompositionEditorView extends TechnicalDetailView {
     }
 
     private void tab(Sheet sheet, Node content) {
-        var tab = addSheet(sheet.title(), content);
+        var tab = addSheet(sheet.title(), content, sheet == Sheet.RECIPE);
         sheets.put(tab, sheet);
     }
 

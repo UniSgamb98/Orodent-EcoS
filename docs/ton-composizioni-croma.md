@@ -8,7 +8,9 @@ Le percentuali non hanno etichette sopra le caselle; tooltip e descrizioni
 accessibili mantengono il significato di tinta e totale. Selettori delle polveri,
 percentuali e pulsanti di rimozione sono alti 34 px. La barra con aggiunta, copia
 e comandi dello strato rimane in fondo al riquadro: lo spazio libero si dispone
-fra elenco e pulsanti.
+fra elenco e pulsanti. Quando sono affiancati, il riquadro dello strato e quello
+del riepilogo si estendono fino al fondo dell’area disponibile. In finestra
+ridotta i pannelli mantengono lo scorrimento necessario ai contenuti.
 Non ci sono interruttori di modalità, ricerca o paginazione delle polveri:
 il selettore contiene tutte le revisioni approvate disponibili e conserva
 l’eventuale revisione storica già usata dalla ricetta.

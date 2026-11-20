@@ -117,7 +117,7 @@ public final class RecipeEditor extends GridPane {
                                 "muted-label"),
                         progress);
         getChildren().addAll(navigation, center, summary);
-        setFillHeight(summary, false);
+        setVgrow(center, Priority.ALWAYS);
         setFillHeight(navigation, false);
         widthProperty().addListener((o, a, b) -> arrange(b.doubleValue()));
         arrange(0);
@@ -149,6 +149,8 @@ public final class RecipeEditor extends GridPane {
     private void arrange(double width) {
         getColumnConstraints().clear();
         boolean wide = width >= 800, medium = width >= 620;
+        setFillHeight(summary, wide);
+        setVgrow(summary, wide ? Priority.ALWAYS : Priority.NEVER);
         navigation.setPrefTileWidth(width >= 1080 ? 132 : 108);
         if (medium) {
             var nav = new ColumnConstraints(width >= 1080 ? 136 : 112);
