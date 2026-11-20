@@ -112,10 +112,21 @@ public final class Consumption {
             List<Movement> movements,
             List<String> warnings,
             Set<Long> approved,
-            List<Arrival> arrivals) {
+            List<Arrival> arrivals,
+            Catalogue legacyCatalogue) {
+        public Snapshot(
+                Catalogue c,
+                List<Powder> p,
+                List<Movement> m,
+                List<String> w,
+                Set<Long> a,
+                List<Arrival> arrivals) {
+            this(c, p, m, w, a, arrivals, c);
+        }
+
         public Snapshot(
                 Catalogue c, List<Powder> p, List<Movement> m, List<String> w, Set<Long> a) {
-            this(c, p, m, w, a, List.of());
+            this(c, p, m, w, a, List.of(), c);
         }
 
         public Snapshot {

@@ -22,7 +22,7 @@ public final class ConsumptionEngine {
                     "Le scorte datate prima di oggi sono estrapolate con il consumo medio: i"
                         + " rifornimenti già ricevuti vanno riportati nella fotografia manuale.");
         var present = EnumSet.noneOf(Basis.class);
-        record Key(long article, Long specification) {}
+        record Key(Basis basis, long article, Long specification) {}
         var cache = new HashMap<Key, Result>();
         Map<Long, Article> articles = new HashMap<>();
         snapshot.catalogue().articles().forEach(a -> articles.put(a.id(), a));
@@ -37,15 +37,15 @@ public final class ConsumptionEngine {
                 warnings.add(movement.basis() + ": quantità non valida nel periodo.");
                 continue;
             }
+            var catalogue =
+                    movement.basis() == Basis.PRODUZIONI
+                            ? snapshot.legacyCatalogue()
+                            : snapshot.catalogue();
             Article a = articles.get(movement.articleId());
             Specification spec =
                     a == null
                             ? null
-                            : snapshot
-                                    .catalogue()
-                                    .specifications()
-                                    .getOrDefault(a.id(), List.of())
-                                    .stream()
+                            : catalogue.specifications().getOrDefault(a.id(), List.of()).stream()
                                     .filter(
                                             s ->
                                                     Objects.equals(
@@ -64,10 +64,13 @@ public final class ConsumptionEngine {
                     a == null
                             ? null
                             : cache.computeIfAbsent(
-                                    new Key(a.id(), spec == null ? null : spec.id()),
+                                    new Key(
+                                            movement.basis(),
+                                            a.id(),
+                                            spec == null ? null : spec.id()),
                                     key ->
                                             calculator.calculate(
-                                                    snapshot.catalogue(),
+                                                    catalogue,
                                                     products.get(a.productId()),
                                                     a,
                                                     spec,

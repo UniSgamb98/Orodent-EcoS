@@ -92,9 +92,11 @@ sostituisce implicitamente una predefinita assente o ritirata con la versione pi
 recente. **Mostra tutte le configurazioni approvate** permette di confrontare le
 alternative, mantenendole su righe distinte, senza sommarne i costi. Le revisioni
 di composizione, modello e polvere rimangono quelle collegate alla configurazione.
-Le misure provengono dalla revisione articolo congelata dalla configurazione;
-per configurazioni precedenti allo storico si usano le misure correnti, con
-indicazione esplicita nella scheda.
+Dalla V21 la configurazione predefinita è quella del prodotto tecnico, condivisa
+da tutti i suoi articoli. Il costo nominale usa diametro, altezza e revisione
+correnti dell’articolo; il diametro individua il gruppo di g/mm nel modello.
+Le misure congelate nelle vecchie configurazioni articolo restano disponibili
+per ricostruire i consumi delle produzioni fisiche storiche.
 
 La tab **Dettaglio polveri** mostra strato, polvere e revisione tecnica, percentuale,
 grammi da pesare, prezzo applicato e costo della riga. Indica modalità del prezzo,
@@ -266,7 +268,7 @@ Sono esclusi sovramateriali, maggiorazione perdite e trasformazione; diametro e
 altezza non intervengono. Il costo **Polveri €** conserva il calcolo effettivo del
 disco con sovramateriali e maggiorazione 1,005.
 
-L'elenco usa le configurazioni predefinite approvate degli articoli del prodotto,
+L’elenco usa la configurazione predefinita approvata del prodotto per tutti i suoi articoli,
 comprese quelle degli articoli archiviati. Se non è possibile determinare un dato
 completo mostra `—`; se i prezzi nominali differiscono mostra **Più valori**.
 Le configurazioni alternative rimangono distinguibili nella tabella articoli.

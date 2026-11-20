@@ -188,7 +188,10 @@ e approvate nuovamente; non si inventano revisioni mancanti.
 
 Migrazione, nuove associazioni e Revisioni dei prodotti vengono salvate nella
 stessa transazione, dopo il backup previsto dall'HOST. Piani preparati,
-documenti e produzioni fisiche precedenti non vengono riscritti.
+documenti e produzioni fisiche precedenti non vengono riscritti. Costi nominali,
+scenari, stime da vendite e simulazioni leggono la specifica del prodotto; i
+consumi delle produzioni fisiche storiche continuano a leggere quella articolo
+originale, mantenendo separati i due ambiti di identificazione.
 
 ## Migrazione V6
 

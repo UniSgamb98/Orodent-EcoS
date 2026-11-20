@@ -437,7 +437,9 @@ public final class ConsumptionController {
                                                                                 old.movements(),
                                                                                 old.warnings(),
                                                                                 old.approved(),
-                                                                                old.arrivals());
+                                                                                old.arrivals(),
+                                                                                old
+                                                                                        .legacyCatalogue());
                                                                 analysis =
                                                                         new Analysis(
                                                                                 snapshot,

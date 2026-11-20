@@ -19,6 +19,7 @@ public final class ConsumptionRepository {
 
     public Snapshot load(LocalDate from, LocalDate through) throws SQLException {
         var catalogue = new ProductCostRepository(connection).load(true);
+        var legacyCatalogue = new ProductCostRepository(connection).loadLegacy();
         var settings = new HashMap<Long, Settings>();
         var powders = new ArrayList<Powder>();
         var repository = new PowderPriceRepository(connection);
@@ -133,7 +134,7 @@ public final class ConsumptionRepository {
         try (var q = connection.createStatement();
                 var r =
                         q.executeQuery(
-                                "SELECT configurazione_id FROM TON.CONFIGURAZIONI_ARTICOLO WHERE"
+                                "SELECT configurazione_id FROM TON.CONFIGURAZIONI_PRODOTTO WHERE"
                                         + " stato='APPROVATA'")) {
             while (r.next()) approved.add(r.getLong(1));
         }
@@ -148,7 +149,8 @@ public final class ConsumptionRepository {
                                 row.row().remaining(),
                                 row.row().key().order(),
                                 row.row().key().position()));
-        return new Snapshot(catalogue, powders, movements, warnings, approved, arrivals);
+        return new Snapshot(
+                catalogue, powders, movements, warnings, approved, arrivals, legacyCatalogue);
     }
 
     public Settings save(long powder, Settings expected) throws SQLException {

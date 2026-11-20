@@ -245,7 +245,7 @@ class ScenariosUiTest {
                         assertTrue(
                                 ((Label) stage.getScene().lookup("#scenarios-comparison-summary"))
                                         .getText()
-                                        .contains("1 articoli su 2"));
+                                        .contains("2 articoli su 2"));
                         assertEquals(1, view().comparison.table.getItems().size());
                         assertTrue(
                                 view().comparison
@@ -253,7 +253,7 @@ class ScenariosUiTest {
                                         .getItems()
                                         .getFirst()
                                         .coverage()
-                                        .contains("1/2"));
+                                        .contains("2/2"));
                         view().preview.compareProduct.fire();
                         assertEquals(2, view().comparison.table.getItems().size());
                         stage.getScene().getRoot().applyCss();

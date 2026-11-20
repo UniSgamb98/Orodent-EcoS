@@ -18,7 +18,8 @@ In **Base reale** scegliere i prodotti coinvolti. Inizialmente sono inclusi i
 prodotti attivi; il selettore permette di cercare linea/prodotto/colore e includere
 o escludere tutte le righe visibili. Per ciascun prodotto si considerano tutte le
 anagrafiche articolo, incluse le archiviate, usando la sola **configurazione
-predefinita approvata nella fotografia**. Una predefinita mancante resta incompleta,
+predefinita approvata nella fotografia**. Dalla V21 è quella del prodotto
+tecnico, condivisa tra gli articoli; diametro e altezza restano propri del formato. Una predefinita mancante resta incompleta,
 non viene sostituita automaticamente con la revisione più recente.
 
 Il selettore Semplice/Avanzata e l'opzione degli ordini rivalutano i dati già

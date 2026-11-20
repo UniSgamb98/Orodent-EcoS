@@ -314,12 +314,12 @@ class ProductCostsUiTest {
             await(() -> exportPreview() != null);
             fx(
                     () -> {
-                        assertEquals(4, exportPreview().getItems().size());
+                        assertEquals(6, exportPreview().getItems().size());
                         closeExport();
                         view().alternatives.fire();
                         return null;
                     });
-            await(() -> view().articles.getItems().size() == 3);
+            await(() -> view().articles.getItems().size() == 4);
             fx(
                     () -> {
                         view().exportAll.fire();

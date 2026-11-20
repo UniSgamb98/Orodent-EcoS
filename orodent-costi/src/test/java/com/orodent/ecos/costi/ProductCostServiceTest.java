@@ -175,7 +175,8 @@ class ProductCostServiceTest {
         assertEquals(1, first.materials().getFirst().ingredient().technicalVersion());
         assertEquals(2, first.materials().getFirst().price().version());
         assertEquals(0, n("48.6825").compareTo(first.total()));
-        assertNull(calculate(catalogue).get(1).total());
+        assertEquals(0, n("59.9385").compareTo(calculate(catalogue).get(1).total()));
+        assertEquals(first.specification().id(), calculate(catalogue).get(1).specification().id());
         assertEquals(opened.get(), onWorker.get());
     }
 
@@ -266,7 +267,7 @@ class ProductCostServiceTest {
         assertEquals(rows.size(), parsed.rows().size());
         var unknown =
                 parsed.rows().stream()
-                        .filter(r -> r.requiredValue("Articolo").equals("MSTA2-98-14"))
+                        .filter(r -> r.requiredValue("Articolo").equals("MSTA3-98-10"))
                         .findFirst()
                         .orElseThrow();
         assertEquals("", unknown.values().get("Costo totale (EUR/articolo)"));
@@ -289,7 +290,7 @@ class ProductCostServiceTest {
     }
 
     @Test
-    void usesArticleDimensionsPinnedByTheApprovedConfiguration() {
+    void nominalCostsUseCurrentArticleDimensionsAndPhysicalHistoryKeepsTheOldSnapshot() {
         ProductCostFixture.execute(
                 db,
                 "INSERT INTO"
@@ -310,9 +311,22 @@ class ProductCostServiceTest {
                         .filter(r -> r.article().id() == 1)
                         .findFirst()
                         .orElseThrow();
-        assertEquals(0, n("10").compareTo(result.specification().height()));
+        assertEquals(0, n("18").compareTo(result.specification().height()));
         assertEquals(0, n("18").compareTo(result.article().height()));
-        assertEquals(0, n("48.6825").compareTo(result.total()));
+        assertEquals(0, n("71.1945").compareTo(result.total()));
+        var legacy =
+                db.withConnection(
+                        c ->
+                                new com.orodent.ecos.costi.products.repository
+                                                .ProductCostRepository(c)
+                                        .loadLegacy());
+        var old =
+                calculate(legacy).stream()
+                        .filter(v -> v.article().id() == 1)
+                        .findFirst()
+                        .orElseThrow();
+        assertEquals(0, n("10").compareTo(old.specification().height()));
+        assertEquals(0, n("48.6825").compareTo(old.total()));
     }
 
     private int scalar(String sql) {

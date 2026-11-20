@@ -94,7 +94,7 @@ class ConsumptionTest {
         ProductCostFixture.execute(
                 db,
                 "INSERT INTO COSTI.ORDINI_POLVERI(fornitore,numero_ordine,posizione) VALUES"
-                    + " ('F','A',1),('F','B',1),('F','C',1),('F','D',1)",
+                        + " ('F','A',1),('F','B',1),('F','C',1),('F','D',1)",
                 "INSERT INTO"
                     + " COSTI.ORDINI_POLVERI_REVISIONI(ordine_id,numero_versione,polvere_id,codice_sorgente,descrizione,data_ordine,consegna_prevista,quantita_ordinata,quantita_consegnata,quantita_residua,prezzo_kg,escluso,origine)"
                     + " VALUES"
@@ -157,7 +157,9 @@ class ConsumptionTest {
         ProductCostFixture.execute(
                 db,
                 "UPDATE TON.CONFIGURAZIONI_ARTICOLO SET stato='RITIRATA' WHERE"
-                        + " configurazione_id=1");
+                        + " configurazione_id=1",
+                "UPDATE TON.CONFIGURAZIONI_PRODOTTO SET stato='RITIRATA' WHERE"
+                    + " configurazione_id=1");
         Analysis retired = load();
         assertTrue(
                 retired.series().stream()
@@ -167,6 +169,52 @@ class ConsumptionTest {
                 retired.series().stream()
                         .filter(s -> s.basis() == Basis.VENDITE)
                         .allMatch(s -> !s.complete()));
+    }
+
+    @Test
+    void
+            salesUseTheProductSpecificationWhilePhysicalProductionsRetainLegacyReferencesWithTheSameId() {
+        ProductCostFixture.execute(
+                db,
+                "INSERT INTO TON.COMPOSIZIONI(prodotto_id,numero_versione,stato,approvato_il)"
+                    + " VALUES (1,2,'APPROVATA',CURRENT_TIMESTAMP)",
+                "INSERT INTO TON.COMPOSIZIONE_STRATI(composizione_id,numero_strato) VALUES"
+                    + " (2,1),(2,2)",
+                "INSERT INTO"
+                    + " TON.COMPOSIZIONE_INGREDIENTI(composizione_id,numero_strato,polvere_revisione_id,percentuale_massa)"
+                    + " VALUES (2,1,3,100),(2,2,3,100)",
+                "UPDATE TON.CONFIGURAZIONI_PRODOTTO SET composizione_id=2 WHERE"
+                    + " configurazione_id=1");
+        var analysis = load();
+        var physical =
+                analysis.series().stream()
+                        .filter(v -> v.powder().id() == 1 && v.basis() == Basis.PRODUZIONI)
+                        .findFirst()
+                        .orElseThrow();
+        var sales =
+                analysis.series().stream()
+                        .filter(v -> v.powder().id() == 1 && v.basis() == Basis.VENDITE)
+                        .findFirst()
+                        .orElseThrow();
+        value("2.86425", physical.daily().get(LocalDate.of(2026, 11, 3)));
+        value("0", sales.rate());
+        assertTrue(physical.complete());
+        assertTrue(sales.complete());
+        assertEquals(1L, analysis.snapshot().catalogue().articles().getFirst().preferredId());
+        assertEquals(
+                2L,
+                analysis.snapshot().catalogue().specifications().get(1L).stream()
+                        .filter(v -> v.id() == 1)
+                        .findFirst()
+                        .orElseThrow()
+                        .compositionId());
+        assertEquals(
+                1L,
+                analysis.snapshot().legacyCatalogue().specifications().get(1L).stream()
+                        .filter(v -> v.id() == 1)
+                        .findFirst()
+                        .orElseThrow()
+                        .compositionId());
     }
 
     @Test

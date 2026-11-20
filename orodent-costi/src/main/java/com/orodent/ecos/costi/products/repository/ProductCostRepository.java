@@ -14,24 +14,40 @@ import java.util.*;
  * Batched catalogue reads. All prices and technical revisions are captured in one read transaction.
  */
 public final class ProductCostRepository {
-    private static final String USED_RECIPES =
-            "(SELECT composizione_id FROM TON.CONFIGURAZIONI_ARTICOLO WHERE stato IN"
-                    + " ('APPROVATA','RITIRATA'))";
-    private static final String USED_MODELS =
-            "(SELECT modello_id FROM TON.CONFIGURAZIONI_ARTICOLO WHERE stato IN"
-                    + " ('APPROVATA','RITIRATA'))";
     private final Connection connection;
     private boolean scenarioCatalogue;
+    private boolean legacyCatalogue;
+
+    /** Physical productions before V21 keep their original article specification namespace. */
+    public Catalogue loadLegacy() throws SQLException {
+        legacyCatalogue = true;
+        try {
+            return load(true);
+        } finally {
+            legacyCatalogue = false;
+        }
+    }
+
     public Catalogue loadForScenarios() throws SQLException {scenarioCatalogue=true;try{return load(false);}finally{scenarioCatalogue=false;}}
-    private String usedRecipes(){
+
+    private String specificationTable() {
+        return legacyCatalogue ? "TON.CONFIGURAZIONI_ARTICOLO" : "TON.CONFIGURAZIONI_PRODOTTO";
+    }
+
+    private String usedRecipes() {
         return scenarioCatalogue
                 ? "(SELECT composizione_id FROM TON.COMPOSIZIONI WHERE stato<>'BOZZA')"
-                : USED_RECIPES;
+                : "(SELECT composizione_id FROM "
+                        + specificationTable()
+                        + " WHERE stato IN ('APPROVATA','RITIRATA'))";
     }
-    private String usedModels(){
+
+    private String usedModels() {
         return scenarioCatalogue
                 ? "(SELECT modello_id FROM TON.MODELLI_DISCO WHERE stato<>'BOZZA')"
-                : USED_MODELS;
+                : "(SELECT modello_id FROM "
+                        + specificationTable()
+                        + " WHERE stato IN ('APPROVATA','RITIRATA'))";
     }
 
     public ProductCostRepository(Connection connection) {
@@ -69,9 +85,13 @@ public final class ProductCostRepository {
                                         r.getBoolean(7))));
         var articles = new ArrayList<Article>();
         query(
-                "SELECT"
-                    + " articolo_id,prodotto_id,codice,diametro_mm,altezza_mm,attivo,configurazione_predefinita_id"
-                    + " FROM TON.ARTICOLI ORDER BY prodotto_id,diametro_mm,altezza_mm,codice",
+                "SELECT a.articolo_id,a.prodotto_id,a.codice,a.diametro_mm,a.altezza_mm,a.attivo,"
+                        + (legacyCatalogue
+                                ? "a.configurazione_predefinita_id"
+                                : "CASE WHEN p.specifiche_da_verificare=FALSE THEN"
+                                      + " p.configurazione_predefinita_id ELSE NULL END")
+                        + " FROM TON.ARTICOLI a JOIN TON.PRODOTTI p ON p.prodotto_id=a.prodotto_id"
+                        + " ORDER BY a.prodotto_id,a.diametro_mm,a.altezza_mm,a.codice",
                 r ->
                         articles.add(
                                 new Article(
@@ -84,12 +104,19 @@ public final class ProductCostRepository {
                                         (Long) r.getObject(7))));
         var specifications = new HashMap<Long, List<Specification>>();
         query(
-                """
+                legacyCatalogue
+                        ? """
 SELECT c.configurazione_id,c.articolo_id,c.numero_versione,c.composizione_id,c.modello_id,
        c.versione_calcolo,c.articolo_revisione,COALESCE(h.diametro_mm,a.diametro_mm),COALESCE(h.altezza_mm,a.altezza_mm)
 FROM TON.CONFIGURAZIONI_ARTICOLO c JOIN TON.ARTICOLI a ON a.articolo_id=c.articolo_id
 LEFT JOIN TON.ARTICOLI_REVISIONI h ON h.articolo_id=c.articolo_id AND h.numero_revisione=c.articolo_revisione
 WHERE c.stato IN ('APPROVATA','RITIRATA') ORDER BY c.articolo_id,c.numero_versione DESC
+"""
+                        : """
+SELECT c.configurazione_id,a.articolo_id,c.numero_versione,c.composizione_id,c.modello_id,
+       c.versione_calcolo,a.versione_modifica,a.diametro_mm,a.altezza_mm
+FROM TON.CONFIGURAZIONI_PRODOTTO c JOIN TON.ARTICOLI a ON a.prodotto_id=c.prodotto_id
+WHERE c.stato IN ('APPROVATA','RITIRATA') ORDER BY a.articolo_id,c.numero_versione DESC
 """,
                 r ->
                         specifications
@@ -108,8 +135,9 @@ WHERE c.stato IN ('APPROVATA','RITIRATA') ORDER BY c.articolo_id,c.numero_versio
         if (!historical) {
             var approved = new HashSet<Long>();
             query(
-                    "SELECT configurazione_id FROM TON.CONFIGURAZIONI_ARTICOLO WHERE"
-                            + " stato='APPROVATA'",
+                    "SELECT configurazione_id FROM "
+                            + specificationTable()
+                            + " WHERE stato='APPROVATA'",
                     r -> approved.add(r.getLong(1)));
             specifications.replaceAll(
                     (id, values) ->

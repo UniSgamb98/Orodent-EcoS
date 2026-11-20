@@ -137,10 +137,6 @@ class ScenarioTest {
         ProductCostFixture.execute(
                 db,
                 "INSERT INTO"
-                    + " TON.CONFIGURAZIONI_ARTICOLO(articolo_id,prodotto_id,numero_versione,composizione_id,modello_id,versione_calcolo,stato,approvato_il)"
-                    + " VALUES (2,1,1,1,1,'TON-ORIGINALE','APPROVATA',CURRENT_TIMESTAMP)",
-                "UPDATE TON.ARTICOLI SET configurazione_predefinita_id=3 WHERE articolo_id=2",
-                "INSERT INTO"
                     + " VENDITE.VENDITE_DETTAGLIO(sorgente,documento_id,numero_documento,numero_riga,data_vendita,codice_cliente,codice_prodotto,quantita,tipo_operazione)"
                     + " VALUES"
                     + " ('TEST','S2','S2',1,DATE('2026-11-04'),'C1','MSTA2-98-14',60,'VENDITA')");
@@ -374,9 +370,9 @@ class ScenarioTest {
         var analysis = engine.analyse(d);
         Group group = engine.groups(analysis, Weight.ARTICLES, true, null).getFirst();
         assertEquals(2, group.articles());
-        assertEquals(1, group.comparable());
-        assertEquals(1, group.weighted());
-        same("1", group.weight());
+        assertEquals(2, group.comparable());
+        assertEquals(2, group.weighted());
+        same("2", group.weight());
         same("20", engine.groups(analysis, Weight.SALES, true, null).getFirst().weight());
         same("10", engine.groups(analysis, Weight.PRODUCTION, true, null).getFirst().weight());
         var next = service.capture(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31)).join();

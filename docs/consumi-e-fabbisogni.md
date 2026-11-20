@@ -30,7 +30,8 @@ Il tracciato non viene ricalcolato a ogni movimento del mouse.
   annullate sono escluse. Le masse sono **teoriche**, non pesature registrate:
   non si attribuisce un significato arbitrario al CLOB `dosi_calcolate`.
 - Vendite: righe `VENDITA`, collegate per codice articolo esatto e ricostruite con
-  la configurazione predefinita **attualmente approvata**. Non è una ricetta storica
+  la configurazione predefinita **attualmente approvata del prodotto tecnico**,
+  ereditata dall’articolo. Non è una ricetta storica
   della vendita. Resi e note di credito sono segnalati ed esclusi: non restituiscono
   automaticamente polvere utilizzabile. La stima considera vendite lorde.
 - La massa usa percentuali sull'altezza nominale, sovramateriali sugli strati estremi,
@@ -128,3 +129,13 @@ Il residuo è quello stimato a tale data meno il piano, e la copertura residua i
 le consegne successive finché non si verifica il primo esaurimento. Non si sommano
 previsioni basate su vendite e produzioni. Il CSV riporta inclusione degli arrivi,
 prima carenza e data della produzione simulata.
+
+## Riferimenti dopo la migrazione V21
+
+Vendite e simulazioni usano le specifiche del prodotto; i formati ereditano la
+stessa composizione e lo stesso modello. Le produzioni fisiche precedenti alla
+migrazione continuano invece a usare le configurazioni articolo originali e le
+misure storiche registrate. I due cataloghi vengono letti nella stessa fotografia
+transazionale e restano distinti: un vecchio ID articolo e un nuovo ID prodotto
+numericamente uguali non identificano la stessa specifica. I risultati memorizzati
+nel calcolo sono distinti anche per fonte (produzioni o vendite).
