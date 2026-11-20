@@ -72,9 +72,14 @@ public final class RecipeEditor extends GridPane {
         var heading = new FlowPane(12, 6, title, total);
         heading.setAlignment(Pos.CENTER_LEFT);
         heading.setMinWidth(0);
+        title.maxWidthProperty().bind(heading.widthProperty());
+        total.maxWidthProperty().bind(heading.widthProperty());
         HBox.setHgrow(heading, Priority.ALWAYS);
-        var chroma = TechnicalUi.field("Croma dello strato · ppm", ppm);
-        chroma.setMinWidth(180);
+        var chromaLabel = TechnicalUi.label("Croma dello strato · ppm", "muted-label");
+        chromaLabel.setLabelFor(ppm);
+        var chroma = new HBox(8, chromaLabel, ppm);
+        chroma.setAlignment(Pos.CENTER_LEFT);
+        chroma.setMinWidth(0);
         var header = new HBox(18, heading, chroma);
         header.setAlignment(Pos.BOTTOM_LEFT);
         header.setFillHeight(false);
@@ -92,7 +97,9 @@ public final class RecipeEditor extends GridPane {
         actions.getColumnConstraints().addAll(leftColumn, rightColumn);
         actions.add(left, 0, 0);
         actions.add(right, 1, 0);
-        center = new VBox(12, header, rows, actions);
+        var remainingSpace = new Region();
+        VBox.setVgrow(remainingSpace, Priority.ALWAYS);
+        center = new VBox(12, header, rows, remainingSpace, actions);
         center.setMinWidth(0);
         center.getStyleClass().add("ton-technical-panel");
         summary =

@@ -2,11 +2,13 @@
 
 In **Dati tecnici → Composizioni → Ricetta per strato**, il calcolo del croma
 è sempre disponibile. Il croma è sulla stessa riga del titolo dello strato e
-della targhetta di stato, a destra. Il campo del nome facoltativo non è mostrato;
+della targhetta di stato, a destra, con l’etichetta a sinistra della casella. Il campo del nome facoltativo non è mostrato;
 gli eventuali nomi già salvati restano conservati.
 Le percentuali non hanno etichette sopra le caselle; tooltip e descrizioni
 accessibili mantengono il significato di tinta e totale. Selettori delle polveri,
-percentuali e pulsanti di rimozione sono alti 34 px.
+percentuali e pulsanti di rimozione sono alti 34 px. La barra con aggiunta, copia
+e comandi dello strato rimane in fondo al riquadro: lo spazio libero si dispone
+fra elenco e pulsanti.
 Non ci sono interruttori di modalità, ricerca o paginazione delle polveri:
 il selettore contiene tutte le revisioni approvate disponibili e conserva
 l’eventuale revisione storica già usata dalla ricetta.
