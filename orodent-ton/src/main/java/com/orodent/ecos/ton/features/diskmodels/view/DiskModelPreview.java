@@ -48,7 +48,7 @@ final class DiskModelPreview extends VBox {
     void update(String topText, String bottomText, String diameterText, List<String> values) {
         top.setText("Sovramateriale superiore · " + value(topText) + " mm");
         bottom.setText("Sovramateriale inferiore · " + value(bottomText) + " mm");
-        diameter.setText("Diametro pressatura · " + value(diameterText) + " mm");
+        diameter.setText("Ø stampo di riferimento · " + value(diameterText) + " mm");
         stack.getChildren().clear();
         List<BigDecimal> parsed = values.stream().map(TechnicalUi::preview).toList();
         if (parsed.isEmpty() || parsed.stream().anyMatch(v -> v == null || v.signum() <= 0)) {

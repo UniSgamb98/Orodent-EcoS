@@ -4,7 +4,8 @@ Le schede usano il [contenitore comune di Dati tecnici](ton-schede-tecniche.md).
 
 Aprire **TON → Dati tecnici → Modelli disco**, oppure **Apri modelli disco**
 dalla Panoramica TON. La scheda usa lo stesso DB, provider ed executor di EcoS.
-Non serve una migrazione nuova: lo schema resta V6.
+La V19 collega gli stampi ai modelli senza assegnarli automaticamente ai modelli
+già presenti. Vedere [schema e migrazioni](database-schema.md#migrazione-dalla-versione-18-alla-19).
 
 ## Elenco e scheda
 
@@ -27,15 +28,16 @@ nell'intestazione del modulo, **Torna ai modelli** a sinistra e **Aggiorna dati*
 a destra. **Crea nuova versione** affianca il riquadro di stato, sopra le schede;
 salvataggio e altre azioni sono raccolti nel pannello bianco inferiore.
 
-**Nuovo modello** prepara la prima versione. Sono richiesti codice, diametro di
-pressatura, pressione e peso per millimetro; i sovramateriali partono da zero.
+**Nuovo modello** prepara la prima versione. Sono richiesti codice, stampo di
+riferimento, pressione e peso per millimetro; i sovramateriali partono da zero.
 Il codice è normalizzato in maiuscolo e identifica tutte le versioni del modello.
 Dopo il primo salvataggio rimane fisso; per una diversa identità si crea un nuovo
 modello. Il numero della versione viene assegnato dal servizio.
 
-- **Parametri**: geometria, pressione in kg/cm² come in TON V2, coefficiente g/mm,
-  note tecniche. Il diametro di pressatura è distinto dal diametro nominale
-  dell'articolo: non viene imposta un'uguaglianza non confermata sul processo.
+- **Parametri**: stampo di riferimento, pressione in kg/cm² come in TON V2,
+  coefficiente g/mm e note tecniche. Il diametro deriva dallo stampo scelto in
+  [Macchinari e attrezzature](ton-macchinari.md) e non è più un campo numerico
+  modificabile. Resta distinto dal diametro nominale dell'articolo.
 - **Strati**: percentuali di altezza, totale e anteprima in sezione. Aggiungere,
   rimuovere o spostare una riga conserva i valori delle altre. **Distribuisci
   equamente** richiede conferma e assegna l'eventuale residuo all'ultimo strato
@@ -44,6 +46,9 @@ modello. Il numero della versione viene assegnato dal servizio.
   `[da, fino a)`. I limiti iniziali sono inclusi, quelli finali esclusi.
   Le fasce adiacenti sono ammesse; le sovrapposte sono rifiutate anche dal servizio.
   Fuori dalle fasce restano i default. Tutte le misure sono in mm.
+- **Stampi ammissibili**: scelta manuale degli altri stampi utilizzabili per
+  questa versione e confronto con il riferimento, sempre incluso. Nessuna
+  tolleranza o regola seleziona automaticamente gli stampi.
 - **Utilizzi**: specifiche degli articoli collegate alla versione selezionata,
   con formato, stato e indicazione della predefinita. **Apri articolo** apre la
   scheda reale, anche per consultare un articolo archiviato.
@@ -59,15 +64,53 @@ La numerazione visuale procede dall'alto al basso. Per il calcolo economico
 poi sovramateriale superiore al primo strato e inferiore all’ultimo; entrambi nel
 monostrato. [Regola e calcolo costi](costi-e-consumi.md#regola-di-calcolo-costi-nominale-1).
 
+## Stampi e scostamenti teorici
+
+Il selettore in **Parametri** propone gli stampi attivi, senza una scelta iniziale.
+In **Stampi ammissibili** ogni altro stampo ha una spunta indipendente, inizialmente
+vuota. Cambiare riferimento non ammette automaticamente quello precedente.
+**Aggiorna elenco stampi** rilegge il catalogo senza modificare le scelte.
+
+La tabella mostra diametro, differenza di diametro, scostamento della sezione,
+differenza di peso in g/mm e in g ogni 100 g di polvere di riferimento. Sono stime
+geometriche a parità di altezza e densità, con segno positivo per la polvere in più
+e negativo per quella in meno:
+
+```text
+rapporto sezioni = (diametro stampo / diametro riferimento)²
+scostamento = rapporto sezioni − 1
+Δ sezione % = scostamento × 100
+Δ peso g/mm = scostamento × g/mm del modello
+Δ peso g/100 g = scostamento × 100
+```
+
+Per esempio, da Ø 99 a Ø 99,2 mm con 25 g/mm: +0,4044% di sezione,
++0,10111 g/mm e +0,4044 g ogni 100 g. Il calcolo serve a decidere quali stampi
+ammettere; **non corregge il coefficiente g/mm né le pesate della produzione**.
+Non misura la densità reale del verde o i ritiri di cottura e non definisce
+la compatibilità con le presse.
+
+Ogni versione conserva ID, revisione, codice, nome e diametro degli stampi scelti.
+Cambiare successivamente un'anagrafica non riscrive questi dati. Se lo stampo di
+una bozza è stato aggiornato, prima di salvare occorre aggiornare l'elenco e
+riselezionarlo esplicitamente: per gli stampi aggiuntivi togliere e rimettere la
+spunta; per il riferimento scegliere la revisione corrente dal selettore.
+Uno stampo archiviato non si può approvare in una nuova configurazione.
+
+Le versioni precedenti alla V19 mantengono il diametro storico e nessuna
+associazione inventata, anche se esiste uno stampo con lo stesso diametro.
+Restano consultabili e utilizzabili. La loro copia conserva il valore storico,
+ma per salvare o approvare la nuova bozza bisogna selezionare un riferimento reale.
+
 ## Salvataggio e versioni
 
-**Salva bozza** salva insieme parametri, strati e fasce. I parametri obbligatori
+**Salva bozza** salva insieme parametri, strati, fasce e selezione degli stampi. I parametri obbligatori
 devono essere validi anche in bozza; le quote degli strati possono essere ancora
 da completare come totale. Ogni riga compilata richiede una percentuale positiva,
 massimo 100%. Non si arrotondano automaticamente valori oltre la precisione DB.
 
 **Salva e approva** richiede almeno uno strato e totale esatto 100%. La versione
-approvata è di sola lettura, inclusi note e sovramateriali. **Crea nuova versione**
+approvata è di sola lettura, inclusi note, sovramateriali e stampi. **Crea nuova versione**
 copia l'intero contenuto in una nuova bozza; è ammessa una sola bozza per codice.
 Il controllo avviene nel DB sotto blocco della famiglia del modello, anche se due
 postazioni chiedono la copia contemporaneamente. Un salvataggio identico senza
@@ -95,8 +138,9 @@ flusso produttivo, senza spostare l'altezza dell'articolo nel modello.
 ## Organizzazione del codice
 
 `features/diskmodels` separa valori immutabili, SQL, transazioni, controller e viste.
-Le tre tabelle esistenti sono `TON.MODELLI_DISCO`, `TON.MODELLO_STRATI` e
-`TON.MODELLO_SOVRAMATERIALI`. Il salvataggio dei figli è atomico con i parametri.
+Le tabelle sono `TON.MODELLI_DISCO`, `TON.MODELLO_STRATI`,
+`TON.MODELLO_SOVRAMATERIALI`, `TON.MODELLO_STAMPO_RIF` e
+`TON.MODELLO_STAMPI_AMMESSI`. Il salvataggio dei figli è atomico con i parametri.
 Contatori di modifica e blocchi impediscono sovrascritture di versioni concorrenti.
 
 Ricerche con debounce, letture e pagine superate vengono rilasciate alla chiusura.

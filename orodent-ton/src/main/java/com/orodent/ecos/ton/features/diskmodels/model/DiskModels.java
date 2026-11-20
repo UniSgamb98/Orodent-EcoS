@@ -36,6 +36,42 @@ public final class DiskModels {
         }
     }
 
+    /** Equipment metadata frozen with a particular model version. */
+    public record Mould(long id, int revision, String code, String name, BigDecimal diameter) {
+        public Mould {
+            if (id <= 0 || revision <= 0) throw invalid("Seleziona uno stampo registrato.");
+            code = text(code);
+            name = text(name);
+            if (code.isEmpty() || code.length() > 50 || name.isEmpty() || name.length() > 100)
+                throw invalid("Anagrafica dello stampo non valida.");
+            diameter = decimal(diameter, 10, 3, false, "Diametro stampo");
+        }
+
+        @Override
+        public String toString() {
+            return code + " · " + name + " · Ø " + diameter.toPlainString() + " mm · r" + revision;
+        }
+    }
+
+    public record Moulds(Mould reference, List<Mould> admitted) {
+        public Moulds {
+            Objects.requireNonNull(reference);
+            admitted = admitted.stream().sorted(Comparator.comparingLong(Mould::id)).toList();
+            var ids = new HashSet<Long>();
+            ids.add(reference.id());
+            for (var mould : admitted)
+                if (!ids.add(mould.id()))
+                    throw invalid("Ogni stampo può essere selezionato una sola volta.");
+        }
+
+        public List<Mould> all() {
+            var all = new ArrayList<Mould>();
+            all.add(reference);
+            all.addAll(admitted);
+            return all;
+        }
+    }
+
     public record Draft(
             String code,
             BigDecimal diameter,
@@ -45,12 +81,30 @@ public final class DiskModels {
             BigDecimal bottom,
             String notes,
             List<BigDecimal> layers,
-            List<Range> ranges) {
+            List<Range> ranges,
+            Moulds moulds) {
+        /** Legacy rows and import fixtures have a diameter but no assigned physical mould. */
+        public Draft(
+                String code,
+                BigDecimal diameter,
+                BigDecimal pressure,
+                BigDecimal grams,
+                BigDecimal top,
+                BigDecimal bottom,
+                String notes,
+                List<BigDecimal> layers,
+                List<Range> ranges) {
+            this(code, diameter, pressure, grams, top, bottom, notes, layers, ranges, null);
+        }
+
         public Draft {
             code = text(code).toUpperCase(Locale.ROOT);
             if (code.isEmpty() || code.length() > 100)
                 throw invalid("Inserisci un codice modello di massimo 100 caratteri.");
-            diameter = decimal(diameter, 6, 2, false, "Diametro di pressatura");
+            diameter = decimal(diameter, 10, 3, false, "Diametro dello stampo di riferimento");
+            if (moulds != null && diameter.compareTo(moulds.reference().diameter()) != 0)
+                throw invalid(
+                        "Il diametro del modello deve corrispondere allo stampo di riferimento.");
             pressure = decimal(pressure, 10, 3, false, "Pressione");
             grams = decimal(grams, 12, 5, false, "Peso per millimetro");
             top = decimal(top, 6, 2, true, "Sovramateriale superiore");

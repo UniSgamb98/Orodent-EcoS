@@ -39,6 +39,7 @@ class CompositionChromaSchemaTest {
             }
             db.withTransaction(
                     c -> {
+                        ModelMouldFixtures.beforeV19(c);
                         try (var q = c.createStatement()) {
                             for (String sql : ddl.split(";"))
                                 if (!sql.isBlank()) q.executeUpdate(sql);

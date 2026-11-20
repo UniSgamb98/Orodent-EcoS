@@ -29,6 +29,7 @@ class EquipmentSchemaTest {
         try {
             db.withTransaction(
                     c -> {
+                        ModelMouldFixtures.beforeV19(c);
                         try (var q = c.createStatement()) {
                             q.executeUpdate(
                                     "INSERT INTO TON.FORNI(codice,nome,versione_modifica) VALUES"

@@ -90,6 +90,21 @@ public final class CatalogDetailsUiProbe {
                                     product.id(), "", List.of()),
                             false)
                     .join();
+        var mouldEntry =
+                new com.orodent.ecos.ton.features.equipment.service.EquipmentService(db, workers)
+                        .save(
+                                com.orodent.ecos.ton.features.equipment.model.Equipment.Kind.MOULDS,
+                                null,
+                                new com.orodent.ecos.ton.features.equipment.model.Equipment.Draft(
+                                        "S98", "Stampo 98", new BigDecimal("98"), "", true))
+                        .join();
+        var mould =
+                new com.orodent.ecos.ton.features.diskmodels.model.DiskModels.Mould(
+                        mouldEntry.id(),
+                        mouldEntry.revision(),
+                        mouldEntry.code(),
+                        mouldEntry.name(),
+                        mouldEntry.dimension());
         for (int i = 0; i < 55; i++)
             models.create(
                             new com.orodent.ecos.ton.features.diskmodels.model.DiskModels.Draft(
@@ -101,7 +116,9 @@ public final class CatalogDetailsUiProbe {
                                     BigDecimal.ZERO,
                                     "",
                                     List.of(new BigDecimal("100")),
-                                    List.of()),
+                                    List.of(),
+                                    new com.orodent.ecos.ton.features.diskmodels.model.DiskModels
+                                            .Moulds(mould, List.of())),
                             i == 54)
                     .join();
 
@@ -709,7 +726,7 @@ public final class CatalogDetailsUiProbe {
                     assertNull(node("ton-model-version"));
                     assertEquals("← Torna ai modelli", button("ton-model-back").getText());
                     assertRefreshOnRight("model");
-                    assertTrue(node("ton-model-diameter").isDisabled());
+                    assertTrue(node("ton-model-reference-mould").isDisabled());
                     screenshot("target/disk-model-detail-approved.png");
                     button("ton-model-copy").fire();
                     return null;
@@ -720,9 +737,9 @@ public final class CatalogDetailsUiProbe {
                                 && ((Label) node("ton-model-status")).getText().startsWith("v2"));
         fx(
                 () -> {
-                    assertFalse(node("ton-model-diameter").isDisabled());
+                    assertFalse(node("ton-model-reference-mould").isDisabled());
                     screenshot("target/disk-model-detail-draft.png");
-                    ((TabPane) node("ton-model-tabs")).getSelectionModel().select(4);
+                    ((TabPane) node("ton-model-tabs")).getSelectionModel().select(5);
                     return null;
                 });
         await(
@@ -736,7 +753,10 @@ public final class CatalogDetailsUiProbe {
                     table.fireEvent(doubleClick());
                     return null;
                 });
-        await(() -> node("ton-model-diameter") != null && node("ton-model-diameter").isDisabled());
+        await(
+                () ->
+                        node("ton-model-reference-mould") != null
+                                && node("ton-model-reference-mould").isDisabled());
         fx(
                 () -> {
                     assertTrue(((Label) node("ton-model-status")).getText().startsWith("v1"));

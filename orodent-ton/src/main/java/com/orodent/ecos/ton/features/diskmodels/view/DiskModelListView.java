@@ -27,7 +27,10 @@ public final class DiskModelListView extends TonListView<Summary> {
         filters("ton-model-filters", TechnicalUi.field("Stato", filter));
         TechnicalUi.column(table(), "Modello", 180, Summary::code);
         TechnicalUi.column(
-                table(), "Diametro pressatura", 160, r -> TechnicalUi.number(r.diameter()) + " mm");
+                table(),
+                "Ø stampo di riferimento",
+                160,
+                r -> TechnicalUi.number(r.diameter()) + " mm");
         TechnicalUi.column(table(), "Strati", 70, r -> "" + r.layers());
         TechnicalUi.column(
                 table(),

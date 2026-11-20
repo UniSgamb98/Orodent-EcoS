@@ -30,6 +30,11 @@ class CrmOperatorMigrationTest {
                     }
                 };
         new DatabaseSchema(db).initialize();
+        db.withTransaction(
+                c -> {
+                    ModelMouldFixtures.beforeV19(c);
+                    return null;
+                });
         execute(
                 "DROP TABLE TON.PRESSE",
                 "DROP TABLE TON.STAMPI",

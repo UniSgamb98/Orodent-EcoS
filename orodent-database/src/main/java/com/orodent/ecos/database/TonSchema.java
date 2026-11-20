@@ -355,7 +355,10 @@ final class TonSchema {
         if (schemaVersion >= 6) tables.addAll(CATALOGUES);
         for (Table table : tables) {
             Map<String, Column> columns = actual.getOrDefault(table.name(), Map.of());
-            for (Column expected : table.columns()) {
+            for (Column declared : table.columns()) {
+                Column expected = schemaVersion >= 19 && table.name().equals("MODELLI_DISCO")
+                        && declared.name().equals("DIAMETRO_PRESSATURA_MM")
+                        ? column(declared.name(), Types.DECIMAL, 10, 3, false, false, null) : declared;
                 Column found = columns.get(expected.name());
                 if (found == null || found.type() != expected.type() || found.nullable() != expected.nullable()
                         || found.identity() != expected.identity()

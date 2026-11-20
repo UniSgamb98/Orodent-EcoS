@@ -37,6 +37,15 @@ class DiskModelServiceTest {
                     }
                 };
         new DatabaseSchema(db).initialize();
+        db.withTransaction(
+                c -> {
+                    try (var q = c.createStatement()) {
+                        q.executeUpdate(
+                                "INSERT INTO TON.STAMPI(codice,nome,diametro_mm) VALUES"
+                                        + " ('S98','Stampo di riferimento',98)");
+                    }
+                    return null;
+                });
         workers = Executors.newFixedThreadPool(2, r -> new Thread(r, "models-worker"));
         service =
                 new DiskModelService(
@@ -330,7 +339,8 @@ class DiskModelServiceTest {
                 n("0.5"),
                 "Nota tecnica",
                 layers,
-                ranges);
+                ranges,
+                new Moulds(new Mould(1, 1, "S98", "Stampo di riferimento", n("98")), List.of()));
     }
 
     private List<Range> ranges() {

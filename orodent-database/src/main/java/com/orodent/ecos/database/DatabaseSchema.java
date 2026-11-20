@@ -100,6 +100,11 @@ public final class DatabaseSchema {
                     18,
                     "TON presses and moulds catalogues",
                     "/database/migrations/V18__ton_equipment_catalogues.sql");
+    private static final SchemaMigration TON_MODEL_MOULDS =
+            new SchemaMigration(
+                    19,
+                    "TON versioned model reference and admitted moulds",
+                    "/database/migrations/V19__ton_model_moulds.sql");
     private static final List<SchemaMigration> MIGRATIONS =
             List.of(
                     BASELINE,
@@ -119,7 +124,8 @@ public final class DatabaseSchema {
                     TON_PRODUCTION_PLANS,
                     TON_COMPOSITION_CHROMA,
                     TON_DERIVED_COMPOSITION_CHROMA,
-                    TON_EQUIPMENT);
+                    TON_EQUIPMENT,
+                    TON_MODEL_MOULDS);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS =
             List.of(
@@ -284,6 +290,7 @@ public final class DatabaseSchema {
             if (version == TON_COMPOSITION_CHROMA.version())
                 CompositionChromaSchema.verify(connection);
             if (version >= TON_EQUIPMENT.version()) EquipmentSchema.verify(connection);
+            if (version >= TON_MODEL_MOULDS.version()) ModelMouldSchema.verify(connection);
             return version;
         }
         if (tableExists(connection, "APP", HISTORY)) {

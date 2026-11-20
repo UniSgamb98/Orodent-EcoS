@@ -4,6 +4,7 @@ import static com.orodent.ecos.ton.features.diskmodels.model.DiskModels.*;
 
 import com.orodent.ecos.core.ConnectionProvider;
 import com.orodent.ecos.ton.features.diskmodels.repository.DiskModelRepository;
+import com.orodent.ecos.ton.features.diskmodels.repository.ModelMouldRepository;
 
 import java.sql.*;
 import java.util.*;
@@ -47,6 +48,10 @@ public final class DiskModelService {
                                                         Objects.requireNonNull(filter),
                                                         0,
                                                         Integer.MAX_VALUE)));
+    }
+
+    public CompletableFuture<List<Mould>> moulds() {
+        return async(() -> connections.withConnection(c -> new ModelMouldRepository(c).choices()));
     }
 
     public CompletableFuture<Detail> load(long id) {
@@ -94,6 +99,7 @@ public final class DiskModelService {
                                         throw invalid(
                                                 "Questo codice modello esiste già. Apri la scheda e"
                                                         + " crea una nuova versione.");
+                                    new ModelMouldRepository(c).validate(draft.moulds(), approve);
                                     return detail(repo, repo.insert(draft, 1, approve));
                                 }));
     }
@@ -114,6 +120,7 @@ public final class DiskModelService {
                                         throw invalid(
                                                 "Il codice del modello rimane lo stesso nelle sue"
                                                         + " versioni.");
+                                    new ModelMouldRepository(c).validate(draft.moulds(), approve);
                                     if (approve || !current.data().equals(draft))
                                         repo.update(current, draft, approve);
                                     return detail(repo, current.id());

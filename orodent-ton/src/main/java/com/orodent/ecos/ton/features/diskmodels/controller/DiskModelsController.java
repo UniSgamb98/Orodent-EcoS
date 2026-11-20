@@ -75,6 +75,7 @@ public final class DiskModelsController implements FeatureController {
                         } else render(original, e.sheet());
                     }
                 });
+        on(e.moulds().refresh(), this::loadMoulds);
         on(e.save(), () -> save(false));
         on(e.approve(), () -> save(true));
         on(
@@ -187,6 +188,7 @@ public final class DiskModelsController implements FeatureController {
         view.editor().sheet(Sheet.PARAMETERS);
         baseline = view.editor().fingerprint();
         view.showEditor();
+        loadMoulds();
     }
 
     private void openSelected() {
@@ -237,7 +239,17 @@ public final class DiskModelsController implements FeatureController {
         view.editor().sheet(sheet);
         baseline = view.editor().fingerprint();
         view.showEditor();
+        if (!detail.revision().frozen()) loadMoulds();
         loadSheet();
+    }
+
+    private void loadMoulds() {
+        if (!editing || saving.get() || original != null && original.revision().frozen()) return;
+        read(
+                "moulds",
+                service::moulds,
+                values -> view.editor().moulds().choices(values),
+                error -> view.editor().feedback(error, true));
     }
 
     private void loadSheet() {

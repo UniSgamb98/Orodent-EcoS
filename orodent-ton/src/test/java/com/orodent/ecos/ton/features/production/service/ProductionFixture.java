@@ -83,6 +83,21 @@ public final class ProductionFixture {
                 new CompositionService(db, workers)
                         .create(new Compositions.Draft(product.id(), "", layers), true)
                         .join();
+        var mouldEntry =
+                new com.orodent.ecos.ton.features.equipment.service.EquipmentService(db, workers)
+                        .save(
+                                com.orodent.ecos.ton.features.equipment.model.Equipment.Kind.MOULDS,
+                                null,
+                                new com.orodent.ecos.ton.features.equipment.model.Equipment.Draft(
+                                        "S98", "Stampo 98", new BigDecimal("98"), "", true))
+                        .join();
+        var mould =
+                new DiskModels.Mould(
+                        mouldEntry.id(),
+                        mouldEntry.revision(),
+                        mouldEntry.code(),
+                        mouldEntry.name(),
+                        mouldEntry.dimension());
         model =
                 new DiskModelService(db, workers)
                         .create(
@@ -99,7 +114,8 @@ public final class ProductionFixture {
                                                 new BigDecimal("20"),
                                                 new BigDecimal("20"),
                                                 new BigDecimal("30")),
-                                        List.of()),
+                                        List.of(),
+                                        new DiskModels.Moulds(mould, List.of())),
                                 true)
                         .join();
         for (int height : List.of(12, 14, 16, 18, 20, 22)) {

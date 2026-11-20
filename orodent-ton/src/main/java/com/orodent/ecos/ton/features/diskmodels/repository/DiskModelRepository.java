@@ -87,7 +87,8 @@ public final class DiskModelRepository {
                                 r.getBigDecimal("sovramateriale_inferiore_mm"),
                                 r.getString("note"),
                                 layers(id),
-                                ranges(id));
+                                ranges(id),
+                                new ModelMouldRepository(connection).load(id));
                 return new Revision(
                         id,
                         r.getInt("numero_versione"),
@@ -339,6 +340,7 @@ public final class DiskModelRepository {
     }
 
     private void deleteChildren(long id) throws SQLException {
+        new ModelMouldRepository(connection).delete(id);
         for (String table : List.of("MODELLO_STRATI", "MODELLO_SOVRAMATERIALI"))
             try (var q =
                     connection.prepareStatement(
@@ -349,6 +351,7 @@ public final class DiskModelRepository {
     }
 
     private void insertChildren(long id, Draft d) throws SQLException {
+        new ModelMouldRepository(connection).insert(id, d.moulds());
         try (var q =
                 connection.prepareStatement(
                         "INSERT INTO"

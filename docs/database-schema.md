@@ -8,7 +8,7 @@ EcoS usa un solo database Derby, organizzato per dominio dei dati.
 | `ANAGRAFICHE` | `CLIENTI` | Anagrafica condivisa tra i moduli |
 | `VENDITE` | `VENDITE_DETTAGLIO` | Vendite e rettifiche condivise |
 | `COSTI` | `POLVERI_PREZZI`, `POLVERI_LOTTI` | Fotografie manuali dei prezzi e delle quantità delle polveri, con revisioni economiche |
-| `TON` | 33 tabelle: cataloghi, specifiche versionate, piani e produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
+| `TON` | 35 tabelle: cataloghi, specifiche versionate, piani e produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
 
 Statistiche legge clienti e vendite dagli schemi condivisi; TON gestisce il proprio
 catalogo tecnico in `TON.PRODOTTI`. Lo schema `STATISTICHE` sarà creato soltanto
@@ -306,3 +306,23 @@ sono inizialmente vuoti; non si generano presse o stampi dai modelli disco e non
 si modificano le specifiche di produzione. Il controllo CLIENT verifica presenza,
 tipi e precisione delle misure. Backup e migrazione seguono la procedura HOST.
 Vedere [Macchinari e attrezzature](ton-macchinari.md).
+
+## Migrazione dalla versione 18 alla 19
+
+`V19__ton_model_moulds.sql` aggiunge `TON.MODELLO_STAMPO_RIF` e
+`TON.MODELLO_STAMPI_AMMESSI`. Per ciascuna versione del modello conservano i
+riferimenti agli stampi e una fotografia di revisione, codice, nome e diametro.
+Il riferimento è unico e implicitamente ammesso; gli altri stampi sono scelti
+manualmente. La selezione viene salvata nella stessa transazione del modello.
+
+`MODELLI_DISCO.diametro_pressatura_mm` passa da `DECIMAL(6,2)` a `DECIMAL(10,3)`
+per conservare esattamente i tre decimali delle misure degli stampi. Derby richiede
+una colonna temporanea: si copiano i valori, si sostituisce la colonna e si
+ripristina il vincolo sulle misure, nella stessa transazione. Nome della colonna,
+valori esistenti, ID, stato e revisione dei modelli restano conservati.
+
+Le due nuove tabelle sono inizialmente vuote: non viene dedotto lo stampo dal
+diametro dei vecchi modelli. Le produzioni e specifiche storiche continuano a
+leggere il loro modello preciso. L’HOST esegue il backup prima della migrazione;
+i CLIENT verificano il nuovo schema in sola lettura. Vedere
+[stampi dei modelli disco](ton-modelli-disco.md#stampi-e-scostamenti-teorici).

@@ -7,6 +7,8 @@ composizioni per strato e modelli disco. Vedere anche la [guida delle composizio
 Questo documento descrive
 anche regole applicative previste per i flussi ancora da costruire. Il cubaggio
 rimane fuori da questo passaggio. Vedere [uso delle polveri](ton-polveri.md).
+Le evoluzioni successive, comprese le anagrafiche delle attrezzature V18 e gli
+stampi dei modelli V19, sono descritte nello [schema corrente](database-schema.md).
 
 L'obiettivo è mantenere il percorso di TON-V2 — cataloghi, composizioni, modelli,
 produzioni, forni, lotti e documenti — rendendo espliciti i dati tecnici storici e
@@ -237,7 +239,7 @@ revisioni diverse della stessa polvere nel medesimo strato.
 | `modello_id` | BIGINT PK | Versione precisa del modello |
 | `codice` | VARCHAR(100) | Per esempio `ML-98` |
 | `numero_versione` | INTEGER | Versione tecnica |
-| `diametro_pressatura_mm` | DECIMAL(6,2) | Diametro impiegato dalla lavorazione |
+| `diametro_pressatura_mm` | DECIMAL(10,3), da V19 | Diametro dello stampo di riferimento; valore storico per modelli senza associazione |
 | `sovramateriale_superiore_mm` | DECIMAL(6,2) | Default superiore |
 | `sovramateriale_inferiore_mm` | DECIMAL(6,2) | Default inferiore |
 | `pressione_kg_cm2` | DECIMAL(10,3) | Pressione, unità esplicita come in TON-V2 |
@@ -246,6 +248,9 @@ revisioni diverse della stessa polvere nel medesimo strato.
 
 Più il ciclo di vita delle schede tecniche. UQ `(codice, numero_versione)`;
 pressione, diametro e coefficiente positivi; sovramateriali non negativi.
+Da V19 `TON.MODELLO_STAMPO_RIF` e `TON.MODELLO_STAMPI_AMMESSI` conservano per
+versione le fotografie degli stampi selezionati manualmente, senza deduzioni
+dai diametri precedenti. Vedere [scelta degli stampi](ton-modelli-disco.md#stampi-e-scostamenti-teorici).
 
 ### 12. `TON.MODELLO_STRATI`
 
