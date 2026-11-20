@@ -246,6 +246,8 @@ public final class RecipeEditor extends GridPane {
             var item = bound.items().get(i);
             shown.add(item);
             var box = new ComboBox<PowderRef>();
+            box.setCellFactory(list -> new PowderOptionCell());
+            box.setButtonCell(new PowderOptionCell());
             box.setId("ton-composition-ingredient-" + (i + 1) + "-powder");
             box.setPromptText("Scegli polvere e versione");
             box.setAccessibleText("Polvere e revisione ingrediente " + (i + 1));
@@ -303,8 +305,14 @@ public final class RecipeEditor extends GridPane {
                 var selected = shown.get(i).powder().get();
                 var items = new ArrayList<>(choices);
                 if (selected != null) {
-                    items.removeIf(p -> p.id() == selected.id());
-                    items.addFirst(selected);
+                    int index = -1;
+                    for (int j = 0; j < items.size(); j++)
+                        if (items.get(j).id() == selected.id()) {
+                            index = j;
+                            break;
+                        }
+                    if (index < 0) items.addFirst(selected);
+                    else items.set(index, selected);
                 }
                 boxes.get(i).getItems().setAll(items);
                 boxes.get(i).setValue(selected);

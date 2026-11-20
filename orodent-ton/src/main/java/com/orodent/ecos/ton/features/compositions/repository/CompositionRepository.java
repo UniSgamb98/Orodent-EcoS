@@ -271,9 +271,12 @@ public final class CompositionRepository {
                         "SELECT r.polvere_revisione_id"
                                 + from
                                 + where
-                                + " ORDER BY CASE p.colore WHEN 'BIANCA' THEN 0 WHEN 'GIALLA' THEN"
+                                + " ORDER BY CASE WHEN p.fornitore IS NULL OR TRIM(p.fornitore)=''"
+                                + " THEN 1 ELSE 0 END,UPPER(TRIM(COALESCE(p.fornitore,''))),"
+                                + " CASE p.colore WHEN 'BIANCA' THEN 0 WHEN 'GIALLA' THEN"
                                 + " 1 WHEN 'ROSA' THEN 2 WHEN 'GRIGIA' THEN 3 ELSE 4"
-                                + " END,p.codice,r.numero_versione DESC OFFSET ? ROWS FETCH NEXT ?"
+                                + " END,r.classe_ittria_y ASC NULLS LAST,p.codice,"
+                                + " r.numero_versione DESC,r.polvere_revisione_id OFFSET ? ROWS FETCH NEXT ?"
                                 + " ROWS ONLY")) {
             q.setString(1, pattern(search));
             q.setString(2, pattern(search));

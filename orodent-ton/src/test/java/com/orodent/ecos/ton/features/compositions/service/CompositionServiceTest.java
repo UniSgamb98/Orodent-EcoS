@@ -353,10 +353,46 @@ class CompositionServiceTest {
                         + " VALUES (1,4,'RITIRATA',CURRENT_TIMESTAMP)",
                 "UPDATE TON.POLVERI SET attivo=FALSE WHERE polvere_id=2",
                 "UPDATE TON.POLVERI_REVISIONI SET stato='BOZZA',approvato_il=NULL WHERE"
-                    + " polvere_id=3");
+                        + " polvere_id=3");
         var available = service.powderPage("", 0).join();
         assertEquals(1, available.total());
         assertEquals(2, available.rows().getFirst().number());
+    }
+
+    @Test
+    void powderChoicesOrderBySupplierThenColorThenYttriaBeforePagination() {
+        execute(
+                "INSERT INTO TON.POLVERI(codice,nome,colore,fornitore) VALUES"
+                        + " ('ORDER-A','Test','BIANCA',' tosoh '),"
+                        + " ('ORDER-Z','Test','BIANCA','Tosoh'),"
+                        + " ('ORDER-D','Test','BIANCA','Tosoh'),"
+                        + " ('ORDER-C','Test','BIANCA','Tosoh'),"
+                        + " ('ORDER-B','Test','GIALLA','Tosoh'),"
+                        + " ('ORDER-R','Test','ROSA','Tosoh'),"
+                        + " ('ORDER-G','Test','GRIGIA','Tosoh'),"
+                        + " ('ORDER-S','Test','GRIGIA','Sinocera'),"
+                        + " ('ORDER-N','Test','BIANCA','Tosoh'),"
+                        + " ('ORDER-U','Test','BIANCA',NULL)",
+                "INSERT INTO"
+                    + " TON.POLVERI_REVISIONI(polvere_id,numero_versione,classe_ittria_y,stato,approvato_il)"
+                    + " SELECT polvere_id,1,CASE codice WHEN 'ORDER-A' THEN 6 WHEN 'ORDER-S' THEN 6"
+                    + " WHEN 'ORDER-C' THEN 4 WHEN 'ORDER-D' THEN 4 WHEN 'ORDER-N' THEN NULL ELSE 3"
+                    + " END, 'APPROVATA',CURRENT_TIMESTAMP FROM TON.POLVERI WHERE codice LIKE"
+                    + " 'ORDER-%'");
+        var expected =
+                List.of(
+                        "ORDER-S", "ORDER-Z", "ORDER-C", "ORDER-D", "ORDER-A", "ORDER-N", "ORDER-B",
+                        "ORDER-R", "ORDER-G", "ORDER-U");
+        assertEquals(
+                expected, service.powders("ORDER-").join().stream().map(PowderRef::code).toList());
+        var page =
+                db.withConnection(
+                        c ->
+                                new com.orodent.ecos.ton.features.compositions.repository
+                                                .CompositionRepository(c)
+                                        .choices("ORDER-", 2, 3));
+        assertEquals(10, page.total());
+        assertEquals(expected.subList(2, 5), page.rows().stream().map(PowderRef::code).toList());
     }
 
     @Test

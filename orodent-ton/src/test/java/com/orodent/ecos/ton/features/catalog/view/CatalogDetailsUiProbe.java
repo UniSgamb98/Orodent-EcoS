@@ -477,6 +477,12 @@ public final class CatalogDetailsUiProbe {
                         return null;
                     });
             await(() -> node("ton-lines-table") != null);
+            fx(
+                    () -> {
+                        new com.orodent.ecos.ton.features.compositions.view.RecipePowderChecks()
+                                .verify();
+                        return null;
+                    });
             verifyTechnicalLists();
             verifyDocumentList();
             fx(
