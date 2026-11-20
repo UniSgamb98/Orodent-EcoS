@@ -52,6 +52,16 @@ public final class CompositionService {
         return powderPage(query, 0).thenApply(Page::rows);
     }
 
+    public CompletableFuture<List<PowderRef>> allPowders() {
+        return async(
+                () ->
+                        connections.withConnection(
+                                c ->
+                                        new CompositionRepository(c)
+                                                .choices("", 0, Integer.MAX_VALUE)
+                                                .rows()));
+    }
+
     public CompletableFuture<Page<PowderRef>> powderPage(String query, int offset) {
         return async(
                 () ->
@@ -256,11 +266,8 @@ public final class CompositionService {
 
     public static Set<Long> references(Draft draft) {
         var result = new TreeSet<Long>();
-        for (Layer l : draft.layers()) {
+        for (Layer l : draft.layers())
             for (Ingredient i : l.ingredients()) result.add(i.powderRevisionId());
-            if (l.chroma() != null)
-                l.chroma().parts().forEach(p -> result.add(p.powderRevisionId()));
-        }
         return result;
     }
 
@@ -271,12 +278,8 @@ public final class CompositionService {
         Map<Long, PowderRef> refs = repo.powders(ids);
         for (Layer layer : draft.layers()) {
             var families = new HashSet<Long>();
-            var layerIds = new TreeSet<Long>();
-            layer.ingredients().forEach(i -> layerIds.add(i.powderRevisionId()));
-            if (layer.chroma() != null)
-                layer.chroma().parts().forEach(p -> layerIds.add(p.powderRevisionId()));
-            for (long powderId : layerIds) {
-                PowderRef p = refs.get(powderId);
+            for (Ingredient i : layer.ingredients()) {
+                PowderRef p = refs.get(i.powderRevisionId());
                 if (p == null)
                     throw invalid("Una revisione di polvere non esiste più. Ricarica la scheda.");
                 if (!families.add(p.powderId()))
@@ -293,7 +296,6 @@ public final class CompositionService {
                                     + p.label()
                                     + " non è una revisione approvata di una polvere attiva.");
             }
-            CompositionChroma.verify(layer, refs);
         }
     }
 

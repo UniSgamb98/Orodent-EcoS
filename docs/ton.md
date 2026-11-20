@@ -61,8 +61,9 @@ finestra, senza avviare un processo distinto per catalogo.
 V3 crea il catalogo prodotti, V4 aggiunge il dominio produttivo e documentale,
 V5 il colore delle polveri e V6 la gerarchia dei cataloghi con storico reale.
 V15 aggiunge i piani di preparazione e il foglio operativo conservato.
-V16 conserva croma e rapporti per strato delle composizioni.
-Il dominio TON comprende 33 tabelle. Le migrazioni pubblicate restano immutabili.
+V17 ricava croma e tinta dalle percentuali fisiche delle composizioni,
+rimuovendo le due tabelle dei parametri introdotte nella V16.
+Il dominio TON comprende 31 tabelle. Le migrazioni pubblicate restano immutabili.
 
 L'HOST salva il backup prima delle scritture e applica le migrazioni pendenti in
 transazione, prima di pubblicare il servizio. Il CLIENT verifica lo schema

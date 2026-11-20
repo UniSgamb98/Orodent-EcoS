@@ -176,45 +176,76 @@ public final class CompositionChromaUiProbe {
                     () -> {
                         tabs().getSelectionModel().select(1);
                         layout();
-                        ((CheckBox) node("ton-composition-ppm-enabled")).fire();
-                        layout();
+                        assertNull(node("ton-composition-ppm-enabled"));
+                        assertNull(node("ton-composition-powder-search"));
+                        assertNull(node("ton-composition-ingredient-1-tint"));
+                        assertNull(node("ton-composition-ingredient-4-tint"));
                         assertEquals("1000", field("ton-composition-ppm").getText());
-                        assertEquals("29,4%", text("ton-composition-ingredient-3-final"));
-                        assertEquals("19,6%", text("ton-composition-ingredient-4-final"));
+                        assertEquals("29,4", text("ton-composition-ingredient-2-final"));
+                        assertEquals("19,6", text("ton-composition-ingredient-3-final"));
+                        List<String> colors = new ArrayList<>();
+                        for (int n = 1; n <= 4; n++) {
+                            var box =
+                                    (ComboBox<?>)
+                                            node("ton-composition-ingredient-" + n + "-powder");
+                            colors.add(((PowderRef) box.getValue()).color());
+                        }
+                        assertEquals(List.of("BIANCA", "GIALLA", "ROSA", "GRIGIA"), colors);
                         field("ton-composition-ppm").setText("600");
-                        assertEquals("50", field("ton-composition-ingredient-1-mass").getText());
-                        assertEquals("17,4%", text("ton-composition-ingredient-3-final"));
-                        assertTrue(
-                                text("ton-composition-white-remaining")
-                                        .contains("Da aggiungere: 20%"));
-                        field("ton-composition-ingredient-1-mass").setText("70");
-                        var yellow = field("ton-composition-ingredient-3-mass");
+                        assertEquals("50", field("ton-composition-ingredient-1-final").getText());
+                        assertEquals("17,4", text("ton-composition-ingredient-2-final"));
+                        field("ton-composition-ingredient-1-final").setText("70");
+                        var yellow = field("ton-composition-ingredient-2-tint");
                         yellow.setText("70");
-                        assertSame(yellow, field("ton-composition-ingredient-3-mass"));
-                        assertEquals("70", yellow.getText());
+                        assertSame(yellow, field("ton-composition-ingredient-2-tint"));
+                        assertEquals("20,3", text("ton-composition-ingredient-2-final"));
+                        field("ton-composition-ingredient-3-tint").setText("30");
+                        assertEquals("8,7", text("ton-composition-ingredient-3-final"));
                         assertTrue(text("ton-composition-layer-total").contains("100%"));
-                        field("ton-composition-ingredient-4-mass").setText("30");
-                        assertEquals("20,3%", text("ton-composition-ingredient-3-final"));
-                        assertEquals("8,7%", text("ton-composition-ingredient-4-final"));
+                        field("ton-composition-ingredient-2-final").setText("14,5");
+                        assertEquals("50", yellow.getText());
+                        assertTrue(text("ton-composition-layer-total").contains("Tinta 80%"));
+                        assertTrue(
+                                node("ton-composition-layer-total")
+                                        .getStyleClass()
+                                        .contains("ton-comp-invalid"));
+                        assertEquals("8,7", text("ton-composition-ingredient-3-final"));
+                        assertEquals("600", field("ton-composition-ppm").getText());
+                        field("ton-composition-ingredient-3-final").setText("14,5");
+                        assertEquals("50", text("ton-composition-ingredient-3-tint"));
+                        assertTrue(text("ton-composition-layer-total").contains("Tinta 100%"));
+                        assertFalse(
+                                node("ton-composition-layer-total")
+                                        .getStyleClass()
+                                        .contains("ton-comp-invalid"));
+                        assertTrue(text("ton-composition-layer-total").contains("100%"));
                         button("ton-composition-layer-select-2").fire();
-                        assertFalse(((CheckBox) node("ton-composition-ppm-enabled")).isSelected());
+                        assertEquals("0", field("ton-composition-ppm").getText());
                         button("ton-composition-layer-select-1").fire();
-                        assertTrue(((CheckBox) node("ton-composition-ppm-enabled")).isSelected());
                         assertEquals("600", field("ton-composition-ppm").getText());
                         field("ton-composition-ppm").setText("2001");
                         assertTrue(text("ton-composition-layer-total").contains("2000"));
-                        assertEquals("70", field("ton-composition-ingredient-1-mass").getText());
                         field("ton-composition-ppm").setText("600");
+                        layout();
+                        var powderBox = (ComboBox<?>) node("ton-composition-ingredient-2-powder");
+                        assertEquals(
+                                field("ton-composition-ingredient-2-final").getHeight(),
+                                powderBox.getHeight(),
+                                0.1);
+                        assertEquals(
+                                36, button("ton-composition-ingredient-2-remove").getWidth(), 0.1);
+                        assertEquals(
+                                36, button("ton-composition-ingredient-2-remove").getHeight(), 0.1);
+                        assertEquals(
+                                node("ton-composition-layer-heading").localToScene(0, 0).getY(),
+                                node("ton-composition-layer-total").localToScene(0, 0).getY(),
+                                15);
                         screenshot("target/composition-chroma-wide.png");
                         button("ton-composition-save").fire();
                         return null;
                     });
             await(() -> text("ton-composition-feedback").contains("salvata"));
             var saved = service.load(comp.revision().id()).join();
-            assertEquals(
-                    0,
-                    new BigDecimal("600")
-                            .compareTo(saved.revision().data().layers().getFirst().chroma().ppm()));
             assertEquals(
                     0,
                     new BigDecimal("70")
@@ -249,9 +280,10 @@ public final class CompositionChromaUiProbe {
                     () -> {
                         tabs().getSelectionModel().select(1);
                         layout();
-                        assertTrue(((CheckBox) node("ton-composition-ppm-enabled")).isSelected());
+                        assertNull(node("ton-composition-ppm-enabled"));
                         assertEquals("600", field("ton-composition-ppm").getText());
-                        assertEquals("70", field("ton-composition-ingredient-3-mass").getText());
+                        assertEquals("50", field("ton-composition-ingredient-2-tint").getText());
+                        assertEquals("14,5", field("ton-composition-ingredient-2-final").getText());
                         Platform.runLater(() -> answer());
                         button("ton-composition-approve").fire();
                         return null;
@@ -261,7 +293,8 @@ public final class CompositionChromaUiProbe {
                     () -> {
                         tabs().getSelectionModel().select(1);
                         layout();
-                        assertTrue(node("ton-composition-ppm-enabled").isDisabled());
+                        assertTrue(field("ton-composition-ingredient-2-tint").isDisabled());
+                        assertTrue(field("ton-composition-ingredient-2-final").isDisabled());
                         assertTrue(field("ton-composition-ppm").isDisabled());
                         screenshot("target/composition-chroma-approved.png");
                         stage.setWidth(1050);
@@ -347,7 +380,7 @@ public final class CompositionChromaUiProbe {
 
     String text(String id) {
         var n = node(id);
-        return n instanceof Label l ? l.getText() : "";
+        return n instanceof Label l ? l.getText() : n instanceof TextField f ? f.getText() : "";
     }
 
     void layout() {

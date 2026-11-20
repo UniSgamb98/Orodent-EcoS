@@ -44,11 +44,20 @@ public final class CompositionChroma {
     }
 
     public static Result calculate(Chroma input) {
+        return compute(input, true);
+    }
+
+    /** During editing, update individual percentages even while tint ratios are incomplete. */
+    public static Result preview(Chroma input) {
+        return compute(input, false);
+    }
+
+    private static Result compute(Chroma input, boolean requireCompleteTint) {
         BigDecimal hundred = new BigDecimal("100");
         // ppm/2000 is a fraction. In percent points it is ppm/20.
         BigDecimal totalColor = input.ppm().divide(new BigDecimal("20"));
         BigDecimal gray = sum(input, ChromaGroup.GRIGIA), white = sum(input, ChromaGroup.BIANCA);
-        BigDecimal budget = totalColor.subtract(gray), target = hundred.subtract(totalColor);
+        BigDecimal budget = totalColor.subtract(gray);
         if (budget.signum() < 0)
             throw invalid(
                     "Il grigio richiede almeno "
@@ -57,7 +66,7 @@ public final class CompositionChroma {
         var colored =
                 input.parts().stream().filter(p -> p.group() == ChromaGroup.CROMATICA).toList();
         BigDecimal hp = sum(input, ChromaGroup.CROMATICA);
-        if (!colored.isEmpty() && hp.compareTo(hundred) != 0)
+        if (requireCompleteTint && !colored.isEmpty() && hp.compareTo(hundred) != 0)
             throw invalid("Rapporti rosa e gialle: " + plain(hp) + "%. La somma deve essere 100%.");
         if (budget.signum() > 0 && colored.isEmpty())
             throw invalid("Aggiungi almeno una polvere rosa o gialla per il croma richiesto.");
@@ -66,23 +75,30 @@ public final class CompositionChroma {
             if (p.group() != ChromaGroup.CROMATICA)
                 percentages.put(p.powderRevisionId(), p.value());
         percentages.putAll(distribute(budget, colored));
-        return new Result(percentages, gray, budget, target, white, hp);
+        BigDecimal roundedBudget = budget.setScale(1, RoundingMode.HALF_UP);
+        return new Result(
+                percentages,
+                gray,
+                roundedBudget,
+                hundred.subtract(gray).subtract(roundedBudget),
+                white,
+                hp);
     }
 
-    /** Round only once to the existing 0.0001% storage precision; keep each group total exact. */
+    /**
+     * Round new coloured percentages to 0.1%; distribute residuals to keep the rounded group total
+     * exact.
+     */
     private static Map<Long, BigDecimal> distribute(BigDecimal budget, List<ChromaPart> parts) {
         var result = new LinkedHashMap<Long, BigDecimal>();
         if (parts.isEmpty()) return result;
         record Part(long id, BigDecimal exact, BigInteger floor) {}
-        var ticks = budget.movePointRight(4).toBigIntegerExact();
+        var ticks = budget.setScale(1, RoundingMode.HALF_UP).movePointRight(1);
         var values =
                 parts.stream()
                         .map(
                                 p -> {
-                                    var exact =
-                                            new BigDecimal(ticks)
-                                                    .multiply(p.value())
-                                                    .movePointLeft(2);
+                                    var exact = ticks.multiply(p.value()).movePointLeft(2);
                                     return new Part(
                                             p.powderRevisionId(),
                                             exact,
@@ -91,7 +107,12 @@ public final class CompositionChroma {
                                 })
                         .toList();
         int remaining =
-                ticks.subtract(
+                values.stream()
+                        .map(Part::exact)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add)
+                        .setScale(0, RoundingMode.HALF_UP)
+                        .toBigIntegerExact()
+                        .subtract(
                                 values.stream()
                                         .map(Part::floor)
                                         .reduce(BigInteger.ZERO, BigInteger::add))
@@ -113,7 +134,7 @@ public final class CompositionChroma {
                                                     bonus.contains(p.id())
                                                             ? BigInteger.ONE
                                                             : BigInteger.ZERO),
-                                    4)
+                                    1)
                             .stripTrailingZeros());
         return result;
     }
@@ -131,24 +152,6 @@ public final class CompositionChroma {
             if (group(powders.get(i.powderRevisionId())) != ChromaGroup.BIANCA)
                 color = color.add(i.mass());
         return color.multiply(new BigDecimal("20")).stripTrailingZeros();
-    }
-
-    public static void verify(Layer layer, Map<Long, PowderRef> refs) {
-        if (layer.chroma() == null) return;
-        for (var p : layer.chroma().parts())
-            if (group(refs.get(p.powderRevisionId())) != p.group())
-                throw invalid("Il colore di una polvere è cambiato. Rivedi il calcolo del croma.");
-        var actual = new TreeMap<Long, BigDecimal>();
-        layer.ingredients()
-                .forEach(i -> actual.put(i.powderRevisionId(), i.mass().stripTrailingZeros()));
-        var expected = new TreeMap<Long, BigDecimal>();
-        calculate(layer.chroma())
-                .ingredients()
-                .forEach(i -> expected.put(i.powderRevisionId(), i.mass().stripTrailingZeros()));
-        if (!actual.equals(expected))
-            throw invalid(
-                    "Le percentuali dello strato non corrispondono ai parametri ppm. Ricalcola il"
-                            + " croma prima di salvare.");
     }
 
     private static String plain(BigDecimal n) {

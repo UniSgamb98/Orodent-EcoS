@@ -64,7 +64,7 @@ class CompositionChromaTest {
     void impossiblePpmGrayOrRatiosAreRejectedWithoutNormalisingThem() {
         assertThrows(IllegalArgumentException.class, () -> new Chroma(n("10000"), List.of()));
         assertThrows(IllegalArgumentException.class, () -> new Chroma(n("-1"), List.of()));
-        assertThrows(IllegalArgumentException.class, () -> new Chroma(n("0.001"), List.of()));
+        assertThrows(IllegalArgumentException.class, () -> new Chroma(n("0.0001"), List.of()));
         var error =
                 assertThrows(
                         IllegalArgumentException.class,
@@ -125,54 +125,37 @@ class CompositionChromaTest {
     }
 
     @Test
-    void fourDecimalRoundingPreservesBothPpmAndTheTotal() {
+    void oneDecimalRoundingDistributesResidualsAndPreservesTheTotal() {
         var result =
                 CompositionChroma.calculate(
                         new Chroma(
-                                n("0.01"),
+                                n("1000"),
                                 List.of(
-                                        p(1, ChromaGroup.BIANCA, "99.9995"),
+                                        p(1, ChromaGroup.BIANCA, "50"),
                                         p(2, ChromaGroup.CROMATICA, "33.3333"),
                                         p(3, ChromaGroup.CROMATICA, "33.3333"),
                                         p(4, ChromaGroup.CROMATICA, "33.3334"))));
-        equal("0.0005", result.chromatic());
         equal(
                 "100",
                 result.ingredients().stream()
                         .map(Ingredient::mass)
                         .reduce(BigDecimal.ZERO, BigDecimal::add));
-        equal(
-                "0.0005",
-                result.percentages().entrySet().stream()
-                        .filter(e -> e.getKey() != 1)
-                        .map(Map.Entry::getValue)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add));
-        assertEquals(
-                result,
-                CompositionChroma.calculate(
-                        new Chroma(
-                                n("0.01"),
-                                List.of(
-                                        p(1, ChromaGroup.BIANCA, "99.9995"),
-                                        p(2, ChromaGroup.CROMATICA, "33.3333"),
-                                        p(3, ChromaGroup.CROMATICA, "33.3333"),
-                                        p(4, ChromaGroup.CROMATICA, "33.3334")))));
+        for (var value : result.percentages().values()) assertTrue(value.scale() <= 1);
+        equal("16.7", result.percentages().get(4L));
     }
 
     @Test
-    void ppmPrecisionRetainsTheExistingFourDecimalMassResolution() {
+    void previewUpdatesAPowderWhileRatiosAreBeingRebalanced() {
         var input =
                 new Chroma(
-                        n("6.666"),
+                        n("1000"),
                         List.of(
-                                p(1, ChromaGroup.BIANCA, "99.6667"),
-                                p(2, ChromaGroup.CROMATICA, "100")));
-        var result = CompositionChroma.calculate(input);
-        equal("0.3333", result.percentages().get(2L));
-        equal(
-                "100",
-                result.ingredients().stream()
-                        .map(Ingredient::mass)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add));
+                                p(1, ChromaGroup.BIANCA, "50"),
+                                p(2, ChromaGroup.CROMATICA, "30"),
+                                p(3, ChromaGroup.CROMATICA, "40")));
+        var result = CompositionChroma.preview(input);
+        equal("15", result.percentages().get(2L));
+        equal("20", result.percentages().get(3L));
+        assertThrows(IllegalArgumentException.class, () -> CompositionChroma.calculate(input));
     }
 }

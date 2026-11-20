@@ -31,8 +31,6 @@ class CrmOperatorMigrationTest {
                 };
         new DatabaseSchema(db).initialize();
         execute(
-                "DROP TABLE TON.COMPOSIZIONE_CROMA_POLVERI",
-                "DROP TABLE TON.COMPOSIZIONE_CROMA",
                 "DROP TABLE TON.PIANI_DOCUMENTI",
                 "DROP TABLE TON.PIANO_PRODUZIONE_RIGHE",
                 "DROP TABLE TON.PIANI_PRODUZIONE",

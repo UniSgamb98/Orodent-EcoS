@@ -8,7 +8,7 @@ EcoS usa un solo database Derby, organizzato per dominio dei dati.
 | `ANAGRAFICHE` | `CLIENTI` | Anagrafica condivisa tra i moduli |
 | `VENDITE` | `VENDITE_DETTAGLIO` | Vendite e rettifiche condivise |
 | `COSTI` | `POLVERI_PREZZI`, `POLVERI_LOTTI` | Fotografie manuali dei prezzi e delle quantità delle polveri, con revisioni economiche |
-| `TON` | 33 tabelle: cataloghi, specifiche versionate, piani e produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
+| `TON` | 31 tabelle: cataloghi, specifiche versionate, piani e produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
 
 Statistiche legge clienti e vendite dagli schemi condivisi; TON gestisce il proprio
 catalogo tecnico in `TON.PRODOTTI`. Lo schema `STATISTICHE` sarà creato soltanto
@@ -280,3 +280,14 @@ percentuali sono salvati nella stessa transazione e copiati nella nuova versione
 Non vengono modificate produzioni, scorte o approvazioni esistenti. Backup HOST,
 verifica CLIENT e aggiornamento seguono la procedura condivisa.
 Vedere [calcolo del croma](ton-composizioni-croma.md).
+
+
+## Migrazione dalla versione 16 alla 17
+
+`V17__ton_derived_composition_chroma.sql` rimuove soltanto
+`TON.COMPOSIZIONE_CROMA_POLVERI` e `TON.COMPOSIZIONE_CROMA`.
+Ppm e tinta sono ricostruiti a video dalle percentuali fisiche e non richiedono
+persistenza separata. `COMPOSIZIONE_INGREDIENTI`, strati, revisioni approvate,
+produzioni e scorte restano conservati esattamente. Le migrazioni precedenti
+rimangono immutabili. Backup e applicazione avvengono sull’HOST prima della
+verifica in sola lettura dei CLIENT.

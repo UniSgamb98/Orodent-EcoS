@@ -90,6 +90,11 @@ public final class DatabaseSchema {
                     16,
                     "TON per-layer chroma inputs and tint ratios",
                     "/database/migrations/V16__ton_composition_chroma.sql");
+    private static final SchemaMigration TON_DERIVED_COMPOSITION_CHROMA =
+            new SchemaMigration(
+                    17,
+                    "TON derive chroma from saved recipe percentages",
+                    "/database/migrations/V17__ton_derived_composition_chroma.sql");
     private static final List<SchemaMigration> MIGRATIONS =
             List.of(
                     BASELINE,
@@ -107,7 +112,8 @@ public final class DatabaseSchema {
                     CRM,
                     CRM_OPERATORS,
                     TON_PRODUCTION_PLANS,
-                    TON_COMPOSITION_CHROMA);
+                    TON_COMPOSITION_CHROMA,
+                    TON_DERIVED_COMPOSITION_CHROMA);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS =
             List.of(
@@ -269,7 +275,7 @@ public final class DatabaseSchema {
             if (version >= CRM.version()) CrmSchema.verify(connection);
             if (version >= CRM_OPERATORS.version()) CrmSchema.verifyOperators(connection);
             if (version >= TON_PRODUCTION_PLANS.version()) ProductionPlanSchema.verify(connection);
-            if (version >= TON_COMPOSITION_CHROMA.version())
+            if (version == TON_COMPOSITION_CHROMA.version())
                 CompositionChromaSchema.verify(connection);
             return version;
         }

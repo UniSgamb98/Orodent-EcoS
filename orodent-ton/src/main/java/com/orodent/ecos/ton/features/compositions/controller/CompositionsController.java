@@ -29,11 +29,10 @@ public final class CompositionsController implements FeatureController {
     private final List<Runnable> cleanups = new ArrayList<>();
     private final PauseTransition listDelay = delay(),
             productDelay = delay(),
-            powderDelay = delay(),
             modelDelay = delay();
     private Detail original;
     private List<String> baseline = List.of();
-    private int versionsOffset, usagesOffset, modelsOffset, powdersOffset;
+    private int versionsOffset, usagesOffset, modelsOffset;
     private long selectedId;
     private boolean editing;
     private volatile boolean disposed;
@@ -72,22 +71,6 @@ public final class CompositionsController implements FeatureController {
                 });
         productDelay.setOnFinished(event -> loadProducts());
         e.product().query().setOnAction(event -> loadProducts());
-        listen(
-                e.recipe().search().textProperty(),
-                (o, a, b) -> {
-                    if (!e.updating()) {
-                        drop("powders");
-                        powderDelay.playFromStart();
-                    }
-                });
-        powderDelay.setOnFinished(event -> loadPowders(0));
-        e.recipe().search().setOnAction(event -> loadPowders(0));
-        on(
-                e.recipe().powderPrevious(),
-                () -> loadPowders(Math.max(0, powdersOffset - CompositionService.PAGE_SIZE)));
-        on(
-                e.recipe().powderNext(),
-                () -> loadPowders(powdersOffset + CompositionService.PAGE_SIZE));
         listen(
                 e.modelSearch().textProperty(),
                 (o, a, b) -> {
@@ -285,13 +268,13 @@ public final class CompositionsController implements FeatureController {
         cancelReads();
         original = null;
         editing = true;
-        versionsOffset = usagesOffset = modelsOffset = powdersOffset = 0;
+        versionsOffset = usagesOffset = modelsOffset = 0;
         view.editor().show(null);
         view.editor().sheet(Sheet.DATA);
         baseline = view.editor().fingerprint();
         view.showEditor();
         loadProducts();
-        loadPowders(0);
+        loadPowders();
     }
 
     private void openSelected() {
@@ -333,22 +316,12 @@ public final class CompositionsController implements FeatureController {
                 error -> view.editor().feedback(error, true));
     }
 
-    private void loadPowders(int next) {
+    private void loadPowders() {
         if (!editing || saving.get()) return;
-        powderDelay.stop();
-        powdersOffset = next;
         read(
                 "powders",
-                () -> service.powderPage(view.editor().recipe().search().getText(), next),
-                page -> {
-                    if (page.rows().isEmpty() && page.total() > 0 && next > 0) {
-                        loadPowders(
-                                (int) ((page.total() - 1) / CompositionService.PAGE_SIZE)
-                                        * CompositionService.PAGE_SIZE);
-                        return;
-                    }
-                    view.editor().recipe().choices(page);
-                },
+                service::allPowders,
+                values -> view.editor().recipe().choices(values),
                 error -> view.editor().feedback(error, true));
     }
 
@@ -371,12 +344,12 @@ public final class CompositionsController implements FeatureController {
         original = detail;
         selectedId = detail.revision().id();
         editing = true;
-        versionsOffset = usagesOffset = modelsOffset = powdersOffset = 0;
+        versionsOffset = usagesOffset = modelsOffset = 0;
         view.editor().show(detail);
         view.editor().sheet(sheet);
         baseline = view.editor().fingerprint();
         view.showEditor();
-        if (!detail.revision().frozen()) loadPowders(0);
+        if (!detail.revision().frozen()) loadPowders();
         loadSheet();
     }
 
@@ -561,7 +534,7 @@ public final class CompositionsController implements FeatureController {
     }
 
     private void cancelReads() {
-        for (var timer : List.of(listDelay, productDelay, powderDelay, modelDelay)) timer.stop();
+        for (var timer : List.of(listDelay, productDelay, modelDelay)) timer.stop();
         for (var future : reads.values()) future.cancel(false);
         reads.clear();
     }
@@ -607,8 +580,7 @@ public final class CompositionsController implements FeatureController {
     public void dispose() {
         disposed = true;
         cancelReads();
-        for (var timer : List.of(listDelay, productDelay, powderDelay, modelDelay))
-            timer.setOnFinished(null);
+        for (var timer : List.of(listDelay, productDelay, modelDelay)) timer.setOnFinished(null);
         cleanups.forEach(Runnable::run);
         cleanups.clear();
         view.list().search().setOnAction(null);
@@ -616,7 +588,6 @@ public final class CompositionsController implements FeatureController {
         view.list().archived().setOnAction(null);
         var e = view.editor();
         e.product().query().setOnAction(null);
-        e.recipe().search().setOnAction(null);
         e.modelSearch().setOnAction(null);
         e.matching().setOnAction(null);
         e.versions().setOnAction(null);

@@ -88,9 +88,8 @@ public final class Compositions {
                 throw invalid("Il croma deve essere compreso tra 0 e 2000 ppm.");
             try {
                 ppm = ppm.setScale(3, RoundingMode.UNNECESSARY).stripTrailingZeros();
-                ppm.divide(new BigDecimal("20")).setScale(4, RoundingMode.UNNECESSARY);
             } catch (ArithmeticException e) {
-                throw invalid("Il croma deve usare multipli di 0,002 ppm.");
+                throw invalid("Croma: massimo tre decimali.");
             }
             parts =
                     parts.stream()
@@ -103,11 +102,7 @@ public final class Compositions {
         }
     }
 
-    public record Layer(int number, String name, List<Ingredient> ingredients, Chroma chroma) {
-        public Layer(int number, String name, List<Ingredient> ingredients) {
-            this(number, name, ingredients, null);
-        }
-
+    public record Layer(int number, String name, List<Ingredient> ingredients) {
         public Layer {
             if (number <= 0) throw invalid("Il numero dello strato deve essere positivo.");
             name = text(name);

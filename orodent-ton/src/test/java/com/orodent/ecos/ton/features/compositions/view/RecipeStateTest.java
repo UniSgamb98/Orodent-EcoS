@@ -54,7 +54,7 @@ class RecipeStateTest {
     }
 
     @Test
-    void ppmParametersSurviveReopenCopyAndIncompleteWhiteInput() {
+    void chromaIsAlwaysAvailableAndDerivedAfterReopeningActualPercentages() {
         var refs = new HashMap<Long, PowderRef>();
         for (int n = 1; n <= 4; n++)
             refs.put(
@@ -83,27 +83,156 @@ class RecipeStateTest {
                                         new Ingredient(4, new BigDecimal("19.6")))),
                         new Layer(2, "", List.of())),
                 refs);
-        state.ppmMode(0, true);
+        assertEquals(
+                List.of("BIANCA", "GIALLA", "ROSA", "GRIGIA"),
+                state.layers().getFirst().items().stream()
+                        .map(i -> i.powder().get().color())
+                        .toList());
         assertEquals("1000", state.layers().getFirst().ppm().get());
-        assertEquals("60", state.layers().getFirst().items().get(2).share().get());
-        assertEquals("40", state.layers().getFirst().items().get(3).share().get());
-        state.layers().getFirst().items().getFirst().mass().set("45");
-        assertEquals(0, new BigDecimal("95").compareTo(state.layer(0).total()));
+        assertEquals("60", state.layers().getFirst().items().get(1).share().get());
+        state.layers().getFirst().ppm().set("600");
+        assertEquals("17,4", state.layers().getFirst().items().get(1).mass().get());
+        assertEquals("50", state.layers().getFirst().items().getFirst().mass().get());
         assertFalse(state.layer(0).complete());
         state.copy(0, 1);
-        state.layers().getFirst().items().get(2).share().set("60,");
+        state.layers().getFirst().items().get(1).share().set("60,");
         assertThrows(IllegalArgumentException.class, () -> state.layer(0));
-        assertEquals("60", state.layers().get(1).items().get(2).share().get());
+        assertEquals("60", state.layers().get(1).items().get(1).share().get());
         assertTrue(state.fingerprint().contains("60,"));
         var saved = state.layer(1);
         state.show(List.of(saved), refs);
-        assertTrue(state.layers().getFirst().ppmMode());
         assertEquals(saved, state.layer(0));
+        assertEquals("600", state.layers().getFirst().ppm().get());
+        assertEquals("60", state.layers().getFirst().items().get(1).share().get());
         state.layers().getFirst().ppm().set("20");
-        var input = state.layer(0).chroma();
-        assertEquals(4, input.parts().size());
-        state.ppmMode(0, false);
         assertEquals(2, state.layer(0).ingredients().size());
-        assertNull(state.layer(0).chroma());
+    }
+
+    @Test
+    void editingEitherColumnKeepsTheUsersPpmFixedAndDoesNotChangeOtherPowders() {
+        var state = sample();
+        var layer = state.layers().getFirst();
+        layer.items().get(1).mass().set("24,5");
+        assertEquals("50", layer.items().get(1).share().get());
+        assertEquals("19,6", layer.items().get(2).mass().get());
+        assertEquals("1000", layer.ppm().get());
+        assertThrows(IllegalArgumentException.class, () -> state.layer(0));
+        layer.items().get(2).mass().set("24,5");
+        assertEquals("50", layer.items().get(2).share().get());
+        assertTrue(state.layer(0).complete());
+        layer.items().get(1).share().set("70");
+        assertEquals("34,3", layer.items().get(1).mass().get());
+        assertEquals("1000", layer.ppm().get());
+        layer.items().get(2).share().set("30");
+        assertEquals("14,7", layer.items().get(2).mass().get());
+        assertTrue(state.layer(0).complete());
+        layer.items().get(3).mass().set("2");
+        assertEquals("33,6", layer.items().get(1).mass().get());
+        assertEquals("1000", layer.ppm().get());
+        assertEquals("50", layer.items().getFirst().mass().get());
+    }
+
+    @Test
+    void openingAndCopyingARecipeDoesNotRecalculateItsOriginalFourDecimalPercentages() {
+        var state = sample();
+        var refs = state.powders();
+        var legacy =
+                new Layer(
+                        1,
+                        "",
+                        List.of(
+                                new Ingredient(1, new BigDecimal("99.6667")),
+                                new Ingredient(3, new BigDecimal("0.3333"))));
+        state.show(List.of(legacy), refs);
+        assertEquals(legacy, state.layer(0));
+        assertEquals("6,666", state.layers().getFirst().ppm().get());
+        state.addLayer();
+        state.copy(0, 1);
+        assertEquals(legacy.ingredients(), state.layer(1).ingredients());
+    }
+
+    @Test
+    void ingredientRowsUseSupplierThenColourYClassAndAlphabeticalCode() {
+        var refs = new HashMap<Long, PowderRef>();
+        String[][] values = {
+            {"Z", "Tosoh", "BIANCA", "4"},
+            {"B", "Tosoh", "BIANCA", "3"},
+            {"A", "Tosoh", "BIANCA", "3"},
+            {"A", "Sinocera", "GRIGIA", "6"},
+            {"A", "Tosoh", "GIALLA", "3"},
+            {"A", "Tosoh", "ROSA", "3"},
+            {"A", "Tosoh", "GRIGIA", "3"}
+        };
+        var ingredients = new ArrayList<Ingredient>();
+        for (int n = 0; n < values.length; n++) {
+            long id = n + 1;
+            var row = values[n];
+            refs.put(
+                    id,
+                    new PowderRef(
+                            id,
+                            id,
+                            row[0],
+                            row[0],
+                            row[2],
+                            Integer.valueOf(row[3]),
+                            1,
+                            State.APPROVATA,
+                            true,
+                            Map.of(),
+                            row[1]));
+            ingredients.add(new Ingredient(id, BigDecimal.ONE));
+        }
+        var state = new RecipeState();
+        state.show(List.of(new Layer(1, "", ingredients)), refs);
+        assertEquals(
+                List.of(4L, 3L, 2L, 1L, 5L, 6L, 7L),
+                state.layers().getFirst().items().stream()
+                        .map(i -> i.powder().get().id())
+                        .toList());
+        var changed = state.layers().getFirst().items().getLast();
+        state.choosePowder(
+                0,
+                changed,
+                new PowderRef(
+                        8, 8, "C", "C", "BIANCA", 5, 1, State.APPROVATA, true, Map.of(), "Tosoh"));
+        assertEquals(
+                List.of(4L, 3L, 2L, 1L, 8L, 5L, 6L),
+                state.layers().getFirst().items().stream()
+                        .map(i -> i.powder().get().id())
+                        .toList());
+        state.addItem(0);
+        assertNull(state.layers().getFirst().items().getLast().powder().get());
+    }
+
+    private RecipeState sample() {
+        var refs = new HashMap<Long, PowderRef>();
+        for (int n = 1; n <= 4; n++)
+            refs.put(
+                    (long) n,
+                    new PowderRef(
+                            n,
+                            n,
+                            "P" + n,
+                            "Polvere",
+                            List.of("BIANCA", "GRIGIA", "GIALLA", "ROSA").get(n - 1),
+                            3,
+                            1,
+                            State.APPROVATA,
+                            true,
+                            Map.of()));
+        var state = new RecipeState();
+        state.show(
+                List.of(
+                        new Layer(
+                                1,
+                                "",
+                                List.of(
+                                        new Ingredient(1, new BigDecimal("50")),
+                                                new Ingredient(2, new BigDecimal("1")),
+                                        new Ingredient(3, new BigDecimal("29.4")),
+                                                new Ingredient(4, new BigDecimal("19.6"))))),
+                refs);
+        return state;
     }
 }

@@ -454,6 +454,7 @@ class CompositionServiceTest {
         var recent = service.powderPage("", 0).join();
         var next = service.powderPage("", 50).join();
         assertEquals(58, recent.total());
+        assertEquals(58, service.allPowders().join().size());
         assertEquals(50, recent.rows().size());
         assertEquals(8, next.rows().size());
         var all = new HashSet<Long>();
@@ -465,85 +466,22 @@ class CompositionServiceTest {
     }
 
     @Test
-    void chromaRoundTripsAcrossApprovalCopyAndZeroCandidatesWithoutChangingLegacyRecipes() {
-        execute(
-                "INSERT INTO TON.POLVERI(codice,nome,colore) VALUES ('GRAY','Grigia','GRIGIA')",
-                "INSERT INTO"
-                    + " TON.POLVERI_REVISIONI(polvere_id,numero_versione,classe_ittria_y,stato,approvato_il)"
-                    + " VALUES (4,1,3,'APPROVATA',CURRENT_TIMESTAMP)");
-        long gray = service.powders("GRAY").join().getFirst().id();
+    void calculatedPercentagesRoundTripWithoutPersistingEditingParameters() {
         var input =
                 new Chroma(
                         n("1000"),
                         List.of(
                                 new ChromaPart(2, ChromaGroup.BIANCA, n("50")),
-                                new ChromaPart(gray, ChromaGroup.GRIGIA, n("1")),
                                 new ChromaPart(3, ChromaGroup.CROMATICA, n("60")),
                                 new ChromaPart(4, ChromaGroup.CROMATICA, n("40"))));
-        var layer = new Layer(1, "Tinta", CompositionChroma.calculate(input).ingredients(), input);
+        var layer = new Layer(1, "Tinta", CompositionChroma.calculate(input).ingredients());
         var draft = new Draft(1, "", List.of(layer));
-        var created = service.create(draft, false).join();
-        assertEquals(input, created.revision().data().layers().getFirst().chroma());
+        var created = service.create(draft, true).join();
         assertEquals(
                 layer,
                 service.load(created.revision().id()).join().revision().data().layers().getFirst());
-        var tampered = new Layer(1, "", List.of(new Ingredient(2, n("100"))), input);
-        assertThrows(
-                CompletionException.class,
-                () ->
-                        service.save(created.revision(), new Draft(1, "", List.of(tampered)), false)
-                                .join());
-        assertEquals(draft, service.load(created.revision().id()).join().revision().data());
-        var approved = service.save(created.revision(), draft, true).join();
-        var copy = service.copy(approved.revision()).join();
-        assertEquals(input, copy.revision().data().layers().getFirst().chroma());
-        var zero =
-                new Chroma(
-                        n("20"),
-                        List.of(
-                                new ChromaPart(2, ChromaGroup.BIANCA, n("99")),
-                                new ChromaPart(gray, ChromaGroup.GRIGIA, n("1")),
-                                new ChromaPart(3, ChromaGroup.CROMATICA, n("60")),
-                                new ChromaPart(4, ChromaGroup.CROMATICA, n("40"))));
-        var changed =
-                new Draft(
-                        1,
-                        "",
-                        List.of(
-                                new Layer(
-                                        1,
-                                        "",
-                                        CompositionChroma.calculate(zero).ingredients(),
-                                        zero)));
-        var saved = service.save(copy.revision(), changed, false).join();
-        assertEquals(2, saved.revision().data().layers().getFirst().ingredients().size());
-        assertEquals(4, saved.revision().data().layers().getFirst().chroma().parts().size());
-        assertEquals(4, saved.powders().size());
-        service.delete(saved.revision()).join();
-        assertThrows(CompletionException.class, () -> service.load(saved.revision().id()).join());
-        assertEquals(
-                layer,
-                service.load(approved.revision().id())
-                        .join()
-                        .revision()
-                        .data()
-                        .layers()
-                        .getFirst());
-    }
-
-    @Test
-    void chromaPersistsPpmAtTheExistingMassPrecision() {
-        var input =
-                new Chroma(
-                        n("6.666"),
-                        List.of(
-                                new ChromaPart(2, ChromaGroup.BIANCA, n("99.6667")),
-                                new ChromaPart(3, ChromaGroup.CROMATICA, n("100"))));
-        var layer = new Layer(1, "", CompositionChroma.calculate(input).ingredients(), input);
-        var created = service.create(new Draft(1, "", List.of(layer)), true).join();
-        var loaded = service.load(created.revision().id()).join();
-        assertEquals(layer, loaded.revision().data().layers().getFirst());
-        assertTrue(loaded.revision().data().layers().getFirst().complete());
+        var copy = service.copy(created.revision()).join();
+        assertEquals(draft, copy.revision().data());
     }
 
     private Draft recipe(long product) {

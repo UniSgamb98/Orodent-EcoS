@@ -1,20 +1,34 @@
 # Croma per strato
 
-In **Dati tecnici → Composizioni → Ricetta per strato**, ogni strato può usare
-**Calcola rosa e gialle dai ppm**. Le ricette precedenti rimangono in modalità
-manuale finché l’utente sceglie di attivare il calcolo.
+In **Dati tecnici → Composizioni → Ricetta per strato**, il calcolo del croma
+è sempre disponibile. Nome facoltativo e croma sono affiancati sopra le polveri.
+Non ci sono interruttori di modalità, ricerca o paginazione delle polveri:
+il selettore contiene tutte le revisioni approvate disponibili e conserva
+l’eventuale revisione storica già usata dalla ricetta.
 
-1. Selezionare le polveri con le rispettive revisioni.
-2. Impostare il croma dello strato in ppm.
-3. Per ogni rosa o gialla inserire il rapporto rispetto alla somma delle sole
-   rosa e gialle. Questi rapporti devono sommare esattamente 100%.
-4. Per le grigie inserire la percentuale rispetto a tutto lo strato.
-5. Leggere **Finale sul totale**: sono le percentuali effettive calcolate.
-6. Completare manualmente le bianche fino al 100% dello strato. Il pannello
-   indica bianche necessarie, già inserite e ancora da aggiungere o in eccesso.
+Le righe e i selettori seguono l’ordine **fornitore → colore (bianca, gialla,
+rosa, grigia) → classe Y → codice alfabetico**. Le righe senza selezione
+rimangono in fondo. Gli sfondi mantengono la palette comune delle polveri.
 
-Le bianche non vengono ripartite o completate automaticamente. Nelle quote
-manuali `1` significa **1%**, nei rapporti `60` significa **60%**.
+## Due percentuali, un croma scelto dall’utente
+
+- Per le rosa e gialle, **Tinta %** indica il rapporto fra tutte le sole rosa e
+  gialle; **Totale %** indica la quota di quella polvere nell’intero
+  strato. Entrambe le caselle sono modificabili.
+- Cambiare la tinta aggiorna le percentuali finali con il croma impostato.
+  Durante il riequilibrio è possibile avere temporaneamente una tinta diversa
+  dal 100%.
+- Cambiare una percentuale finale aggiorna la tinta corrispondente. Le quantità
+  delle altre polveri rimangono ferme: riequilibrarle spetta all’utente.
+- Per bianche e grigie compare solo la percentuale finale modificabile; il
+  selettore occupa anche lo spazio libero della casella tinta.
+- Il croma resta **fisso durante l’editing** e viene cambiato solo dall’utente.
+  Le bianche non vengono completate o ripartite automaticamente.
+
+La targhetta accanto al titolo dello strato mostra insieme totale della miscela
+e totale della tinta. Diventa verde quando i totali sono corretti, rossa quando
+uno dei due è incompleto o ci sono valori da correggere. Il totale della tinta
+non si applica agli strati senza polveri rosa/gialle.
 
 ## Formula e esempio
 
@@ -22,9 +36,9 @@ La regola empirica del laboratorio, espressa con frazioni, è:
 
 `quota rosa/gialla = (ppm / 2000 − quota grigia totale) × rapporto rosa/gialla`.
 
-Con i campi espressi in percentuale la stessa formula diventa:
+Con i campi espressi in percentuale:
 
-`percentuale finale = (ppm / 20 − percentuale grigia totale) × rapporto / 100`.
+`percentuale finale = (ppm / 20 − percentuale grigia totale) × tinta / 100`.
 
 Con **1000 ppm**, **1% grigia**, **60% gialla e 40% rosa** fra le colorate:
 
@@ -35,36 +49,35 @@ Con **1000 ppm**, **1% grigia**, **60% gialla e 40% rosa** fra le colorate:
 | Grigia | 1% |
 | Bianche da inserire manualmente | 50% |
 
-Il grigio viene sottratto una sola volta, sommando tutte le grigie presenti.
-I ppm sono il parametro empirico concordato; restano distinti dal bilancio
-chimico degli ossidi e dalla classe Y.
+Le grigie vengono sommate prima della sottrazione. I ppm restano distinti dal
+bilancio chimico degli ossidi e dalla classe Y.
 
-## Validazione e precisione
+## Arrotondamento e salvataggio
 
-Il croma deve essere fra **0 e 2000 ppm** e non può essere inferiore a
-`20 × percentuale grigia totale`. Con 1% grigia il minimo è quindi 20 ppm.
-Un valore impossibile o rapporti rosa/gialle diversi da 100% mostrano un errore;
-il programma non corregge o normalizza gli input automaticamente.
+I campi percentuali mostrano al massimo **una cifra decimale**. I nuovi calcoli
+ripartiscono le quote rosa/gialle a passi di 0,1%, assegnando gli eventuali
+residui ai maggiori resti affinché la somma arrotondata rimanga coerente.
+Il calcolo inverso usa la stessa quota colorata arrotondata. Con un croma che
+richiede più precisione delle quote in decimi, la miscela rappresenta la sua
+approssimazione; il campo croma non viene corretto automaticamente.
 
-Le percentuali fisiche conservano quattro decimali. Il croma accetta multipli
-di **0,002 ppm**, fino a tre decimali, per mantenere quella precisione anche
-quando si passa da una ricetta manuale al calcolo ppm. Nella distribuzione
-rosa/gialle gli eventuali residui di arrotondamento vengono assegnati ai maggiori
-resti, così la somma delle percentuali calcolate rimane esatta.
+Aprire una ricetta precedente non modifica né arrotonda le percentuali già
+salvate a quattro decimali. Il tooltip della percentuale riporta il valore
+esatto conservato; solo un intervento esplicito cambia quella quantità.
 
-Una bozza può avere le bianche ancora da completare; l’approvazione richiede
-che ciascuno strato raggiunga esattamente il 100%, con gli altri controlli di
-stato e validità già previsti per le composizioni.
+Nel database si salvano **solo strati e percentuali fisiche positive**, come
+prima del calcolo assistito. Tinta e croma rimangono nel buffer durante la
+compilazione e i cambi di strato, ma non vengono registrati separatamente.
+Alla riapertura sono ricavati dalle percentuali effettive: croma = somma delle
+quote rosa, gialle e grigie × 20; tinta = quota / somma rosa e gialle × 100.
+Perciò la ricostruzione riflette anche l’arrotondamento delle quantità salvate.
+I candidati allo 0% non entrano nella ricetta fisica e non riappaiono dopo la
+riapertura.
 
-## Versioni e modalità manuale
+La V17 elimina le tabelle aggiunte dalla V16 per i parametri derivati, senza
+modificare ingredienti, percentuali o stato delle versioni esistenti.
 
-Il salvataggio conserva ppm, rapporti, revisioni e percentuali finali insieme
-alla versione della composizione. Cambiare strato o copiare uno strato conserva
-anche gli input in corso di compilazione. Gli errori di compilazione non
-vengono salvati nel database.
-
-Una polvere configurata che riceve lo 0% rimane disponibile fra i parametri,
-ma non compare fra gli ingredienti fisici e non entra in pesate o consumi.
-Disattivando il calcolo ppm si mantengono le percentuali finali positive e
-si torna all’editing manuale. Le versioni approvate restano in sola lettura;
-una nuova versione copia anche i parametri del croma.
+Il croma accetta 0–2000 ppm e deve coprire il grigio inserito. Le bozze possono
+avere le bianche da completare. Per approvare servono miscela e tinta complete,
+oltre ai controlli di validità già previsti. Le versioni approvate restano
+in sola lettura.

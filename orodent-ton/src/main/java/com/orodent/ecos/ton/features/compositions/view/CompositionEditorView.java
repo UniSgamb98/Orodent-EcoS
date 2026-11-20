@@ -269,7 +269,6 @@ public final class CompositionEditorView extends TechnicalDetailView {
             usages.reset(detail != null);
             models.reset(true);
             modelSearch.clear();
-            recipe.search().clear();
             matching.setSelected(true);
             feedback.setText("");
         } finally {

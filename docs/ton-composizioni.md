@@ -4,7 +4,7 @@ Le schede usano il [contenitore comune di Dati tecnici](ton-schede-tecniche.md).
 
 Aprire **TON → Dati tecnici → Composizioni**, oppure **Apri composizioni**
 dalla Panoramica TON. Il catalogo usa provider ed executor di EcoS e le tabelle
-dei cataloghi TON. La V16 aggiunge i parametri opzionali del calcolo del croma.
+dei cataloghi TON. La V17 mantiene nel database solo le percentuali fisiche della ricetta.
 
 ## Elenco e dati generali
 
@@ -33,10 +33,10 @@ Le opzioni e la polvere selezionata hanno lo sfondo del rispettivo colore, con
 la stessa [palette comune di TON e Costi e consumi](powder-appearance.md). L'ordine è per fornitore, poi bianca,
 gialla, rosa, grigia, quindi classe da 3Y a 6Y; a parità di classe segue il codice.
 I fornitori non indicati e le classi Y mancanti seguono quelli conosciuti.
-La ricerca è paginata e propone solo l'ultima revisione approvata di ogni polvere
-attiva. Una bozza più recente non sostituisce la scheda approvata. Una revisione
+Il selettore propone tutte le ultime revisioni approvate delle polveri attive,
+senza ricerca o paginazione. Una bozza più recente non sostituisce la scheda approvata. Una revisione
 già inserita rimane visibile nella propria riga anche se precedente all'ultima,
-fuori dalla pagina corrente o successivamente ritirata: i riferimenti salvati
+fuori dal catalogo attivo o successivamente ritirata: i riferimenti salvati
 non vengono aggiornati automaticamente.
 
 - Si possono aggiungere, rimuovere, spostare e nominare gli strati. La numerazione
@@ -44,9 +44,12 @@ non vengono aggiornati automaticamente.
   definite nel modello disco.
 - **Copia da strato** sostituisce gli ingredienti dello strato selezionato dopo
   conferma. I nuovi campi sono indipendenti: modificarli non cambia lo strato origine.
-- Aggiungere o rimuovere ingredienti non ridistribuisce le percentuali.
-- Sono accettati virgola o punto e fino a quattro decimali, senza arrotondamenti
-  dei valori salvati. Ogni quota deve essere positiva e al massimo 100%.
+- Le bianche restano sempre manuali; modificare il totale di una rosa/gialla
+  non cambia le quantità delle altre polveri.
+- I campi accettano virgola o punto e mostrano al massimo un decimale. Le vecchie
+  quote conservano la loro precisione originale finché non vengono modificate.
+  I candidati allo 0% rimangono solo nel buffer; ogni ingrediente salvato è positivo
+  e al massimo 100%.
 - Una stessa polvere compare una sola volta nello strato, anche se si tentano
   di usare due revisioni differenti. Per approvare, ogni strato deve arrivare
   esattamente a 100% e contenere almeno un ingrediente.
@@ -55,10 +58,12 @@ La barra della miscela e il totale si aggiornano durante la compilazione.
 Solo i controlli dello strato selezionato vengono costruiti; gli altri dati
 restano nel buffer della ricetta, comprese le modifiche ancora da correggere.
 
-La modalità opzionale **Calcola rosa e gialle dai ppm** ricava le percentuali
-finali delle polveri rosa e gialle dal croma dello strato e dai rapporti fra loro.
-Le percentuali delle bianche e delle grigie restano manuali; il riepilogo indica
-la quota bianca da completare. Vedere [calcolo, esempio e limiti](ton-composizioni-croma.md).
+Il calcolo del croma è sempre disponibile: rosa e gialle hanno **Tinta %** e
+**Totale %**, collegate in entrambe le direzioni. Bianche e grigie
+hanno solo la percentuale finale. Il croma è fissato dall’utente; il programma
+non cambia automaticamente il croma o le altre quantità quando si modifica una
+percentuale finale. La targhetta dello strato segnala sia miscela sia tinta.
+Vedere [calcolo, arrotondamento e salvataggio](ton-composizioni-croma.md).
 
 ## Riepilogo e ossidi
 
@@ -128,9 +133,8 @@ sostituisce i riferimenti già salvati nelle specifiche precedenti.
 
 `features/compositions` separa dati immutabili, SQL, transazioni, controller e viste.
 `TON.COMPOSIZIONI`, `TON.COMPOSIZIONE_STRATI` e `TON.COMPOSIZIONE_INGREDIENTI`
-conservano le percentuali fisiche; `TON.COMPOSIZIONE_CROMA` e
-`TON.COMPOSIZIONE_CROMA_POLVERI` conservano gli eventuali parametri ppm e rapporti.
-Il bilancio nominale viene derivato dalle revisioni delle
+conservano le percentuali fisiche. Croma e tinta sono calcoli della vista,
+ricostruiti dalle percentuali salvate. Il bilancio nominale viene derivato dalle revisioni delle
 polveri, senza colonne aggiuntive di medie. L'abbinamento con il modello rimane
 in `TON.CONFIGURAZIONI_ARTICOLO`.
 

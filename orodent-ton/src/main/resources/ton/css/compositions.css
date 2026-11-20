@@ -6,7 +6,7 @@
 .ton-compositions .ton-comp-layer-amount { -fx-text-fill: #173f5f; -fx-font-weight: bold; -fx-font-size: 16px; }
 .ton-compositions .ton-comp-layer-choice .muted-label, .ton-compositions .ton-comp-layer-selected .muted-label { -fx-font-size: 11px; }
 .ton-compositions .ton-comp-chemical-value { -fx-text-fill: #173f5f; -fx-font-weight: bold; -fx-font-size: 22px; }
-.ton-compositions .ton-comp-total { -fx-padding: 12px; -fx-background-color: #eaf5f0; -fx-background-radius: 6px; -fx-text-fill: #2e7257; -fx-font-weight: bold; }
+.ton-compositions .ton-comp-total { -fx-padding: 6px 10px; -fx-background-color: #eaf5f0; -fx-background-radius: 6px; -fx-text-fill: #2e7257; -fx-font-weight: bold; }
 .ton-compositions .ton-comp-total.ton-comp-invalid { -fx-background-color: #fff1ed; -fx-text-fill: #9e4334; }
 .ton-compositions .ton-comp-warning { -fx-text-fill: #9e4334; -fx-font-size: 11px; }
 .ton-compositions .ton-comp-readonly { -fx-padding: 12px 15px; -fx-background-color: #e7f3ed; -fx-background-radius: 7px; -fx-text-fill: #386f59; }
@@ -17,8 +17,6 @@
 .ton-compositions .tab-pane > .tab-header-area > .headers-region > .tab:selected { -fx-background-color: white; -fx-border-color: transparent transparent #176d86 transparent; -fx-border-width: 0 0 3px 0; }
 .ton-compositions .scroll-pane, .ton-compositions .scroll-pane > .viewport { -fx-background-color: #e3edf3; -fx-background: #e3edf3; }
 .ton-compositions .tab-content-area { -fx-padding: 16px 0; }
-.ton-compositions .ton-comp-chroma-panel { -fx-background-color:#edf6fa; -fx-background-radius:8px; -fx-padding:14px; }
-.ton-compositions .ton-comp-ppm-row { -fx-background-color:#f8fbfd; -fx-border-color:#dce5ee; -fx-border-radius:8px; -fx-background-radius:8px; -fx-padding:12px; }
-.ton-compositions .ton-comp-result-value { -fx-font-size:18px; -fx-font-weight:bold; -fx-padding:6px 10px; }
-.ton-compositions .ton-comp-white-hint { -fx-text-fill:#176d86; -fx-font-weight:bold; }
+.ton-compositions .ton-comp-ppm-row { -fx-background-color:#f8fbfd; -fx-border-color:#dce5ee; -fx-border-radius:8px; -fx-background-radius:8px; -fx-padding:8px 10px; }
 .ton-compositions .ton-comp-chroma-value { -fx-font-size:15px; -fx-font-weight:bold; }
+.ton-compositions .ton-comp-ppm-row .combo-box > .list-cell { -fx-padding: 3px 10px; }
