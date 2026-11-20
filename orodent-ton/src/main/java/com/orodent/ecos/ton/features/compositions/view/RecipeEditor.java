@@ -22,8 +22,6 @@ public final class RecipeEditor extends GridPane {
             total = TechnicalUi.label("", "ton-comp-total"),
             yttria = TechnicalUi.label("—", "ton-comp-chemical-value"),
             progress = TechnicalUi.label("", "muted-label");
-    private final TextField name =
-            TechnicalUi.input("ton-composition-layer-name", "Nome facoltativo dello strato");
     private final TextField ppm = TechnicalUi.input("ton-composition-ppm", "Da 0 a 2000");
     private final Label chromaSummary = TechnicalUi.label("", "ton-comp-chroma-value");
     private final List<TextField> finalValues = new ArrayList<>();
@@ -71,14 +69,15 @@ public final class RecipeEditor extends GridPane {
         chromaSummary.setId("ton-composition-chroma-summary");
         ppm.setPrefWidth(180);
         ppm.setMaxWidth(180);
-        var nameField = TechnicalUi.field("Nome dello strato", name);
-        nameField.setMinWidth(0);
-        HBox.setHgrow(nameField, Priority.ALWAYS);
-        var parameters =
-                new HBox(18, nameField, TechnicalUi.field("Croma dello strato · ppm", ppm));
-        parameters.setAlignment(Pos.BOTTOM_LEFT);
         var heading = new FlowPane(12, 6, title, total);
         heading.setAlignment(Pos.CENTER_LEFT);
+        heading.setMinWidth(0);
+        HBox.setHgrow(heading, Priority.ALWAYS);
+        var chroma = TechnicalUi.field("Croma dello strato · ppm", ppm);
+        chroma.setMinWidth(180);
+        var header = new HBox(18, heading, chroma);
+        header.setAlignment(Pos.BOTTOM_LEFT);
+        header.setFillHeight(false);
         var actions = new GridPane();
         actions.setHgap(12);
         var left = new FlowPane(10, 8, addPowder, copy);
@@ -93,7 +92,7 @@ public final class RecipeEditor extends GridPane {
         actions.getColumnConstraints().addAll(leftColumn, rightColumn);
         actions.add(left, 0, 0);
         actions.add(right, 1, 0);
-        center = new VBox(12, heading, parameters, rows, actions);
+        center = new VBox(12, header, rows, actions);
         center.setMinWidth(0);
         center.getStyleClass().add("ton-technical-panel");
         summary =
@@ -218,7 +217,6 @@ public final class RecipeEditor extends GridPane {
 
     private void unbind() {
         if (bound != null) {
-            name.textProperty().unbindBidirectional(bound.name());
             ppm.textProperty().unbindBidirectional(bound.ppm());
         }
         for (int i = 0; i < shown.size(); i++) {
@@ -238,7 +236,8 @@ public final class RecipeEditor extends GridPane {
         return TechnicalUi.number(value.setScale(1, java.math.RoundingMode.HALF_UP));
     }
 
-    private void bindPercent(TextField field, javafx.beans.property.StringProperty source) {
+    private void bindPercent(
+            TextField field, javafx.beans.property.StringProperty source, String caption) {
         boolean[] changing = {false};
         Runnable refresh =
                 () -> {
@@ -250,9 +249,7 @@ public final class RecipeEditor extends GridPane {
                                 value == null
                                         ? null
                                         : new Tooltip(
-                                                "Valore della ricetta: "
-                                                        + TechnicalUi.number(value)
-                                                        + "%"));
+                                                caption + ": " + TechnicalUi.number(value) + "%"));
                     } finally {
                         changing[0] = false;
                     }
@@ -306,8 +303,6 @@ public final class RecipeEditor extends GridPane {
         bound = state.layers().get(selected);
         ppm.setDisable(frozen);
         ppm.textProperty().bindBidirectional(bound.ppm());
-        name.textProperty().bindBidirectional(bound.name());
-        name.setDisable(frozen);
         for (int i = 0; i < bound.items().size(); i++) {
             var item = bound.items().get(i);
             shown.add(item);
@@ -331,7 +326,7 @@ public final class RecipeEditor extends GridPane {
             amount.setMaxWidth(100);
             boolean chromatic = item.chromatic();
             var source = chromatic ? item.share() : item.mass();
-            bindPercent(amount, source);
+            bindPercent(amount, source, chromatic ? "Tinta" : "Totale dello strato");
             amount.setDisable(frozen);
             amounts.add(amount);
             var delete =
@@ -349,7 +344,7 @@ public final class RecipeEditor extends GridPane {
             result.setId("ton-composition-ingredient-" + (i + 1) + "-final");
             if (chromatic) amount.setId("ton-composition-ingredient-" + (i + 1) + "-tint");
             if (chromatic) {
-                bindPercent(result, item.mass());
+                bindPercent(result, item.mass(), "Totale dello strato");
                 result.setDisable(frozen);
             }
             result.setAccessibleText("Percentuale sul totale ingrediente " + (i + 1));
@@ -357,18 +352,17 @@ public final class RecipeEditor extends GridPane {
                     result, item.powder().get() == null ? null : item.powder().get().color());
             finalValues.add(result);
             for (Region control : List.of(box, amount, result, delete)) {
-                control.setMinHeight(36);
-                control.setPrefHeight(36);
-                control.setMaxHeight(36);
+                control.setMinHeight(34);
+                control.setPrefHeight(34);
+                control.setMaxHeight(34);
             }
-            delete.setMinWidth(36);
-            delete.setPrefWidth(36);
-            delete.setMaxWidth(36);
+            delete.setMinWidth(34);
+            delete.setPrefWidth(34);
+            delete.setMaxWidth(34);
             result.setPrefWidth(100);
             result.setMinWidth(85);
             result.setMaxWidth(100);
             var output = new VBox(4);
-            if (i == 0) output.getChildren().add(TechnicalUi.label("Totale %", "muted-label"));
             output.getChildren().add(result);
             output.setMinWidth(115);
             output.setPrefWidth(125);
@@ -377,8 +371,6 @@ public final class RecipeEditor extends GridPane {
                 amount.setPromptText("Tinta %");
                 amount.setAccessibleText("Tinta % ingrediente " + (i + 1));
                 var input = new VBox(4);
-                if (i == 0 || !bound.items().get(i - 1).chromatic())
-                    input.getChildren().add(TechnicalUi.label("Tinta %", "muted-label"));
                 input.getChildren().add(amount);
                 input.setMinWidth(85);
                 input.setPrefWidth(100);

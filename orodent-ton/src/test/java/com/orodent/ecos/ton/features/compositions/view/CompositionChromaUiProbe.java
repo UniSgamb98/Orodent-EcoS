@@ -233,9 +233,9 @@ public final class CompositionChromaUiProbe {
                                 powderBox.getHeight(),
                                 0.1);
                         assertEquals(
-                                36, button("ton-composition-ingredient-2-remove").getWidth(), 0.1);
+                                34, button("ton-composition-ingredient-2-remove").getWidth(), 0.1);
                         assertEquals(
-                                36, button("ton-composition-ingredient-2-remove").getHeight(), 0.1);
+                                34, button("ton-composition-ingredient-2-remove").getHeight(), 0.1);
                         assertEquals(
                                 node("ton-composition-layer-heading").localToScene(0, 0).getY(),
                                 node("ton-composition-layer-total").localToScene(0, 0).getY(),
