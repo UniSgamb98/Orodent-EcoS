@@ -31,6 +31,8 @@ class CrmOperatorMigrationTest {
                 };
         new DatabaseSchema(db).initialize();
         execute(
+                "DROP TABLE TON.PRESSE",
+                "DROP TABLE TON.STAMPI",
                 "DROP TABLE TON.PIANI_DOCUMENTI",
                 "DROP TABLE TON.PIANO_PRODUZIONE_RIGHE",
                 "DROP TABLE TON.PIANI_PRODUZIONE",

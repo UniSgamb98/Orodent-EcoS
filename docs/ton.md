@@ -1,7 +1,7 @@
 # TON: navigazione e cataloghi tecnici
 
-TON dispone di **Panoramica**, **Produzione**, **Forni e cotture**, **Dati tecnici**,
-**Tracciabilità** e **Documenti**. Il percorso completo è mostrato nell'intestazione
+TON dispone di **Panoramica**, **Produzione**, **Cotture**, **Dati tecnici**,
+**Macchinari e attrezzature**, **Tracciabilità** e **Documenti**. Il percorso completo è mostrato nell'intestazione
 (es. **TON › Dati tecnici › Articoli**), senza una seconda barra sotto o titoli
 ripetuti nel corpo delle pagine. L'inserimento multiplo aggiunge l'ultimo livello:
 **TON › Dati tecnici › Prodotti tecnici › Inserimento multiplo** (oppure Articoli);
@@ -18,13 +18,16 @@ Dati tecnici mantiene al massimo due colonne, disposte per righe:
 Tutti e sei i cataloghi tecnici sono operativi e si aprono anche dalla
 Panoramica. In **Documenti → Modelli documento** è disponibile l’editor visuale
 con bozze e versioni nel DB. In **Produzione → Produzioni e bozze** si preparano
-i dischi richiesti e le relative pesate. Le funzioni restanti sono indicate come
+i dischi richiesti e le relative pesate. **Macchinari e attrezzature**, nel gruppo
+Preparazione, contiene le anagrafiche operative di presse, stampi e forni.
+Le funzioni restanti sono indicate come
 **In preparazione**, senza contatori fittizi o comandi non implementati. Il cubaggio resta rinviato.
 
 - [Linee, prodotti, articoli, storico e specifiche produttive](ton-cataloghi.md).
 - [Inserimento multiplo di prodotti e articoli](ton-bulk-entry-proposal.md).
 - [Polveri, ossidi e schede tecniche approvate](ton-polveri.md).
 - [Modelli disco, strati, sovramateriali e versioni](ton-modelli-disco.md).
+- [Macchinari e attrezzature: presse, stampi e forni](ton-macchinari.md).
 - [Composizioni, ricette per strato, ossidi e utilizzi](ton-composizioni.md).
 - [Produzioni e bozze: quantità, pesate e documenti reali](ton-produzione.md).
 - [Mockup di riferimento della produzione](ton-produzione-proposta.md).
@@ -63,7 +66,8 @@ V5 il colore delle polveri e V6 la gerarchia dei cataloghi con storico reale.
 V15 aggiunge i piani di preparazione e il foglio operativo conservato.
 V17 ricava croma e tinta dalle percentuali fisiche delle composizioni,
 rimuovendo le due tabelle dei parametri introdotte nella V16.
-Il dominio TON comprende 31 tabelle. Le migrazioni pubblicate restano immutabili.
+V18 aggiunge le anagrafiche di presse e stampi e riusa il catalogo dei forni.
+Il dominio TON comprende 33 tabelle. Le migrazioni pubblicate restano immutabili.
 
 L'HOST salva il backup prima delle scritture e applica le migrazioni pendenti in
 transazione, prima di pubblicare il servizio. Il CLIENT verifica lo schema

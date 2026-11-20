@@ -8,7 +8,7 @@ EcoS usa un solo database Derby, organizzato per dominio dei dati.
 | `ANAGRAFICHE` | `CLIENTI` | Anagrafica condivisa tra i moduli |
 | `VENDITE` | `VENDITE_DETTAGLIO` | Vendite e rettifiche condivise |
 | `COSTI` | `POLVERI_PREZZI`, `POLVERI_LOTTI` | Fotografie manuali dei prezzi e delle quantità delle polveri, con revisioni economiche |
-| `TON` | 31 tabelle: cataloghi, specifiche versionate, piani e produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
+| `TON` | 33 tabelle: cataloghi, specifiche versionate, piani e produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
 
 Statistiche legge clienti e vendite dagli schemi condivisi; TON gestisce il proprio
 catalogo tecnico in `TON.PRODOTTI`. Lo schema `STATISTICHE` sarà creato soltanto
@@ -291,3 +291,18 @@ persistenza separata. `COMPOSIZIONE_INGREDIENTI`, strati, revisioni approvate,
 produzioni e scorte restano conservati esattamente. Le migrazioni precedenti
 rimangono immutabili. Backup e applicazione avvengono sull’HOST prima della
 verifica in sola lettura dei CLIENT.
+
+
+## Migrazione dalla versione 17 alla 18
+
+`V18__ton_equipment_catalogues.sql` aggiunge `TON.PRESSE` e `TON.STAMPI`.
+Ogni riga ha codice univoco, nome, misura positiva `DECIMAL(10,3)` in mm,
+note, stato attivo, revisione per i conflitti e timestamp. Per le presse la misura
+è l’alesaggio del pistone idraulico; per gli stampi è il diametro di pressatura.
+
+La tabella `TON.FORNI` viene riutilizzata senza modificarne dati o struttura:
+gli ID e i riferimenti dei cicli di cottura restano identici. I due nuovi cataloghi
+sono inizialmente vuoti; non si generano presse o stampi dai modelli disco e non
+si modificano le specifiche di produzione. Il controllo CLIENT verifica presenza,
+tipi e precisione delle misure. Backup e migrazione seguono la procedura HOST.
+Vedere [Macchinari e attrezzature](ton-macchinari.md).

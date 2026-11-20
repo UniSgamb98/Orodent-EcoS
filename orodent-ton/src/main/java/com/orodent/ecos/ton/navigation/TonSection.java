@@ -16,7 +16,7 @@ public enum TonSection {
             "M3 21V9l6 3V7l6 3V3h6v18z"),
     FIRING(
             "firing",
-            "Forni e cotture",
+            "Cotture",
             "Prepara i carichi e segui le cotture, dalla pianificazione all'esito.",
             "M5 2h14v20H5z M8 5v3h8V5z M8 11v7h8v-7z"),
     TECHNICAL(
@@ -24,6 +24,11 @@ public enum TonSection {
             "Dati tecnici",
             "Prepara prodotti, materiali e specifiche da utilizzare in produzione.",
             "M3 3h18v4H3z M3 10h18v4H3z M3 17h18v4H3z"),
+    EQUIPMENT(
+            "equipment",
+            "Macchinari e attrezzature",
+            "Gestisci presse, stampi e forni utilizzati nelle lavorazioni del laboratorio.",
+            "M14 3l7 7-4 4-3-3-7 10-4-4 10-7-3-3z"),
     TRACEABILITY(
             "traceability",
             "Tracciabilità",

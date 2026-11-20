@@ -19,6 +19,10 @@ import com.orodent.ecos.ton.features.diskmodels.view.DiskModelsView;
 import com.orodent.ecos.ton.features.documents.controller.DocumentTemplatesController;
 import com.orodent.ecos.ton.features.documents.service.DocumentTemplateService;
 import com.orodent.ecos.ton.features.documents.view.DocumentTemplatesView;
+import com.orodent.ecos.ton.features.equipment.controller.EquipmentController;
+import com.orodent.ecos.ton.features.equipment.model.Equipment.Kind;
+import com.orodent.ecos.ton.features.equipment.service.EquipmentService;
+import com.orodent.ecos.ton.features.equipment.view.EquipmentView;
 import com.orodent.ecos.ton.features.powders.controller.PowdersController;
 import com.orodent.ecos.ton.features.powders.service.PowderService;
 import com.orodent.ecos.ton.features.powders.view.PowdersView;
@@ -42,6 +46,7 @@ final class TonController {
     private final CompositionService compositions;
     private final DocumentTemplateService documents;
     private final ProductionService productions;
+    private final EquipmentService equipment;
     private final java.util.concurrent.Executor workers;
     private FeatureController active;
     private TonFeature activeFeature;
@@ -49,6 +54,7 @@ final class TonController {
 
     TonController(ModuleContext context) {
         workers = context.workers();
+        equipment = new EquipmentService(context.connections(), workers);
         documents = new DocumentTemplateService(context.connections(), workers);
         productions = new ProductionService(context.connections(), workers);
         catalogues = new CatalogService(context.connections(), context.workers());
@@ -85,6 +91,20 @@ final class TonController {
         if (activeFeature == feature || !canLeave()) return;
         closePage();
         switch (feature) {
+            case PRESSES, MOULDS, FURNACES -> {
+                Kind kind =
+                        switch (feature) {
+                            case PRESSES -> Kind.PRESSES;
+                            case MOULDS -> Kind.MOULDS;
+                            default -> Kind.FURNACES;
+                        };
+                var page = new EquipmentView(kind);
+                page.subpageProperty()
+                        .addListener(
+                                (o, before, subpage) -> view.showFeature(page, feature, subpage));
+                var controller = new EquipmentController(page, equipment);
+                install(feature, page, controller, controller::start);
+            }
             case PRODUCTIONS -> {
                 var page = new ProductionView();
                 page.subpageProperty()

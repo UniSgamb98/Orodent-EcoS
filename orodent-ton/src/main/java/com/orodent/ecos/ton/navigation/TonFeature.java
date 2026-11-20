@@ -21,11 +21,19 @@ public enum TonFeature {
             TonSection.FIRING,
             "Cotture ed esiti",
             "Segui i cicli effettivi: forno, inizio, conclusione, pezzi buoni e scarti."),
+    PRESSES(
+            TonSection.EQUIPMENT,
+            "Presse",
+            "Gestisci le presse e registra l’alesaggio del pistone idraulico."),
+    MOULDS(
+            TonSection.EQUIPMENT,
+            "Stampi",
+            "Gestisci gli stampi e registra il loro diametro di pressatura."),
     FURNACES(
-            TonSection.FIRING,
+            TonSection.EQUIPMENT,
             "Forni",
             "Gestisci l'anagrafica delle attrezzature e la loro disponibilità per nuove"
-                + " lavorazioni."),
+                    + " lavorazioni."),
     PROGRAMS(
             TonSection.FIRING,
             "Programmi di cottura",
@@ -101,7 +109,10 @@ public enum TonFeature {
     }
 
     public boolean available() {
-        return this == PRODUCTIONS
+        return this == PRESSES
+                || this == MOULDS
+                || this == FURNACES
+                || this == PRODUCTIONS
                 || this == PRODUCTS
                 || this == POWDERS
                 || this == LINES

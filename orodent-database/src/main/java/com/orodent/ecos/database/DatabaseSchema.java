@@ -95,6 +95,11 @@ public final class DatabaseSchema {
                     17,
                     "TON derive chroma from saved recipe percentages",
                     "/database/migrations/V17__ton_derived_composition_chroma.sql");
+    private static final SchemaMigration TON_EQUIPMENT =
+            new SchemaMigration(
+                    18,
+                    "TON presses and moulds catalogues",
+                    "/database/migrations/V18__ton_equipment_catalogues.sql");
     private static final List<SchemaMigration> MIGRATIONS =
             List.of(
                     BASELINE,
@@ -113,7 +118,8 @@ public final class DatabaseSchema {
                     CRM_OPERATORS,
                     TON_PRODUCTION_PLANS,
                     TON_COMPOSITION_CHROMA,
-                    TON_DERIVED_COMPOSITION_CHROMA);
+                    TON_DERIVED_COMPOSITION_CHROMA,
+                    TON_EQUIPMENT);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS =
             List.of(
@@ -277,6 +283,7 @@ public final class DatabaseSchema {
             if (version >= TON_PRODUCTION_PLANS.version()) ProductionPlanSchema.verify(connection);
             if (version == TON_COMPOSITION_CHROMA.version())
                 CompositionChromaSchema.verify(connection);
+            if (version >= TON_EQUIPMENT.version()) EquipmentSchema.verify(connection);
             return version;
         }
         if (tableExists(connection, "APP", HISTORY)) {

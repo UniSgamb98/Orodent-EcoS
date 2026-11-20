@@ -86,19 +86,26 @@ final class TonPages {
         page.getChildren()
                 .add(
                         label(
-                                section == TonSection.TECHNICAL
-                                        ? "I sei cataloghi tecnici sono operativi."
-                                        : section == TonSection.PRODUCTION
-                                                ? "La preparazione delle produzioni e le bozze sono"
-                                                      + " disponibili. Scarti ed esecuzione fisica"
-                                                      + " saranno collegati successivamente."
-                                                : section == TonSection.DOCUMENTS
-                                                        ? "L’editor dei modelli è disponibile."
-                                                              + " L’archivio dei documenti emessi"
-                                                              + " sarà collegato alle produzioni."
-                                                        : "Area in preparazione. Qui trovi le"
-                                                              + " funzioni previste; le operazioni"
-                                                              + " non sono ancora disponibili.",
+                                section == TonSection.EQUIPMENT
+                                        ? "Le anagrafiche di presse, stampi e forni sono"
+                                                + " disponibili."
+                                        : section == TonSection.TECHNICAL
+                                                ? "I sei cataloghi tecnici sono operativi."
+                                                : section == TonSection.PRODUCTION
+                                                        ? "La preparazione delle produzioni e le"
+                                                              + " bozze sono disponibili. Scarti ed"
+                                                              + " esecuzione fisica saranno"
+                                                              + " collegati successivamente."
+                                                        : section == TonSection.DOCUMENTS
+                                                                ? "L’editor dei modelli è"
+                                                                      + " disponibile. L’archivio"
+                                                                      + " dei documenti emessi sarà"
+                                                                      + " collegato alle"
+                                                                      + " produzioni."
+                                                                : "Area in preparazione. Qui trovi"
+                                                                      + " le funzioni previste; le"
+                                                                      + " operazioni non sono"
+                                                                      + " ancora disponibili.",
                                 "ton-area-status"));
         List<Node> cards =
                 TonFeature.in(section).stream()
@@ -113,7 +120,7 @@ final class TonPages {
         card.getChildren()
                 .addAll(
                         badge(
-                                section == TonSection.TECHNICAL
+                                section == TonSection.TECHNICAL || section == TonSection.EQUIPMENT
                                         ? "Catalogo disponibile"
                                         : section == TonSection.DOCUMENTS
                                                 ? "Editor disponibile"
@@ -121,6 +128,7 @@ final class TonPages {
                                                         ? "Preparazione disponibile"
                                                         : "In preparazione",
                                 section == TonSection.TECHNICAL
+                                        || section == TonSection.EQUIPMENT
                                         || section == TonSection.DOCUMENTS
                                         || section == TonSection.PRODUCTION),
                         label(section.title(), "ton-card-title"),
@@ -151,6 +159,9 @@ final class TonPages {
             String title =
                     switch (feature) {
                         case PRODUCTIONS -> "Apri produzioni";
+                        case PRESSES -> "Apri presse";
+                        case MOULDS -> "Apri stampi";
+                        case FURNACES -> "Apri forni";
                         case LINES -> "Apri linee";
                         case ARTICLES -> "Apri articoli";
                         case POWDERS -> "Apri polveri";

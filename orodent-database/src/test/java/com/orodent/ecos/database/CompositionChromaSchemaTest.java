@@ -42,8 +42,10 @@ class CompositionChromaSchemaTest {
                         try (var q = c.createStatement()) {
                             for (String sql : ddl.split(";"))
                                 if (!sql.isBlank()) q.executeUpdate(sql);
+                            q.executeUpdate("DROP TABLE TON.PRESSE");
+                            q.executeUpdate("DROP TABLE TON.STAMPI");
                             q.executeUpdate(
-                                    "DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE VERSION=17");
+                                    "DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE VERSION>=17");
                             q.executeUpdate(
                                     "INSERT INTO TON.LINEE(codice,nome) VALUES ('L','Linea')");
                             q.executeUpdate(
