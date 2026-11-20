@@ -1,5 +1,6 @@
 package com.orodent.ecos.ton.features.powders.repository;
 
+import com.orodent.ecos.database.PowderDisplayCatalogue;
 import com.orodent.ecos.ton.features.powders.model.PowderModel.*;
 
 import java.sql.*;
@@ -26,7 +27,8 @@ public final class PowderRepository {
                                 .replace("_", "\\_")
                         + "%";
         String where =
-                " WHERE (UPPER(codice) LIKE ? ESCAPE '\\' OR UPPER(nome || ' ' || COALESCE(fornitore,'')) LIKE ? ESCAPE '\\')"
+                " WHERE (UPPER(codice) LIKE ? ESCAPE '\\' OR UPPER(nome || ' ' ||"
+                        + " COALESCE(fornitore,'')) LIKE ? ESCAPE '\\')"
                         + (inactive ? "" : " AND attivo=TRUE");
         long count;
         try (var query = connection.prepareStatement("SELECT COUNT(*) FROM TON.POLVERI" + where)) {
@@ -40,11 +42,12 @@ public final class PowderRepository {
         var powders = new ArrayList<Powder>();
         try (var query =
                 connection.prepareStatement(
-                        "SELECT * FROM TON.POLVERI"
+                        "SELECT p.* FROM TON.POLVERI p"
+                                + PowderDisplayCatalogue.latestJoin("p", "py_display")
                                 + where
-                                + " ORDER BY CASE colore WHEN 'BIANCA' THEN 0 WHEN 'GIALLA' THEN 1"
-                                + " WHEN 'ROSA' THEN 2 WHEN 'GRIGIA' THEN 3 ELSE 4"
-                                + " END,codice,polvere_id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY")) {
+                                + " ORDER BY "
+                                + PowderDisplayCatalogue.sqlOrder("p", "py_display.classe_ittria_y")
+                                + " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY")) {
             query.setString(1, pattern);
             query.setString(2, pattern);
             query.setInt(3, offset);
@@ -170,7 +173,8 @@ public final class PowderRepository {
     public long insertPowder(IdentityDraft draft) throws SQLException {
         try (var statement =
                 connection.prepareStatement(
-                        "INSERT INTO TON.POLVERI(codice,nome,colore,attivo,fornitore) VALUES" + " (?,?,?,?,?)",
+                        "INSERT INTO TON.POLVERI(codice,nome,colore,attivo,fornitore) VALUES"
+                                + " (?,?,?,?,?)",
                         Statement.RETURN_GENERATED_KEYS)) {
             identity(statement, draft);
             statement.executeUpdate();
@@ -305,7 +309,8 @@ WHERE polvere_revisione_id=? AND polvere_id=? AND versione_modifica=? AND stato=
                         ? null
                         : PowderColor.valueOf(rows.getString("colore")),
                 rows.getBoolean("attivo"),
-                rows.getInt("versione_modifica"), Objects.toString(rows.getString("fornitore"), ""));
+                rows.getInt("versione_modifica"),
+                Objects.toString(rows.getString("fornitore"), ""));
     }
 
     private record RevisionSummary(int number, State state, Integer yttria) {}

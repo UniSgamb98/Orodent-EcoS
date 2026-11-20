@@ -384,9 +384,9 @@ public final class ScenariosController {
         long intent = ++epoch;
         controls();
         view.feedback.setText("Calcolo dei confronti…");
-        service.analyse(draft)
+        service.analyseForScreen(draft)
                 .whenComplete(
-                        (loaded, error) ->
+                        (screen, error) ->
                                 Platform.runLater(
                                         () -> {
                                             if (disposed || intent != epoch) return;
@@ -396,7 +396,9 @@ public final class ScenariosController {
                                                 controls();
                                                 return;
                                             }
+                                            var loaded = screen.analysis();
                                             analysis = loaded;
+                                            view.editors.powderMetadata(screen.powders());
                                             view.editors.show(draft, loaded.before());
                                             view.preview.show(loaded);
                                             view.comparison.show(loaded);

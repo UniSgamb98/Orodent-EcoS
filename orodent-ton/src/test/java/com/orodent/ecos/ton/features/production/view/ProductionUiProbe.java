@@ -125,6 +125,20 @@ public final class ProductionUiProbe {
             fx(
                     () -> {
                         view().tabs.getSelectionModel().select(1);
+                        layout();
+                        var yellow =
+                                view().lookupAll(".powder-tint").stream()
+                                        .filter(
+                                                n ->
+                                                        n instanceof Label label
+                                                                && label.getText()
+                                                                        .equals("ZPEX4.M YELLOW"))
+                                        .map(Label.class::cast)
+                                        .findFirst()
+                                        .orElseThrow();
+                        assertEquals(
+                                javafx.scene.paint.Color.web("#fff1b8"),
+                                yellow.getBackground().getFills().getFirst().getFill());
                         screenshot("target/production-weighing.png");
                         view().tabs.getSelectionModel().select(2);
                         return null;

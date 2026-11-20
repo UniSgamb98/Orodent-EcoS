@@ -3,6 +3,7 @@ package com.orodent.ecos.ton.features.production.repository;
 import static com.orodent.ecos.ton.features.production.model.Production.*;
 
 import com.google.gson.Gson;
+import com.orodent.ecos.database.PowderDisplayCatalogue;
 import com.orodent.ecos.ton.features.catalog.model.CatalogKind;
 import com.orodent.ecos.ton.features.catalog.model.CatalogModels;
 import com.orodent.ecos.ton.features.catalog.repository.*;
@@ -63,7 +64,7 @@ public final class ProductionRepository {
                                     + " nome,numero_versione DESC")) {
             while (r.next()) templates.add(template(r.getLong(1)));
         }
-        return new Catalogues(lines, products, templates);
+        return new Catalogues(lines, products, templates, PowderDisplayCatalogue.read(c));
     }
 
     public TemplateChoice template(Long id) throws SQLException {

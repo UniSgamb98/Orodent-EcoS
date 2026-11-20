@@ -8,6 +8,7 @@ import com.orodent.ecos.costi.products.model.ProductCosts.*;
 import com.orodent.ecos.costi.products.service.ProductCostService;
 import com.orodent.ecos.costi.products.view.ProductCostsView;
 import com.orodent.ecos.costi.view.PriceFormats;
+import com.orodent.ecos.database.PowderDisplayCatalogue;
 import com.orodent.ecos.module.csv.CsvExportDialog;
 
 import javafx.animation.PauseTransition;
@@ -166,7 +167,8 @@ public final class ProductCostsController {
 
     private record Priced(Catalogue catalogue, Map<Long, NominalMixtureCost.Summary> prices) {}
 
-    private record Loaded(Priced priced, Map<Long, String> colors) {}
+    private record Loaded(
+            Priced priced, Map<Long, String> colors, PowderDisplayCatalogue powders) {}
 
     private static Priced price(Catalogue source, PowderPricing.Selection selection) {
         Catalogue valued = PowderPricing.apply(source, selection);
@@ -228,7 +230,8 @@ public final class ProductCostsController {
                         loaded ->
                                 new Loaded(
                                         price(loaded.catalogue(), selection),
-                                        loaded.powderColors()),
+                                        loaded.powderColors(),
+                                        loaded.powders()),
                         workers)
                 .whenComplete(
                         (screen, error) ->
@@ -243,6 +246,7 @@ public final class ProductCostsController {
                                             }
                                             Priced priced = screen.priced();
                                             view.powderColors(screen.colors());
+                                            view.powderMetadata(screen.powders());
                                             Catalogue loaded = priced.catalogue();
                                             view.nominalPrices(priced.prices());
                                             catalogue = loaded;

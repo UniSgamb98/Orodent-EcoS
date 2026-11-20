@@ -1,5 +1,6 @@
 package com.orodent.ecos.ton.features.powders.view;
 
+import com.orodent.ecos.module.view.PowderCells;
 import com.orodent.ecos.ton.features.powders.model.PowderModel.*;
 import com.orodent.ecos.ton.features.technical.view.TonListView;
 
@@ -26,7 +27,7 @@ public final class PowderListView extends TonListView<Row> {
         table.getColumns()
                 .setAll(
                         List.of(
-                                column("Codice", r -> r.powder().code(), 110),
+                                powderColumn(),
                                 column("Nome", r -> r.powder().name(), 200),
                                 column("Fornitore", r -> r.powder().supplier(), 160),
                                 column("Colore", r -> r.powder().colorLabel(), 110),
@@ -40,6 +41,16 @@ public final class PowderListView extends TonListView<Row> {
                                         r -> r.powder().active() ? "Attiva" : "Archiviata",
                                         90)));
         table.setPlaceholder(new Label("Nessuna polvere. Usa Nuova polvere per iniziare."));
+    }
+
+    private static TableColumn<Row, Row> powderColumn() {
+        var column = new TableColumn<Row, Row>("Codice");
+        column.setPrefWidth(110);
+        PowderCells.column(
+                column,
+                r -> r.powder().code(),
+                r -> r.powder().color() == null ? null : r.powder().color().name());
+        return column;
     }
 
     public void showLoading() {

@@ -108,3 +108,6 @@ SQL annulla l'intero comando. I salvataggi interrotti non vengono ripetuti autom
 
 I servizi impediscono di riscrivere caratteristiche approvate; non sono presenti
 trigger che impongano questa regola a eventuali scritture SQL esterne all'applicazione.
+
+Colori e ordinamento degli elenchi seguono la [regola comune delle polveri](powder-appearance.md):
+fornitore, colore, classe Y e codice, con sfondo del colore nella cella della polvere.

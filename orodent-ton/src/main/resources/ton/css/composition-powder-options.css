@@ -6,11 +6,6 @@
     -fx-border-color: transparent;
     -fx-padding: 7px 10px;
 }
-.ton-comp-powder-option.list-cell.powder-white { -fx-background-color: #f6f6f0; }
-.ton-comp-powder-option.list-cell.powder-yellow { -fx-background-color: #fff1b8; }
-.ton-comp-powder-option.list-cell.powder-pink { -fx-background-color: #fbe1e8; }
-.ton-comp-powder-option.list-cell.powder-gray { -fx-background-color: #e3e7ed; }
-.ton-comp-powder-option.list-cell.powder-unknown { -fx-background-color: #edf3f7; }
 .ton-comp-powder-option:filled:hover,
 .ton-comp-powder-option:filled:selected { -fx-border-color: #18778c; }
 .ton-comp-powder-option:empty { -fx-background-color: transparent; -fx-border-color: transparent; }

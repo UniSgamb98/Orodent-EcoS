@@ -68,6 +68,36 @@ class PowderPriceServiceTest {
         else System.setProperty("derby.stream.error.file", oldLog);
     }
 
+    @Test
+    void pricesAndOrderMappingsShareSupplierColorAndYOrder() {
+        execute(
+                "INSERT INTO TON.POLVERI(codice,nome,colore,fornitore) VALUES"
+                        + " ('ORDER-Z3','Three','BIANCA','Tosoh'),"
+                        + " ('ORDER-A6','Six','BIANCA','Tosoh'),"
+                        + " ('ORDER-FIRST','First','GRIGIA','Sinocera'),"
+                        + " ('ORDER-N','Unknown Y','BIANCA','Tosoh'),"
+                        + " ('ORDER-PINK','Pink','ROSA','Tosoh')",
+                "INSERT INTO"
+                    + " TON.POLVERI_REVISIONI(polvere_id,numero_versione,classe_ittria_y,stato,approvato_il)"
+                    + " SELECT polvere_id,1,CASE codice WHEN 'ORDER-A6' THEN 6 WHEN 'ORDER-N' THEN"
+                    + " NULL ELSE 3 END, 'APPROVATA',CURRENT_TIMESTAMP FROM TON.POLVERI WHERE"
+                    + " codice LIKE 'ORDER-%'");
+        var expected = List.of("ORDER-FIRST", "ORDER-Z3", "ORDER-A6", "ORDER-N", "ORDER-PINK");
+        var prices = service.page("ORDER-", Filter.TUTTE, false, 0).join().rows();
+        assertEquals(expected, prices.stream().map(r -> r.powder().code()).toList());
+        assertEquals(3, prices.get(1).powder().yttria());
+        assertEquals(6, prices.get(2).powder().yttria());
+        var mappings =
+                db.withConnection(
+                        c -> new com.orodent.ecos.costi.orders.OrderRepository(c).powders());
+        assertEquals(
+                expected,
+                mappings.stream()
+                        .filter(p -> p.code().startsWith("ORDER-"))
+                        .map(p -> p.code())
+                        .toList());
+    }
+
     private static BigDecimal n(String text) {
         return new BigDecimal(text);
     }
@@ -231,7 +261,10 @@ class PowderPriceServiceTest {
         var second = service.page("", Filter.TUTTE, false, 40).join();
         assertEquals(47, first.total());
         var all = service.all(false).join();
-        assertEquals(47, all.rows().size(), "The scrolling price screen must include powders beyond page 1");
+        assertEquals(
+                47,
+                all.rows().size(),
+                "The scrolling price screen must include powders beyond page 1");
         assertFalse(all.hasNext());
         assertEquals(40, first.rows().size());
         assertTrue(first.hasNext());

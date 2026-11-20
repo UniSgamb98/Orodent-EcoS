@@ -1,5 +1,6 @@
 package com.orodent.ecos.ton.features.compositions.model;
 
+import com.orodent.ecos.core.PowderAppearance;
 import com.orodent.ecos.ton.features.technical.model.PageData;
 
 import java.math.BigDecimal;
@@ -139,8 +140,28 @@ public final class Compositions {
             int number,
             State state,
             boolean active,
-            Map<String, BigDecimal> oxides) {
+            Map<String, BigDecimal> oxides,
+            String supplier) {
+        public PowderRef(
+                long id,
+                long powderId,
+                String code,
+                String name,
+                String color,
+                Integer yttria,
+                int number,
+                State state,
+                boolean active,
+                Map<String, BigDecimal> oxides) {
+            this(id, powderId, code, name, color, yttria, number, state, active, oxides, "");
+        }
+
+        public PowderAppearance appearance() {
+            return new PowderAppearance(powderId, code, supplier, color, yttria);
+        }
+
         public PowderRef {
+            supplier = text(supplier);
             oxides = Collections.unmodifiableMap(new TreeMap<>(oxides));
         }
 

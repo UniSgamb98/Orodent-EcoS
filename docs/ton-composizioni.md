@@ -30,7 +30,7 @@ salvataggio il prodotto resta fisso; le note appartengono alla singola versione.
 Ogni strato contiene polveri, revisioni precise e quote percentuali in massa.
 Il selettore indica insieme codice, versione, nome e classe Y della polvere.
 Le opzioni e la polvere selezionata hanno lo sfondo del rispettivo colore, con
-la stessa palette di Costi e consumi. L'ordine è per fornitore, poi bianca,
+la stessa [palette comune di TON e Costi e consumi](powder-appearance.md). L'ordine è per fornitore, poi bianca,
 gialla, rosa, grigia, quindi classe da 3Y a 6Y; a parità di classe segue il codice.
 I fornitori non indicati e le classi Y mancanti seguono quelli conosciuti.
 La ricerca è paginata e propone solo l'ultima revisione approvata di ogni polvere

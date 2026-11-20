@@ -3,6 +3,8 @@ package com.orodent.ecos.ton.features.production.view;
 import static com.orodent.ecos.ton.features.production.model.Production.*;
 import static com.orodent.ecos.ton.features.production.service.ProductionDocumentData.number;
 
+import com.orodent.ecos.core.PowderAppearance;
+import com.orodent.ecos.module.view.PowderCells;
 import com.orodent.ecos.ton.features.technical.view.*;
 
 import javafx.beans.binding.Bindings;
@@ -645,10 +647,31 @@ public final class ProductionView extends BorderPane {
                 label("Quota", "muted-label"),
                 label("Da pesare", "muted-label"));
         int n = 1;
-        for (var w : m.powders())
+        for (var w :
+                m.powders().stream()
+                        .sorted(
+                                Comparator.comparing(
+                                        w ->
+                                                catalogues
+                                                        .powders()
+                                                        .revisions()
+                                                        .getOrDefault(
+                                                                w.revisionId(),
+                                                                PowderAppearance.unknown(
+                                                                        w.revisionId(), w.code())),
+                                        PowderAppearance.order()))
+                        .toList())
             grid.addRow(
                     n++,
-                    label(w.code(), "production-powder-code"),
+                    PowderCells.badge(
+                            w.code(),
+                            catalogues
+                                    .powders()
+                                    .revisions()
+                                    .getOrDefault(
+                                            w.revisionId(),
+                                            PowderAppearance.unknown(w.revisionId(), w.code()))
+                                    .color()),
                     label(
                             w.percentage().stripTrailingZeros().toPlainString() + "%",
                             "production-powder-code"),

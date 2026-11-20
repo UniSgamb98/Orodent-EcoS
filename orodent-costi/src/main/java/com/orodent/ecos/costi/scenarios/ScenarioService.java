@@ -3,6 +3,7 @@ package com.orodent.ecos.costi.scenarios;
 import com.orodent.ecos.core.ConnectionProvider;
 import com.orodent.ecos.costi.products.repository.ProductCostRepository;
 import com.orodent.ecos.costi.scenarios.Scenarios.*;
+import com.orodent.ecos.database.PowderDisplayCatalogue;
 
 import java.math.BigDecimal;
 import java.sql.*;
@@ -46,6 +47,12 @@ public final class ScenarioService {
     public CompletableFuture<Draft> save(Draft draft) {
         return CompletableFuture.supplyAsync(
                 () -> db.withTransaction(c -> new ScenarioRepository(c).save(draft)), workers);
+    }
+
+    public record ScreenAnalysis(Analysis analysis, PowderDisplayCatalogue powders) {}
+
+    public CompletableFuture<ScreenAnalysis> analyseForScreen(Draft draft) {
+        return analyse(draft).thenCombine(read(PowderDisplayCatalogue::read), ScreenAnalysis::new);
     }
 
     public CompletableFuture<Analysis> analyse(Draft draft) {

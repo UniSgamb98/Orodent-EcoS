@@ -1,5 +1,7 @@
 package com.orodent.ecos.ton.features.compositions.view;
 
+import com.orodent.ecos.core.PowderAppearance;
+import com.orodent.ecos.module.view.PowderCells;
 import com.orodent.ecos.ton.features.compositions.model.Compositions.*;
 import com.orodent.ecos.ton.features.compositions.service.CompositionChemistry;
 import com.orodent.ecos.ton.features.technical.view.TechnicalUi;
@@ -311,9 +313,12 @@ public final class RecipeEditor extends GridPane {
                             index = j;
                             break;
                         }
-                    if (index < 0) items.addFirst(selected);
+                    if (index < 0) items.add(selected);
                     else items.set(index, selected);
                 }
+                items.sort(
+                        Comparator.comparing(PowderRef::appearance, PowderAppearance.order())
+                                .thenComparing(PowderRef::number));
                 boxes.get(i).getItems().setAll(items);
                 boxes.get(i).setValue(selected);
             }
@@ -377,7 +382,13 @@ public final class RecipeEditor extends GridPane {
             total.getStyleClass().remove("ton-comp-invalid");
             if (!valid) total.getStyleClass().add("ton-comp-invalid");
             if (valid) {
-                for (Ingredient i : layer.ingredients()) {
+                for (Ingredient i :
+                        layer.ingredients().stream()
+                                .sorted(
+                                        Comparator.comparing(
+                                                i -> refs.get(i.powderRevisionId()).appearance(),
+                                                PowderAppearance.order()))
+                                .toList()) {
                     PowderRef p = refs.get(i.powderRevisionId());
                     var segment = new Region();
                     segment.setMinWidth(0);
@@ -388,14 +399,14 @@ public final class RecipeEditor extends GridPane {
                     mix.getChildren().add(segment);
                     legend.getChildren()
                             .add(
-                                    TechnicalUi.label(
+                                    PowderCells.badge(
                                             p.code()
                                                     + " · v"
                                                     + p.number()
                                                     + " · "
                                                     + TechnicalUi.number(i.mass())
                                                     + "%",
-                                            "muted-label"));
+                                            p.color()));
                 }
                 var y = CompositionChemistry.balance(layer, "Y2O3", refs);
                 yttria.setText(

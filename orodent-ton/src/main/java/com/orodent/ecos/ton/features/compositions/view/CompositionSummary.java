@@ -1,5 +1,7 @@
 package com.orodent.ecos.ton.features.compositions.view;
 
+import com.orodent.ecos.core.PowderAppearance;
+import com.orodent.ecos.module.view.PowderCells;
 import com.orodent.ecos.ton.features.compositions.model.Compositions.*;
 import com.orodent.ecos.ton.features.compositions.service.CompositionChemistry;
 import com.orodent.ecos.ton.features.technical.view.TechnicalUi;
@@ -49,7 +51,10 @@ final class CompositionSummary extends VBox {
         Map<Long, PowderRef> refs = state.powders();
         matrix.getColumns().clear();
         oxides.getColumns().clear();
-        TechnicalUi.column(matrix, "Polvere · versione", 230, PowderRef::label);
+        var powderColumn = new TableColumn<PowderRef, PowderRef>("Polvere · versione");
+        powderColumn.setPrefWidth(230);
+        PowderCells.column(powderColumn, PowderRef::label, PowderRef::color);
+        matrix.getColumns().add(powderColumn);
         TechnicalUi.column(oxides, "Ossido", 140, s -> s);
         var known = new ArrayList<Layer>();
         var totalLabels = new ArrayList<String>();
@@ -113,7 +118,8 @@ final class CompositionSummary extends VBox {
         var powders =
                 refs.values().stream()
                         .sorted(
-                                Comparator.comparing(PowderRef::code)
+                                Comparator.comparing(
+                                                PowderRef::appearance, PowderAppearance.order())
                                         .thenComparing(PowderRef::number))
                         .toList();
         matrix.getItems().setAll(powders);

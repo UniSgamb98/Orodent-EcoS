@@ -3,6 +3,7 @@ package com.orodent.ecos.costi.products.service;
 import com.orodent.ecos.core.ConnectionProvider;
 import com.orodent.ecos.costi.products.model.ProductCosts.*;
 import com.orodent.ecos.costi.products.repository.ProductCostRepository;
+import com.orodent.ecos.database.PowderDisplayCatalogue;
 
 import java.sql.Connection;
 import java.util.*;
@@ -18,7 +19,8 @@ public final class ProductCostService {
         this.workers = Objects.requireNonNull(workers);
     }
 
-    public record ScreenData(Catalogue catalogue, Map<Long, String> powderColors) {
+    public record ScreenData(
+            Catalogue catalogue, Map<Long, String> powderColors, PowderDisplayCatalogue powders) {
         public ScreenData {
             powderColors = Map.copyOf(powderColors);
         }
@@ -36,7 +38,9 @@ public final class ProductCostService {
                                     c.setReadOnly(true);
                                     var repository = new ProductCostRepository(c);
                                     return new ScreenData(
-                                            repository.load(), repository.powderColors());
+                                            repository.load(),
+                                            repository.powderColors(),
+                                            PowderDisplayCatalogue.read(c));
                                 }),
                 workers);
     }

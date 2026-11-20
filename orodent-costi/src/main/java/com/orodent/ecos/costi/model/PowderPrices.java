@@ -46,7 +46,18 @@ public final class PowderPrices {
     }
 
     public record Powder(
-            long id, String code, String name, String color, boolean active, String supplier) {
+            long id,
+            String code,
+            String name,
+            String color,
+            boolean active,
+            String supplier,
+            Integer yttria) {
+        public Powder(
+                long id, String code, String name, String color, boolean active, String supplier) {
+            this(id, code, name, color, active, supplier, null);
+        }
+
         public Powder(long id, String code, String name, String color, boolean active) {
             this(id, code, name, color, active, "");
         }

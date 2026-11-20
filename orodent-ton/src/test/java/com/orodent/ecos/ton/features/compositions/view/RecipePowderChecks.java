@@ -107,6 +107,10 @@ public final class RecipePowderChecks {
             assertTrue(
                     pinned.getItems().contains(historical),
                     "A historical revision stays selectable");
+            assertEquals(
+                    1,
+                    pinned.getItems().indexOf(historical),
+                    "Historical selections also follow colour, Y class and code order");
         } finally {
             stage.close();
         }

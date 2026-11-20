@@ -1,6 +1,7 @@
 package com.orodent.ecos.costi.orders;
 
 import com.orodent.ecos.costi.orders.PowderOrders.*;
+import com.orodent.ecos.database.PowderDisplayCatalogue;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -53,8 +54,10 @@ public final class OrderRepository {
         try (var q = connection.createStatement();
                 var r =
                         q.executeQuery(
-                                "SELECT polvere_id,codice,nome,colore,fornitore FROM"
-                                    + " TON.POLVERI")) {
+                                "SELECT"
+                                    + " p.polvere_id,p.codice,p.nome,p.colore,p.fornitore,py_display.classe_ittria_y"
+                                    + " FROM TON.POLVERI p"
+                                        + PowderDisplayCatalogue.latestJoin("p", "py_display"))) {
             while (r.next())
                 rows.add(
                         new Powder(
@@ -62,7 +65,8 @@ public final class OrderRepository {
                                 r.getString(2),
                                 r.getString(3),
                                 r.getString(4),
-                                r.getString(5)));
+                                r.getString(5),
+                                (Integer) r.getObject(6)));
         }
         rows.sort(Powder.catalogueOrder());
         return List.copyOf(rows);

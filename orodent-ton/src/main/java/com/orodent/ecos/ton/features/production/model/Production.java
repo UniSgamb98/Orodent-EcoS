@@ -1,5 +1,7 @@
 package com.orodent.ecos.ton.features.production.model;
 
+import com.orodent.ecos.database.PowderDisplayCatalogue;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
@@ -54,7 +56,17 @@ public final class Production {
     }
 
     public record Catalogues(
-            List<LineChoice> lines, List<ProductChoice> products, List<TemplateChoice> templates) {
+            List<LineChoice> lines,
+            List<ProductChoice> products,
+            List<TemplateChoice> templates,
+            PowderDisplayCatalogue powders) {
+        public Catalogues(
+                List<LineChoice> lines,
+                List<ProductChoice> products,
+                List<TemplateChoice> templates) {
+            this(lines, products, templates, PowderDisplayCatalogue.empty());
+        }
+
         public Catalogues {
             lines = List.copyOf(lines);
             products = List.copyOf(products);

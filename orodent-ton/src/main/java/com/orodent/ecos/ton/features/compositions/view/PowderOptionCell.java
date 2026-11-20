@@ -22,6 +22,10 @@ final class PowderOptionCell extends ListCell<PowderRef> {
         getStyleClass().removeIf(style -> style.startsWith("powder-"));
         setText(empty || powder == null ? null : powder.toString());
         setTooltip(empty || powder == null ? null : new Tooltip(powder.toString()));
+        setStyle(
+                empty || powder == null
+                        ? ""
+                        : "-fx-background-color:" + powder.appearance().background() + ";");
         if (empty || powder == null) return;
         getStyleClass()
                 .add(

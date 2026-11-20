@@ -270,7 +270,17 @@ public final class CatalogDetailsUiProbe {
                         assertNoCounters();
                         screenshot("target/powders-single-list.png");
                         TableView<?> table = (TableView<?>) node("ton-powders-table");
-                        table.getSelectionModel().selectLast();
+                        int targetIndex =
+                                java.util.stream.IntStream.range(0, table.getItems().size())
+                                        .filter(
+                                                i ->
+                                                        ((PowderModel.Row) table.getItems().get(i))
+                                                                        .powder()
+                                                                        .id()
+                                                                == target.powder().id())
+                                        .findFirst()
+                                        .orElseThrow();
+                        table.getSelectionModel().select(targetIndex);
                         table.fireEvent(doubleClick());
                         return null;
                     });
@@ -927,6 +937,10 @@ public final class CatalogDetailsUiProbe {
     }
 
     private Button button(String id) {
+        if (id.startsWith("ton-nav-") && node(id) == null) {
+            ((Button) node("ton-menu-button")).fire();
+            layout();
+        }
         return (Button) Objects.requireNonNull(node(id), id);
     }
 

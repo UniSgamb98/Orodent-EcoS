@@ -1,5 +1,6 @@
 package com.orodent.ecos.costi.consumption;
 
+import com.orodent.ecos.core.PowderAppearance;
 import com.orodent.ecos.costi.products.model.ProductCosts.*;
 
 import java.math.*;
@@ -71,7 +72,24 @@ public final class Consumption {
             String color,
             BigDecimal stock,
             LocalDate stockDate,
-            Settings settings) {}
+            Settings settings,
+            String supplier,
+            Integer yttria) {
+        public Powder(
+                long id,
+                String code,
+                String name,
+                String color,
+                BigDecimal stock,
+                LocalDate stockDate,
+                Settings settings) {
+            this(id, code, name, color, stock, stockDate, settings, "", null);
+        }
+
+        public PowderAppearance appearance() {
+            return new PowderAppearance(id, code, supplier, color, yttria);
+        }
+    }
 
     public record Movement(
             LocalDate date,

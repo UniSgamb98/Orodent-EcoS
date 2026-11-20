@@ -120,7 +120,21 @@ class PowderPricesUiTest {
                                                 null));
                         return null;
                     });
-            await(() -> table().getItems().size() == 2 && editable("costi-inline-price-1"));
+            await(() -> table().getItems().size() == 2 && editable("costi-inline-price-2"));
+            fx(
+                    () -> {
+                        assertEquals(
+                                List.of("PINK4M", "Z-PEX4M"),
+                                table().getItems().stream().map(r -> r.powder().code()).toList());
+                        table().getSelectionModel()
+                                .select(
+                                        table().getItems().stream()
+                                                .filter(r -> r.powder().id() == 1)
+                                                .findFirst()
+                                                .orElseThrow());
+                        return null;
+                    });
+            await(() -> editable("costi-inline-price-1"));
             fx(
                     () -> {
                         assertNull(stage.getScene().lookup("#costi-search"));
@@ -212,34 +226,47 @@ class PowderPricesUiTest {
             var rejectedSwitch = new CompletableFuture<Void>();
             fx(
                     () -> {
-                        Platform.runLater(() -> Platform.runLater(() -> {
-                            try {
-                                answer(ButtonType.CANCEL);
-                                rejectedSwitch.complete(null);
-                            } catch (Throwable error) {
-                                rejectedSwitch.completeExceptionally(error);
-                            }
-                        }));
+                        Platform.runLater(
+                                () ->
+                                        Platform.runLater(
+                                                () -> {
+                                                    try {
+                                                        answer(ButtonType.CANCEL);
+                                                        rejectedSwitch.complete(null);
+                                                    } catch (Throwable error) {
+                                                        rejectedSwitch.completeExceptionally(error);
+                                                    }
+                                                }));
                         table().requestFocus();
                         field("costi-inline-quantity-2").requestFocus();
                         return null;
                     });
             rejectedSwitch.get(15, TimeUnit.SECONDS);
-            await(() -> table().getSelectionModel().getSelectedIndex() == 0
-                    && field("costi-inline-quantity-1") != null
-                    && field("costi-inline-quantity-1").isFocused());
+            await(
+                    () ->
+                            table().getSelectionModel().getSelectedItem() != null
+                                    && table().getSelectionModel().getSelectedItem().powder().id()
+                                            == 1
+                                    && field("costi-inline-quantity-1") != null
+                                    && field("costi-inline-quantity-1").isFocused());
             fx(
                     () -> {
                         button("costi-cancel").fire();
                         assertEquals("80", field("costi-lot-0-price").getText());
-                        table().getSelectionModel().select(1);
+                        table().getSelectionModel()
+                                .select(
+                                        table().getItems().stream()
+                                                .filter(r -> r.powder().id() == 2)
+                                                .findFirst()
+                                                .orElseThrow());
                         return null;
                     });
             await(() -> enabled("costi-inline-price-1") && editable("costi-inline-price-2"));
             fx(
                     () -> {
                         assertEquals("", view().state().price());
-                        // Selecting a row in code leaves the old field focused; a user click does not.
+                        // Selecting a row in code leaves the old field focused; a user click does
+                        // not.
                         table().requestFocus();
                         field("costi-inline-quantity-1").requestFocus();
                         return null;
@@ -267,11 +294,18 @@ class PowderPricesUiTest {
                         ((CheckBox) stage.getScene().lookup("#costi-color-bianca")).fire();
                         return null;
                     });
-            await(
-                    () ->
-                            table().getItems().size() == 2
-                                    && field("costi-lot-0-price") != null
-                                    && editable("costi-inline-price-1"));
+            await(() -> table().getItems().size() == 2 && editable("costi-inline-price-2"));
+            fx(
+                    () -> {
+                        table().getSelectionModel()
+                                .select(
+                                        table().getItems().stream()
+                                                .filter(r -> r.powder().id() == 1)
+                                                .findFirst()
+                                                .orElseThrow());
+                        return null;
+                    });
+            await(() -> field("costi-lot-0-price") != null && editable("costi-inline-price-1"));
             fx(
                     () -> {
                         stage.setWidth(1100);

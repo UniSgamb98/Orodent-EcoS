@@ -1,10 +1,13 @@
 package com.orodent.ecos.costi.products.view;
 
+import com.orodent.ecos.core.PowderAppearance;
 import com.orodent.ecos.costi.products.model.NominalMixtureCost;
 import com.orodent.ecos.costi.products.model.PowderPricing;
 import com.orodent.ecos.costi.products.model.ProductCosts.*;
 import com.orodent.ecos.costi.view.CostsShell;
 import com.orodent.ecos.costi.view.PriceFormats;
+import com.orodent.ecos.database.PowderDisplayCatalogue;
+import com.orodent.ecos.module.view.PowderCells;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.geometry.*;
@@ -98,6 +101,12 @@ public final class ProductCostsView extends CostsShell {
             totalAmount = label("—", "products-total"),
             pending = label("Calcolo in aggiornamento…", "costs-muted");
     private Map<Long, String> powderColors = Map.of();
+    private PowderDisplayCatalogue powderMetadata = PowderDisplayCatalogue.empty();
+
+    public void powderMetadata(PowderDisplayCatalogue metadata) {
+        powderMetadata = metadata;
+    }
+
     private boolean compactLayout;
     private double divider = .26;
 
@@ -261,6 +270,8 @@ public final class ProductCostsView extends CostsShell {
                                                 colorStyle(
                                                         powderColors.get(
                                                                 material.ingredient().powderId())));
+                                PowderCells.color(
+                                        badge, powderColors.get(material.ingredient().powderId()));
                                 badge.setMaxWidth(Double.MAX_VALUE);
                                 setGraphic(badge);
                                 setTooltip(new Tooltip(text));
@@ -508,7 +519,22 @@ public final class ProductCostsView extends CostsShell {
     }
 
     public void article(Result row) {
-        materials.getItems().setAll(row == null ? List.of() : row.materials());
+        materials
+                .getItems()
+                .setAll(
+                        row == null
+                                ? List.of()
+                                : row.materials().stream()
+                                        .sorted(
+                                                java.util.Comparator.comparing(
+                                                        m ->
+                                                                powderMetadata.version(
+                                                                        m.ingredient().powderId(),
+                                                                        m.ingredient()
+                                                                                .technicalVersion(),
+                                                                        m.ingredient().code()),
+                                                        PowderAppearance.order()))
+                                        .toList());
         powderAmount.setText(euros(row == null ? null : row.powderCost()));
         transformationAmount.setText(euros(row == null ? null : row.transformation()));
         totalAmount.setText(euros(row == null ? null : row.total()));

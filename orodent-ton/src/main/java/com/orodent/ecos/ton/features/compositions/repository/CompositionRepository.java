@@ -2,6 +2,8 @@ package com.orodent.ecos.ton.features.compositions.repository;
 
 import static com.orodent.ecos.ton.features.compositions.model.Compositions.*;
 
+import com.orodent.ecos.database.PowderDisplayCatalogue;
+
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.*;
@@ -190,7 +192,7 @@ public final class CompositionRepository {
         try (var q =
                 connection.prepareStatement(
                         "SELECT"
-                            + " r.polvere_revisione_id,p.polvere_id,p.codice,p.nome,p.colore,r.classe_ittria_y,r.numero_versione,r.stato,p.attivo"
+                            + " r.polvere_revisione_id,p.polvere_id,p.codice,p.nome,p.colore,r.classe_ittria_y,r.numero_versione,r.stato,p.attivo,p.fornitore"
                             + " FROM TON.POLVERI_REVISIONI r JOIN TON.POLVERI p ON"
                             + " p.polvere_id=r.polvere_id WHERE r.polvere_revisione_id IN ("
                                 + marks(ids.size())
@@ -211,7 +213,8 @@ public final class CompositionRepository {
                                     r.getInt(7),
                                     State.valueOf(r.getString(8)),
                                     r.getBoolean(9),
-                                    Map.of()));
+                                    Map.of(),
+                                    r.getString(10)));
                 }
             }
         }
@@ -243,7 +246,8 @@ public final class CompositionRepository {
                             p.number(),
                             p.state(),
                             p.active(),
-                            oxides.getOrDefault(p.id(), Map.of())));
+                            oxides.getOrDefault(p.id(), Map.of()),
+                            p.supplier()));
         return enriched;
     }
 
@@ -271,13 +275,10 @@ public final class CompositionRepository {
                         "SELECT r.polvere_revisione_id"
                                 + from
                                 + where
-                                + " ORDER BY CASE WHEN p.fornitore IS NULL OR TRIM(p.fornitore)=''"
-                                + " THEN 1 ELSE 0 END,UPPER(TRIM(COALESCE(p.fornitore,''))),"
-                                + " CASE p.colore WHEN 'BIANCA' THEN 0 WHEN 'GIALLA' THEN"
-                                + " 1 WHEN 'ROSA' THEN 2 WHEN 'GRIGIA' THEN 3 ELSE 4"
-                                + " END,r.classe_ittria_y ASC NULLS LAST,p.codice,"
-                                + " r.numero_versione DESC,r.polvere_revisione_id OFFSET ? ROWS FETCH NEXT ?"
-                                + " ROWS ONLY")) {
+                                + " ORDER BY "
+                                + PowderDisplayCatalogue.sqlOrder("p", "r.classe_ittria_y")
+                                + ",r.numero_versione DESC,r.polvere_revisione_id OFFSET ? ROWS"
+                                + " FETCH NEXT ? ROWS ONLY")) {
             q.setString(1, pattern(search));
             q.setString(2, pattern(search));
             q.setInt(3, offset);

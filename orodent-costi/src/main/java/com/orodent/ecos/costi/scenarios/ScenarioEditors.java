@@ -2,9 +2,12 @@ package com.orodent.ecos.costi.scenarios;
 
 import static com.orodent.ecos.costi.scenarios.ScenarioTables.*;
 
+import com.orodent.ecos.core.PowderAppearance;
 import com.orodent.ecos.costi.products.model.ProductCosts.*;
 import com.orodent.ecos.costi.scenarios.Scenarios.*;
 import com.orodent.ecos.costi.view.PriceFormats;
+import com.orodent.ecos.database.PowderDisplayCatalogue;
+import com.orodent.ecos.module.view.PowderCells;
 
 import javafx.beans.property.*;
 import javafx.collections.*;
@@ -24,6 +27,32 @@ public final class ScenarioEditors extends BorderPane {
     private Catalogue valued;
     private Consumer<Draft> applied = d -> {};
     private boolean rendering;
+    private PowderDisplayCatalogue powderMetadata = PowderDisplayCatalogue.empty();
+
+    public void powderMetadata(PowderDisplayCatalogue metadata) {
+        powderMetadata = metadata;
+    }
+
+    private PowderAppearance appearance(long id, int version, String code) {
+        var found = powderMetadata.version(id, version, code);
+        var original = powders.get(id);
+        return powderMetadata.identities().containsKey(id) || original == null
+                ? found
+                : new PowderAppearance(id, original.code(), "", original.color(), null);
+    }
+
+    private PowderAppearance appearance(EditRow row) {
+        return appearance(row.id, row.version, row.get(0));
+    }
+
+    private void powderColumn(TableView<EditRow> table) {
+        var column = new TableColumn<EditRow, EditRow>(table.getColumns().getFirst().getText());
+        column.setPrefWidth(table.getColumns().getFirst().getPrefWidth());
+        column.setSortable(false);
+        PowderCells.column(column, r -> r.get(0), r -> appearance(r).color());
+        table.getColumns().set(0, column);
+    }
+
     private final TabPane tabs = new TabPane();
     private final ComboBox<Recipe> recipeSource = new ComboBox<>();
     private final ListView<Integer> layers = new ListView<>();
@@ -99,6 +128,8 @@ public final class ScenarioEditors extends BorderPane {
         modeColumn.setMinWidth(150);
         prices.getColumns().get(3).setMinWidth(140);
         prices.setId("scenarios-price-table");
+        powderColumn(prices);
+        powderColumn(ingredients);
         color.getItems().setAll("Tutte", "BIANCA", "GIALLA", "ROSA", "GRIGIA", "ALTRE");
         color.setValue("Tutte");
         priceSearch.setPromptText("Cerca polvere per codice o nome");
@@ -518,7 +549,12 @@ public final class ScenarioEditors extends BorderPane {
                                                     0)));
             priceRows.clear();
             for (Powder p :
-                    powders.values().stream().sorted(Comparator.comparing(Powder::code)).toList()) {
+                    powders.values().stream()
+                            .sorted(
+                                    Comparator.comparing(
+                                            p -> appearance(p.id(), p.technicalVersion(), p.code()),
+                                            PowderAppearance.order()))
+                            .toList()) {
                 var change = draft.prices().get(p.id());
                 var price = valued.prices().get(p.id());
                 priceRows.add(
@@ -768,6 +804,18 @@ public final class ScenarioEditors extends BorderPane {
                                                 n,
                                                 FXCollections.observableArrayList(
                                                         list.stream()
+                                                                .sorted(
+                                                                        Comparator.comparing(
+                                                                                p ->
+                                                                                        appearance(
+                                                                                                p
+                                                                                                        .powderId(),
+                                                                                                p
+                                                                                                        .technicalVersion(),
+                                                                                                p
+                                                                                                        .code()),
+                                                                                PowderAppearance
+                                                                                        .order()))
                                                                 .map(this::ingredient)
                                                                 .toList())));
             showLayers(1);
@@ -884,7 +932,20 @@ public final class ScenarioEditors extends BorderPane {
     private void addPowder() {
         Integer n = layers.getSelectionModel().getSelectedItem();
         if (n == null) return;
-        var selected = choose("Aggiungi polvere", draft.base().powders(), Powder::toString);
+        var selected =
+                choose(
+                        "Aggiungi polvere",
+                        draft.base().powders().stream()
+                                .sorted(
+                                        Comparator.comparing(
+                                                p ->
+                                                        appearance(
+                                                                p.id(),
+                                                                p.technicalVersion(),
+                                                                p.code()),
+                                                PowderAppearance.order()))
+                                .toList(),
+                        Powder::toString);
         if (selected != null) {
             recipeRows
                     .get(n)
@@ -895,6 +956,9 @@ public final class ScenarioEditors extends BorderPane {
                                             selected.code(),
                                             selected.technicalVersion(),
                                             BigDecimal.ZERO)));
+            recipeRows
+                    .get(n)
+                    .sort(Comparator.comparing(this::appearance, PowderAppearance.order()));
             changed();
         }
     }
@@ -913,7 +977,19 @@ public final class ScenarioEditors extends BorderPane {
                         new ListCell<>() {
                             protected void updateItem(T item, boolean empty) {
                                 super.updateItem(item, empty);
+                                setGraphic(null);
                                 setText(empty || item == null ? null : text.apply(item));
+                                if (!empty && item instanceof Powder powder) {
+                                    setText(null);
+                                    setGraphic(
+                                            PowderCells.badge(
+                                                    text.apply(item),
+                                                    appearance(
+                                                                    powder.id(),
+                                                                    powder.technicalVersion(),
+                                                                    powder.code())
+                                                            .color()));
+                                }
                             }
                         });
         list.getItems().setAll(values);
@@ -970,7 +1046,21 @@ public final class ScenarioEditors extends BorderPane {
                                     recipeRows.put(
                                             n,
                                             FXCollections.observableArrayList(
-                                                    list.stream().map(this::ingredient).toList())));
+                                                    list.stream()
+                                                            .sorted(
+                                                                    Comparator.comparing(
+                                                                            p ->
+                                                                                    appearance(
+                                                                                            p
+                                                                                                    .powderId(),
+                                                                                            p
+                                                                                                    .technicalVersion(),
+                                                                                            p
+                                                                                                    .code()),
+                                                                            PowderAppearance
+                                                                                    .order()))
+                                                            .map(this::ingredient)
+                                                            .toList())));
             showLayers(1);
             changed();
         }

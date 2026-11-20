@@ -2,6 +2,7 @@ package com.orodent.ecos.costi.orders;
 
 import com.orodent.ecos.costi.orders.PowderOrders.*;
 import com.orodent.ecos.costi.view.PriceFormats;
+import com.orodent.ecos.module.view.PowderCells;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.scene.control.*;
@@ -74,6 +75,7 @@ final class OrderTableSupport {
 
     static void badge(Label label, String text, Powder powder) {
         label.setText(text);
+        PowderCells.color(label, powder == null ? null : powder.color());
         String color = powder == null ? "ALTRE" : Objects.toString(powder.color(), "ALTRE");
         label.getStyleClass()
                 .setAll(

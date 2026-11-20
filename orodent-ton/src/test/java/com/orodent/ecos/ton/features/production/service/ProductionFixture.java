@@ -51,7 +51,9 @@ public final class ProductionFixture {
                                     new PowderModel.IdentityDraft(
                                             code,
                                             code,
-                                            PowderModel.PowderColor.BIANCA,
+                                            code.contains("YELLOW")
+                                                    ? PowderModel.PowderColor.GIALLA
+                                                    : PowderModel.PowderColor.BIANCA,
                                             true,
                                             "Tosoh"),
                                     new PowderModel.TechnicalDraft(

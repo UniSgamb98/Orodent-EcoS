@@ -35,7 +35,9 @@ public final class ConsumptionRepository {
                                 row.powder().color(),
                                 row.quantity(),
                                 row.referenceDate(),
-                                settings.get(row.powder().id())));
+                                settings.get(row.powder().id()),
+                                row.powder().supplier(),
+                                row.powder().yttria()));
             if (!page.hasNext()) break;
         }
         try (var q = connection.createStatement();
@@ -60,7 +62,9 @@ public final class ConsumptionRepository {
                                 p.color(),
                                 p.stock(),
                                 p.stockDate(),
-                                settings.get(p.id())));
+                                settings.get(p.id()),
+                                p.supplier(),
+                                p.yttria()));
         var movements = new ArrayList<Movement>();
         var warnings = new ArrayList<String>();
         try (var q =

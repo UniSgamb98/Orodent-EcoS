@@ -1,5 +1,6 @@
 package com.orodent.ecos.costi.consumption;
 
+import com.orodent.ecos.core.PowderAppearance;
 import com.orodent.ecos.costi.consumption.Consumption.*;
 import com.orodent.ecos.costi.view.PriceFormats;
 import com.orodent.ecos.module.csv.CsvExportDialog;
@@ -168,6 +169,9 @@ public final class ConsumptionController {
                                 view.basis.getValue() == Basis.CONFRONTO
                                         || s.basis() == view.basis.getValue())
                 .filter(s -> !visible || view.visible(s.powder()))
+                .sorted(
+                        java.util.Comparator.comparing(
+                                s -> s.powder().appearance(), PowderAppearance.order()))
                 .toList();
     }
 
@@ -235,7 +239,21 @@ public final class ConsumptionController {
                                             }
                                             required = amount.required();
                                             details = amount.details();
-                                            view.contributions.getItems().setAll(details);
+                                            view.contributions
+                                                    .getItems()
+                                                    .setAll(
+                                                            details.stream()
+                                                                    .sorted(
+                                                                            java.util.Comparator
+                                                                                    .comparing(
+                                                                                            c ->
+                                                                                                    view
+                                                                                                            .appearance(
+                                                                                                                    c
+                                                                                                                            .powder()),
+                                                                                            PowderAppearance
+                                                                                                    .order()))
+                                                                    .toList());
                                             renderPlan();
                                             view.feedback(
                                                     "Simulazione aggiornata · Disponibilità"
@@ -397,7 +415,9 @@ public final class ConsumptionController {
                                                                                 powder.color(),
                                                                                 powder.stock(),
                                                                                 powder.stockDate(),
-                                                                                saved);
+                                                                                saved,
+                                                                                powder.supplier(),
+                                                                                powder.yttria());
                                                                 Snapshot old = analysis.snapshot();
                                                                 Snapshot snapshot =
                                                                         new Snapshot(

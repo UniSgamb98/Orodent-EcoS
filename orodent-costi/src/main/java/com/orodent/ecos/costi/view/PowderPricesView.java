@@ -2,6 +2,7 @@ package com.orodent.ecos.costi.view;
 
 import com.orodent.ecos.costi.model.PowderPrices;
 import com.orodent.ecos.costi.model.PowderPrices.*;
+import com.orodent.ecos.module.view.PowderCells;
 
 import javafx.beans.property.*;
 import javafx.geometry.Insets;
@@ -89,6 +90,7 @@ public final class PowderPricesView extends CostsShell {
             box.setSelected(true);
             box.setId("costi-color-" + color.toLowerCase(Locale.ROOT));
             box.getStyleClass().addAll("powder-color-filter", colorStyle(color));
+            PowderCells.color(box, color);
             box.setOnAction(e -> colorsChanged.run());
             colors.put(color, box);
             colorBar.getChildren().add(box);
@@ -268,6 +270,7 @@ public final class PowderPricesView extends CostsShell {
                                 var box = new VBox(2, title, text);
                                 box.getStyleClass()
                                         .addAll("powder-badge", colorStyle(row.powder().color()));
+                                PowderCells.color(box, row.powder().color());
                                 box.setMaxWidth(Double.MAX_VALUE);
                                 Tooltip.install(
                                         box,
@@ -459,6 +462,7 @@ public final class PowderPricesView extends CostsShell {
                             + (value.powder().active() ? "" : " · Archiviata in TON"));
             identity.getStyleClass()
                     .setAll("powder-detail-identity", colorStyle(value.powder().color()));
+            PowderCells.color(identity, value.powder().color());
             status.setText(
                     value.version() == 0
                             ? "Prezzo da compilare"

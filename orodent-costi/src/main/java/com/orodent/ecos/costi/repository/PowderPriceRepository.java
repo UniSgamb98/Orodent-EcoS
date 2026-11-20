@@ -1,6 +1,7 @@
 package com.orodent.ecos.costi.repository;
 
 import com.orodent.ecos.costi.model.PowderPrices.*;
+import com.orodent.ecos.database.PowderDisplayCatalogue;
 
 import java.math.BigDecimal;
 import java.sql.*;
@@ -11,12 +12,13 @@ import java.util.*;
 public final class PowderPriceRepository {
     private static final String SELECT =
             """
-SELECT p.polvere_id,p.codice,p.nome,p.colore,p.attivo,p.fornitore,
+SELECT p.polvere_id,p.codice,p.nome,p.colore,p.attivo,p.fornitore,py_display.classe_ittria_y AS display_y,
        c.prezzo_id,c.numero_versione,c.modalita,c.data_riferimento,CASE WHEN c.modello_dati=2 THEN c.prezzo_riferimento ELSE c.prezzo_semplice END AS prezzo_semplice,
        CASE WHEN c.modello_dati=2 THEN c.quantita_totale ELSE c.quantita_semplice END AS quantita_semplice,c.modello_dati
 FROM TON.POLVERI p LEFT JOIN COSTI.POLVERI_PREZZI c ON c.polvere_id=p.polvere_id
   AND c.numero_versione=(SELECT MAX(v.numero_versione) FROM COSTI.POLVERI_PREZZI v WHERE v.polvere_id=p.polvere_id)
-""";
+"""
+                    + PowderDisplayCatalogue.latestJoin("p", "py_display");
     private final Connection connection;
 
     public PowderPriceRepository(Connection connection) {
@@ -87,10 +89,9 @@ FROM TON.POLVERI p LEFT JOIN COSTI.POLVERI_PREZZI c ON c.polvere_id=p.polvere_id
                 connection.prepareStatement(
                         SELECT
                                 + where
-                                + " ORDER BY CASE p.colore WHEN 'BIANCA' THEN 0 WHEN 'GIALLA' THEN"
-                                + " 1 WHEN 'ROSA' THEN 2 WHEN 'GRIGIA' THEN 3 ELSE 4"
-                                + " END,p.codice,p.polvere_id OFFSET ? ROWS FETCH NEXT ? ROWS"
-                                + " ONLY")) {
+                                + " ORDER BY "
+                                + PowderDisplayCatalogue.sqlOrder("p", "py_display.classe_ittria_y")
+                                + " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY")) {
             q.setString(1, pattern);
             q.setString(2, pattern);
             for (int i = 0; i < colors.size(); i++) q.setString(3 + i, colors.get(i));
@@ -226,7 +227,9 @@ FROM TON.POLVERI p LEFT JOIN COSTI.POLVERI_PREZZI c ON c.polvere_id=p.polvere_id
                         r.getString("codice"),
                         r.getString("nome"),
                         r.getString("colore"),
-                        r.getBoolean("attivo"), Objects.toString(r.getString("fornitore"), "")),
+                        r.getBoolean("attivo"),
+                        Objects.toString(r.getString("fornitore"), ""),
+                        (Integer) r.getObject("display_y")),
                 r.getLong("prezzo_id"),
                 r.getInt("numero_versione"),
                 mode == null ? null : Mode.valueOf(mode),

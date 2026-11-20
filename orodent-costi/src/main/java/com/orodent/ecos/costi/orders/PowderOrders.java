@@ -1,5 +1,6 @@
 package com.orodent.ecos.costi.orders;
 
+import com.orodent.ecos.core.PowderAppearance;
 import com.orodent.ecos.core.csv.CsvImportResult;
 
 import java.math.*;
@@ -59,7 +60,16 @@ public final class PowderOrders {
         }
     }
 
-    public record Powder(long id, String code, String name, String color, String supplier) {
+    public record Powder(
+            long id, String code, String name, String color, String supplier, Integer yttria) {
+        public Powder(long id, String code, String name, String color, String supplier) {
+            this(id, code, name, color, supplier, null);
+        }
+
+        public PowderAppearance appearance() {
+            return new PowderAppearance(id, code, supplier, color, yttria);
+        }
+
         public Powder {
             supplier = Objects.toString(supplier, "").strip();
             color = Objects.toString(color, "ALTRE").strip().toUpperCase(Locale.ROOT);
@@ -74,19 +84,7 @@ public final class PowderOrders {
         }
 
         public static Comparator<Powder> catalogueOrder() {
-            return Comparator.comparing((Powder p) -> p.supplier().isBlank())
-                    .thenComparing(Powder::supplier, String.CASE_INSENSITIVE_ORDER)
-                    .thenComparingInt(
-                            p ->
-                                    switch (p.color()) {
-                                        case "BIANCA" -> 0;
-                                        case "GIALLA" -> 1;
-                                        case "ROSA" -> 2;
-                                        case "GRIGIA" -> 3;
-                                        default -> 4;
-                                    })
-                    .thenComparing(Powder::code, String.CASE_INSENSITIVE_ORDER)
-                    .thenComparingLong(Powder::id);
+            return Comparator.comparing(Powder::appearance, PowderAppearance.order());
         }
 
         @Override

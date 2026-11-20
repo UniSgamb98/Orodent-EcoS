@@ -1,8 +1,10 @@
 package com.orodent.ecos.costi.consumption;
 
+import com.orodent.ecos.core.PowderAppearance;
 import com.orodent.ecos.costi.consumption.Consumption.*;
 import com.orodent.ecos.costi.products.model.ProductCosts.*;
 import com.orodent.ecos.costi.view.*;
+import com.orodent.ecos.module.view.PowderCells;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.geometry.*;
@@ -43,6 +45,7 @@ public final class ConsumptionView extends CostsShell {
     private final TextArea warnings = new TextArea();
     private final List<PlanInput> inputs = new ArrayList<>();
     private List<Choice> choices = List.of();
+    private final Map<String, Powder> powderMetadata = new HashMap<>();
     private Runnable planChanged = () -> {};
 
     public record Choice(long article, long specification, String text) {
@@ -148,7 +151,16 @@ public final class ConsumptionView extends CostsShell {
         column(contributions, "Articolo", 180, Contribution::article);
         column(contributions, "Configurazione", 110, c -> String.valueOf(c.specification()));
         column(contributions, "Strato", 75, c -> String.valueOf(c.layer()));
-        column(contributions, "Polvere", 160, Contribution::powder);
+        var contributionPowder = new TableColumn<Contribution, Contribution>("Polvere");
+        contributionPowder.setPrefWidth(180);
+        PowderCells.column(
+                contributionPowder,
+                Contribution::powder,
+                c ->
+                        powderMetadata.containsKey(c.powder())
+                                ? powderMetadata.get(c.powder()).color()
+                                : null);
+        contributions.getColumns().add(contributionPowder);
         column(contributions, "Necessari kg", 120, c -> number(c.kg()));
         contributions.setPrefHeight(180);
         TitledPane breakdown =
@@ -293,16 +305,35 @@ public final class ConsumptionView extends CostsShell {
     public void legend(Snapshot snapshot, Runnable changed) {
         legends.getChildren().clear();
         powders.clear();
-        for (Powder p : snapshot.powders()) {
+        powderMetadata.clear();
+        snapshot.powders().forEach(p -> powderMetadata.put(p.code(), p));
+        for (Powder p :
+                snapshot.powders().stream()
+                        .sorted(Comparator.comparing(Powder::appearance, PowderAppearance.order()))
+                        .toList()) {
             CheckBox check = new CheckBox(p.code());
             check.setSelected(true);
             check.setId("consumption-powder-" + p.id());
             check.setTooltip(new Tooltip(p.name() + " · " + p.color()));
-            check.setTextFill(PowderChart.color(p));
+            PowderCells.color(check, p.color());
+            var marker = new Region();
+            marker.setMinSize(18, 4);
+            marker.setPrefSize(18, 4);
+            marker.setMaxSize(18, 4);
+            marker.setBackground(
+                    new Background(
+                            new BackgroundFill(
+                                    PowderChart.color(p), CornerRadii.EMPTY, Insets.EMPTY)));
+            check.setGraphic(marker);
             check.setOnAction(e -> changed.run());
             powders.put(p.id(), check);
             legends.getChildren().add(check);
         }
+    }
+
+    public PowderAppearance appearance(String code) {
+        var powder = powderMetadata.get(code);
+        return powder == null ? PowderAppearance.unknown(0, code) : powder.appearance();
     }
 
     public boolean visible(Powder p) {
@@ -330,7 +361,10 @@ public final class ConsumptionView extends CostsShell {
 
     private static void setup(TableView<Balance> table) {
         table.setFixedCellSize(38);
-        column(table, "Polvere", 140, b -> b.powder().code());
+        var powderColumn = new TableColumn<Balance, Balance>("Polvere");
+        powderColumn.setPrefWidth(180);
+        PowderCells.column(powderColumn, b -> b.powder().code(), b -> b.powder().color());
+        table.getColumns().add(powderColumn);
         column(table, "Base", 100, b -> b.basis().toString());
         column(table, "Stimati alla data kg", 110, b -> number(b.current()));
         column(table, "Necessari kg", 100, b -> number(b.required()));
