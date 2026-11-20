@@ -367,14 +367,19 @@ public final class RecipeEditor extends GridPane {
             result.setPrefWidth(100);
             result.setMinWidth(85);
             result.setMaxWidth(100);
-            var output = new VBox(4, TechnicalUi.label("Totale %", "muted-label"), result);
+            var output = new VBox(4);
+            if (i == 0) output.getChildren().add(TechnicalUi.label("Totale %", "muted-label"));
+            output.getChildren().add(result);
             output.setMinWidth(115);
             output.setPrefWidth(125);
             var values = new HBox(10, box);
             if (chromatic) {
                 amount.setPromptText("Tinta %");
                 amount.setAccessibleText("Tinta % ingrediente " + (i + 1));
-                var input = new VBox(4, TechnicalUi.label("Tinta %", "muted-label"), amount);
+                var input = new VBox(4);
+                if (i == 0 || !bound.items().get(i - 1).chromatic())
+                    input.getChildren().add(TechnicalUi.label("Tinta %", "muted-label"));
+                input.getChildren().add(amount);
                 input.setMinWidth(85);
                 input.setPrefWidth(100);
                 values.getChildren().add(input);

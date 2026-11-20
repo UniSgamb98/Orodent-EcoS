@@ -2,6 +2,9 @@
 
 In **Dati tecnici → Composizioni → Ricetta per strato**, il calcolo del croma
 è sempre disponibile. Nome facoltativo e croma sono affiancati sopra le polveri.
+L’etichetta **Totale %** compare solo sulla prima riga; **Tinta %** compare
+all’inizio di ogni gruppo consecutivo di righe rosa/gialle. Le altre righe
+non riservano spazio alle etichette, mantenendo i controlli allineati.
 Non ci sono interruttori di modalità, ricerca o paginazione delle polveri:
 il selettore contiene tutte le revisioni approvate disponibili e conserva
 l’eventuale revisione storica già usata dalla ricetta.
