@@ -69,10 +69,33 @@ public final class ProductCosts {
             BigDecimal top,
             BigDecimal bottom,
             Map<Integer, BigDecimal> layers,
-            List<Range> ranges) {
+            List<Range> ranges,
+            Map<BigDecimal, BigDecimal> diameters) {
+        public Model(
+                long id,
+                String code,
+                int version,
+                String state,
+                BigDecimal gramsPerMm,
+                BigDecimal top,
+                BigDecimal bottom,
+                Map<Integer, BigDecimal> layers,
+                List<Range> ranges) {
+            this(id, code, version, state, gramsPerMm, top, bottom, layers, ranges, Map.of());
+        }
+
+        public BigDecimal gramsFor(BigDecimal nominal) {
+            if (diameters.isEmpty()) return gramsPerMm;
+            return nominal == null ? null : diameters.get(nominal.stripTrailingZeros());
+        }
+
         public Model {
             layers = Map.copyOf(layers);
             ranges = List.copyOf(ranges);
+            var normalized = new HashMap<BigDecimal, BigDecimal>();
+            if (diameters != null)
+                diameters.forEach((d, g) -> normalized.put(d.stripTrailingZeros(), g));
+            diameters = Map.copyOf(normalized);
         }
     }
 

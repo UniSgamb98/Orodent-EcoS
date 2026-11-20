@@ -86,6 +86,53 @@ class ScenarioTest {
     }
 
     @Test
+    void snapshotAndScenarioKeepSeparateCoefficientsForEachNominalDiameter() {
+        ProductCostFixture.execute(
+                db,
+                "INSERT INTO TON.STAMPI(codice,nome,diametro_mm) VALUES ('S96','Stampo"
+                    + " 96',96),('S99','Stampo 99',99)",
+                "INSERT INTO TON.MODELLO_DIAMETRI VALUES (1,95,10,1,1,'S96','Stampo"
+                    + " 96',96),(1,98,20,2,1,'S99','Stampo 99',99)");
+        var d = fresh();
+        var m = d.base().catalogue().models().get(1L);
+        var alternative =
+                new Model(
+                        m.id(),
+                        m.code(),
+                        m.version(),
+                        "SCENARIO",
+                        n("12"),
+                        m.top(),
+                        m.bottom(),
+                        m.layers(),
+                        m.ranges(),
+                        Map.of(n("95"), n("12"), n("98"), n("16")));
+        var changed =
+                d.state(
+                        d.name(),
+                        d.notes(),
+                        d.archived(),
+                        d.selection(),
+                        d.products(),
+                        d.prices(),
+                        d.recipes(),
+                        Map.of(1L, alternative),
+                        d.transforms());
+        var before = engine.analyse(d).rows().getFirst().after();
+        var after = engine.analyse(changed).rows().getFirst().after();
+        assertEquals(0, before.grams().multiply(n("0.8")).compareTo(after.grams()));
+        var saved = service.save(changed).join();
+        assertEquals(saved, service.load(service.list(false).join().getFirst()).join());
+        var codec = new ScenarioCodec();
+        assertEquals(d.base(), codec.base(codec.base(d.base())));
+        assertEquals(changed, codec.edits(codec.edits(changed), changed.base()));
+        // A pre-V20 snapshot has no diameter map and must retain its historical coefficient.
+        var legacy = fresh();
+        String json = codec.base(legacy.base()).replaceAll(",\"diameters\":\\{[^}]*\\}", "");
+        assertTrue(codec.base(json).catalogue().models().get(1L).diameters().isEmpty());
+    }
+
+    @Test
     void equalAndVolumeWeightedMeansDifferAcrossFormats() {
         ProductCostFixture.execute(
                 db,

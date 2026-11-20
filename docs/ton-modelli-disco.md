@@ -5,7 +5,8 @@ Le schede usano il [contenitore comune di Dati tecnici](ton-schede-tecniche.md).
 Aprire **TON → Dati tecnici → Modelli disco**, oppure **Apri modelli disco**
 dalla Panoramica TON. La scheda usa lo stesso DB, provider ed executor di EcoS.
 La V19 collega gli stampi ai modelli senza assegnarli automaticamente ai modelli
-già presenti. Vedere [schema e migrazioni](database-schema.md#migrazione-dalla-versione-18-alla-19).
+già presenti. La V20 aggiunge i gruppi per diametro nominale dell’articolo.
+Vedere [schema e migrazioni](database-schema.md#migrazione-dalla-versione-19-alla-20).
 
 ## Elenco e scheda
 
@@ -13,7 +14,7 @@ La pagina usa il [componente comune degli elenchi TON](ton-elenchi.md).
 
 L'elenco mostra tutti i risultati filtrati in una sola tabella scorrevole,
 con una sola riga per modello:
-codice, diametro/strati della versione più recente, ultima approvata ed eventuale
+codice, diametri articolo e strati della versione più recente, ultima approvata ed eventuale
 bozza. La ricerca tratta `%`, `_` e `\` come caratteri letterali. I filtri
 permettono di cercare modelli con una bozza o con versioni approvate.
 
@@ -28,16 +29,19 @@ nell'intestazione del modulo, **Torna ai modelli** a sinistra e **Aggiorna dati*
 a destra. **Crea nuova versione** affianca il riquadro di stato, sopra le schede;
 salvataggio e altre azioni sono raccolti nel pannello bianco inferiore.
 
-**Nuovo modello** prepara la prima versione. Sono richiesti codice, stampo di
-riferimento, pressione e peso per millimetro; i sovramateriali partono da zero.
+**Nuovo modello** prepara la prima versione. Sono richiesti codice, pressione e
+almeno un gruppo con diametro articolo, stampo di riferimento e peso per
+millimetro; i sovramateriali partono da zero.
 Il codice è normalizzato in maiuscolo e identifica tutte le versioni del modello.
 Dopo il primo salvataggio rimane fisso; per una diversa identità si crea un nuovo
 modello. Il numero della versione viene assegnato dal servizio.
 
-- **Parametri**: stampo di riferimento, pressione in kg/cm² come in TON V2,
-  coefficiente g/mm e note tecniche. Il diametro deriva dallo stampo scelto in
-  [Macchinari e attrezzature](ton-macchinari.md) e non è più un campo numerico
-  modificabile. Resta distinto dal diametro nominale dell'articolo.
+- **Parametri**: codice, pressione target in kg/cm² e note comuni; una o più
+  righe con **diametro articolo → stampo di riferimento → g/mm**.
+  **+ Aggiungi diametro** crea una riga indipendente; **Rimuovi diametro** la
+  elimina dalla bozza, mantenendo almeno una riga. Il diametro fisico deriva
+  dallo stampo registrato in [Macchinari e attrezzature](ton-macchinari.md);
+  quello nominale è inserito esplicitamente. I valori non devono coincidere.
 - **Strati**: percentuali di altezza, totale e anteprima in sezione. Aggiungere,
   rimuovere o spostare una riga conserva i valori delle altre. **Distribuisci
   equamente** richiede conferma e assegna l'eventuale residuo all'ultimo strato
@@ -47,7 +51,8 @@ modello. Il numero della versione viene assegnato dal servizio.
   Le fasce adiacenti sono ammesse; le sovrapposte sono rifiutate anche dal servizio.
   Fuori dalle fasce restano i default. Tutte le misure sono in mm.
 - **Stampi ammissibili**: scelta manuale degli altri stampi utilizzabili per
-  questa versione e confronto con il riferimento, sempre incluso. Nessuna
+  ciascun diametro articolo di questa versione. Il selettore in alto cambia il
+  gruppo confrontato; ogni gruppo ha il proprio riferimento, sempre incluso. Nessuna
   tolleranza o regola seleziona automaticamente gli stampi.
 - **Utilizzi**: specifiche degli articoli collegate alla versione selezionata,
   con formato, stato e indicazione della predefinita. **Apri articolo** apre la
@@ -64,9 +69,31 @@ La numerazione visuale procede dall'alto al basso. Per il calcolo economico
 poi sovramateriale superiore al primo strato e inferiore all’ultimo; entrambi nel
 monostrato. [Regola e calcolo costi](costi-e-consumi.md#regola-di-calcolo-costi-nominale-1).
 
+## Gruppi per diametro articolo
+
+Ogni diametro compare una sola volta nella versione del modello. Accetta punto
+o virgola, è positivo e usa al massimo due decimali, come il diametro dell’articolo.
+Ogni gruppo ha un coefficiente g/mm positivo, fino a cinque decimali, e una
+selezione indipendente di stampi. Cambiare i g/mm di un gruppo non modifica gli altri.
+Pressione target, quote degli strati e sovramateriali, comprese le fasce per
+altezza, restano comuni.
+
+Per esempio, un solo modello può definire Ø articolo 98 → stampo Ø 99 → 25 g/mm
+e Ø articolo 95 → stampo Ø 96 → 20 g/mm. Il calcolo sceglie il gruppo per
+uguaglianza numerica esatta del diametro articolo: 98 e 98,00 coincidono, 97,99 no.
+Non esiste ricerca del diametro più vicino. L’approvazione di una specifica con
+un diametro non configurato viene rifiutata; produzione e costi segnalano la
+configurazione mancante senza usare il primo coefficiente disponibile.
+
+Produzione, costi e scenari usano i g/mm del diametro interessato. Negli scenari
+si seleziona il diametro prima di modificare il coefficiente; gli altri gruppi
+restano conservati anche nel salvataggio della fotografia economica.
+L’associazione delle specifiche all’articolo rimane invariata in questo passo;
+il trasferimento al prodotto tecnico sarà un intervento successivo.
+
 ## Stampi e scostamenti teorici
 
-Il selettore in **Parametri** propone gli stampi attivi, senza una scelta iniziale.
+Il selettore di ogni riga in **Parametri** propone gli stampi attivi, senza una scelta iniziale.
 In **Stampi ammissibili** ogni altro stampo ha una spunta indipendente, inizialmente
 vuota. Cambiare riferimento non ammette automaticamente quello precedente.
 **Aggiorna elenco stampi** rilegge il catalogo senza modificare le scelte.
@@ -80,7 +107,7 @@ e negativo per quella in meno:
 rapporto sezioni = (diametro stampo / diametro riferimento)²
 scostamento = rapporto sezioni − 1
 Δ sezione % = scostamento × 100
-Δ peso g/mm = scostamento × g/mm del modello
+Δ peso g/mm = scostamento × g/mm del gruppo selezionato
 Δ peso g/100 g = scostamento × 100
 ```
 
@@ -97,14 +124,17 @@ riselezionarlo esplicitamente: per gli stampi aggiuntivi togliere e rimettere la
 spunta; per il riferimento scegliere la revisione corrente dal selettore.
 Uno stampo archiviato non si può approvare in una nuova configurazione.
 
-Le versioni precedenti alla V19 mantengono il diametro storico e nessuna
-associazione inventata, anche se esiste uno stampo con lo stesso diametro.
-Restano consultabili e utilizzabili. La loro copia conserva il valore storico,
-ma per salvare o approvare la nuova bozza bisogna selezionare un riferimento reale.
+Le versioni precedenti alla V20 conservano diametro fisico e g/mm storici,
+insieme agli eventuali stampi associati in V19. Non viene inventato il diametro
+nominale dell’articolo. Restano consultabili e utilizzabili con il comportamento
+precedente. La copia conserva questi dati e mostra il diametro articolo vuoto:
+per salvare o approvare la nuova bozza bisogna compilarlo esplicitamente e
+selezionare uno stampo reale se manca. La versione originale rimane invariata.
 
 ## Salvataggio e versioni
 
-**Salva bozza** salva insieme parametri, strati, fasce e selezione degli stampi. I parametri obbligatori
+**Salva bozza** salva insieme parametri, gruppi per diametro, strati, fasce e
+selezioni degli stampi. I parametri obbligatori
 devono essere validi anche in bozza; le quote degli strati possono essere ancora
 da completare come totale. Ogni riga compilata richiede una percentuale positiva,
 massimo 100%. Non si arrotondano automaticamente valori oltre la precisione DB.
@@ -132,15 +162,20 @@ Dentro **Articoli → Specifiche di produzione** sono selezionabili i modelli
 approvati, con codice e versione. La specifica collega un `modello_id` preciso:
 approvare v3 non sostituisce il modello v2 già usato da una specifica.
 Il servizio delle specifiche verifica che composizione e modello abbiano strati
-corrispondenti e totali validi. I parametri di produzione saranno usati dal futuro
-flusso produttivo, senza spostare l'altezza dell'articolo nel modello.
+corrispondenti, totali validi e presenza del diametro articolo nei modelli con
+gruppi espliciti. La produzione usa il coefficiente e il diametro dello stampo
+del gruppo corretto; l’altezza continua ad appartenere all’articolo.
 
 ## Organizzazione del codice
 
 `features/diskmodels` separa valori immutabili, SQL, transazioni, controller e viste.
 Le tabelle sono `TON.MODELLI_DISCO`, `TON.MODELLO_STRATI`,
-`TON.MODELLO_SOVRAMATERIALI`, `TON.MODELLO_STAMPO_RIF` e
-`TON.MODELLO_STAMPI_AMMESSI`. Il salvataggio dei figli è atomico con i parametri.
+`TON.MODELLO_SOVRAMATERIALI`, `TON.MODELLO_DIAMETRI` e
+`TON.MODELLO_DIAM_STAMPI`. `TON.MODELLO_STAMPO_RIF` e
+`TON.MODELLO_STAMPI_AMMESSI` conservano le sole associazioni storiche V19.
+Il salvataggio dei figli è atomico con i parametri. Le colonne storiche di
+diametro e g/mm nella testata rispecchiano il primo gruppo, ma i calcoli dei
+modelli V20 usano sempre il gruppo corrispondente al diametro articolo.
 Contatori di modifica e blocchi impediscono sovrascritture di versioni concorrenti.
 
 Ricerche con debounce, letture e pagine superate vengono rilasciate alla chiusura.

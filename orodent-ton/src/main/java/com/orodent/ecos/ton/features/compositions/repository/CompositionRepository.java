@@ -492,6 +492,10 @@ public final class CompositionRepository {
                 }
             }
         var result = new ArrayList<ModelMatch>();
+        var diameters =
+                new com.orodent.ecos.ton.features.diskmodels.repository.ModelDiameterRepository(
+                                connection)
+                        .catalogueDiameters();
         for (Row row : rows) {
             var order = layers.getOrDefault(row.id(), List.of());
             result.add(
@@ -501,7 +505,8 @@ public final class CompositionRepository {
                             row.version(),
                             row.diameter(),
                             order,
-                            order.equals(numbers)));
+                            order.equals(numbers),
+                            diameters.getOrDefault(row.id(), List.of())));
         }
         return new Page<>(result, total, offset, limit);
     }

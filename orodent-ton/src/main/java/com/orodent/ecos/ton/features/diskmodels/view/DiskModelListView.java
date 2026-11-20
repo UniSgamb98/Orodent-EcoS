@@ -28,9 +28,17 @@ public final class DiskModelListView extends TonListView<Summary> {
         TechnicalUi.column(table(), "Modello", 180, Summary::code);
         TechnicalUi.column(
                 table(),
-                "Ø stampo di riferimento",
+                "Diametri articolo",
                 160,
-                r -> TechnicalUi.number(r.diameter()) + " mm");
+                r ->
+                        r.articleDiameters().isEmpty()
+                                ? "Da associare · stampo "
+                                        + TechnicalUi.number(r.diameter())
+                                        + " mm"
+                                : r.articleDiameters().stream()
+                                                .map(TechnicalUi::number)
+                                                .collect(java.util.stream.Collectors.joining(" / "))
+                                        + " mm");
         TechnicalUi.column(table(), "Strati", 70, r -> "" + r.layers());
         TechnicalUi.column(
                 table(),

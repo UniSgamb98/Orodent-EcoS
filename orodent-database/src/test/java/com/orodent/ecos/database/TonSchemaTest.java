@@ -210,7 +210,7 @@ class TonSchemaTest {
                 history,
                 rows("SELECT * FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version <= 3 ORDER BY version"));
         assertEquals(identity, connections.withConnection(DatabaseIdentity::read));
-        assertEquals(35, tonTableCount());
+        assertEquals(37, tonTableCount());
         execute("INSERT INTO TON.PRODOTTI(codice) VALUES ('NEXT')");
         assertEquals(100, scalar("SELECT prodotto_id FROM TON.PRODOTTI WHERE codice='NEXT'"));
     }
@@ -253,7 +253,7 @@ class TonSchemaTest {
         assertEquals(2, tonTableCount());
         execute("DROP TABLE TON.DOCUMENTI");
         migrate();
-        assertEquals(35, tonTableCount());
+        assertEquals(37, tonTableCount());
     }
 
     @Test

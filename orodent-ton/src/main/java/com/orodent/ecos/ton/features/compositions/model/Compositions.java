@@ -270,9 +270,11 @@ public final class Compositions {
             int version,
             BigDecimal diameter,
             List<Integer> layers,
-            boolean matches) {
+            boolean matches,
+            List<BigDecimal> articleDiameters) {
         public ModelMatch {
             layers = List.copyOf(layers);
+            articleDiameters = List.copyOf(articleDiameters);
         }
     }
 

@@ -75,7 +75,7 @@ public final class DiskModelsController implements FeatureController {
                         } else render(original, e.sheet());
                     }
                 });
-        on(e.moulds().refresh(), this::loadMoulds);
+        on(e.diameters().refresh(), this::loadMoulds);
         on(e.save(), () -> save(false));
         on(e.approve(), () -> save(true));
         on(
@@ -248,7 +248,7 @@ public final class DiskModelsController implements FeatureController {
         read(
                 "moulds",
                 service::moulds,
-                values -> view.editor().moulds().choices(values),
+                values -> view.editor().diameters().choices(values),
                 error -> view.editor().feedback(error, true));
     }
 

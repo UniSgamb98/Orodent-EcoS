@@ -88,7 +88,7 @@ public final class DiskModelService {
     }
 
     public CompletableFuture<Detail> create(Draft draft, boolean approve) {
-        Objects.requireNonNull(draft);
+        Objects.requireNonNull(draft).requireDiameters();
         if (approve) draft.requireApprovable();
         return async(
                 () ->
@@ -99,12 +99,14 @@ public final class DiskModelService {
                                         throw invalid(
                                                 "Questo codice modello esiste già. Apri la scheda e"
                                                         + " crea una nuova versione.");
-                                    new ModelMouldRepository(c).validate(draft.moulds(), approve);
+                                    new ModelMouldRepository(c)
+                                            .validate(draft.diameters(), approve);
                                     return detail(repo, repo.insert(draft, 1, approve));
                                 }));
     }
 
     public CompletableFuture<Detail> save(Revision expected, Draft draft, boolean approve) {
+        draft.requireDiameters();
         if (approve) draft.requireApprovable();
         return async(
                 () ->
@@ -120,7 +122,8 @@ public final class DiskModelService {
                                         throw invalid(
                                                 "Il codice del modello rimane lo stesso nelle sue"
                                                         + " versioni.");
-                                    new ModelMouldRepository(c).validate(draft.moulds(), approve);
+                                    new ModelMouldRepository(c)
+                                            .validate(draft.diameters(), approve);
                                     if (approve || !current.data().equals(draft))
                                         repo.update(current, draft, approve);
                                     return detail(repo, current.id());

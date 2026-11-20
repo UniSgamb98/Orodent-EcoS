@@ -214,6 +214,10 @@ WHERE configurazione_id=? AND articolo_id=? AND versione_modifica=? AND stato='B
             }
         }
         if (!approving) return;
+        new com.orodent.ecos.ton.features.diskmodels.repository.DiskModelRepository(connection)
+                .load(draft.modelId())
+                .data()
+                .forArticleDiameter(article.diameter());
         var powders = new ArrayList<Long>();
         try (var q =
                 connection.prepareStatement(

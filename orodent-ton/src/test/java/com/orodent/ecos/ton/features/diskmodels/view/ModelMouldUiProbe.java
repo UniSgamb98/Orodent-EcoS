@@ -123,6 +123,7 @@ public final class ModelMouldUiProbe {
                         assertNull(node("ton-model-diameter"));
                         assertNull(reference().getValue());
                         field("ton-model-code").setText("MODEL-STAMPI");
+                        field("ton-model-article-diameter").setText("98");
                         field("ton-model-pressure").setText("1500");
                         field("ton-model-grams").setText("25");
                         field("ton-model-top").setText("1,5");
@@ -212,6 +213,34 @@ public final class ModelMouldUiProbe {
                         assertFalse(check("S992").isSelected());
                         assertEquals("+2,0304", cell("S992", 6));
                         check("S992").fire();
+                        sheet("Parametri");
+                        button("ton-model-add-diameter").fire();
+                        field("ton-model-article-diameter-2").setText("95");
+                        field("ton-model-grams-2").setText("20");
+                        var ref95 = (ComboBox<Mould>) node("ton-model-reference-mould-2");
+                        assertNull(ref95.getValue());
+                        ref95.setValue(
+                                ref95.getItems().stream()
+                                        .filter(m -> m.code().equals("S988"))
+                                        .findFirst()
+                                        .orElseThrow());
+                        button("ton-model-add-diameter").fire();
+                        button("ton-model-remove-diameter-3").fire();
+                        screenshot("target/model-diameters-parameters.png");
+                        sheet("Stampi ammissibili");
+                        var groups = (ComboBox<?>) node("ton-model-diameter-group");
+                        groups.getSelectionModel().select(1);
+                        layout();
+                        assertTrue(check("S988").isSelected());
+                        assertFalse(check("S99").isSelected());
+                        assertFalse(check("S992").isSelected());
+                        check("S99").fire();
+                        groups.getSelectionModel().select(0);
+                        layout();
+                        assertTrue(check("S99").isSelected());
+                        assertTrue(check("S992").isSelected());
+                        assertFalse(check("S988").isSelected());
+                        screenshot("target/model-diameters-comparison.png");
                         Platform.runLater(this::answer);
                         button("ton-model-approve").fire();
                         return null;
@@ -220,9 +249,47 @@ public final class ModelMouldUiProbe {
                     () ->
                             text("ton-model-status").startsWith("v2")
                                     && text("ton-model-status").contains("Approvata"));
+            var latest =
+                    models.load(
+                                    models.catalogue("MODEL-STAMPI", Filter.ALL)
+                                            .join()
+                                            .rows()
+                                            .getFirst()
+                                            .id())
+                            .join()
+                            .revision();
+            assertEquals(2, latest.data().diameters().size());
+            assertEquals(
+                    0,
+                    new BigDecimal("20").compareTo(latest.data().gramsFor(new BigDecimal("95"))));
+            assertEquals(
+                    0,
+                    new BigDecimal("25").compareTo(latest.data().gramsFor(new BigDecimal("98"))));
+            assertEquals(
+                    List.of("S99"),
+                    latest
+                            .data()
+                            .forArticleDiameter(new BigDecimal("95"))
+                            .moulds()
+                            .admitted()
+                            .stream()
+                            .map(Mould::code)
+                            .toList());
+            assertEquals(
+                    List.of("S992"),
+                    latest
+                            .data()
+                            .forArticleDiameter(new BigDecimal("98"))
+                            .moulds()
+                            .admitted()
+                            .stream()
+                            .map(Mould::code)
+                            .toList());
             fx(
                     () -> {
                         sheet("Stampi ammissibili");
+                        assertTrue(field("ton-model-article-diameter").isDisabled());
+                        assertTrue(field("ton-model-grams-2").isDisabled());
                         stage.setWidth(1050);
                         stage.setHeight(780);
                         return null;

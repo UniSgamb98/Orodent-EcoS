@@ -42,6 +42,7 @@ public final class DiskModelRepository {
             }
         }
         var result = new ArrayList<Summary>();
+        var diameters = new ModelDiameterRepository(connection).catalogueDiameters();
         try (var q =
                 connection.prepareStatement(
                         "SELECT m.modello_id,m.codice,m.diametro_pressatura_mm,(SELECT COUNT(*)"
@@ -64,7 +65,8 @@ public final class DiskModelRepository {
                                     r.getBigDecimal(3),
                                     r.getInt(4),
                                     (Integer) r.getObject(5),
-                                    (Integer) r.getObject(6)));
+                                    (Integer) r.getObject(6),
+                                    diameters.getOrDefault(r.getLong(1), List.of())));
             }
         }
         return new Page<>(result, total, offset, limit);
@@ -88,7 +90,8 @@ public final class DiskModelRepository {
                                 r.getString("note"),
                                 layers(id),
                                 ranges(id),
-                                new ModelMouldRepository(connection).load(id));
+                                new ModelMouldRepository(connection).load(id),
+                                new ModelDiameterRepository(connection).load(id));
                 return new Revision(
                         id,
                         r.getInt("numero_versione"),
@@ -340,6 +343,7 @@ public final class DiskModelRepository {
     }
 
     private void deleteChildren(long id) throws SQLException {
+        new ModelDiameterRepository(connection).delete(id);
         new ModelMouldRepository(connection).delete(id);
         for (String table : List.of("MODELLO_STRATI", "MODELLO_SOVRAMATERIALI"))
             try (var q =
@@ -351,7 +355,9 @@ public final class DiskModelRepository {
     }
 
     private void insertChildren(long id, Draft d) throws SQLException {
-        new ModelMouldRepository(connection).insert(id, d.moulds());
+        new ModelDiameterRepository(connection).insert(id, d.diameters());
+        // V19 tables retain only legacy snapshots. New groups own their independent selections.
+        if (d.diameters().isEmpty()) new ModelMouldRepository(connection).insert(id, d.moulds());
         try (var q =
                 connection.prepareStatement(
                         "INSERT INTO"

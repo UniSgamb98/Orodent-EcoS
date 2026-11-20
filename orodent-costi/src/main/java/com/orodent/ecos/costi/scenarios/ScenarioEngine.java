@@ -353,6 +353,10 @@ public final class ScenarioEngine {
     }
 
     public static void validateModel(Model model) {
+        for (var entry : model.diameters().entrySet())
+            if (entry.getKey().signum() <= 0 || entry.getValue().signum() <= 0)
+                throw new IllegalArgumentException(
+                        "Diametri articolo e coefficienti g/mm devono essere positivi.");
         if (model.gramsPerMm() == null
                 || model.gramsPerMm().signum() <= 0
                 || model.top() == null

@@ -110,9 +110,17 @@ public final class CompositionEditorView extends TechnicalDetailView {
         TechnicalUi.column(models.table(), "Versione", 85, m -> "v" + m.version());
         TechnicalUi.column(
                 models.table(),
-                "Diametro pressatura",
+                "Diametri articolo",
                 160,
-                m -> TechnicalUi.number(m.diameter()) + " mm");
+                m ->
+                        m.articleDiameters().isEmpty()
+                                ? "Da associare · stampo "
+                                        + TechnicalUi.number(m.diameter())
+                                        + " mm"
+                                : m.articleDiameters().stream()
+                                                .map(TechnicalUi::number)
+                                                .collect(java.util.stream.Collectors.joining(" / "))
+                                        + " mm");
         TechnicalUi.column(models.table(), "Strati", 80, m -> "" + m.layers().size());
         TechnicalUi.column(
                 models.table(),

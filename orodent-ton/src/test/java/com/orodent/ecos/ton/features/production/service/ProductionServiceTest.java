@@ -61,6 +61,138 @@ class ProductionServiceTest {
     }
 
     @Test
+    void resolvesReferenceAndDosesByArticleDiameterAndRejectsAnUnconfiguredFormat() {
+        var models = new DiskModelService(db, workers);
+        var source = fixture.model.revision();
+        var copy = models.copy(source).join().revision();
+        var equipment =
+                new com.orodent.ecos.ton.features.equipment.service.EquipmentService(db, workers);
+        var mould =
+                equipment
+                        .save(
+                                com.orodent.ecos.ton.features.equipment.model.Equipment.Kind.MOULDS,
+                                null,
+                                new com.orodent.ecos.ton.features.equipment.model.Equipment.Draft(
+                                        "S96", "Stampo 96", new BigDecimal("96"), "", true))
+                        .join();
+        var d = source.data();
+        var group =
+                new com.orodent.ecos.ton.features.diskmodels.model.DiskModels.DiameterGroup(
+                        new BigDecimal("95"),
+                        new BigDecimal("20"),
+                        new com.orodent.ecos.ton.features.diskmodels.model.DiskModels.Moulds(
+                                new com.orodent.ecos.ton.features.diskmodels.model.DiskModels.Mould(
+                                        mould.id(),
+                                        mould.revision(),
+                                        mould.code(),
+                                        mould.name(),
+                                        mould.dimension()),
+                                List.of()));
+        var data =
+                new com.orodent.ecos.ton.features.diskmodels.model.DiskModels.Draft(
+                        d.code(),
+                        d.pressure(),
+                        d.top(),
+                        d.bottom(),
+                        d.notes(),
+                        d.layers(),
+                        d.ranges(),
+                        List.of(d.diameters().getFirst(), group));
+        var approved = models.save(copy, data, true).join().revision();
+        var catalog = new com.orodent.ecos.ton.features.catalog.service.CatalogService(db, workers);
+        var specs =
+                new com.orodent.ecos.ton.features.catalog.service.SpecificationService(db, workers);
+        long comp =
+                db.withConnection(
+                        c -> {
+                            try (var q = c.createStatement();
+                                    var r =
+                                            q.executeQuery(
+                                                    "SELECT composizione_id FROM"
+                                                        + " TON.CONFIGURAZIONI_ARTICOLO FETCH FIRST"
+                                                        + " ROW ONLY")) {
+                                r.next();
+                                return r.getLong(1);
+                            }
+                        });
+        var a95 =
+                (com.orodent.ecos.ton.features.catalog.model.CatalogModels.Article)
+                        catalog.create(
+                                        new com.orodent.ecos.ton.features.catalog.model
+                                                .CatalogModels.ArticleDraft(
+                                                "A95",
+                                                "Formato 95",
+                                                fixture.product.id(),
+                                                new BigDecimal("95"),
+                                                new BigDecimal("12"),
+                                                "",
+                                                true))
+                                .join()
+                                .entry();
+        specs.save(
+                        a95,
+                        null,
+                        new com.orodent.ecos.ton.features.catalog.model.CatalogModels
+                                .SpecificationDraft(comp, approved.id(), "COSTI-NOMINALE-1", ""),
+                        true)
+                .join();
+        var workspace =
+                fixture.service
+                        .workspace(fixture.product.id(), new BigDecimal("95"), Map.of())
+                        .join();
+        var article = workspace.articles().getFirst();
+        assertTrue(article.available(), article.reason());
+        assertEquals(0, new BigDecimal("96").compareTo(article.pressDiameter()));
+        assertEquals(0, new BigDecimal("282").compareTo(article.weight()));
+        var request =
+                new Request(
+                        java.time.LocalDate.now(),
+                        fixture.product.id(),
+                        new BigDecimal("95"),
+                        null,
+                        "",
+                        Map.of(a95.id(), 2));
+        var prepared = fixture.service.save(null, workspace, request, true).join();
+        assertEquals(0, new BigDecimal("564").compareTo(prepared.plan().needed()));
+        assertEquals(prepared, fixture.service.load(prepared.id()).join());
+        assertEquals(source.data(), models.load(source.id()).join().revision().data());
+        assertEquals(
+                0,
+                new BigDecimal("352.5")
+                        .compareTo(fixture.workspace().articles().getFirst().weight()));
+        var a97 =
+                (com.orodent.ecos.ton.features.catalog.model.CatalogModels.Article)
+                        catalog.create(
+                                        new com.orodent.ecos.ton.features.catalog.model
+                                                .CatalogModels.ArticleDraft(
+                                                "A97",
+                                                "Formato 97",
+                                                fixture.product.id(),
+                                                new BigDecimal("97"),
+                                                new BigDecimal("12"),
+                                                "",
+                                                true))
+                                .join()
+                                .entry();
+        var missing =
+                assertThrows(
+                        CompletionException.class,
+                        () ->
+                                specs.save(
+                                                a97,
+                                                null,
+                                                new com.orodent.ecos.ton.features.catalog.model
+                                                        .CatalogModels.SpecificationDraft(
+                                                        comp,
+                                                        approved.id(),
+                                                        "COSTI-NOMINALE-1",
+                                                        ""),
+                                                true)
+                                        .join());
+        assertTrue(missing.getCause().getMessage().contains("non configurato"));
+    }
+
+    @Test
     void computesExactDosesAndRoundingsBeforePreparingRequestedWork() {
         var w = fixture.workspace();
         var r = fixture.request(true);

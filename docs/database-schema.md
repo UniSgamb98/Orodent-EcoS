@@ -8,7 +8,7 @@ EcoS usa un solo database Derby, organizzato per dominio dei dati.
 | `ANAGRAFICHE` | `CLIENTI` | Anagrafica condivisa tra i moduli |
 | `VENDITE` | `VENDITE_DETTAGLIO` | Vendite e rettifiche condivise |
 | `COSTI` | `POLVERI_PREZZI`, `POLVERI_LOTTI` | Fotografie manuali dei prezzi e delle quantità delle polveri, con revisioni economiche |
-| `TON` | 35 tabelle: cataloghi, specifiche versionate, piani e produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
+| `TON` | 37 tabelle: cataloghi, specifiche versionate, piani e produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
 
 Statistiche legge clienti e vendite dagli schemi condivisi; TON gestisce il proprio
 catalogo tecnico in `TON.PRODOTTI`. Lo schema `STATISTICHE` sarà creato soltanto
@@ -326,3 +326,23 @@ diametro dei vecchi modelli. Le produzioni e specifiche storiche continuano a
 leggere il loro modello preciso. L’HOST esegue il backup prima della migrazione;
 i CLIENT verificano il nuovo schema in sola lettura. Vedere
 [stampi dei modelli disco](ton-modelli-disco.md#stampi-e-scostamenti-teorici).
+
+
+## Migrazione dalla versione 19 alla 20
+
+`V20__ton_model_diameters.sql` aggiunge `TON.MODELLO_DIAMETRI` e
+`TON.MODELLO_DIAM_STAMPI`. La prima contiene, per versione del modello e diametro
+nominale articolo (`DECIMAL(6,2)`), g/mm (`DECIMAL(12,5)`) e fotografia dello stampo
+di riferimento. La seconda contiene gli stampi aggiuntivi ammessi manualmente
+per quel gruppo, con FK composta sul modello e sul diametro articolo.
+Le fotografie conservano ID, revisione, codice, nome e misura fisica degli stampi.
+Il salvataggio di parametri e figli è nella stessa transazione.
+
+La migrazione lascia intatti tutti i modelli e le associazioni V19: il diametro
+fisico dello stampo non permette di dedurre il nominale dell’articolo. Le nuove
+tabelle partono vuote; nessun modello precedente viene riscritto. Produzioni,
+specifiche e scenari storici restano leggibili con i coefficienti originali.
+Le nuove versioni richiedono gruppi espliciti, senza diametri duplicati.
+I calcoli V20 scelgono il gruppo esatto e segnalano i diametri mancanti.
+Backup HOST e verifica CLIENT seguono la procedura condivisa. Vedere
+[gruppi dei modelli disco](ton-modelli-disco.md#gruppi-per-diametro-articolo).

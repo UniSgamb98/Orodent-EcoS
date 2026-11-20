@@ -109,16 +109,20 @@ public final class CatalogDetailsUiProbe {
             models.create(
                             new com.orodent.ecos.ton.features.diskmodels.model.DiskModels.Draft(
                                     String.format("MODEL-%02d", i),
-                                    new BigDecimal("98"),
                                     new BigDecimal("100"),
-                                    BigDecimal.ONE,
                                     BigDecimal.ZERO,
                                     BigDecimal.ZERO,
                                     "",
                                     List.of(new BigDecimal("100")),
                                     List.of(),
-                                    new com.orodent.ecos.ton.features.diskmodels.model.DiskModels
-                                            .Moulds(mould, List.of())),
+                                    List.of(
+                                            new com.orodent.ecos.ton.features.diskmodels.model
+                                                    .DiskModels.DiameterGroup(
+                                                    new BigDecimal("98"),
+                                                    BigDecimal.ONE,
+                                                    new com.orodent.ecos.ton.features.diskmodels
+                                                            .model.DiskModels.Moulds(
+                                                            mould, List.of())))),
                             i == 54)
                     .join();
 

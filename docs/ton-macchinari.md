@@ -43,8 +43,8 @@ conservati, anche quando si rinomina o archivia un forno.
 ## Confini di questo primo passo
 
 I [modelli disco](ton-modelli-disco.md#stampi-e-scostamenti-teorici) usano ora
-il catalogo per scegliere lo stampo di riferimento e gli altri stampi ammessi
-manualmente. Ogni versione conserva le misure selezionate e mostra gli
+il catalogo per scegliere, per ogni diametro articolo, lo stampo di riferimento
+e gli altri stampi ammessi manualmente. Ogni versione conserva le misure selezionate e mostra gli
 scostamenti teorici di sezione e peso; modificare lo stampo non riscrive i modelli.
 
 Si registrano le identità fisiche e le prime misure. Non vengono ancora definite

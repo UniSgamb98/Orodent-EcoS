@@ -28,6 +28,7 @@ public final class ModelMouldsPane extends VBox {
     private boolean updating, frozen;
     private BigDecimal grams;
     private final Runnable changed;
+    private final javafx.beans.value.ChangeListener<Mould> referenceChanged;
 
     public ModelMouldsPane(Runnable changed) {
         super(14);
@@ -39,14 +40,15 @@ public final class ModelMouldsPane extends VBox {
         reference.setMinWidth(0);
         reference.setPromptText("Seleziona lo stampo di riferimento");
         reference.setAccessibleText("Stampo di riferimento del modello");
-        reference.setOnAction(
-                e -> {
+        referenceChanged =
+                (o, previous, value) -> {
                     if (updating) return;
                     var selected = reference.getValue();
                     if (selected != null) admitted.remove(selected.id());
                     render();
                     changed.run();
-                });
+                };
+        reference.valueProperty().addListener(referenceChanged);
         table.setId("ton-model-moulds-table");
         table.setMinHeight(220);
         table.setPrefHeight(440);
@@ -247,7 +249,7 @@ public final class ModelMouldsPane extends VBox {
     }
 
     public void dispose() {
-        reference.setOnAction(null);
+        reference.valueProperty().removeListener(referenceChanged);
         refresh.setOnAction(null);
         table.getItems().clear();
     }

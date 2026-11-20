@@ -69,7 +69,8 @@ rimuovendo le due tabelle dei parametri introdotte nella V16.
 V18 aggiunge le anagrafiche di presse e stampi e riusa il catalogo dei forni.
 V19 conserva per versione del modello lo stampo di riferimento e gli altri
 stampi ammessi manualmente, con misure e scostamenti teorici.
-Il dominio TON comprende 35 tabelle. Le migrazioni pubblicate restano immutabili.
+V20 distingue i gruppi per diametro articolo, ciascuno con g/mm e stampi propri.
+Il dominio TON comprende 37 tabelle. Le migrazioni pubblicate restano immutabili.
 
 L'HOST salva il backup prima delle scritture e applica le migrazioni pendenti in
 transazione, prima di pubblicare il servizio. Il CLIENT verifica lo schema

@@ -131,7 +131,8 @@ public final class ProductCostCalculator {
             if (layer == 1) height = height.add(top);
             if (layer == model.layers().size()) height = height.add(bottom);
             BigDecimal layerGrams =
-                    height.multiply(model.gramsPerMm()).multiply(ProductCosts.LOSS_FACTOR);
+                    height.multiply(model.gramsFor(specification.diameter()))
+                            .multiply(ProductCosts.LOSS_FACTOR);
             grams = grams.add(layerGrams);
             for (Ingredient ingredient : recipe.layers().get(layer)) {
                 BigDecimal quantity = layerGrams.multiply(ingredient.percent()).divide(HUNDRED);
@@ -197,10 +198,12 @@ public final class ProductCostCalculator {
     private String validate(Specification specification, Recipe recipe, Model model) {
         if ("BOZZA".equals(recipe.state()) || "BOZZA".equals(model.state()))
             return "Composizione o modello non approvato";
+        if (!model.diameters().isEmpty() && model.gramsFor(specification.diameter()) == null)
+            return "Diametro articolo non configurato nel modello";
         if (specification.height() == null
                 || specification.height().signum() <= 0
-                || model.gramsPerMm() == null
-                || model.gramsPerMm().signum() <= 0)
+                || model.gramsFor(specification.diameter()) == null
+                || model.gramsFor(specification.diameter()).signum() <= 0)
             return "Altezza o coefficiente g/mm non valido";
         if (model.layers().isEmpty() || !model.layers().keySet().equals(recipe.layers().keySet()))
             return "Strati di modello e composizione non corrispondenti";

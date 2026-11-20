@@ -103,9 +103,7 @@ public final class ProductionFixture {
                         .create(
                                 new DiskModels.Draft(
                                         "THOR-98",
-                                        new BigDecimal("98"),
                                         new BigDecimal("100"),
-                                        new BigDecimal("25"),
                                         new BigDecimal("1.5"),
                                         new BigDecimal("0.6"),
                                         "",
@@ -115,7 +113,11 @@ public final class ProductionFixture {
                                                 new BigDecimal("20"),
                                                 new BigDecimal("30")),
                                         List.of(),
-                                        new DiskModels.Moulds(mould, List.of())),
+                                        List.of(
+                                                new DiskModels.DiameterGroup(
+                                                        new BigDecimal("98"),
+                                                        new BigDecimal("25"),
+                                                        new DiskModels.Moulds(mould, List.of())))),
                                 true)
                         .join();
         for (int height : List.of(12, 14, 16, 18, 20, 22)) {

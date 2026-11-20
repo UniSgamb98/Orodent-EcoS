@@ -36,7 +36,6 @@ public final class DiskModelEditorView extends TechnicalDetailView {
 
     private final TextField code = TechnicalUi.input("ton-model-code", "Codice modello"),
             pressure = TechnicalUi.input("ton-model-pressure", "Pressione"),
-            grams = TechnicalUi.input("ton-model-grams", "Peso per millimetro"),
             top = TechnicalUi.input("ton-model-top", "Sovramateriale superiore"),
             bottom = TechnicalUi.input("ton-model-bottom", "Sovramateriale inferiore");
     private final TextArea notes = new TextArea();
@@ -45,8 +44,7 @@ public final class DiskModelEditorView extends TechnicalDetailView {
     private final Map<Tab, Sheet> sheets = new HashMap<>();
     private final EnumMap<Sheet, GridPane> grids = new EnumMap<>(Sheet.class);
     private final DiskModelPreview preview = new DiskModelPreview();
-    private final ModelMouldsPane moulds = new ModelMouldsPane(this::refreshPreview);
-    private BigDecimal historicalDiameter;
+    private final ModelDiametersEditor diameters = new ModelDiametersEditor(this::refreshPreview);
     private final LayersEditor layers = new LayersEditor(this::refreshPreview);
     private final RangesEditor ranges = new RangesEditor(this::refreshPreview);
     private final TechnicalTablePage<Usage> usages =
@@ -76,14 +74,13 @@ public final class DiskModelEditorView extends TechnicalDetailView {
                         "Il modello può essere riutilizzato per più prodotti e altezze.",
                         TechnicalUi.fields(
                                 TechnicalUi.field("Codice modello *", code),
-                                TechnicalUi.field("Stampo di riferimento *", moulds.reference()),
-                                TechnicalUi.field("Pressione · kg/cm² *", pressure),
-                                TechnicalUi.field("Peso per millimetro · g/mm *", grams)),
+                                TechnicalUi.field("Pressione · kg/cm² *", pressure)),
+                        diameters,
                         TechnicalUi.field("Note tecniche", notes),
                         TechnicalUi.label(
-                                "Il diametro deriva dallo stampo di riferimento. Gli altri stampi"
-                                    + " si selezionano manualmente in Stampi ammissibili; i pesi"
-                                    + " standard per millimetro rimangono invariati.",
+                                "Ogni diametro articolo ha stampo di riferimento, g/mm e stampi"
+                                    + " ammissibili propri. Pressione, strati e sovramateriali sono"
+                                    + " comuni a tutti i diametri del modello.",
                                 "muted-label"));
         var layerPanel =
                 TechnicalUi.panel(
@@ -113,7 +110,7 @@ public final class DiskModelEditorView extends TechnicalDetailView {
         tabWithPreview(Sheet.PARAMETERS, parameters);
         tabWithPreview(Sheet.LAYERS, layerPanel);
         tabWithPreview(Sheet.RANGES, rangePanel);
-        tab(Sheet.MOULDS, moulds);
+        tab(Sheet.MOULDS, diameters.comparisons());
         var usagePanel =
                 TechnicalUi.panel(
                         "Specifiche che utilizzano questa versione",
@@ -162,9 +159,8 @@ public final class DiskModelEditorView extends TechnicalDetailView {
         status(true, status, readonly);
         addStatusAction(copy);
         actions(cancel, save, approve, retire, delete);
-        editable.addAll(
-                List.of(moulds.reference(), pressure, grams, top, bottom, notes, layers, ranges));
-        for (TextField field : List.of(grams, top, bottom))
+        editable.addAll(List.of(pressure, top, bottom, notes, layers, ranges));
+        for (TextField field : List.of(top, bottom))
             field.textProperty().addListener((o, a, b) -> refreshPreview());
         movePreview();
     }
@@ -229,10 +225,8 @@ public final class DiskModelEditorView extends TechnicalDetailView {
             boolean frozen = revision != null && revision.frozen();
             code.setText(data == null ? "" : data.code());
             code.setDisable(revision != null);
-            historicalDiameter = data == null ? null : data.diameter();
-            moulds.show(data == null ? null : data.moulds(), frozen, historicalDiameter);
+            diameters.show(data, frozen);
             pressure.setText(data == null ? "" : TechnicalUi.number(data.pressure()));
-            grams.setText(data == null ? "" : TechnicalUi.number(data.grams()));
             top.setText(data == null ? "0" : TechnicalUi.number(data.top()));
             bottom.setText(data == null ? "0" : TechnicalUi.number(data.bottom()));
             notes.setText(data == null ? "" : data.notes());
@@ -247,13 +241,22 @@ public final class DiskModelEditorView extends TechnicalDetailView {
                                     + revision.number()
                                     + " · "
                                     + revision.state()
-                                    + (data.moulds() == null
-                                            ? " · Diametro storico "
-                                            : " · Stampo "
-                                                    + data.moulds().reference().code()
-                                                    + " · Ø ")
-                                    + TechnicalUi.number(data.diameter())
-                                    + " mm · "
+                                    + (data.diameters().isEmpty()
+                                            ? " · Diametro storico stampo "
+                                                    + TechnicalUi.number(data.diameter())
+                                                    + " mm"
+                                            : " · Diametri articolo: "
+                                                    + data.diameters().stream()
+                                                            .map(
+                                                                    g ->
+                                                                            TechnicalUi.number(
+                                                                                    g
+                                                                                            .articleDiameter()))
+                                                            .collect(
+                                                                    java.util.stream.Collectors
+                                                                            .joining(" / "))
+                                                    + " mm")
+                                    + " · "
                                     + data.layers().size()
                                     + " strati");
             readonly.setText(
@@ -283,22 +286,20 @@ public final class DiskModelEditorView extends TechnicalDetailView {
     public Draft draft() {
         return new Draft(
                 code.getText(),
-                moulds.selection().reference().diameter(),
                 TechnicalUi.decimal(pressure.getText(), "Pressione"),
-                TechnicalUi.decimal(grams.getText(), "Peso per millimetro"),
                 TechnicalUi.decimal(top.getText(), "Sovramateriale superiore"),
                 TechnicalUi.decimal(bottom.getText(), "Sovramateriale inferiore"),
                 notes.getText(),
                 layers.data(),
                 ranges.data(),
-                moulds.selection());
+                diameters.data());
     }
 
     public List<String> fingerprint() {
         var result = new ArrayList<String>();
-        for (TextField t : List.of(code, pressure, grams, top, bottom)) result.add(t.getText());
+        for (TextField t : List.of(code, pressure, top, bottom)) result.add(t.getText());
         result.add(notes.getText());
-        result.addAll(moulds.fingerprint());
+        result.addAll(diameters.fingerprint());
         result.add("LAYERS:" + layers.texts().size());
         result.addAll(layers.texts());
         result.add("RANGES:" + ranges.texts().size());
@@ -307,11 +308,7 @@ public final class DiskModelEditorView extends TechnicalDetailView {
     }
 
     private void refreshPreview() {
-        BigDecimal diameter =
-                moulds.reference().getValue() == null
-                        ? historicalDiameter
-                        : moulds.reference().getValue().diameter();
-        moulds.grams(TechnicalUi.preview(grams.getText()));
+        BigDecimal diameter = diameters.previewDiameter();
         preview.update(
                 top.getText(), bottom.getText(), TechnicalUi.number(diameter), layers.texts());
     }
@@ -343,8 +340,12 @@ public final class DiskModelEditorView extends TechnicalDetailView {
         return headerTitleProperty();
     }
 
+    public ModelDiametersEditor diameters() {
+        return diameters;
+    }
+
     public ModelMouldsPane moulds() {
-        return moulds;
+        return diameters.selectedMoulds();
     }
 
     public LayersEditor layers() {
@@ -384,7 +385,7 @@ public final class DiskModelEditorView extends TechnicalDetailView {
     }
 
     void dispose() {
-        moulds.dispose();
+        diameters.dispose();
         layers.dispose();
         ranges.dispose();
         usages.dispose();

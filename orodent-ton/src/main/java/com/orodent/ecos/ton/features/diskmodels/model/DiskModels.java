@@ -72,6 +72,15 @@ public final class DiskModels {
         }
     }
 
+    /** One explicit nominal diameter; independent standard dose and manual mould selection. */
+    public record DiameterGroup(BigDecimal articleDiameter, BigDecimal grams, Moulds moulds) {
+        public DiameterGroup {
+            articleDiameter = decimal(articleDiameter, 6, 2, false, "Diametro articolo");
+            grams = decimal(grams, 12, 5, false, "Peso per millimetro");
+            Objects.requireNonNull(moulds, "Seleziona lo stampo di riferimento.");
+        }
+    }
+
     public record Draft(
             String code,
             BigDecimal diameter,
@@ -82,7 +91,57 @@ public final class DiskModels {
             String notes,
             List<BigDecimal> layers,
             List<Range> ranges,
-            Moulds moulds) {
+            Moulds moulds,
+            List<DiameterGroup> diameters) {
+        /** Historical V19 model: physical mould known, nominal diameter not assigned. */
+        public Draft(
+                String code,
+                BigDecimal diameter,
+                BigDecimal pressure,
+                BigDecimal grams,
+                BigDecimal top,
+                BigDecimal bottom,
+                String notes,
+                List<BigDecimal> layers,
+                List<Range> ranges,
+                Moulds moulds) {
+            this(
+                    code, diameter, pressure, grams, top, bottom, notes, layers, ranges, moulds,
+                    List.of());
+        }
+
+        /** New model. The legacy header mirrors the first group only for old readers. */
+        public Draft(
+                String code,
+                BigDecimal pressure,
+                BigDecimal top,
+                BigDecimal bottom,
+                String notes,
+                List<BigDecimal> layers,
+                List<Range> ranges,
+                List<DiameterGroup> diameters) {
+            this(
+                    code,
+                    first(diameters).moulds().reference().diameter(),
+                    pressure,
+                    first(diameters).grams(),
+                    top,
+                    bottom,
+                    notes,
+                    layers,
+                    ranges,
+                    first(diameters).moulds(),
+                    diameters);
+        }
+
+        private static DiameterGroup first(List<DiameterGroup> groups) {
+            if (groups == null || groups.isEmpty())
+                throw invalid("Aggiungi almeno un diametro articolo.");
+            return groups.stream()
+                    .min(Comparator.comparing(DiameterGroup::articleDiameter))
+                    .orElseThrow();
+        }
+
         /** Legacy rows and import fixtures have a diameter but no assigned physical mould. */
         public Draft(
                 String code,
@@ -98,6 +157,24 @@ public final class DiskModels {
         }
 
         public Draft {
+            diameters =
+                    Objects.requireNonNull(diameters).stream()
+                            .sorted(Comparator.comparing(DiameterGroup::articleDiameter))
+                            .toList();
+            for (int i = 1; i < diameters.size(); i++)
+                if (diameters
+                                .get(i)
+                                .articleDiameter()
+                                .compareTo(diameters.get(i - 1).articleDiameter())
+                        == 0)
+                    throw invalid(
+                            "Ogni diametro articolo può comparire una sola volta nel modello.");
+            if (!diameters.isEmpty()) {
+                var first = diameters.getFirst();
+                diameter = first.moulds().reference().diameter();
+                grams = first.grams();
+                moulds = first.moulds();
+            }
             code = text(code).toUpperCase(Locale.ROOT);
             if (code.isEmpty() || code.length() > 100)
                 throw invalid("Inserisci un codice modello di massimo 100 caratteri.");
@@ -124,6 +201,43 @@ public final class DiskModels {
             for (int i = 1; i < ranges.size(); i++)
                 if (ranges.get(i).from().compareTo(ranges.get(i - 1).to()) < 0)
                     throw invalid("Le fasce di altezza non possono sovrapporsi.");
+        }
+
+        public void requireDiameters() {
+            if (diameters.isEmpty())
+                throw invalid(
+                        "Configura almeno un diametro articolo con stampo di riferimento e g/mm.");
+        }
+
+        /**
+         * Legacy models retain their historical coefficients; explicit groups require exact
+         * matching.
+         */
+        public DiameterGroup forArticleDiameter(BigDecimal nominal) {
+            if (diameters.isEmpty()) return null;
+            return diameters.stream()
+                    .filter(d -> nominal != null && d.articleDiameter().compareTo(nominal) == 0)
+                    .findFirst()
+                    .orElseThrow(
+                            () ->
+                                    invalid(
+                                            "Diametro articolo "
+                                                    + (nominal == null
+                                                            ? ""
+                                                            : nominal.toPlainString())
+                                                    + " mm non configurato nel modello "
+                                                    + code
+                                                    + "."));
+        }
+
+        public BigDecimal gramsFor(BigDecimal nominal) {
+            var group = forArticleDiameter(nominal);
+            return group == null ? grams : group.grams();
+        }
+
+        public BigDecimal mouldDiameterFor(BigDecimal nominal) {
+            var group = forArticleDiameter(nominal);
+            return group == null ? diameter : group.moulds().reference().diameter();
         }
 
         public BigDecimal total() {
@@ -163,7 +277,12 @@ public final class DiskModels {
             BigDecimal diameter,
             int layers,
             Integer approvedVersion,
-            Integer draftVersion) {}
+            Integer draftVersion,
+            List<BigDecimal> articleDiameters) {
+        public Summary {
+            articleDiameters = List.copyOf(articleDiameters);
+        }
+    }
 
     public enum Filter {
         ALL("Tutti gli stati"),

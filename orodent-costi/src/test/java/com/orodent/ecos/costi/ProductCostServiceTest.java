@@ -81,6 +81,40 @@ class ProductCostServiceTest {
     }
 
     @Test
+    void costsUseTheNominalDiameterGroupAndNeverFallBackToTheFirstGroup() {
+        var legacy =
+                calculate(service.load().join()).stream()
+                        .filter(r -> r.article().id() == 1)
+                        .findFirst()
+                        .orElseThrow();
+        ProductCostFixture.execute(
+                db,
+                "INSERT INTO TON.STAMPI(codice,nome,diametro_mm) VALUES ('S96','Stampo"
+                    + " 96',96),('S99','Stampo 99',99)",
+                "INSERT INTO TON.MODELLO_DIAMETRI VALUES (1,95,10,1,1,'S96','Stampo"
+                    + " 96',96),(1,98,20,2,1,'S99','Stampo 99',99)");
+        var loaded = service.load().join();
+        var updated =
+                calculate(loaded).stream()
+                        .filter(r -> r.article().id() == 1)
+                        .findFirst()
+                        .orElseThrow();
+        assertEquals(0, legacy.grams().multiply(n("0.8")).compareTo(updated.grams()));
+        assertEquals(0, legacy.powderCost().multiply(n("0.8")).compareTo(updated.powderCost()));
+        assertEquals(0, n("10").compareTo(loaded.models().get(1L).gramsFor(n("95.00"))));
+        assertNull(loaded.models().get(1L).gramsFor(n("97")));
+        ProductCostFixture.execute(
+                db, "DELETE FROM TON.MODELLO_DIAMETRI WHERE diametro_articolo_mm=98");
+        var missing =
+                calculate(service.load().join()).stream()
+                        .filter(r -> r.article().id() == 1)
+                        .findFirst()
+                        .orElseThrow();
+        assertNull(missing.grams());
+        assertTrue(missing.problems().stream().anyMatch(p -> p.contains("Diametro articolo")));
+    }
+
+    @Test
     void valuationUsesSnapshotLotsAndOutstandingOrdersAndCsvDescribesTheSelectedPolicy() {
         var date = java.time.LocalDate.now().plusDays(10);
         ProductCostFixture.execute(

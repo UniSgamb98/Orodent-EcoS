@@ -5,6 +5,7 @@ import java.sql.*;
 /** Reconstruct an actual pre-V19 catalogue when testing older migration paths. */
 final class ModelMouldFixtures {
     static void beforeV19(Connection c) throws SQLException {
+        ModelDiameterFixtures.beforeV20(c);
         try (var q = c.createStatement()) {
             q.executeUpdate("DROP TABLE TON.MODELLO_STAMPI_AMMESSI");
             q.executeUpdate("DROP TABLE TON.MODELLO_STAMPO_RIF");

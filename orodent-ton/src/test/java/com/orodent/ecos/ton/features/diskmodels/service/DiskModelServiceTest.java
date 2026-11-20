@@ -332,15 +332,19 @@ class DiskModelServiceTest {
     private Draft draft(String code, List<BigDecimal> layers, List<Range> ranges) {
         return new Draft(
                 code,
-                n("98"),
                 n("2300.125"),
-                n("20.12345"),
                 n("1.2"),
                 n("0.5"),
                 "Nota tecnica",
                 layers,
                 ranges,
-                new Moulds(new Mould(1, 1, "S98", "Stampo di riferimento", n("98")), List.of()));
+                List.of(
+                        new DiameterGroup(
+                                n("98"),
+                                n("20.12345"),
+                                new Moulds(
+                                        new Mould(1, 1, "S98", "Stampo di riferimento", n("98")),
+                                        List.of()))));
     }
 
     private List<Range> ranges() {

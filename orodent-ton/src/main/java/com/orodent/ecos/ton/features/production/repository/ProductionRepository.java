@@ -182,6 +182,7 @@ public final class ProductionRepository {
         try {
             comp.data().requireApprovable();
             m.requireApprovable();
+            m.forArticleDiameter(a.diameter());
         } catch (IllegalArgumentException bad) {
             return unavailable(a, bad.getMessage());
         }
@@ -215,7 +216,7 @@ public final class ProductionRepository {
                             new PowderShare(
                                     powder.id(), powder.code(), powder.name(), ingredient.mass()));
             }
-            doses.add(new Dose(i + 1, height, height.multiply(m.grams()), shares));
+            doses.add(new Dose(i + 1, height, height.multiply(m.gramsFor(a.diameter())), shares));
         }
         return new ArticleChoice(
                 a.id(),
@@ -230,7 +231,7 @@ public final class ProductionRepository {
                 model.number(),
                 m.code(),
                 m.pressure(),
-                m.diameter(),
+                m.mouldDiameterFor(a.diameter()),
                 reason,
                 doses);
     }

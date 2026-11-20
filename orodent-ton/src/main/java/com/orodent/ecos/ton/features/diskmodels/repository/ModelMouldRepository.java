@@ -92,10 +92,20 @@ public final class ModelMouldRepository {
         }
     }
 
-    public void validate(Moulds moulds, boolean approve) throws SQLException {
-        if (moulds == null) throw invalid("Seleziona lo stampo di riferimento del modello.");
+    public void validate(List<DiameterGroup> groups, boolean approve) throws SQLException {
+        if (groups.isEmpty()) throw invalid("Configura almeno un diametro articolo.");
+        var selected = new TreeMap<Long, Mould>();
+        for (var group : groups)
+            for (var m : group.moulds().all()) {
+                var previous = selected.putIfAbsent(m.id(), m);
+                if (previous != null && !previous.equals(m))
+                    throw invalid(
+                            m.code()
+                                    + ": seleziona la stessa revisione dello stampo nei diversi"
+                                    + " diametri.");
+            }
         var equipment = new EquipmentRepository(c);
-        for (var m : moulds.all().stream().sorted(Comparator.comparingLong(Mould::id)).toList()) {
+        for (var m : selected.values()) {
             try (var q =
                     c.prepareStatement(
                             "UPDATE TON.STAMPI SET versione_modifica=versione_modifica WHERE"

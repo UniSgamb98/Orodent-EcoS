@@ -65,6 +65,10 @@ public final class ScenarioEditors extends BorderPane {
     private Recipe recipeTemplate, shownRecipe;
     private final ComboBox<Model> modelSource = new ComboBox<>();
     private Model modelTemplate, shownModel;
+    private final ComboBox<BigDecimal> modelDiameter = new ComboBox<>();
+    private final VBox modelDiameterField =
+            new VBox(5, new Label("Diametro articolo · mm"), modelDiameter);
+    private final Map<BigDecimal, String> diameterDoses = new TreeMap<>();
     private Product shownProduct;
     private final TextField grams = new TextField(),
             top = new TextField(),
@@ -287,6 +291,25 @@ public final class ScenarioEditors extends BorderPane {
         Button applyModel = button("Applica modello allo scenario", this::applyModel);
         applyModel.setId("scenarios-apply-model");
         modelSource.setId("scenarios-model-source");
+        modelDiameter.setId("scenarios-model-diameter");
+        modelDiameter.setConverter(
+                new javafx.util.StringConverter<>() {
+                    public String toString(BigDecimal d) {
+                        return d == null ? "" : edit(d);
+                    }
+
+                    public BigDecimal fromString(String s) {
+                        throw new UnsupportedOperationException();
+                    }
+                });
+        modelDiameter
+                .valueProperty()
+                .addListener(
+                        (o, old, value) -> {
+                            if (rendering) return;
+                            if (old != null) diameterDoses.put(old, grams.getText());
+                            if (value != null) grams.setText(diameterDoses.get(value));
+                        });
         modelAffected.setWrapText(true);
         VBox modelPane =
                 new VBox(
@@ -309,6 +332,7 @@ public final class ScenarioEditors extends BorderPane {
                         new FlowPane(
                                 12,
                                 8,
+                                modelDiameterField,
                                 field("Coefficiente g/mm", grams),
                                 field("Sovramateriale superiore mm", top),
                                 field("Sovramateriale inferiore mm", bottom)),
@@ -1119,6 +1143,7 @@ public final class ScenarioEditors extends BorderPane {
             modelTemplate =
                     source == null ? null : draft.models().getOrDefault(source.id(), source);
             grams.setText(edit(modelTemplate == null ? null : modelTemplate.gramsPerMm()));
+            loadDiameterDoses();
             top.setText(edit(modelTemplate == null ? null : modelTemplate.top()));
             bottom.setText(edit(modelTemplate == null ? null : modelTemplate.bottom()));
             heights.getItems().clear();
@@ -1188,6 +1213,7 @@ public final class ScenarioEditors extends BorderPane {
             boolean b = rendering;
             rendering = true;
             grams.setText(edit(choice.gramsPerMm()));
+            loadDiameterDoses();
             top.setText(edit(choice.top()));
             bottom.setText(edit(choice.bottom()));
             heights.getItems().clear();
@@ -1222,6 +1248,18 @@ public final class ScenarioEditors extends BorderPane {
         }
     }
 
+    private void loadDiameterDoses() {
+        diameterDoses.clear();
+        if (modelTemplate != null)
+            modelTemplate.diameters().forEach((d, g) -> diameterDoses.put(d, edit(g)));
+        modelDiameter.getItems().setAll(diameterDoses.keySet());
+        modelDiameter.getSelectionModel().selectFirst();
+        boolean hasDiameters = !diameterDoses.isEmpty();
+        modelDiameterField.setVisible(hasDiameters);
+        modelDiameterField.setManaged(hasDiameters);
+        if (hasDiameters) grams.setText(diameterDoses.get(modelDiameter.getValue()));
+    }
+
     private void applyModel() {
         error(
                 () -> {
@@ -1249,22 +1287,34 @@ public final class ScenarioEditors extends BorderPane {
                                                                     false)))
                                     .sorted(Comparator.comparing(Range::from))
                                     .toList();
+                    var groupDoses = new TreeMap<BigDecimal, BigDecimal>();
+                    if (!diameterDoses.isEmpty()) {
+                        diameterDoses.put(modelDiameter.getValue(), grams.getText());
+                        diameterDoses.forEach(
+                                (d, g) ->
+                                        groupDoses.put(
+                                                d, decimal(g, "g/mm per Ø " + edit(d), false)));
+                    }
                     Model model =
                             new Model(
                                     modelTemplate.id(),
                                     modelTemplate.code(),
                                     modelTemplate.version(),
                                     "SCENARIO",
-                                    decimal(grams.getText(), "g/mm", false),
+                                    groupDoses.isEmpty()
+                                            ? decimal(grams.getText(), "g/mm", false)
+                                            : groupDoses.firstEntry().getValue(),
                                     decimal(top.getText(), "Superiore", false),
                                     decimal(bottom.getText(), "Inferiore", false),
                                     layer,
-                                    bands);
+                                    bands,
+                                    groupDoses);
                     ScenarioEngine.validateModel(model);
                     var map = new HashMap<>(draft.models());
                     if (model.id() == source.id()
                             && model.layers().equals(source.layers())
                             && model.ranges().equals(source.ranges())
+                            && model.diameters().equals(source.diameters())
                             && Objects.equals(model.gramsPerMm(), source.gramsPerMm())
                             && Objects.equals(model.top(), source.top())
                             && Objects.equals(model.bottom(), source.bottom()))

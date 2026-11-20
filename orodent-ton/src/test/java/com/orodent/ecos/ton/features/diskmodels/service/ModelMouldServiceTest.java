@@ -65,15 +65,13 @@ class ModelMouldServiceTest {
     Draft draft(String code, Mould ref, List<Mould> admitted) {
         return new Draft(
                 code,
-                ref.diameter(),
                 n("1500"),
-                n("25"),
                 n("1.5"),
                 n("0.5"),
                 "",
                 List.of(n("30"), n("20"), n("20"), n("30")),
                 List.of(),
-                new Moulds(ref, admitted));
+                List.of(new DiameterGroup(n("98"), n("25"), new Moulds(ref, admitted))));
     }
 
     Mould ref(String code) {
@@ -146,5 +144,80 @@ class ModelMouldServiceTest {
         assertThrows(IllegalArgumentException.class, () -> new Moulds(ref, List.of(ref)));
         service.delete(created).join();
         assertEquals(0, service.catalogue("ONE", Filter.ALL).join().total());
+    }
+
+    @Test
+    void independentDiameterGroupsRoundTripAndResolveOnlyExactArticleDiameters() {
+        var g98 = new DiameterGroup(n("98"), n("25"), new Moulds(ref("S99"), List.of(ref("S992"))));
+        var g95 = new DiameterGroup(n("95"), n("20"), new Moulds(ref("S988"), List.of()));
+        var data =
+                new Draft(
+                        "MULTI",
+                        n("1500"),
+                        n("1.5"),
+                        n("0.5"),
+                        "",
+                        List.of(n("100")),
+                        List.of(),
+                        List.of(g98, g95));
+        var approved = service.create(data, true).join().revision();
+        assertEquals(data, service.load(approved.id()).join().revision().data());
+        assertEquals(
+                List.of(n("95"), n("98")),
+                service
+                        .catalogue("MULTI", Filter.ALL)
+                        .join()
+                        .rows()
+                        .getFirst()
+                        .articleDiameters()
+                        .stream()
+                        .map(BigDecimal::stripTrailingZeros)
+                        .toList());
+        assertEquals(0, n("25").compareTo(data.gramsFor(n("98.00"))));
+        assertEquals(0, n("20").compareTo(data.gramsFor(n("95"))));
+        assertEquals(0, n("99").compareTo(data.mouldDiameterFor(n("98"))));
+        assertTrue(data.forArticleDiameter(n("95")).moulds().admitted().isEmpty());
+        assertThrows(IllegalArgumentException.class, () -> data.gramsFor(n("97.99")));
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        new Draft(
+                                "DUP",
+                                n("1500"),
+                                n("0"),
+                                n("0"),
+                                "",
+                                List.of(n("100")),
+                                List.of(),
+                                List.of(
+                                        g98,
+                                        new DiameterGroup(n("98.00"), n("10"), g95.moulds()))));
+        var matches =
+                new com.orodent.ecos.ton.features.compositions.service.CompositionService(
+                                db, workers)
+                        .models(List.of(1), "MULTI", true, 0)
+                        .join();
+        assertEquals(
+                List.of(n("95"), n("98")),
+                matches.rows().getFirst().articleDiameters().stream()
+                        .map(BigDecimal::stripTrailingZeros)
+                        .toList());
+        var copied = service.copy(approved).join().revision();
+        var changed =
+                new Draft(
+                        "MULTI",
+                        n("1500"),
+                        n("1.5"),
+                        n("0.5"),
+                        "",
+                        List.of(n("100")),
+                        List.of(),
+                        List.of(g98));
+        var saved = service.save(copied, changed, false).join().revision();
+        assertEquals(List.of(g98), saved.data().diameters());
+        assertEquals(data, service.load(approved.id()).join().revision().data());
+        assertThrows(CompletionException.class, () -> service.save(copied, data, false).join());
+        service.delete(saved).join();
+        assertEquals(data, service.load(approved.id()).join().revision().data());
     }
 }

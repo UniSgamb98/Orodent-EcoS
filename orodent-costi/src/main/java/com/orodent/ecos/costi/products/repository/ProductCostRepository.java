@@ -23,8 +23,16 @@ public final class ProductCostRepository {
     private final Connection connection;
     private boolean scenarioCatalogue;
     public Catalogue loadForScenarios() throws SQLException {scenarioCatalogue=true;try{return load(false);}finally{scenarioCatalogue=false;}}
-    private String usedRecipes(){return scenarioCatalogue?"(SELECT composizione_id FROM TON.COMPOSIZIONI WHERE stato<>'BOZZA')":USED_RECIPES;}
-    private String usedModels(){return scenarioCatalogue?"(SELECT modello_id FROM TON.MODELLI_DISCO WHERE stato<>'BOZZA')":USED_MODELS;}
+    private String usedRecipes(){
+        return scenarioCatalogue
+                ? "(SELECT composizione_id FROM TON.COMPOSIZIONI WHERE stato<>'BOZZA')"
+                : USED_RECIPES;
+    }
+    private String usedModels(){
+        return scenarioCatalogue
+                ? "(SELECT modello_id FROM TON.MODELLI_DISCO WHERE stato<>'BOZZA')"
+                : USED_MODELS;
+    }
 
     public ProductCostRepository(Connection connection) {
         this.connection = Objects.requireNonNull(connection);
@@ -172,6 +180,15 @@ JOIN TON.POLVERI p ON p.polvere_id=r.polvere_id WHERE i.composizione_id IN
                                                 r.getBigDecimal(3),
                                                 r.getBigDecimal(4),
                                                 r.getBigDecimal(5))));
+        var modelDiameters = new HashMap<Long, Map<BigDecimal, BigDecimal>>();
+        query(
+                "SELECT modello_id,diametro_articolo_mm,grammi_per_mm FROM TON.MODELLO_DIAMETRI"
+                    + " WHERE modello_id IN "
+                        + usedModels(),
+                r ->
+                        modelDiameters
+                                .computeIfAbsent(r.getLong(1), k -> new HashMap<>())
+                                .put(r.getBigDecimal(2), r.getBigDecimal(3)));
         var models = new HashMap<Long, Model>();
         query(
                 "SELECT"
@@ -190,7 +207,8 @@ JOIN TON.POLVERI p ON p.polvere_id=r.polvere_id WHERE i.composizione_id IN
                                         r.getBigDecimal(6),
                                         r.getBigDecimal(7),
                                         layers.getOrDefault(r.getLong(1), Map.of()),
-                                        ranges.getOrDefault(r.getLong(1), List.of()))));
+                                        ranges.getOrDefault(r.getLong(1), List.of()),
+                                        modelDiameters.getOrDefault(r.getLong(1), Map.of()))));
 
         var lotTotals = new HashMap<Long, BigDecimal[]>();
         query(
