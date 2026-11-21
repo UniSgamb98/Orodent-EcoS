@@ -119,7 +119,7 @@ public final class EquipmentUiProbe {
                         assertInstanceOf(TonListView.class, node("ton-presses-list"));
                         assertTrue(
                                 text("ton-breadcrumb")
-                                        .contains("Macchinari e attrezzature › Presse"));
+                                        .contains("Attrezzature e Fornitori › Presse"));
                         assertEquals("Aggiorna", button("ton-presses-refresh").getText());
                         button("ton-presses-new").fire();
                         assertTrue(button("ton-presses-reload").isDisabled());

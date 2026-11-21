@@ -71,8 +71,16 @@ public final class SuppliersUiProbe {
                                                 .toUri()
                                                 .toString());
                         stage.show();
-                        assertNotNull(node("ton-suppliers-button"));
-                        button("ton-suppliers-button").fire();
+                        nav("technical");
+                        assertNull(node("ton-tech-suppliers-button"));
+                        nav("equipment");
+                        assertEquals(
+                                "Attrezzature e Fornitori", button("ton-nav-equipment").getText());
+                        button("ton-tech-suppliers-button").fire();
+                        assertTrue(
+                                ((Label) node("ton-breadcrumb"))
+                                        .getText()
+                                        .endsWith("Attrezzature e Fornitori › Fornitori"));
                         return null;
                     });
             await(() -> node("ton-suppliers-table") instanceof TableView<?> t && !t.isDisabled());

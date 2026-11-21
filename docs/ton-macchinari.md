@@ -1,7 +1,8 @@
-# Macchinari e attrezzature
+# Attrezzature e Fornitori
 
-Aprire **TON → Preparazione → Macchinari e attrezzature**, accanto a **Dati tecnici**.
-Le tre pagine **Presse**, **Stampi** e **Forni** riutilizzano `TonListView`, lo stesso
+Aprire **TON → Preparazione → Attrezzature e Fornitori**, accanto a **Dati tecnici**.
+Le pagine **Presse**, **Stampi**, **Forni** e [**Fornitori**](ton-fornitori.md)
+riutilizzano `TonListView`, lo stesso
 componente degli elenchi dei cataloghi tecnici: sfondo azzurro, pannello bianco,
 ricerca, **Aggiorna**, filtro delle archiviate e tabella con colonne distribuite
 su tutta la larghezza. Non ci sono frecce di pagina, contatore o pulsante di

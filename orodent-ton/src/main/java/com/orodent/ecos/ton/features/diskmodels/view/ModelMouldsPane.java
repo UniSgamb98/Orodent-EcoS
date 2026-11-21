@@ -110,7 +110,7 @@ public final class ModelMouldsPane extends VBox {
                                                 : "Non selezionato",
                 160);
         table.setPlaceholder(
-                new Label("Nessuno stampo. Registra gli stampi in Macchinari e attrezzature."));
+                new Label("Nessuno stampo. Registra gli stampi in Attrezzature e Fornitori."));
         getChildren()
                 .addAll(
                         TechnicalUi.label("Stampi ammissibili", "ton-technical-panel-title"),

@@ -65,7 +65,7 @@ public enum TonFeature {
             "Polveri",
             "Organizza le polveri, le caratteristiche tecniche e le revisioni delle schede."),
     SUPPLIERS(
-            TonSection.TECHNICAL,
+            TonSection.EQUIPMENT,
             "Fornitori",
             "Gestisci i codici e i nomi dei fornitori delle polveri."),
     LOTS(

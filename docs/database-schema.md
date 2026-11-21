@@ -305,7 +305,7 @@ gli ID e i riferimenti dei cicli di cottura restano identici. I due nuovi catalo
 sono inizialmente vuoti; non si generano presse o stampi dai modelli disco e non
 si modificano le specifiche di produzione. Il controllo CLIENT verifica presenza,
 tipi e precisione delle misure. Backup e migrazione seguono la procedura HOST.
-Vedere [Macchinari e attrezzature](ton-macchinari.md).
+Vedere [Attrezzature e Fornitori](ton-macchinari.md).
 
 ## Migrazione dalla versione 18 alla 19
 

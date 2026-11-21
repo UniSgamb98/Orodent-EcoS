@@ -92,11 +92,10 @@ final class TonPages {
                 .add(
                         label(
                                 section == TonSection.EQUIPMENT
-                                        ? "Le anagrafiche di presse, stampi e forni sono"
+                                        ? "Le anagrafiche di presse, stampi, forni e fornitori sono"
                                                 + " disponibili."
                                         : section == TonSection.TECHNICAL
-                                                ? "I cataloghi tecnici e l’anagrafica fornitori"
-                                                      + " sono operativi."
+                                                ? "I cataloghi tecnici sono operativi."
                                                 : section == TonSection.PRODUCTION
                                                         ? "La preparazione delle produzioni e le"
                                                               + " bozze sono disponibili. Scarti ed"

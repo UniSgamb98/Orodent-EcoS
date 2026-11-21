@@ -1,6 +1,6 @@
 # Fornitori
 
-Aprire **TON → Dati tecnici → Fornitori**. La pagina usa l’elenco comune TON:
+Aprire **TON → Attrezzature e Fornitori → Fornitori**. La pagina usa l’elenco comune TON:
 ricerca per codice o nome, Aggiorna, Nuovo fornitore e Mostra anche archiviati.
 Doppio clic o Invio apre l’anagrafica con codice univoco, nome e stato attivo.
 Salvataggi concorrenti vengono rilevati senza sovrascrivere quelli di altri operatori.

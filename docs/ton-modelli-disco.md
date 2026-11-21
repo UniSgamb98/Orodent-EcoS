@@ -42,7 +42,7 @@ modello. Il numero della versione viene assegnato dal servizio.
   elimina dalla bozza, mantenendo almeno una riga. Le intestazioni compaiono
   una sola volta sopra tutte le righe; campi e × hanno la stessa altezza.
   Il diametro fisico deriva
-  dallo stampo registrato in [Macchinari e attrezzature](ton-macchinari.md);
+  dallo stampo registrato in [Attrezzature e Fornitori](ton-macchinari.md);
   quello nominale è inserito esplicitamente. I valori non devono coincidere.
 - **Strati**: percentuali di altezza, totale e anteprima in sezione. Aggiungere,
   rimuovere o spostare una riga conserva i valori delle altre. **Distribuisci

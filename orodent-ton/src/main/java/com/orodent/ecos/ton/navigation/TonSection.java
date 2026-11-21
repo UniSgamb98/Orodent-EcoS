@@ -26,8 +26,8 @@ public enum TonSection {
             "M3 3h18v4H3z M3 10h18v4H3z M3 17h18v4H3z"),
     EQUIPMENT(
             "equipment",
-            "Macchinari e attrezzature",
-            "Gestisci presse, stampi e forni utilizzati nelle lavorazioni del laboratorio.",
+            "Attrezzature e Fornitori",
+            "Gestisci presse, stampi, forni e fornitori delle polveri del laboratorio.",
             "M14 3l7 7-4 4-3-3-7 10-4-4 10-7-3-3z"),
     TRACEABILITY(
             "traceability",

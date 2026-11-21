@@ -1,7 +1,7 @@
 # TON: navigazione e cataloghi tecnici
 
 TON dispone di **Panoramica**, **Produzione**, **Cotture**, **Dati tecnici**,
-**Macchinari e attrezzature**, **Tracciabilità** e **Documenti**. Il percorso completo è mostrato nell'intestazione
+**Attrezzature e Fornitori**, **Tracciabilità** e **Documenti**. Il percorso completo è mostrato nell'intestazione
 (es. **TON › Dati tecnici › Articoli**), senza una seconda barra sotto o titoli
 ripetuti nel corpo delle pagine. L'inserimento multiplo aggiunge l'ultimo livello:
 **TON › Dati tecnici › Prodotti tecnici › Inserimento multiplo** (oppure Articoli);
@@ -18,8 +18,8 @@ Dati tecnici mantiene al massimo due colonne, disposte per righe:
 Tutti e sei i cataloghi tecnici sono operativi e si aprono anche dalla
 Panoramica. In **Documenti → Modelli documento** è disponibile l’editor visuale
 con bozze e versioni nel DB. In **Produzione → Produzioni e bozze** si preparano
-i dischi richiesti e le relative pesate. **Macchinari e attrezzature**, nel gruppo
-Preparazione, contiene le anagrafiche operative di presse, stampi e forni.
+i dischi richiesti e le relative pesate. **Attrezzature e Fornitori**, nel gruppo
+Preparazione, contiene le anagrafiche operative di presse, stampi, forni e fornitori.
 Le funzioni restanti sono indicate come
 **In preparazione**, senza contatori fittizi o comandi non implementati. Il cubaggio resta rinviato.
 
@@ -28,7 +28,7 @@ Le funzioni restanti sono indicate come
 - [Polveri, ossidi e schede tecniche approvate](ton-polveri.md).
 - [Fornitori delle polveri](ton-fornitori.md).
 - [Modelli disco, strati, sovramateriali e versioni](ton-modelli-disco.md).
-- [Macchinari e attrezzature: presse, stampi e forni](ton-macchinari.md).
+- [Attrezzature e Fornitori: presse, stampi, forni e fornitori](ton-macchinari.md).
 - [Composizioni, ricette per strato, ossidi e utilizzi](ton-composizioni.md).
 - [Produzioni e bozze: quantità, pesate e documenti reali](ton-produzione.md).
 - [Mockup di riferimento della produzione](ton-produzione-proposta.md).
