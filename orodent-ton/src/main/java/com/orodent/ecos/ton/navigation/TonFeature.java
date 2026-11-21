@@ -5,6 +5,11 @@ import java.util.List;
 
 /** Planned work is descriptive; only implemented features get action buttons. */
 public enum TonFeature {
+    AVAILABILITY(
+            TonSection.PRODUCTION,
+            "Disponibilità",
+            "Consulta giacenze, ordini da evadere e vendite degli articoli; prepara le nuove"
+                + " produzioni."),
     PRODUCTIONS(
             TonSection.PRODUCTION,
             "Produzioni e bozze",
@@ -113,7 +118,8 @@ public enum TonFeature {
     }
 
     public boolean available() {
-        return this == SUPPLIERS
+        return this == AVAILABILITY
+                || this == SUPPLIERS
                 || this == PRESSES
                 || this == MOULDS
                 || this == FURNACES

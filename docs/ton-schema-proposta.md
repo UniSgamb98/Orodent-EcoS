@@ -14,7 +14,8 @@ L'obiettivo è mantenere il percorso di TON-V2 — cataloghi, composizioni, mode
 produzioni, forni, lotti e documenti — rendendo espliciti i dati tecnici storici e
 le regole di concorrenza. Tutte le tabelle risiedono nel database `OrodentEcoS`,
 nello schema `TON`. I codici articolo coincidono con quelli delle vendite di
-Statistiche; il collegamento delle schermate sarà implementato successivamente.
+Statistiche; la [pagina Disponibilità](ton-disponibilita.md) usa ora questo
+collegamento per mostrare le vendite per codice.
 La [guida dei cataloghi](ton-cataloghi.md) descrive le regole effettivamente disponibili.
 
 ## Come leggere la proposta

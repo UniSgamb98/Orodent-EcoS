@@ -8,7 +8,7 @@ EcoS usa un solo database Derby, organizzato per dominio dei dati.
 | `ANAGRAFICHE` | `CLIENTI`, `FORNITORI`, `FORNITORI_ALIAS` | Anagrafica condivisa tra i moduli |
 | `VENDITE` | `VENDITE_DETTAGLIO` | Vendite e rettifiche condivise |
 | `COSTI` | `POLVERI_PREZZI`, `POLVERI_LOTTI` | Fotografie manuali dei prezzi e delle quantità delle polveri, con revisioni economiche |
-| `TON` | 40 tabelle: cataloghi, specifiche versionate, piani e produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
+| `TON` | 43 tabelle: cataloghi, specifiche versionate, piani e produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
 
 Statistiche legge clienti e vendite dagli schemi condivisi; TON gestisce il proprio
 catalogo tecnico in `TON.PRODOTTI`. Lo schema `STATISTICHE` sarà creato soltanto
@@ -370,3 +370,12 @@ preventivo dell'HOST; il CLIENT richiede l'aggiornamento dell'HOST.
 `V22__supplier_catalogue.sql` aggiunge l’anagrafica condivisa dei fornitori e i
 collegamenti da polveri e ordini. Il recupero dei nomi esistenti avviene nella
 stessa transazione della migrazione. Vedere [Fornitori](ton-fornitori.md).
+
+## Migrazione dalla versione 22 alla 23
+
+`V23__ton_availability.sql` conserva le fotografie CSV di disponibilità e ordini
+da evadere degli articoli in `TON.DISPONIBILITA_IMPORT` e
+`TON.DISPONIBILITA_VALORI`. `TON.DISPONIBILITA_FONTI` punta separatamente alla
+fotografia corrente delle due fonti, con controllo di concorrenza. Non contiene
+quantità iniziali o movimentazioni automatiche. I dati di vendita restano nello
+schema condiviso `VENDITE`. Vedere [Disponibilità prodotti](ton-disponibilita.md).

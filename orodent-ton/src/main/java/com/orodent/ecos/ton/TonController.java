@@ -1,6 +1,10 @@
 package com.orodent.ecos.ton;
 
 import com.orodent.ecos.module.ModuleContext;
+import com.orodent.ecos.ton.features.availability.controller.AvailabilityController;
+import com.orodent.ecos.ton.features.availability.model.Availability.Article;
+import com.orodent.ecos.ton.features.availability.service.AvailabilityService;
+import com.orodent.ecos.ton.features.availability.view.AvailabilityView;
 import com.orodent.ecos.ton.features.catalog.bulk.controller.BulkCatalogController;
 import com.orodent.ecos.ton.features.catalog.bulk.service.BulkCatalogService;
 import com.orodent.ecos.ton.features.catalog.bulk.view.BulkCatalogView;
@@ -51,6 +55,9 @@ final class TonController {
     private final ProductionService productions;
     private final EquipmentService equipment;
     private final SupplierService suppliers;
+    private final AvailabilityService availability;
+    private AvailabilityView availabilityView;
+    private AvailabilityView.Position availabilityPosition = AvailabilityView.Position.initial();
     private final java.util.concurrent.Executor workers;
     private FeatureController active;
     private TonFeature activeFeature;
@@ -59,6 +66,7 @@ final class TonController {
     TonController(ModuleContext context) {
         workers = context.workers();
         suppliers = new SupplierService(context.connections(), workers);
+        availability = new AvailabilityService(context.connections(), workers);
         equipment = new EquipmentService(context.connections(), workers);
         documents = new DocumentTemplateService(context.connections(), workers);
         productions = new ProductionService(context.connections(), workers);
@@ -116,23 +124,8 @@ final class TonController {
                 var controller = new SuppliersController(page, suppliers);
                 install(feature, page, controller, controller::start);
             }
-            case PRODUCTIONS -> {
-                var page = new ProductionView();
-                page.subpageProperty()
-                        .addListener(
-                                (o, before, subpage) -> view.showFeature(page, feature, subpage));
-                var controller =
-                        new ProductionController(
-                                page,
-                                productions,
-                                article ->
-                                        openCatalogue(
-                                                Navigation.open(CatalogKind.ARTICLES, article)),
-                                product ->
-                                        openCatalogue(
-                                                Navigation.open(CatalogKind.PRODUCTS, product)));
-                install(feature, page, controller, controller::start);
-            }
+            case AVAILABILITY -> installAvailability();
+            case PRODUCTIONS -> installProductions(null);
             case PRODUCTS -> {
                 installCatalogue(Navigation.list(CatalogKind.PRODUCTS));
             }
@@ -175,6 +168,51 @@ final class TonController {
                     throw new IllegalArgumentException(
                             "Funzione TON non ancora disponibile: " + feature);
         }
+    }
+
+    private void installAvailability() {
+        availabilityView = new AvailabilityView();
+        var controller =
+                new AvailabilityController(availabilityView, availability, this::openProduction);
+        install(
+                TonFeature.AVAILABILITY,
+                availabilityView,
+                controller,
+                () -> controller.start(availabilityPosition));
+    }
+
+    private void openProduction(Article article) {
+        if (!canLeave()) return;
+        closePage();
+        installProductions(article);
+    }
+
+    private void installProductions(Article origin) {
+        var page = new ProductionView();
+        page.subpageProperty()
+                .addListener((o, a, b) -> view.showFeature(page, TonFeature.PRODUCTIONS, b));
+        var controller =
+                new ProductionController(
+                        page,
+                        productions,
+                        article -> openCatalogue(Navigation.open(CatalogKind.ARTICLES, article)),
+                        product -> openCatalogue(Navigation.open(CatalogKind.PRODUCTS, product)));
+        if (origin != null) {
+            page.back.setText("← Torna alla disponibilità");
+            controller.onReturn(
+                    () -> {
+                        closePage();
+                        installAvailability();
+                    });
+        }
+        install(
+                TonFeature.PRODUCTIONS,
+                page,
+                controller,
+                () -> {
+                    if (origin == null) controller.start();
+                    else controller.startForProduct(origin.productId(), origin.diameter());
+                });
     }
 
     private void openCatalogue(Navigation route) {
@@ -246,6 +284,10 @@ final class TonController {
     }
 
     private void closePage() {
+        if (activeFeature == TonFeature.AVAILABILITY && availabilityView != null) {
+            availabilityPosition = availabilityView.position();
+            availabilityView = null;
+        }
         view.navigationBlockedProperty().unbind();
         view.navigationBlockedProperty().set(false);
         if (active != null) {

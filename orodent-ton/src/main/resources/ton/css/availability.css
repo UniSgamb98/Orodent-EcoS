@@ -1,0 +1,24 @@
+/* Operational stock view: dense catalogue, fixed line index and explicit source freshness. */
+.ton-availability { -fx-padding: 12px 26px 20px 26px; }
+.ton-availability .availability-title { -fx-font-size: 22px; -fx-font-weight: bold; }
+.ton-availability .availability-total-label { -fx-text-fill: #526e83; -fx-font-size: 12px; }
+.ton-availability .availability-total-number { -fx-text-fill: #18778c; -fx-font-size: 24px; -fx-font-weight: bold; }
+.ton-availability .split-pane { -fx-background-color: transparent; -fx-padding: 0; }
+.ton-availability .split-pane-divider { -fx-background-color: transparent; -fx-padding: 0 6px; }
+.ton-availability .availability-rail { -fx-background-color: white; -fx-border-color: #cbdce7; -fx-background-radius: 9px; -fx-border-radius: 9px; -fx-padding: 10px; }
+.ton-availability .scroll-pane, .ton-availability .scroll-pane > .viewport { -fx-background-color: transparent; }
+.ton-availability .availability-line-button { -fx-min-height: 36px; -fx-alignment: center; -fx-padding: 7px 10px; }
+.ton-availability .availability-current-line { -fx-background-color: #18778c; -fx-text-fill: white; -fx-border-color: #18778c; }
+.ton-availability .availability-current-line:hover { -fx-background-color: #12677a; }
+.ton-availability .availability-table-card { -fx-padding: 10px; -fx-background-color: white; -fx-border-color: #cbdce7; -fx-border-radius: 9px; -fx-background-radius: 9px; }
+.ton-availability .table-row-cell:odd { -fx-background-color: #f8fbfd; }
+.ton-availability .table-row-cell:selected { -fx-background-color: #d9eef2; }
+.ton-availability .table-row-cell:jump-target { -fx-background-color: #ccecef; }
+.ton-availability .table-cell { -fx-padding: 7px 14px; -fx-font-size: 14px; -fx-font-weight: normal; -fx-font-family: "System"; }
+.ton-availability .availability-number-column .label { -fx-alignment: center-right; }
+.ton-availability .table-cell.availability-low { -fx-text-fill: #b33b39; -fx-font-weight: bold; }
+.ton-availability .table-view .column-header .label { -fx-padding: 7px 14px; }
+
+.ton-availability .table-cell.availability-number-column { -fx-alignment: center-right; }
+.ton-availability .table-cell.availability-code-column { -fx-alignment: center-left; }
+.ton-availability .column-header.availability-code-column .label { -fx-alignment: center-left; }

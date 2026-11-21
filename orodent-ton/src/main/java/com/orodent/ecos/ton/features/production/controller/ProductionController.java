@@ -36,6 +36,8 @@ public final class ProductionController implements FeatureController {
     private ProductChoice product;
     private LineChoice line;
     private BigDecimal diameter;
+    private BigDecimal preferredDiameter;
+    private Runnable returnAction;
     private long formVersion, renderedVersion = -1;
     private final ChangeListener<LocalDate> dateListener = (o, a, b) -> changed();
     private final ChangeListener<String> notesListener = (o, a, b) -> changed();
@@ -76,6 +78,10 @@ public final class ProductionController implements FeatureController {
         view.back.setOnAction(
                 e -> {
                     if (canLeave()) {
+                        if (returnAction != null) {
+                            returnAction.run();
+                            return;
+                        }
                         cancelReads();
                         editing = false;
                         workspace = null;
@@ -126,11 +132,52 @@ public final class ProductionController implements FeatureController {
         loadList();
     }
 
+    public void onReturn(Runnable action) {
+        returnAction = action;
+    }
+
+    public void startForProduct(long productId, BigDecimal selectedDiameter) {
+        loadCatalogues(
+                () -> {
+                    newPlan();
+                    var selected =
+                            catalogues.products().stream()
+                                    .filter(p -> p.id() == productId)
+                                    .findFirst()
+                                    .orElse(null);
+                    if (selected == null) {
+                        view.feedback(
+                                "Il prodotto non è disponibile per nuove produzioni. Verifica"
+                                    + " l’anagrafica.");
+                        return;
+                    }
+                    preferredDiameter = selectedDiameter;
+                    var selectedLine =
+                            catalogues.lines().stream()
+                                    .filter(l -> l.id() == selected.lineId())
+                                    .findFirst()
+                                    .orElse(null);
+                    selectLine(selectedLine);
+                    updating = true;
+                    try {
+                        view.line.setValue(selectedLine);
+                    } finally {
+                        updating = false;
+                    }
+                    selectProduct(selected);
+                    dirty = false;
+                });
+    }
+
     public ReadOnlyBooleanProperty savingProperty() {
         return saving.getReadOnlyProperty();
     }
 
     private void loadCatalogues() {
+        loadCatalogues(null);
+    }
+
+    private void loadCatalogues(Runnable loaded) {
         read(
                 "catalogues",
                 service.catalogues(),
@@ -158,6 +205,7 @@ public final class ProductionController implements FeatureController {
                         updating = false;
                     }
                     view.listing.create().setDisable(false);
+                    if (loaded != null) loaded.run();
                 },
                 text -> {
                     view.listing.error(text);
@@ -263,6 +311,8 @@ public final class ProductionController implements FeatureController {
         view.showColors(line, value);
         view.clearRows();
         changed();
+        BigDecimal desired = preferredDiameter;
+        preferredDiameter = null;
         read(
                 "diameters",
                 service.diameters(value.id()),
@@ -272,9 +322,19 @@ public final class ProductionController implements FeatureController {
                         view.diameter.getItems().setAll(values);
                         diameter =
                                 values.stream()
-                                        .filter(d -> d.compareTo(new BigDecimal("98")) == 0)
+                                        .filter(
+                                                d ->
+                                                        d.compareTo(
+                                                                        desired == null
+                                                                                ? new BigDecimal(
+                                                                                        "98")
+                                                                                : desired)
+                                                                == 0)
                                         .findFirst()
-                                        .orElse(values.isEmpty() ? null : values.getFirst());
+                                        .orElse(
+                                                desired != null || values.isEmpty()
+                                                        ? null
+                                                        : values.getFirst());
                         view.diameter.setValue(diameter);
                     } finally {
                         updating = false;
@@ -283,7 +343,7 @@ public final class ProductionController implements FeatureController {
                     else {
                         view.feedback(
                                 "Il prodotto non ha articoli attivi. Crea i formati nei Dati"
-                                    + " tecnici.");
+                                        + " tecnici.");
                         controls();
                     }
                 });

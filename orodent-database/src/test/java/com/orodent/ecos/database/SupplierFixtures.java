@@ -4,6 +4,7 @@ import java.sql.*;
 
 final class SupplierFixtures {
     static void beforeV22(Connection c) throws SQLException {
+        AvailabilityFixtures.beforeV23(c);
         try (var q = c.createStatement()) {
             q.executeUpdate("ALTER TABLE TON.POLVERI DROP CONSTRAINT fk_ton_polveri_fornitore");
             q.executeUpdate(

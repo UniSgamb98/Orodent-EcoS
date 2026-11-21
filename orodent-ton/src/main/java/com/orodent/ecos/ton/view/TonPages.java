@@ -42,6 +42,11 @@ final class TonPages {
                                 10,
                                 8,
                                 action(
+                                        "Disponibilità prodotti",
+                                        "ton-availability-button",
+                                        () -> openFeature.accept(TonFeature.AVAILABILITY),
+                                        true),
+                                action(
                                         "Apri articoli",
                                         "ton-articles-button",
                                         () -> openFeature.accept(TonFeature.ARTICLES),
@@ -163,6 +168,7 @@ final class TonPages {
         if (feature.available()) {
             String title =
                     switch (feature) {
+                        case AVAILABILITY -> "Apri disponibilità";
                         case PRODUCTIONS -> "Apri produzioni";
                         case PRESSES -> "Apri presse";
                         case MOULDS -> "Apri stampi";

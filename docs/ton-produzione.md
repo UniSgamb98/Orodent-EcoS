@@ -1,6 +1,9 @@
 # Preparazione delle produzioni TON
 
 Aprire **TON → Produzione → Produzioni e bozze → Nuova produzione**.
+In alternativa, il doppio clic in [Disponibilità](ton-disponibilita.md)
+preseleziona prodotto e diametro del codice e consente di tornare alla
+consultazione mantenendo il punto nell’elenco.
 La pagina descrive i dischi da realizzare e calcola quanto pesare: non registra
 pezzi già prodotti e non movimenta magazzino, scarti, lotti o cotture.
 

@@ -17,7 +17,9 @@ Dati tecnici mantiene al massimo due colonne, disposte per righe:
 
 Tutti e sei i cataloghi tecnici sono operativi e si aprono anche dalla
 Panoramica. In **Documenti → Modelli documento** è disponibile l’editor visuale
-con bozze e versioni nel DB. In **Produzione → Produzioni e bozze** si preparano
+con bozze e versioni nel DB. In **Produzione → Disponibilità** si consultano
+giacenze, ordini aperti e vendite, con accesso diretto alla preparazione.
+In **Produzione → Produzioni e bozze** si preparano
 i dischi richiesti e le relative pesate. **Attrezzature e Fornitori**, nel gruppo
 Preparazione, contiene le anagrafiche operative di presse, stampi, forni e fornitori.
 Le funzioni restanti sono indicate come
@@ -30,6 +32,7 @@ Le funzioni restanti sono indicate come
 - [Modelli disco, strati, sovramateriali e versioni](ton-modelli-disco.md).
 - [Attrezzature e Fornitori: presse, stampi, forni e fornitori](ton-macchinari.md).
 - [Composizioni, ricette per strato, ossidi e utilizzi](ton-composizioni.md).
+- [Disponibilità prodotti: giacenze, ordini, vendite e accesso alla produzione](ton-disponibilita.md).
 - [Produzioni e bozze: quantità, pesate e documenti reali](ton-produzione.md).
 - [Mockup di riferimento della produzione](ton-produzione-proposta.md).
 - [Proposta iniziale dell'editor visuale dei documenti](ton-documenti-proposta.md).

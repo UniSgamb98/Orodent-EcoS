@@ -120,6 +120,11 @@ public final class DatabaseSchema {
                     22,
                     "Shared supplier catalogue",
                     "/database/migrations/V22__supplier_catalogue.sql");
+    private static final SchemaMigration AVAILABILITY =
+            new SchemaMigration(
+                    23,
+                    "TON article availability snapshots",
+                    "/database/migrations/V23__ton_availability.sql");
     private static final List<SchemaMigration> MIGRATIONS =
             List.of(
                     BASELINE,
@@ -143,7 +148,8 @@ public final class DatabaseSchema {
                     TON_MODEL_MOULDS,
                     TON_MODEL_DIAMETERS,
                     TON_PRODUCT_SPECIFICATIONS,
-                    SUPPLIERS);
+                    SUPPLIERS,
+                    AVAILABILITY);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS =
             List.of(
@@ -317,6 +323,7 @@ public final class DatabaseSchema {
             if (version >= TON_PRODUCT_SPECIFICATIONS.version())
                 ProductSpecificationSchema.verify(connection);
             if (version >= SUPPLIERS.version()) SupplierSchema.verify(connection);
+            if (version >= AVAILABILITY.version()) AvailabilitySchema.verify(connection);
             return version;
         }
         if (tableExists(connection, "APP", HISTORY)) {
