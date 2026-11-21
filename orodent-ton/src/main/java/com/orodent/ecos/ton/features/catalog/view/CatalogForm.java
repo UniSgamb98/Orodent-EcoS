@@ -17,6 +17,8 @@ public final class CatalogForm extends VBox {
     private final ComboBox<String> material = new ComboBox<>(), color = new ComboBox<>();
     private final CheckBox active = new CheckBox("Anagrafica attiva");
     private final CatalogLookup parent;
+    private final TextField productSummary = new TextField();
+    private Article originalArticle;
     private final Label structural = CatalogUi.hint(""), legacy = CatalogUi.hint("");
     private final Label generatedDescription = CatalogUi.hint("");
     private Product originalProduct;
@@ -68,6 +70,9 @@ public final class CatalogForm extends VBox {
                 kind.parent() == null
                         ? null
                         : new CatalogLookup(kind.parent(), base + "-parent", false);
+        productSummary.setId(base + "-product-summary");
+        productSummary.setEditable(false);
+        CatalogUi.visible(productSummary, false);
         if (parent != null)
             parent.choices()
                     .valueProperty()
@@ -79,6 +84,7 @@ public final class CatalogForm extends VBox {
                                                 : text(b.lineCode())
                                                         + " · "
                                                         + colorLabelOf(b.color()));
+                                productSummary.setText(b == null ? "" : b.toString());
                                 productPreview();
                             });
         color.getEditor().textProperty().addListener((o, a, b) -> productPreview());
@@ -101,7 +107,7 @@ public final class CatalogForm extends VBox {
                 fields.add(CatalogUi.field("Descrizione · automatica", generatedDescription));
             }
             case ARTICLES -> {
-                fields.add(CatalogUi.field("Prodotto *", parent));
+                fields.add(CatalogUi.field("Prodotto *", new StackPane(parent, productSummary)));
                 fields.add(CatalogUi.field("Linea e colore ereditati", derived));
                 fields.add(CatalogUi.field("Diametro · mm *", diameter));
                 fields.add(CatalogUi.field("Altezza · mm *", height));
@@ -126,6 +132,7 @@ public final class CatalogForm extends VBox {
         showing = true;
         Entry entry = detail == null ? null : detail.entry();
         originalProduct = entry instanceof Product p ? p : null;
+        originalArticle = entry instanceof Article a ? a : null;
         boolean used = entry != null && entry.used();
         code.setText(entry == null ? "" : entry.code());
         name.setText(entry == null ? "" : entry.name());
@@ -145,7 +152,14 @@ public final class CatalogForm extends VBox {
                         case null -> context;
                         default -> null;
                     });
-            parent.setDisable(entry instanceof Product p ? used && p.line() != null : used);
+            parent.setDisable(
+                    entry instanceof Product p
+                            ? used && p.line() != null
+                            : originalArticle != null);
+            if (kind == CatalogKind.ARTICLES) {
+                CatalogUi.visible(parent, originalArticle == null);
+                CatalogUi.visible(productSummary, originalArticle != null);
+            }
         }
         String selected = entry instanceof Product p ? p.color() : null;
         color.setValue(
@@ -242,7 +256,9 @@ public final class CatalogForm extends VBox {
                     new ArticleDraft(
                             code.getText(),
                             name.getText(),
-                            parent.id() == null ? 0 : parent.id(),
+                            originalArticle != null
+                                    ? originalArticle.product().id()
+                                    : parent.id() == null ? 0 : parent.id(),
                             CatalogUi.decimal(diameter.getText(), "Diametro"),
                             CatalogUi.decimal(height.getText(), "Altezza"),
                             notes.getText(),

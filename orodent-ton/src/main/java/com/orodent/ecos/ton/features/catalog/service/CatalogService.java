@@ -267,6 +267,12 @@ public final class CatalogService {
     }
 
     private static void validateStructure(Entry current, Draft draft) {
+        if (current instanceof Article a
+                && draft instanceof ArticleDraft d
+                && a.product().id() != d.productId())
+            throw invalid(
+                    "Il prodotto di appartenenza di un articolo salvato non può essere cambiato."
+                        + " Crea un nuovo articolo nel prodotto corretto.");
         if (!current.used()) return;
         if (current instanceof Line l
                 && draft instanceof LineDraft d
@@ -284,11 +290,10 @@ public final class CatalogService {
         }
         if (current instanceof Article a
                 && draft instanceof ArticleDraft d
-                && (a.product().id() != d.productId()
-                        || a.diameter().compareTo(d.diameter()) != 0
+                && (a.diameter().compareTo(d.diameter()) != 0
                         || a.height().compareTo(d.height()) != 0))
             throw invalid(
-                    "L'articolo è già configurato. Per cambiare prodotto o formato crea un nuovo"
+                    "L'articolo è già utilizzato. Per cambiare formato crea un nuovo"
                             + " articolo.");
     }
 

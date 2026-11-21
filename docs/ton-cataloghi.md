@@ -115,13 +115,18 @@ catalogo passa dal servizio. Scritture SQL esterne che avanzano il contatore
 senza registrare la revisione impediscono ulteriori modifiche tramite l'app
 finché la discrepanza non viene verificata.
 
-Identità strutturali già utilizzate non cambiano significato:
+Le identità strutturali rispettano questi vincoli:
 
 - Una linea usata mantiene tecnologia e materia prima già definite; i campi
   precedentemente mancanti si possono completare.
 - Un prodotto usato mantiene linea e colore già definiti; i mancanti si possono
   completare dopo aver verificato le associazioni precedenti.
-- Un articolo già configurato mantiene prodotto e formato.
+- Il prodotto di appartenenza di un articolo è fisso dal primo salvataggio,
+  anche se l'articolo non è ancora utilizzato. Il selettore compare solo nella
+  creazione; nella scheda esistente codice e nome del prodotto sono in sola
+  lettura. Il servizio rifiuta anche richieste dirette di riassegnazione.
+- Un articolo già utilizzato mantiene anche il formato; prima dell'utilizzo si
+  possono correggere diametro e altezza mantenendo lo stesso prodotto.
 
 Codice e nome della linea, codice e descrizione dell'articolo e le note restano
 correggibili con storico. Nel prodotto codice e descrizione seguono le regole

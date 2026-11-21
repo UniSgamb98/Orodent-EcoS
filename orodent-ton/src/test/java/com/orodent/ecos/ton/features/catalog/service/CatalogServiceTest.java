@@ -410,6 +410,52 @@ class CatalogServiceTest {
     }
 
     @Test
+    void savedArticlesCannotChangeProductEvenBeforeTheirFirstUse() {
+        var line = line();
+        var product = product(line, "A2");
+        var other = product(line, "A3");
+        var article = article(product, "FIXED");
+        assertFalse(article.used());
+        var error =
+                assertThrows(
+                        CompletionException.class,
+                        () ->
+                                service.save(
+                                                article,
+                                                new ArticleDraft(
+                                                        article.code(),
+                                                        article.name(),
+                                                        other.id(),
+                                                        article.diameter(),
+                                                        article.height(),
+                                                        "",
+                                                        true))
+                                        .join());
+        assertTrue(error.getCause().getMessage().contains("prodotto di appartenenza"));
+        var unchanged = (Article) service.load(CatalogKind.ARTICLES, article.id()).join().entry();
+        assertEquals(article, unchanged);
+        assertEquals(1, service.allHistory(CatalogKind.ARTICLES, article.id()).join().total());
+        // Format corrections still belong to the same product and keep its technical specification.
+        var corrected =
+                (Article)
+                        service.save(
+                                        unchanged,
+                                        new ArticleDraft(
+                                                article.code(),
+                                                article.name(),
+                                                product.id(),
+                                                article.diameter(),
+                                                new BigDecimal("20"),
+                                                "Corrected",
+                                                true))
+                                .join()
+                                .entry();
+        assertEquals(product.id(), corrected.product().id());
+        assertEquals(0, new BigDecimal("20").compareTo(corrected.height()));
+        assertEquals(2, service.allHistory(CatalogKind.ARTICLES, article.id()).join().total());
+    }
+
+    @Test
     void concurrentEditsHaveOneWinnerAndOneCompleteAuditSnapshot() throws Exception {
         Line l = line();
         var start = new CountDownLatch(1);

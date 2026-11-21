@@ -549,6 +549,12 @@ public final class CatalogDetailsUiProbe {
                                 ((TabPane) node("ton-article-tabs"))
                                         .getTabs().stream().map(Tab::getText).toList());
                         assertNull(node("ton-article-spec-version"));
+                        var productSummary = (TextField) node("ton-article-product-summary");
+                        assertEquals("ZRMSTA54 · Thor A54", productSummary.getText());
+                        assertFalse(productSummary.isEditable());
+                        assertTrue(productSummary.isVisible());
+                        assertFalse(node("ton-article-parent").getParent().isVisible());
+                        assertTrue(node("ton-article-parent").isDisabled());
                         screenshot("target/article-shared-palette.png");
                         button("ton-article-open-parent").fire();
                         return null;
@@ -603,6 +609,21 @@ public final class CatalogDetailsUiProbe {
                         assertNoFooter("articles");
                         return null;
                     });
+            fx(
+                    () -> {
+                        button("ton-article-new").fire();
+                        return null;
+                    });
+            await(() -> node("ton-article-editor") != null);
+            fx(
+                    () -> {
+                        assertTrue(node("ton-article-parent").getParent().isVisible());
+                        assertFalse(node("ton-article-parent").isDisabled());
+                        assertFalse(node("ton-article-product-summary").isVisible());
+                        button("ton-article-back").fire();
+                        return null;
+                    });
+            await(() -> node("ton-articles-table") != null);
             fx(
                     () -> {
                         button("ton-nav-technical").fire();
