@@ -3,8 +3,6 @@
 .ton-availability .availability-title { -fx-font-size: 22px; -fx-font-weight: bold; }
 .ton-availability .availability-total-label { -fx-text-fill: #526e83; -fx-font-size: 12px; }
 .ton-availability .availability-total-number { -fx-text-fill: #18778c; -fx-font-size: 24px; -fx-font-weight: bold; }
-.ton-availability .split-pane { -fx-background-color: transparent; -fx-padding: 0; }
-.ton-availability .split-pane-divider { -fx-background-color: transparent; -fx-padding: 0 6px; }
 .ton-availability .availability-rail { -fx-background-color: white; -fx-border-color: #cbdce7; -fx-background-radius: 9px; -fx-border-radius: 9px; -fx-padding: 10px; }
 .ton-availability .scroll-pane, .ton-availability .scroll-pane > .viewport { -fx-background-color: transparent; }
 .ton-availability .availability-line-button { -fx-min-height: 36px; -fx-alignment: center; -fx-padding: 7px 10px; }

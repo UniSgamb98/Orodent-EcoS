@@ -68,7 +68,10 @@ public final class AvailabilityUiProbe {
                                 .join()
                                 .entry();
         Line eos =
-                (Line) catalog.create(new LineDraft("MS", "Eos", "", "", "", true)).join().entry();
+                (Line)
+                        catalog.create(new LineDraft("MS", "High Translucent", "", "", "", true))
+                                .join()
+                                .entry();
         Product a0 =
                 (Product)
                         catalog.create(ProductDraft.configured(thor.id(), "A0", "", true))
@@ -187,6 +190,43 @@ public final class AvailabilityUiProbe {
                         return null;
                     });
             await(() -> rows() == 83);
+            double indexWidth =
+                    fx(() -> node("ton-availability-index").getLayoutBounds().getWidth());
+            fx(
+                    () -> {
+                        Button widest = button("ton-availability-line-" + eos.id());
+                        assertTrue(indexWidth >= widest.prefWidth(-1));
+                        assertTrue(
+                                indexWidth < widest.prefWidth(-1) + 60,
+                                "The line index should fit its labels without unused horizontal"
+                                    + " space");
+                        assertEquals(
+                                widest.getText(),
+                                ((javafx.scene.text.Text) widest.lookup(".text")).getText());
+                        return null;
+                    });
+            for (double width : new double[] {1180, 1820, 980, 1760}) {
+                fx(
+                        () -> {
+                            stage.setWidth(width);
+                            return null;
+                        });
+                await(() -> Math.abs(stage.getScene().getWidth() - width) < 50);
+                fx(
+                        () -> {
+                            assertEquals(
+                                    indexWidth,
+                                    node("ton-availability-index").getLayoutBounds().getWidth(),
+                                    1,
+                                    "The line index must retain its content width after window"
+                                        + " resize");
+                            Button widest = button("ton-availability-line-" + eos.id());
+                            assertEquals(
+                                    widest.getText(),
+                                    ((javafx.scene.text.Text) widest.lookup(".text")).getText());
+                            return null;
+                        });
+            }
             long total = expectedTotal;
             fx(
                     () -> {
@@ -302,6 +342,10 @@ public final class AvailabilityUiProbe {
                         assertEquals(
                                 target.id(),
                                 table().getSelectionModel().getSelectedItem().article().id());
+                        assertEquals(
+                                indexWidth,
+                                node("ton-availability-index").getLayoutBounds().getWidth(),
+                                1);
                         stage.setWidth(1180);
                         stage.setHeight(800);
                         return null;

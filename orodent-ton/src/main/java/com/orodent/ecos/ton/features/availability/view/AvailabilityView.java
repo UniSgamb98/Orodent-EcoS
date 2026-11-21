@@ -20,10 +20,9 @@ import java.util.*;
 import java.util.function.*;
 
 public final class AvailabilityView extends VBox {
-    public record Position(
-            Period period, Long selected, Long top, double divider, double railScroll) {
+    public record Position(Period period, Long selected, Long top, double railScroll) {
         public static Position initial() {
-            return new Position(Period.DAYS_90, null, null, .13, 0);
+            return new Position(Period.DAYS_90, null, null, 0);
         }
     }
 
@@ -38,7 +37,8 @@ public final class AvailabilityView extends VBox {
     public final TableView<Row> table = new TableView<>();
     private final VBox lines = new VBox(8);
     private final ScrollPane lineScroll = new ScrollPane(lines);
-    private final SplitPane split = new SplitPane();
+    private final HBox content = new HBox(12);
+    private final VBox rail = new VBox(12);
     private final Label freshness = new Label(), feedback = new Label();
     private final Label stockCaption = new Label("Disponibilità totale"),
             ordersCaption = new Label("Da evadere");
@@ -149,19 +149,21 @@ public final class AvailabilityView extends VBox {
         Label indexHint =
                 TechnicalUi.label("Tasto destro per scegliere il prodotto", "muted-label");
         indexHint.setStyle("-fx-font-size: 12px;");
-        VBox rail = new VBox(12, lineScroll, indexHint);
+        rail.getChildren().setAll(lineScroll, indexHint);
+        rail.setId("ton-availability-index");
         rail.getStyleClass().add("availability-rail");
-        rail.setMinWidth(95);
-        rail.setPrefWidth(160);
+        rail.setMinWidth(Region.USE_PREF_SIZE);
+        rail.setMaxWidth(Region.USE_PREF_SIZE);
+        rail.setPrefWidth(95);
         VBox.setVgrow(lineScroll, Priority.ALWAYS);
         VBox card = new VBox(table);
         card.getStyleClass().add("availability-table-card");
         card.setMinWidth(300);
         VBox.setVgrow(table, Priority.ALWAYS);
-        split.getItems().setAll(rail, card);
-        split.setDividerPositions(.13);
-        split.setMinSize(0, 0);
-        VBox.setVgrow(split, Priority.ALWAYS);
+        content.getChildren().setAll(rail, card);
+        content.setMinSize(0, 0);
+        HBox.setHgrow(card, Priority.ALWAYS);
+        VBox.setVgrow(content, Priority.ALWAYS);
         feedback.setId("ton-availability-feedback");
         feedback.setWrapText(true);
         feedback.getStyleClass().add("ton-error-feedback");
@@ -172,7 +174,7 @@ public final class AvailabilityView extends VBox {
                     highlighted = -1;
                     table.refresh();
                 });
-        getChildren().setAll(header, toolbar, freshness, split, feedback);
+        getChildren().setAll(header, toolbar, freshness, content, feedback);
     }
 
     private static Label numberLabel(String id) {
@@ -259,7 +261,6 @@ public final class AvailabilityView extends VBox {
                 period.getValue(),
                 selected == null ? null : selected.article().id(),
                 top,
-                split.getDividerPositions()[0],
                 lineScroll.getVvalue());
     }
 
@@ -347,9 +348,25 @@ public final class AvailabilityView extends VBox {
                         : (data.unmatchedStock() + data.unmatchedOrders())
                                 + " codici importati non associati al catalogo TON; esclusi dai"
                                 + " totali mostrati.");
-        split.setDividerPositions(position.divider());
+        sizeLineIndex();
         lineScroll.setVvalue(position.railScroll());
         restore(position);
+    }
+
+    /** Measure styled button text once per catalogue refresh, independently of the window width. */
+    private void sizeLineIndex() {
+        rail.applyCss();
+        double longest =
+                lineButtons.values().stream().mapToDouble(b -> b.prefWidth(-1)).max().orElse(0);
+        var bar = lineScroll.lookup(".scroll-bar:vertical");
+        double scrollbar = bar instanceof Region region ? region.prefWidth(-1) : 18;
+        // Reserve the scrollbar even when hidden so vertical resizing cannot shorten the names.
+        double chrome =
+                rail.getInsets().getLeft()
+                        + rail.getInsets().getRight()
+                        + lineScroll.getInsets().getLeft()
+                        + lineScroll.getInsets().getRight();
+        rail.setPrefWidth(Math.ceil(Math.max(95, longest + chrome + scrollbar)));
     }
 
     public void restore(Position position) {

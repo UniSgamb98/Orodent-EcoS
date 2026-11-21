@@ -9,15 +9,18 @@ anagrafiche archiviate, riconoscibili dal tooltip; queste non aprono nuove produ
 La tabella rimane completa e si ordina per linea, prodotto, diametro e altezza.
 Mostra solo **Codice prodotto**, **Disponibilità**, **Da evadere** e **Venduti**.
 Le quantità sono allineate a destra; giacenze nulle o negative sono evidenziate.
-L’indice verticale a sinistra è ridimensionabile e scorre indipendentemente.
+L’indice verticale a sinistra ha larghezza fissa, calcolata sul pulsante con il
+nome di linea più lungo, compresi margini e spazio per lo scorrimento verticale.
+La larghezza resta invariata quando si ridimensiona la finestra; è la tabella
+ad assorbire lo spazio disponibile. L’indice scorre indipendentemente.
 
 - Clic sulla linea: raggiunge il suo primo codice.
 - Clic destro sulla linea: apre i prodotti/colori; una scelta raggiunge il primo
   codice del prodotto. La tabella non viene filtrata.
 - Doppio clic sulla riga o Invio: apre una nuova produzione con prodotto e
   diametro del codice selezionato. Le quantità da produrre restano da inserire.
-- **Torna alla disponibilità** ripristina periodo, selezione, posizione e larghezza
-  dell’indice. Aprire la produzione senza modificare valori non richiede di
+- **Torna alla disponibilità** ripristina periodo, selezione e posizione
+  nell’elenco. Aprire la produzione senza modificare valori non richiede di
   scartare modifiche inesistenti.
 
 Importazioni e Aggiorna sono nella parte alta. I totali riguardano gli articoli
