@@ -58,11 +58,12 @@ public final class CatalogHistoryView extends TechnicalRecordsView<Audit> {
                         .append("\nStato: ")
                         .append(e.active() ? "Attivo" : "Archiviato");
         switch (e) {
-            case Line l ->
-                    text.append("\nTecnologia: ")
-                            .append(l.technology())
-                            .append("\nMateria prima: ")
-                            .append(l.material());
+            case Line l -> {
+                if (!l.technology().isBlank())
+                    text.append("\nTecnologia (dato storico): ").append(l.technology());
+                if (!l.material().isBlank())
+                    text.append("\nMateria prima (dato storico): ").append(l.material());
+            }
             case Product p ->
                     text.append("\nLinea: ")
                             .append(p.line() == null ? "Da specificare" : p.line().code())

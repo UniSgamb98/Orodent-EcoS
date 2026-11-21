@@ -224,6 +224,90 @@ class PowderServiceTest {
     }
 
     @Test
+    void supplierIdsDriveRenameSearchSortAndArchiveChoices() {
+        var suppliers =
+                new com.orodent.ecos.ton.features.suppliers.service.SupplierService(
+                        database, workers);
+        var a =
+                suppliers
+                        .save(
+                                null,
+                                new com.orodent.ecos.database.SupplierCatalogue.Draft(
+                                        "A", "Alfa", true))
+                        .join();
+        var b =
+                suppliers
+                        .save(
+                                null,
+                                new com.orodent.ecos.database.SupplierCatalogue.Draft(
+                                        "B", "Beta", true))
+                        .join();
+        var pa =
+                service.create(
+                                new IdentityDraft("A", "One", PowderColor.BIANCA, true, "", a.id()),
+                                data("5.150", 3),
+                                true)
+                        .join();
+        service.create(
+                        new IdentityDraft("B", "Two", PowderColor.BIANCA, true, "", b.id()),
+                        data("5.150", 3),
+                        true)
+                .join();
+        var renamed =
+                suppliers
+                        .save(
+                                a,
+                                new com.orodent.ecos.database.SupplierCatalogue.Draft(
+                                        "AZ", "Zeta", true))
+                        .join();
+        var current = service.load(pa.powder().id()).join();
+        assertEquals("Zeta", current.powder().supplier());
+        assertEquals(a.id(), current.powder().supplierId());
+        assertEquals(1, service.findAll("Zeta", false).join().total());
+        assertEquals(
+                List.of("B", "A"),
+                service.findAll("", false).join().rows().stream()
+                        .map(r -> r.powder().code())
+                        .toList());
+        suppliers
+                .save(
+                        renamed,
+                        new com.orodent.ecos.database.SupplierCatalogue.Draft("AZ", "Zeta", false))
+                .join();
+        current = service.load(pa.powder().id()).join();
+        assertTrue(current.suppliers().stream().anyMatch(s -> s.id() == a.id() && !s.active()));
+        assertTrue(service.suppliers().join().stream().noneMatch(s -> s.id() == a.id()));
+        service.saveIdentity(
+                        current,
+                        new IdentityDraft("A", "Updated", PowderColor.BIANCA, true, "", a.id()))
+                .join();
+        assertThrows(
+                CompletionException.class,
+                () ->
+                        service.create(
+                                        new IdentityDraft(
+                                                "C", "No", PowderColor.BIANCA, true, "", a.id()),
+                                        data("5.150", 3),
+                                        true)
+                                .join());
+        assertThrows(
+                CompletionException.class,
+                () ->
+                        service.create(
+                                        new IdentityDraft(
+                                                "D",
+                                                "No",
+                                                PowderColor.BIANCA,
+                                                true,
+                                                "",
+                                                Long.MAX_VALUE),
+                                        data("5.150", 3),
+                                        true)
+                                .join());
+        assertEquals(2, service.findAll("", true).join().total());
+    }
+
+    @Test
     void validatesDecimalsDuplicatesAndYWithoutOpeningConnections() {
         assertThrows(
                 IllegalArgumentException.class, () -> new Oxide("Y2O3", new BigDecimal("5.15001")));

@@ -184,7 +184,9 @@ public final class CodeCompositionDialog {
                         "Scegli le parti e usa le frecce per cambiarne l'ordine. I valori arrivano"
                                 + " dai dati selezionati."
                                 + (kind == CatalogKind.ARTICLES
-                                        ? " Prodotto = linea senza prefisso materiale + colore."
+                                        ? " Per ZR o ZS usa Testo fisso. Un prefisso fisso iniziale"
+                                              + " già presente nel prodotto viene riportato davanti"
+                                              + " al formato senza ripeterlo."
                                         : ""));
         hint.setWrapText(true);
         hint.getStyleClass().add("bulk-small");

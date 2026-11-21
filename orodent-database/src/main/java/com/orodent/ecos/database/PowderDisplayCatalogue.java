@@ -38,11 +38,13 @@ public record PowderDisplayCatalogue(
                 var r =
                         q.executeQuery(
                                 "SELECT"
-                                    + " p.polvere_id,p.codice,p.fornitore,p.colore,r.polvere_revisione_id,r.numero_versione,r.classe_ittria_y"
-                                    + " FROM TON.POLVERI p LEFT JOIN TON.POLVERI_REVISIONI r ON"
-                                    + " r.polvere_id=p.polvere_id ORDER BY p.polvere_id,CASE WHEN"
-                                    + " r.stato='APPROVATA' THEN 0 ELSE 1 END,r.numero_versione"
-                                    + " DESC")) {
+                                        + " p.polvere_id,p.codice,"
+                                        + SupplierCatalogue.powderName("p")
+                                        + ",p.colore,r.polvere_revisione_id,r.numero_versione,r.classe_ittria_y"
+                                        + " FROM TON.POLVERI p LEFT JOIN TON.POLVERI_REVISIONI r ON"
+                                        + " r.polvere_id=p.polvere_id ORDER BY p.polvere_id,CASE"
+                                        + " WHEN r.stato='APPROVATA' THEN 0 ELSE 1"
+                                        + " END,r.numero_versione DESC")) {
             while (r.next()) {
                 var p =
                         new PowderAppearance(
@@ -83,14 +85,12 @@ public record PowderDisplayCatalogue(
     }
 
     public static String sqlOrder(String powder, String yttria) {
-        return " CASE WHEN "
-                + powder
-                + ".fornitore IS NULL OR TRIM("
-                + powder
-                + ".fornitore)='' THEN 1 ELSE 0 END,"
-                + "UPPER(TRIM(COALESCE("
-                + powder
-                + ".fornitore,''))),CASE "
+        String supplier = SupplierCatalogue.powderName(powder);
+        return " CASE WHEN TRIM("
+                + supplier
+                + ")='' THEN 1 ELSE 0 END,UPPER(TRIM("
+                + supplier
+                + ")),CASE "
                 + powder
                 + ".colore WHEN 'BIANCA' THEN 0 WHEN 'GIALLA' THEN 1 WHEN 'ROSA' THEN 2 WHEN"
                 + " 'GRIGIA' THEN 3 ELSE 4 END,"

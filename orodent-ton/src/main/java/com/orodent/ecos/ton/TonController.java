@@ -29,6 +29,9 @@ import com.orodent.ecos.ton.features.powders.view.PowdersView;
 import com.orodent.ecos.ton.features.production.controller.ProductionController;
 import com.orodent.ecos.ton.features.production.service.ProductionService;
 import com.orodent.ecos.ton.features.production.view.ProductionView;
+import com.orodent.ecos.ton.features.suppliers.controller.SuppliersController;
+import com.orodent.ecos.ton.features.suppliers.service.SupplierService;
+import com.orodent.ecos.ton.features.suppliers.view.SuppliersView;
 import com.orodent.ecos.ton.navigation.FeatureController;
 import com.orodent.ecos.ton.navigation.TonFeature;
 import com.orodent.ecos.ton.navigation.TonSection;
@@ -47,6 +50,7 @@ final class TonController {
     private final DocumentTemplateService documents;
     private final ProductionService productions;
     private final EquipmentService equipment;
+    private final SupplierService suppliers;
     private final java.util.concurrent.Executor workers;
     private FeatureController active;
     private TonFeature activeFeature;
@@ -54,6 +58,7 @@ final class TonController {
 
     TonController(ModuleContext context) {
         workers = context.workers();
+        suppliers = new SupplierService(context.connections(), workers);
         equipment = new EquipmentService(context.connections(), workers);
         documents = new DocumentTemplateService(context.connections(), workers);
         productions = new ProductionService(context.connections(), workers);
@@ -103,6 +108,12 @@ final class TonController {
                         .addListener(
                                 (o, before, subpage) -> view.showFeature(page, feature, subpage));
                 var controller = new EquipmentController(page, equipment);
+                install(feature, page, controller, controller::start);
+            }
+            case SUPPLIERS -> {
+                var page = new SuppliersView();
+                page.subpageProperty().addListener((o, a, b) -> view.showFeature(page, feature, b));
+                var controller = new SuppliersController(page, suppliers);
                 install(feature, page, controller, controller::start);
             }
             case PRODUCTIONS -> {

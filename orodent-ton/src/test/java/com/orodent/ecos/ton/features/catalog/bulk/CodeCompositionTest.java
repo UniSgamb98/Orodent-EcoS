@@ -13,85 +13,56 @@ import java.util.List;
 
 class CodeCompositionTest {
     @Test
-    void composesCodesWithoutFormulaSyntaxAndSkipsUncoloredSeparators() {
-        var v = new Values("ZR", "MST", "A3", new BigDecimal("98.00"), new BigDecimal("12.50"));
-        assertEquals("MSTA3", CodeComposition.defaults(CatalogKind.PRODUCTS).code(v));
-        assertEquals("ZR9812.5MSTA3", CodeComposition.defaults(CatalogKind.ARTICLES).code(v));
-        var custom =
-                new CodeComposition(
-                        List.of(
-                                new Part(Type.TEXT, "Disco"),
-                                new Part(Type.LINE),
-                                new Part(Type.COLOR)),
-                        "-");
-        assertEquals("DISCO-MST-A3", custom.code(v));
-        assertEquals("DISCO-MST", custom.code(new Values("ZR", "MST", "Senza colore", null, null)));
+    void defaultsUseOnlyLineColorAndFormat() {
+        var v = new Values("ZRMST", "A0", new BigDecimal("95"), new BigDecimal("12.5"));
+        assertEquals("ZRMSTA0", CodeComposition.defaults(CatalogKind.PRODUCTS).code(v));
+        assertEquals("9512.5ZRMSTA0", CodeComposition.defaults(CatalogKind.ARTICLES).code(v));
+        assertEquals(
+                List.of(Type.DIAMETER, Type.HEIGHT, Type.PRODUCT, Type.TEXT),
+                CodeComposition.available(CatalogKind.ARTICLES));
         assertThrows(
                 IllegalArgumentException.class,
                 () ->
                         CodeComposition.defaults(CatalogKind.ARTICLES)
-                                .code(new Values("", "MST", "A3", BigDecimal.ONE, BigDecimal.TEN)));
+                                .code(new Values("MST", "A0", null, BigDecimal.ONE)));
     }
 
     @Test
-    void articleProductUsesLineAndColorWithoutRepeatingItsOwnMaterialPrefix() {
-        var rule = CodeComposition.defaults(CatalogKind.ARTICLES);
-        for (String material : List.of("ZR", "ZS")) {
-            var values =
-                    new Values(
-                            material,
-                            material + "MST",
-                            "A0",
-                            new BigDecimal("98"),
-                            new BigDecimal("12"));
-            assertEquals(material + "9812MSTA0", rule.code(values));
+    void fixedTextCanMoveAnExplicitPrefixWithoutRepeatingIt() {
+        for (String prefix : List.of("ZR", "ZS")) {
+            var rule =
+                    new CodeComposition(
+                            List.of(
+                                    new Part(Type.TEXT, prefix),
+                                    new Part(Type.DIAMETER),
+                                    new Part(Type.HEIGHT),
+                                    new Part(Type.PRODUCT)),
+                            "");
             assertEquals(
-                    material + "MSTA0",
-                    CodeComposition.defaults(CatalogKind.PRODUCTS).code(values));
+                    prefix + "9512MSTA0",
+                    rule.code(
+                            new Values(
+                                    prefix + "MST",
+                                    "A0",
+                                    new BigDecimal("95"),
+                                    new BigDecimal("12"))));
+            assertEquals(
+                    prefix + "9512MSTA0",
+                    rule.code(new Values("MST", "A0", new BigDecimal("95"), new BigDecimal("12"))));
         }
-        assertEquals(
-                "ZR9812MSTA3.5",
-                rule.code(
-                        new Values(
-                                "ZR",
-                                "ZRMST",
-                                "A3.5",
-                                new BigDecimal("98"),
-                                new BigDecimal("12"))));
-        assertEquals(
-                "ZR9812MST",
-                rule.code(
-                        new Values(
-                                "ZR",
-                                "ZRMST",
-                                "Senza colore",
-                                new BigDecimal("98"),
-                                new BigDecimal("12"))));
-        assertEquals(
-                "ZR9812MSTA0",
-                rule.code(
-                        new Values("ZR", "MST", "A0", new BigDecimal("98"), new BigDecimal("12"))));
     }
 
     @Test
-    void stripsOnlyOneMatchingPrefixAtTheStartOfTheLine() {
-        var part = new Part(Type.PRODUCT);
-        assertEquals(
-                "ZSMSTA0",
-                CodeComposition.value(part, new Values("ZR", "ZSMST", "A0", null, null)));
-        assertEquals(
-                "MSTZRA0",
-                CodeComposition.value(part, new Values("ZR", "MSTZR", "A0", null, null)));
-        assertEquals(
-                "ZRMSTA0",
-                CodeComposition.value(part, new Values("ZR", "ZRZRMST", "A0", null, null)));
-        assertEquals(
-                "MSTA0", CodeComposition.value(part, new Values("zr", "zrmst", "a0", null, null)));
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> CodeComposition.value(part, new Values("ZR", "", "A0", null, null)));
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> CodeComposition.value(part, new Values("ZR", "ZR", "A0", null, null)));
+    void unrelatedOrNonLeadingLiteralsDoNotStripTheProduct() {
+        var v = new Values("ZRMST", "Senza colore", BigDecimal.ONE, BigDecimal.TEN);
+        var rule =
+                new CodeComposition(List.of(new Part(Type.TEXT, "X"), new Part(Type.PRODUCT)), "-");
+        assertEquals("X-ZRMST", rule.code(v));
+        var suffix =
+                new CodeComposition(
+                        List.of(new Part(Type.PRODUCT), new Part(Type.TEXT, "ZR")), "-");
+        assertEquals("ZRMST-ZR", suffix.code(v));
+        var colors = new CodeComposition(List.of(new Part(Type.LINE), new Part(Type.COLOR)), "-");
+        assertEquals("ZRMST", colors.code(v));
     }
 }

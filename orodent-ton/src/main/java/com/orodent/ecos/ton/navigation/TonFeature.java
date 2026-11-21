@@ -64,6 +64,10 @@ public enum TonFeature {
             TonSection.TECHNICAL,
             "Polveri",
             "Organizza le polveri, le caratteristiche tecniche e le revisioni delle schede."),
+    SUPPLIERS(
+            TonSection.TECHNICAL,
+            "Fornitori",
+            "Gestisci i codici e i nomi dei fornitori delle polveri."),
     LOTS(
             TonSection.TRACEABILITY,
             "Ricerca lotti e articoli",
@@ -109,7 +113,8 @@ public enum TonFeature {
     }
 
     public boolean available() {
-        return this == PRESSES
+        return this == SUPPLIERS
+                || this == PRESSES
                 || this == MOULDS
                 || this == FURNACES
                 || this == PRODUCTIONS

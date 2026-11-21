@@ -26,6 +26,7 @@ Le funzioni restanti sono indicate come
 - [Linee, prodotti, articoli, storico e specifiche produttive](ton-cataloghi.md).
 - [Inserimento multiplo di prodotti e articoli](ton-bulk-entry-proposal.md).
 - [Polveri, ossidi e schede tecniche approvate](ton-polveri.md).
+- [Fornitori delle polveri](ton-fornitori.md).
 - [Modelli disco, strati, sovramateriali e versioni](ton-modelli-disco.md).
 - [Macchinari e attrezzature: presse, stampi e forni](ton-macchinari.md).
 - [Composizioni, ricette per strato, ossidi e utilizzi](ton-composizioni.md).

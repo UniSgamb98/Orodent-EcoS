@@ -3,6 +3,7 @@ package com.orodent.ecos.ton.features.compositions.repository;
 import static com.orodent.ecos.ton.features.compositions.model.Compositions.*;
 
 import com.orodent.ecos.database.PowderDisplayCatalogue;
+import com.orodent.ecos.database.SupplierCatalogue;
 
 import java.math.BigDecimal;
 import java.sql.*;
@@ -192,9 +193,10 @@ public final class CompositionRepository {
         try (var q =
                 connection.prepareStatement(
                         "SELECT"
-                            + " r.polvere_revisione_id,p.polvere_id,p.codice,p.nome,p.colore,r.classe_ittria_y,r.numero_versione,r.stato,p.attivo,p.fornitore"
-                            + " FROM TON.POLVERI_REVISIONI r JOIN TON.POLVERI p ON"
-                            + " p.polvere_id=r.polvere_id WHERE r.polvere_revisione_id IN ("
+                            + " r.polvere_revisione_id,p.polvere_id,p.codice,p.nome,p.colore,r.classe_ittria_y,r.numero_versione,r.stato,p.attivo,"
+                                + SupplierCatalogue.powderName("p")
+                                + " FROM TON.POLVERI_REVISIONI r JOIN TON.POLVERI p ON"
+                                + " p.polvere_id=r.polvere_id WHERE r.polvere_revisione_id IN ("
                                 + marks(ids.size())
                                 + ") ORDER BY p.polvere_id,r.polvere_revisione_id")) {
             ids(q, ids);

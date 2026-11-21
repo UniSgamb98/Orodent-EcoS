@@ -4,6 +4,7 @@ import java.sql.*;
 
 final class ProductSpecificationFixtures {
     static void beforeV21(Connection c) throws SQLException {
+        SupplierFixtures.beforeV22(c);
         try (var q = c.createStatement()) {
             q.executeUpdate("DROP TABLE TON.PIANO_PRODOTTO_RIGHE");
             q.executeUpdate(

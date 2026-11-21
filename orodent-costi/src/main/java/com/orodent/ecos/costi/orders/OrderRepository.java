@@ -2,6 +2,7 @@ package com.orodent.ecos.costi.orders;
 
 import com.orodent.ecos.costi.orders.PowderOrders.*;
 import com.orodent.ecos.database.PowderDisplayCatalogue;
+import com.orodent.ecos.database.SupplierCatalogue;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -55,8 +56,10 @@ public final class OrderRepository {
                 var r =
                         q.executeQuery(
                                 "SELECT"
-                                    + " p.polvere_id,p.codice,p.nome,p.colore,p.fornitore,py_display.classe_ittria_y"
-                                    + " FROM TON.POLVERI p"
+                                        + " p.polvere_id,p.codice,p.nome,p.colore,"
+                                        + SupplierCatalogue.powderName("p")
+                                        + " AS fornitore,py_display.classe_ittria_y"
+                                        + " FROM TON.POLVERI p"
                                         + PowderDisplayCatalogue.latestJoin("p", "py_display"))) {
             while (r.next())
                 rows.add(
@@ -126,12 +129,16 @@ public final class OrderRepository {
                 try (var q =
                         connection.prepareStatement(
                                 "INSERT INTO"
-                                        + " COSTI.ORDINI_POLVERI(fornitore,numero_ordine,posizione)"
-                                        + " VALUES (?,?,?)",
+                                    + " COSTI.ORDINI_POLVERI(fornitore,numero_ordine,posizione,fornitore_id)"
+                                    + " VALUES (?,?,?,?)",
                                 Statement.RETURN_GENERATED_KEYS)) {
                     q.setString(1, row.key().supplier());
                     q.setString(2, row.key().order());
                     q.setInt(3, row.key().position());
+                    q.setObject(
+                            4,
+                            SupplierCatalogue.resolveSource(connection, row.key().supplier()),
+                            Types.BIGINT);
                     try {
                         q.executeUpdate();
                     } catch (SQLException e) {

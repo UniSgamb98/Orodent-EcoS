@@ -169,6 +169,51 @@ class OrdersTest {
     }
 
     @Test
+    void importsLinkRegistryCodeAndKeepSourceKeysAfterRename() throws Exception {
+        var supplier =
+                db.withTransaction(
+                        c ->
+                                com.orodent.ecos.database.SupplierCatalogue.save(
+                                        c,
+                                        null,
+                                        new com.orodent.ecos.database.SupplierCatalogue.Draft(
+                                                "2600266", "Tosoh", true)));
+        var first = preview(HEADER + A);
+        service.apply(first, first.mappings()).join();
+        var stored = service.list().join().rows().getFirst();
+        db.withTransaction(
+                c ->
+                        com.orodent.ecos.database.SupplierCatalogue.save(
+                                c,
+                                supplier,
+                                new com.orodent.ecos.database.SupplierCatalogue.Draft(
+                                        "TOS", "Tosoh Japan", true)));
+        var next = preview(HEADER + A + B);
+        service.apply(next, next.mappings()).join();
+        assertEquals(stored, service.list().join().rows().getFirst());
+        db.withConnection(
+                c -> {
+                    assertEquals(
+                            1,
+                            com.orodent.ecos.database.SupplierCatalogue.list(c, "", true).size());
+                    try (var q = c.createStatement();
+                            var r =
+                                    q.executeQuery(
+                                            "SELECT fornitore,fornitore_id FROM"
+                                                + " COSTI.ORDINI_POLVERI")) {
+                        int count = 0;
+                        while (r.next()) {
+                            count++;
+                            assertEquals("2600266", r.getString(1));
+                            assertEquals(supplier.id(), r.getLong(2));
+                        }
+                        assertEquals(2, count);
+                    }
+                    return null;
+                });
+    }
+
+    @Test
     void stalePreviewRollsBackWholeImportAndUnknownCodeRequiresMapping() throws Exception {
         var stale = preview(HEADER + A + B);
         var current = preview(HEADER + A);

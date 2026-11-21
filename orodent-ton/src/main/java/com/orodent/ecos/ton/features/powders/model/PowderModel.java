@@ -1,5 +1,7 @@
 package com.orodent.ecos.ton.features.powders.model;
 
+import com.orodent.ecos.database.SupplierCatalogue;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.Normalizer;
@@ -51,7 +53,17 @@ public final class PowderModel {
 
     /** Color may be unknown when reading a catalogue record created before V5. */
     public record IdentityDraft(
-            String code, String name, PowderColor color, boolean active, String supplier) {
+            String code,
+            String name,
+            PowderColor color,
+            boolean active,
+            String supplier,
+            Long supplierId) {
+        public IdentityDraft(
+                String code, String name, PowderColor color, boolean active, String supplier) {
+            this(code, name, color, active, supplier, null);
+        }
+
         public IdentityDraft(String code, String name, PowderColor color, boolean active) {
             this(code, name, color, active, "");
         }
@@ -135,7 +147,19 @@ public final class PowderModel {
             PowderColor color,
             boolean active,
             int revision,
-            String supplier) {
+            String supplier,
+            Long supplierId) {
+        public Powder(
+                long id,
+                String code,
+                String name,
+                PowderColor color,
+                boolean active,
+                int revision,
+                String supplier) {
+            this(id, code, name, color, active, revision, supplier, null);
+        }
+
         public Powder(
                 long id,
                 String code,
@@ -147,7 +171,7 @@ public final class PowderModel {
         }
 
         public IdentityDraft identity() {
-            return new IdentityDraft(code, name, color, active, supplier);
+            return new IdentityDraft(code, name, color, active, supplier, supplierId);
         }
 
         public String colorLabel() {
@@ -179,9 +203,15 @@ public final class PowderModel {
             boolean active,
             int compositions) {}
 
-    public record Detail(Powder powder, List<Revision> revisions) {
+    public record Detail(
+            Powder powder, List<Revision> revisions, List<SupplierCatalogue.Entry> suppliers) {
+        public Detail(Powder powder, List<Revision> revisions) {
+            this(powder, revisions, List.of());
+        }
+
         public Detail {
             revisions = List.copyOf(revisions);
+            suppliers = List.copyOf(suppliers);
         }
 
         public boolean hasDraft() {

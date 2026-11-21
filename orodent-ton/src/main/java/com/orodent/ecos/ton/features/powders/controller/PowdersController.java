@@ -66,6 +66,11 @@ public final class PowdersController implements FeatureController {
                             view.editor().newEditor();
                             fingerprint = view.editor().fingerprint();
                             view.showEditor();
+                            readAuxiliary(
+                                    "suppliers",
+                                    service::suppliers,
+                                    view.editor()::suppliers,
+                                    e -> view.editor().feedback(e, true));
                         });
         var editor = view.editor();
         editor.back()

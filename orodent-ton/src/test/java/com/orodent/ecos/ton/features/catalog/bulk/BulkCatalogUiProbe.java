@@ -84,7 +84,7 @@ public final class BulkCatalogUiProbe {
                                 .entry();
         service.create(
                         new ArticleDraft(
-                                "ZR9816MSTA3",
+                                "9816MSTA3",
                                 "Esistente",
                                 old.id(),
                                 new BigDecimal("98"),
@@ -301,7 +301,7 @@ public final class BulkCatalogUiProbe {
                     () -> {
                         assertEquals("MST_A1", p1.code());
                         assertEquals(
-                                "ZR9812MSTA1",
+                                "9812MSTA1",
                                 workspace().table().getItems().getFirst().seed().code());
                         assertNull(node("ton-bulk-articles-generate"));
                         assertNull(node("ton-bulk-articles-code-example"));
@@ -420,7 +420,7 @@ public final class BulkCatalogUiProbe {
             fx(
                     () -> {
                         var rows = workspace().table().getItems();
-                        assertEquals("ZR9812MSTA1", rows.getFirst().seed().code());
+                        assertEquals("9812MSTA1", rows.getFirst().seed().code());
                         assertFalse(rows.get(4).seed().selected());
                         field("ton-bulk-articles-heights").setText("12; 14; 16; 18; 20");
                         return null;
@@ -547,7 +547,7 @@ public final class BulkCatalogUiProbe {
                                 var r =
                                         q.executeQuery(
                                                 "SELECT prodotto_id FROM TON.ARTICOLI WHERE"
-                                                        + " codice='ZR9812MSTA1'")) {
+                                                        + " codice='9812MSTA1'")) {
                             assertTrue(r.next());
                             assertEquals(p1.id(), r.getLong(1));
                         }

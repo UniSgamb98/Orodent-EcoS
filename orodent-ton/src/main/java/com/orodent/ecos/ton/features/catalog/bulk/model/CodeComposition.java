@@ -9,7 +9,6 @@ import java.util.*;
 /** Typed code pieces shared by previews and the visual editor; no formula language. */
 public record CodeComposition(List<Part> parts, String separator) {
     public enum Type {
-        MATERIAL("Materiale"),
         LINE("Linea"),
         COLOR("Colore"),
         DIAMETER("Diametro"),
@@ -42,8 +41,7 @@ public record CodeComposition(List<Part> parts, String separator) {
         }
     }
 
-    public record Values(
-            String material, String line, String color, BigDecimal diameter, BigDecimal height) {}
+    public record Values(String line, String color, BigDecimal diameter, BigDecimal height) {}
 
     public CodeComposition {
         parts = List.copyOf(parts);
@@ -60,21 +58,27 @@ public record CodeComposition(List<Part> parts, String separator) {
         return new CodeComposition(
                 (kind == CatalogKind.PRODUCTS
                                 ? List.of(Type.LINE, Type.COLOR)
-                                : List.of(Type.MATERIAL, Type.DIAMETER, Type.HEIGHT, Type.PRODUCT))
+                                : List.of(Type.DIAMETER, Type.HEIGHT, Type.PRODUCT))
                         .stream().map(Part::new).toList(),
                 "");
     }
 
     public static List<Type> available(CatalogKind kind) {
         return kind == CatalogKind.PRODUCTS
-                ? List.of(Type.MATERIAL, Type.LINE, Type.COLOR, Type.TEXT)
-                : List.of(Type.MATERIAL, Type.DIAMETER, Type.HEIGHT, Type.PRODUCT, Type.TEXT);
+                ? List.of(Type.LINE, Type.COLOR, Type.TEXT)
+                : List.of(Type.DIAMETER, Type.HEIGHT, Type.PRODUCT, Type.TEXT);
     }
 
     public String code(Values values) {
         var codes = new ArrayList<String>();
         for (Part part : parts) {
             String value = value(part, values);
+            // Only an explicit leading literal can move a prefix out of the product token.
+            if (part.type() == Type.PRODUCT && parts.getFirst().type() == Type.TEXT) {
+                String prefix = parts.getFirst().text().toUpperCase(Locale.ROOT);
+                if (value.toUpperCase(Locale.ROOT).startsWith(prefix))
+                    value = value.substring(prefix.length());
+            }
             if (!value.isEmpty()) codes.add(value);
         }
         return String.join(separator, codes).toUpperCase(Locale.ROOT);
@@ -83,7 +87,6 @@ public record CodeComposition(List<Part> parts, String separator) {
     public static String value(Part part, Values v) {
         String value =
                 switch (part.type()) {
-                    case MATERIAL -> v.material();
                     case LINE -> v.line();
                     case PRODUCT -> articleProduct(v);
                     case COLOR ->
@@ -106,10 +109,6 @@ public record CodeComposition(List<Part> parts, String separator) {
     /** Article labels use line/color data; the stored product code and identity are unchanged. */
     private static String articleProduct(Values values) {
         String line = CatalogModels.text(values.line()).toUpperCase(Locale.ROOT);
-        String material = CatalogModels.text(values.material()).toUpperCase(Locale.ROOT);
-        if (!material.isEmpty() && line.startsWith(material)) {
-            line = line.substring(material.length());
-        }
         return CatalogModels.productCode(line, values.color());
     }
 

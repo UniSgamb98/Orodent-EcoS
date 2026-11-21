@@ -17,8 +17,7 @@ public final class CatalogTable extends TableView<Entry> {
         column("Codice", Entry::code);
         switch (kind) {
             case LINES -> {
-                column("Nome / tecnologia", e -> e.name());
-                column("Materia prima", e -> ((Line) e).material());
+                column("Nome", e -> e.name());
                 column("Prodotti", e -> Integer.toString(((Line) e).products()));
             }
             case PRODUCTS -> {

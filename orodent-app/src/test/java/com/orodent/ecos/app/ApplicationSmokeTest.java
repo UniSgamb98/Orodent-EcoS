@@ -844,11 +844,6 @@ class ApplicationSmokeTest {
                     button(stage, "ton-line-new").fire();
                     text(stage, "ton-line-code").setText(" zr-ms ");
                     text(stage, "ton-line-name").setText("Linea MS");
-                    text(stage, "ton-line-technology").setText("Multistrato");
-                    ((javafx.scene.control.ComboBox<?>)
-                                    stage.getScene().lookup("#ton-line-material"))
-                            .getEditor()
-                            .setText("ZR");
                     button(stage, "ton-line-save").fire();
                     assertTrue(buttonUnchecked(stage, "ton-home-button").isDisabled());
                     assertTrue(buttonUnchecked(stage, "ton-nav-documents").isDisabled());

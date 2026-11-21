@@ -2,6 +2,7 @@ package com.orodent.ecos.costi.repository;
 
 import com.orodent.ecos.costi.model.PowderPrices.*;
 import com.orodent.ecos.database.PowderDisplayCatalogue;
+import com.orodent.ecos.database.SupplierCatalogue;
 
 import java.math.BigDecimal;
 import java.sql.*;
@@ -12,12 +13,13 @@ import java.util.*;
 public final class PowderPriceRepository {
     private static final String SELECT =
             """
-SELECT p.polvere_id,p.codice,p.nome,p.colore,p.attivo,p.fornitore,py_display.classe_ittria_y AS display_y,
+SELECT p.polvere_id,p.codice,p.nome,p.colore,p.attivo,%s AS fornitore,py_display.classe_ittria_y AS display_y,
        c.prezzo_id,c.numero_versione,c.modalita,c.data_riferimento,CASE WHEN c.modello_dati=2 THEN c.prezzo_riferimento ELSE c.prezzo_semplice END AS prezzo_semplice,
        CASE WHEN c.modello_dati=2 THEN c.quantita_totale ELSE c.quantita_semplice END AS quantita_semplice,c.modello_dati
 FROM TON.POLVERI p LEFT JOIN COSTI.POLVERI_PREZZI c ON c.polvere_id=p.polvere_id
   AND c.numero_versione=(SELECT MAX(v.numero_versione) FROM COSTI.POLVERI_PREZZI v WHERE v.polvere_id=p.polvere_id)
 """
+                            .formatted(SupplierCatalogue.powderName("p"))
                     + PowderDisplayCatalogue.latestJoin("p", "py_display");
     private final Connection connection;
 

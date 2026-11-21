@@ -1,6 +1,7 @@
 package com.orodent.ecos.ton.features.powders.service;
 
 import com.orodent.ecos.core.ConnectionProvider;
+import com.orodent.ecos.database.SupplierCatalogue;
 import com.orodent.ecos.ton.features.powders.model.PowderModel.*;
 import com.orodent.ecos.ton.features.powders.repository.PowderRepository;
 
@@ -54,6 +55,12 @@ public final class PowderService {
     public CompletableFuture<java.util.List<Usage>> usages(long powderId) {
         return CompletableFuture.supplyAsync(
                 () -> connections.withConnection(c -> new PowderRepository(c).usages(powderId)),
+                workers);
+    }
+
+    public CompletableFuture<java.util.List<SupplierCatalogue.Entry>> suppliers() {
+        return CompletableFuture.supplyAsync(
+                () -> connections.withConnection(c -> SupplierCatalogue.list(c, "", false)),
                 workers);
     }
 

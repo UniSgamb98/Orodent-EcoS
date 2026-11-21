@@ -1,5 +1,6 @@
 package com.orodent.ecos.ton.features.powders.view;
 
+import com.orodent.ecos.database.SupplierCatalogue.Entry;
 import com.orodent.ecos.ton.features.powders.model.PowderModel.*;
 import com.orodent.ecos.ton.features.technical.view.TechnicalDetailView;
 import com.orodent.ecos.ton.features.technical.view.TechnicalRecordsView;
@@ -32,8 +33,7 @@ public final class PowderEditorView extends TechnicalDetailView {
     private final ObjectProperty<Revision> selectedVersion = new SimpleObjectProperty<>();
     private final TextField code = field("ton-powder-code", "Es. P001");
     private final TextField name = field("ton-powder-name", "Nome della polvere");
-    private final TextField supplier =
-            field("ton-powder-supplier", "Nome dell’azienda, facoltativo");
+    private final ComboBox<Entry> supplier = new ComboBox<>();
     private final ComboBox<PowderColor> color = new ComboBox<>();
     private final CheckBox active = new CheckBox("Polvere attiva");
     private final TextField strength = field("ton-powder-strength", "Facoltativa");
@@ -63,6 +63,10 @@ public final class PowderEditorView extends TechnicalDetailView {
         status.setId("ton-powder-state");
         status.setWrapText(true);
         active.setId("ton-powder-active");
+        supplier.setId("ton-powder-supplier");
+        supplier.setPromptText("Seleziona il fornitore");
+        supplier.setMaxWidth(Double.MAX_VALUE);
+        supplier.setAccessibleText("Fornitore della polvere");
         color.setId("ton-powder-color");
         color.getItems().setAll(PowderColor.values());
         color.setPromptText("Seleziona il colore");
@@ -90,8 +94,8 @@ public final class PowderEditorView extends TechnicalDetailView {
                         form("Fornitore", supplier),
                         form("Colore *", color),
                         hint(
-                                "Ordine dell'elenco: bianche, gialle, rosa, grigie. A parità di"
-                                        + " colore, per codice."),
+                                "Ordine: fornitore, colore (bianche, gialle, rosa, grigie), classe"
+                                    + " Y e codice."),
                         active);
         identity.getStyleClass().add("ton-powder-tab");
         technical =
@@ -164,7 +168,18 @@ public final class PowderEditorView extends TechnicalDetailView {
             selectedVersion.set(revision);
             code.setText(powder == null ? "" : powder.code());
             name.setText(powder == null ? "" : powder.name());
-            supplier.setText(powder == null ? "" : powder.supplier());
+            suppliers(detail == null ? List.of() : detail.suppliers());
+            supplier.setValue(
+                    powder == null
+                            ? null
+                            : supplier.getItems().stream()
+                                    .filter(
+                                            s ->
+                                                    s != null
+                                                            && java.util.Objects.equals(
+                                                                    s.id(), powder.supplierId()))
+                                    .findFirst()
+                                    .orElse(null));
             color.setValue(powder == null ? null : powder.color());
             active.setSelected(powder == null || powder.active());
             var data =
@@ -216,6 +231,11 @@ public final class PowderEditorView extends TechnicalDetailView {
         reload.setDisable(detail == null);
     }
 
+    public void suppliers(List<Entry> values) {
+        supplier.getItems().setAll(values);
+        supplier.getItems().addFirst(null);
+    }
+
     public IdentityDraft identity() {
         var identity =
                 new IdentityDraft(
@@ -223,7 +243,8 @@ public final class PowderEditorView extends TechnicalDetailView {
                         name.getText(),
                         color.getValue(),
                         active.isSelected(),
-                        supplier.getText());
+                        "",
+                        supplier.getValue() == null ? null : supplier.getValue().id());
         identity.requireColor();
         return identity;
     }
@@ -243,7 +264,7 @@ public final class PowderEditorView extends TechnicalDetailView {
                         List.of(
                                 code.getText().strip(),
                                 name.getText().strip(),
-                                supplier.getText().strip(),
+                                supplier.getValue() == null ? "" : "" + supplier.getValue().id(),
                                 color.getValue() == null ? "" : color.getValue().name(),
                                 Boolean.toString(active.isSelected()),
                                 strength.getText().strip(),

@@ -399,8 +399,8 @@ public final class CatalogDetailsUiProbe {
                         assertNull(node("ton-line-heading"));
                         assertEquals("← Torna alle linee", button("ton-line-back").getText());
                         assertEquals("Aggiorna dati", button("ton-line-reload").getText());
-                        assertEquals(
-                                "Multistrato", ((TextField) node("ton-line-technology")).getText());
+                        assertNull(node("ton-line-technology"));
+                        assertNull(node("ton-line-material"));
                         assertRefreshOnRight("line");
                         screenshot("target/line-shared-palette.png");
                         selectSheet("ton-line-tabs", "Revisioni");

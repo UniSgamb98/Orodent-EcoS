@@ -35,8 +35,8 @@ final class TonPages {
                         label("Cataloghi del laboratorio", "ton-card-title"),
                         label(
                                 "Linee, prodotti, articoli, composizioni, modelli disco e schede"
-                                    + " delle polveri. Naviga tra i cataloghi e consulta lo"
-                                    + " storico.",
+                                        + " delle polveri. Naviga tra i cataloghi e consulta lo"
+                                        + " storico.",
                                 "ton-description"),
                         new javafx.scene.layout.FlowPane(
                                 10,
@@ -61,6 +61,11 @@ final class TonPages {
                                         "ton-powders-button",
                                         () -> openFeature.accept(TonFeature.POWDERS),
                                         true),
+                                action(
+                                        "Apri fornitori",
+                                        "ton-suppliers-button",
+                                        () -> openFeature.accept(TonFeature.SUPPLIERS),
+                                        false),
                                 action(
                                         "Apri modelli disco",
                                         "ton-models-button",
@@ -90,7 +95,8 @@ final class TonPages {
                                         ? "Le anagrafiche di presse, stampi e forni sono"
                                                 + " disponibili."
                                         : section == TonSection.TECHNICAL
-                                                ? "I sei cataloghi tecnici sono operativi."
+                                                ? "I cataloghi tecnici e l’anagrafica fornitori"
+                                                      + " sono operativi."
                                                 : section == TonSection.PRODUCTION
                                                         ? "La preparazione delle produzioni e le"
                                                               + " bozze sono disponibili. Scarti ed"
@@ -165,6 +171,7 @@ final class TonPages {
                         case LINES -> "Apri linee";
                         case ARTICLES -> "Apri articoli";
                         case POWDERS -> "Apri polveri";
+                        case SUPPLIERS -> "Apri fornitori";
                         case MODELS -> "Apri modelli disco";
                         case COMPOSITIONS -> "Apri composizioni";
                         case DOCUMENT_TEMPLATES -> "Apri modelli documento";

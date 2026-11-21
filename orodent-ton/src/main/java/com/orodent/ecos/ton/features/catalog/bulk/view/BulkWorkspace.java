@@ -410,7 +410,6 @@ public final class BulkWorkspace extends GridPane {
         } catch (RuntimeException ignored) {
         }
         return new Values(
-                p == null ? "" : p.material(),
                 p == null ? "" : p.lineCode(),
                 kind == CatalogKind.PRODUCTS
                         ? (colors.isEmpty() ? "" : colors.iterator().next())
@@ -439,8 +438,7 @@ public final class BulkWorkspace extends GridPane {
         if (kind == CatalogKind.PRODUCTS) {
             Parent p = selected.getFirst();
             for (String color : colors) {
-                String code =
-                        rule.get().code(new Values(p.material(), p.lineCode(), color, null, null));
+                String code = rule.get().code(new Values(p.lineCode(), color, null, null));
                 rows.add(new Row(rows.size(), p, code, color, "", ""));
             }
         } else {
@@ -454,15 +452,7 @@ public final class BulkWorkspace extends GridPane {
             for (Parent p : selected)
                 for (BigDecimal d : ds)
                     for (BigDecimal h : hs) {
-                        String code =
-                                rule.get()
-                                        .code(
-                                                new Values(
-                                                        p.material(),
-                                                        p.lineCode(),
-                                                        p.color(),
-                                                        d,
-                                                        h));
+                        String code = rule.get().code(new Values(p.lineCode(), p.color(), d, h));
                         rows.add(new Row(rows.size(), p, code, "", display(d), display(h)));
                     }
         }

@@ -5,7 +5,7 @@ EcoS usa un solo database Derby, organizzato per dominio dei dati.
 | Schema | Tabelle attuali | Responsabilità |
 | --- | --- | --- |
 | `ECOS` | `ECOS_SCHEMA_HISTORY` | Versioni, checksum e date delle migrazioni |
-| `ANAGRAFICHE` | `CLIENTI` | Anagrafica condivisa tra i moduli |
+| `ANAGRAFICHE` | `CLIENTI`, `FORNITORI`, `FORNITORI_ALIAS` | Anagrafica condivisa tra i moduli |
 | `VENDITE` | `VENDITE_DETTAGLIO` | Vendite e rettifiche condivise |
 | `COSTI` | `POLVERI_PREZZI`, `POLVERI_LOTTI` | Fotografie manuali dei prezzi e delle quantità delle polveri, con revisioni economiche |
 | `TON` | 40 tabelle: cataloghi, specifiche versionate, piani e produzioni, cotture, lotti e documenti | Dominio del laboratorio; [elenco completo](ton-schema-proposta.md) |
@@ -364,3 +364,9 @@ legacy delle configurazioni articolo, delle produzioni fisiche e delle righe
 dei piani anteriori restano valide per consultare lo storico. JSON e documenti
 dei piani preparati rimangono intatti. Tutta la V21 è atomica e usa il backup
 preventivo dell'HOST; il CLIENT richiede l'aggiornamento dell'HOST.
+
+## Migrazione dalla versione 21 alla 22
+
+`V22__supplier_catalogue.sql` aggiunge l’anagrafica condivisa dei fornitori e i
+collegamenti da polveri e ordini. Il recupero dei nomi esistenti avviene nella
+stessa transazione della migrazione. Vedere [Fornitori](ton-fornitori.md).

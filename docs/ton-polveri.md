@@ -10,8 +10,8 @@ il normale backup preventivo; non vengono inseriti dati dimostrativi.
 ## Elenco e scheda
 
 L'elenco cerca codice, nome o fornitore e mostra tutti i risultati in una tabella scorrevole. **Mostra anche archiviate**
-include le anagrafiche disattivate. L'ordine predefinito è **bianche → gialle →
-rosa → grigie**, poi per codice all'interno dello stesso colore. Il colore è
+include le anagrafiche disattivate. L'ordine predefinito è **fornitore → colore
+(bianche, gialle, rosa, grigie) → classe Y → codice**. Il colore è
 visibile anche nell'elenco. Le colonne distinguono l'ultima versione
 approvata dall'eventuale bozza; la classe Y mostrata appartiene alla scheda
 approvata, se presente, altrimenti alla versione più recente.
@@ -25,7 +25,7 @@ coerente con le schede e con gli elenchi Linee, Prodotti tecnici e Articoli.
 Con **Nuova polvere**, doppio clic sulla riga o Invio si entra nell'editor a cinque schede:
 
 - **Anagrafica**: codice obbligatorio e univoco (50 caratteri), nome obbligatorio
-  (100 caratteri), colore obbligatorio e stato attivo. Questi campi sono
+  (100 caratteri), fornitore da anagrafica, colore obbligatorio e stato attivo. Questi campi sono
   comuni a tutte le versioni; il codice viene normalizzato in maiuscolo.
   Il colore si sceglie tra **Bianca, Gialla, Rosa e Grigia**: non occorre assegnare
   un numero per ordinare i risultati. Le polveri create prima della V5 sono mostrate
@@ -120,3 +120,9 @@ trigger che impongano questa regola a eventuali scritture SQL esterne all'applic
 
 Colori e ordinamento degli elenchi seguono la [regola comune delle polveri](powder-appearance.md):
 fornitore, colore, classe Y e codice, con sfondo del colore nella cella della polvere.
+
+## Fornitore
+
+Dalla V22 si sceglie dall’[anagrafica Fornitori](ton-fornitori.md), tramite un menu
+non modificabile. Codice e nome provengono dall’anagrafica comune; i fornitori
+archiviati già assegnati restano visibili.

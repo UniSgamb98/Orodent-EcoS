@@ -115,6 +115,11 @@ public final class DatabaseSchema {
                     21,
                     "TON product-owned production specifications",
                     "/database/migrations/V21__ton_product_specifications.sql");
+    private static final SchemaMigration SUPPLIERS =
+            new SchemaMigration(
+                    22,
+                    "Shared supplier catalogue",
+                    "/database/migrations/V22__supplier_catalogue.sql");
     private static final List<SchemaMigration> MIGRATIONS =
             List.of(
                     BASELINE,
@@ -137,7 +142,8 @@ public final class DatabaseSchema {
                     TON_EQUIPMENT,
                     TON_MODEL_MOULDS,
                     TON_MODEL_DIAMETERS,
-                    TON_PRODUCT_SPECIFICATIONS);
+                    TON_PRODUCT_SPECIFICATIONS,
+                    SUPPLIERS);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS =
             List.of(
@@ -234,6 +240,8 @@ public final class DatabaseSchema {
                                 WarehouseMigration.apply(connection);
                             if (migration.version() == TON_PRODUCT_SPECIFICATIONS.version())
                                 ProductSpecificationMigration.apply(connection);
+                            if (migration.version() == SUPPLIERS.version())
+                                SupplierMigration.apply(connection);
                             recordMigration(connection, "ECOS", migration);
                         }
                     }
@@ -308,6 +316,7 @@ public final class DatabaseSchema {
             if (version >= TON_MODEL_DIAMETERS.version()) ModelDiameterSchema.verify(connection);
             if (version >= TON_PRODUCT_SPECIFICATIONS.version())
                 ProductSpecificationSchema.verify(connection);
+            if (version >= SUPPLIERS.version()) SupplierSchema.verify(connection);
             return version;
         }
         if (tableExists(connection, "APP", HISTORY)) {

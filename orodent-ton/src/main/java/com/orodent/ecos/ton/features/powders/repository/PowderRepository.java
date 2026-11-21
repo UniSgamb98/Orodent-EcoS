@@ -1,6 +1,7 @@
 package com.orodent.ecos.ton.features.powders.repository;
 
 import com.orodent.ecos.database.PowderDisplayCatalogue;
+import com.orodent.ecos.database.SupplierCatalogue;
 import com.orodent.ecos.ton.features.powders.model.PowderModel.*;
 
 import java.sql.*;
@@ -27,11 +28,13 @@ public final class PowderRepository {
                                 .replace("_", "\\_")
                         + "%";
         String where =
-                " WHERE (UPPER(codice) LIKE ? ESCAPE '\\' OR UPPER(nome || ' ' ||"
-                        + " COALESCE(fornitore,'')) LIKE ? ESCAPE '\\')"
-                        + (inactive ? "" : " AND attivo=TRUE");
+                " WHERE (UPPER(p.codice) LIKE ? ESCAPE '\\' OR UPPER(p.nome || ' ' || "
+                        + SupplierCatalogue.powderName("p")
+                        + ") LIKE ? ESCAPE '\\')"
+                        + (inactive ? "" : " AND p.attivo=TRUE");
         long count;
-        try (var query = connection.prepareStatement("SELECT COUNT(*) FROM TON.POLVERI" + where)) {
+        try (var query =
+                connection.prepareStatement("SELECT COUNT(*) FROM TON.POLVERI p" + where)) {
             query.setString(1, pattern);
             query.setString(2, pattern);
             try (var rows = query.executeQuery()) {
@@ -42,7 +45,9 @@ public final class PowderRepository {
         var powders = new ArrayList<Powder>();
         try (var query =
                 connection.prepareStatement(
-                        "SELECT p.* FROM TON.POLVERI p"
+                        "SELECT p.*, "
+                                + SupplierCatalogue.powderName("p")
+                                + " AS supplier_name FROM TON.POLVERI p"
                                 + PowderDisplayCatalogue.latestJoin("p", "py_display")
                                 + where
                                 + " ORDER BY "
@@ -144,7 +149,10 @@ public final class PowderRepository {
     public Detail load(long id) throws SQLException {
         Powder powder;
         try (var query =
-                connection.prepareStatement("SELECT * FROM TON.POLVERI WHERE polvere_id=?")) {
+                connection.prepareStatement(
+                        "SELECT p.*, "
+                                + SupplierCatalogue.powderName("p")
+                                + " AS supplier_name FROM TON.POLVERI p WHERE polvere_id=?")) {
             query.setLong(1, id);
             try (var rows = query.executeQuery()) {
                 if (!rows.next()) throw new SQLException("Polvere non trovata.");
@@ -199,16 +207,21 @@ public final class PowderRepository {
                 }
             }
         }
-        return new Detail(powder, revisions);
+        return new Detail(
+                powder,
+                revisions,
+                SupplierCatalogue.list(connection, "", true).stream()
+                        .filter(s -> s.active() || Objects.equals(powder.supplierId(), s.id()))
+                        .toList());
     }
 
     public long insertPowder(IdentityDraft draft) throws SQLException {
         try (var statement =
                 connection.prepareStatement(
-                        "INSERT INTO TON.POLVERI(codice,nome,colore,attivo,fornitore) VALUES"
-                                + " (?,?,?,?,?)",
+                        "INSERT INTO TON.POLVERI(codice,nome,colore,attivo,fornitore,fornitore_id)"
+                            + " VALUES (?,?,?,?,?,?)",
                         Statement.RETURN_GENERATED_KEYS)) {
-            identity(statement, draft);
+            identity(statement, draft, null);
             statement.executeUpdate();
             try (var keys = statement.getGeneratedKeys()) {
                 if (!keys.next()) throw new SQLException("ID polvere non disponibile.");
@@ -224,13 +237,13 @@ public final class PowderRepository {
         try (var statement =
                 connection.prepareStatement(
                         """
-                        UPDATE TON.POLVERI SET codice=?,nome=?,colore=?,attivo=?,fornitore=?,
-                        versione_modifica=versione_modifica+1,aggiornato_il=CURRENT_TIMESTAMP
-                        WHERE polvere_id=? AND versione_modifica=?
-                        """)) {
-            identity(statement, draft);
-            statement.setLong(6, original.id());
-            statement.setInt(7, original.revision());
+UPDATE TON.POLVERI SET codice=?,nome=?,colore=?,attivo=?,fornitore=?,fornitore_id=?,
+versione_modifica=versione_modifica+1,aggiornato_il=CURRENT_TIMESTAMP
+WHERE polvere_id=? AND versione_modifica=?
+""")) {
+            identity(statement, draft, original.supplierId());
+            statement.setLong(7, original.id());
+            statement.setInt(8, original.revision());
             if (statement.executeUpdate() != 1) throw new Conflict();
         }
     }
@@ -315,13 +328,17 @@ WHERE polvere_revisione_id=? AND polvere_id=? AND versione_modifica=? AND stato=
         }
     }
 
-    private static void identity(PreparedStatement statement, IdentityDraft draft)
+    private void identity(PreparedStatement statement, IdentityDraft draft, Long originalSupplier)
             throws SQLException {
         statement.setString(1, draft.code());
         statement.setString(2, draft.name());
         statement.setString(3, draft.color() == null ? null : draft.color().name());
         statement.setBoolean(4, draft.active());
-        statement.setString(5, draft.supplier());
+        Long id =
+                SupplierCatalogue.assignment(
+                        connection, draft.supplierId(), draft.supplier(), originalSupplier);
+        statement.setString(5, id == null ? null : SupplierCatalogue.load(connection, id).name());
+        statement.setObject(6, id, Types.BIGINT);
     }
 
     private static void technical(PreparedStatement statement, TechnicalDraft draft, int first)
@@ -342,7 +359,8 @@ WHERE polvere_revisione_id=? AND polvere_id=? AND versione_modifica=? AND stato=
                         : PowderColor.valueOf(rows.getString("colore")),
                 rows.getBoolean("attivo"),
                 rows.getInt("versione_modifica"),
-                Objects.toString(rows.getString("fornitore"), ""));
+                Objects.toString(rows.getString("supplier_name"), ""),
+                (Long) rows.getObject("fornitore_id"));
     }
 
     private record RevisionSummary(int number, State state, Integer yttria) {}

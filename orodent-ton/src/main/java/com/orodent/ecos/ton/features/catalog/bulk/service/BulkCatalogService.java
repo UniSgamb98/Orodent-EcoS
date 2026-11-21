@@ -427,18 +427,16 @@ public final class BulkCatalogService {
     private static String parentSelect(CatalogKind kind) {
         if (kind == CatalogKind.LINES)
             return "SELECT b.linea_id AS parent_id,b.codice AS parent_code,b.nome AS"
-                    + " parent_name,b.linea_id,b.codice AS line_code,b.materia_prima AS"
-                    + " material,CAST(NULL AS VARCHAR(30)) AS color,b.versione_modifica AS"
-                    + " parent_revision,b.versione_modifica AS line_revision,b.attivo AS"
-                    + " available FROM TON.LINEE b";
+                       + " parent_name,b.linea_id,b.codice AS line_code,CAST(NULL AS VARCHAR(30))"
+                       + " AS color,b.versione_modifica AS parent_revision,b.versione_modifica AS"
+                       + " line_revision,b.attivo AS available FROM TON.LINEE b";
         if (kind != CatalogKind.PRODUCTS) throw invalid("Seleziona linee o prodotti.");
         return "SELECT b.prodotto_id AS parent_id,b.codice AS parent_code,b.descrizione AS"
-                + " parent_name,b.linea_id,l.codice AS line_code,l.materia_prima AS"
-                + " material,b.colore_commerciale AS color,b.versione_modifica AS"
-                + " parent_revision,l.versione_modifica AS line_revision,CASE WHEN b.attivo=TRUE"
-                + " AND l.attivo=TRUE AND b.colore_commerciale IS NOT NULL THEN TRUE ELSE FALSE"
-                + " END AS available FROM TON.PRODOTTI b LEFT JOIN TON.LINEE l ON"
-                + " l.linea_id=b.linea_id";
+                   + " parent_name,b.linea_id,l.codice AS line_code,b.colore_commerciale AS"
+                   + " color,b.versione_modifica AS parent_revision,l.versione_modifica AS"
+                   + " line_revision,CASE WHEN b.attivo=TRUE AND l.attivo=TRUE AND"
+                   + " b.colore_commerciale IS NOT NULL THEN TRUE ELSE FALSE END AS available FROM"
+                   + " TON.PRODOTTI b LEFT JOIN TON.LINEE l ON l.linea_id=b.linea_id";
     }
 
     private static Parent loadParent(Connection c, CatalogKind kind, long id) throws SQLException {
@@ -460,7 +458,6 @@ public final class BulkCatalogService {
                 r.getString("parent_name"),
                 r.getLong("linea_id"),
                 r.getString("line_code"),
-                r.getString("material"),
                 r.getString("color"),
                 r.getInt("parent_revision"),
                 r.getInt("line_revision"),

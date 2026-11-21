@@ -12,9 +12,10 @@ import java.util.*;
 
 public final class CatalogForm extends VBox {
     private final CatalogKind kind;
-    private final TextField code, name, technology, diameter, height, derived;
+    private final TextField code, name, diameter, height, derived;
     private final TextArea notes = new TextArea();
-    private final ComboBox<String> material = new ComboBox<>(), color = new ComboBox<>();
+    private final ComboBox<String> color = new ComboBox<>();
+    private Line originalLine;
     private final CheckBox active = new CheckBox("Anagrafica attiva");
     private final CatalogLookup parent;
     private final TextField productSummary = new TextField();
@@ -35,16 +36,10 @@ public final class CatalogForm extends VBox {
                 CatalogUi.field(
                         base + "-" + (kind == CatalogKind.LINES ? "name" : "description"),
                         kind == CatalogKind.LINES ? "Nome della linea" : "Descrizione");
-        technology = CatalogUi.field(base + "-technology", "Tecnologia del laboratorio");
         diameter = CatalogUi.field(base + "-diameter", "Diametro in mm");
         height = CatalogUi.field(base + "-height", "Altezza in mm");
         derived = CatalogUi.field(base + "-inherited", "Derivano dal prodotto");
         derived.setEditable(false);
-        material.setId(base + "-material");
-        material.setEditable(true);
-        material.getItems().setAll("ZR", "ZS");
-        material.setMaxWidth(Double.MAX_VALUE);
-        material.getEditor().setPromptText("Facoltativa");
         color.setId(base + "-color");
         color.setEditable(true);
         color.setMaxWidth(Double.MAX_VALUE);
@@ -96,10 +91,7 @@ public final class CatalogForm extends VBox {
             fields.add(CatalogUi.field(kind == CatalogKind.LINES ? "Nome *" : "Descrizione", name));
         }
         switch (kind) {
-            case LINES -> {
-                fields.add(CatalogUi.field("Tecnologia", technology));
-                fields.add(CatalogUi.field("Materia prima", material));
-            }
+            case LINES -> {}
             case PRODUCTS -> {
                 fields.add(CatalogUi.field("Linea *", parent));
                 fields.add(CatalogUi.field("Colore commerciale *", color));
@@ -138,11 +130,7 @@ public final class CatalogForm extends VBox {
         name.setText(entry == null ? "" : entry.name());
         notes.setText(entry == null ? "" : entry.meta().notes());
         active.setSelected(entry == null || entry.active());
-        technology.setText(entry instanceof Line l ? l.technology() : "");
-        material.setValue(entry instanceof Line l ? l.material() : "");
-        material.getEditor().setText(material.getValue());
-        technology.setDisable(used && entry instanceof Line l && !l.technology().isBlank());
-        material.setDisable(used && entry instanceof Line l && !l.material().isBlank());
+        originalLine = entry instanceof Line l ? l : null;
         if (parent != null) {
             parent.reset();
             parent.select(
@@ -175,10 +163,7 @@ public final class CatalogForm extends VBox {
         structural.setText(
                 used
                         ? switch (kind) {
-                            case LINES ->
-                                    "La tecnologia è già utilizzata. Per cambiarne il significato"
-                                        + " crea una nuova linea; puoi correggere codice, nome e"
-                                        + " note.";
+                            case LINES -> "";
                             case PRODUCTS ->
                                     "Il prodotto è già utilizzato: linea e colore già definiti ne"
                                             + " identificano il gruppo. Puoi completare i valori"
@@ -189,7 +174,7 @@ public final class CatalogForm extends VBox {
                                             + " restano modificabili con storico.";
                         }
                         : "");
-        CatalogUi.visible(structural, used);
+        CatalogUi.visible(structural, used && kind != CatalogKind.LINES);
         legacy.setText(
                 detail != null && !detail.previousLines().isEmpty()
                         ? "Associazioni precedenti: "
@@ -242,8 +227,8 @@ public final class CatalogForm extends VBox {
                     new LineDraft(
                             code.getText(),
                             name.getText(),
-                            technology.getText(),
-                            material.getEditor().getText(),
+                            originalLine == null ? "" : originalLine.technology(),
+                            originalLine == null ? "" : originalLine.material(),
                             notes.getText(),
                             active.isSelected());
             case PRODUCTS ->
@@ -278,8 +263,6 @@ public final class CatalogForm extends VBox {
                 name.getText(),
                 notes.getText(),
                 Boolean.toString(active.isSelected()),
-                technology.getText(),
-                material.getEditor().getText(),
                 color.getEditor().getText(),
                 parent == null || parent.id() == null ? "" : parent.id().toString(),
                 diameter.getText(),

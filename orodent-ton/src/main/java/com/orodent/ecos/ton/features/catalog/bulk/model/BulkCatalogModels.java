@@ -18,14 +18,12 @@ public final class BulkCatalogModels {
             String name,
             long lineId,
             String lineCode,
-            String material,
             String color,
             int revision,
             int lineRevision,
             boolean available) {
         public Parent {
             name = CatalogModels.text(name);
-            material = CatalogModels.text(material);
         }
 
         @Override

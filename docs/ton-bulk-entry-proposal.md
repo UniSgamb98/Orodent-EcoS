@@ -28,7 +28,7 @@ singola resta disponibile per i casi occasionali.
 2. Si scelgono più colori commerciali, con possibilità di aggiungerne altri.
 3. L'anteprima genera una riga per colore. Il codice segue una composizione a
    blocchi modificabile, inizialmente **Linea + Colore**, che conserva la regola
-   attuale. Si possono riordinare le parti **Linea**, **Colore**, **Materiale** e
+   attuale. Si possono riordinare le parti **Linea**, **Colore** e
    **Testo fisso**, scegliendo anche un separatore. La descrizione deriva dalla
    linea e dal colore. «Senza colore» non aggiunge un suffisso colore né un
    separatore finale.
@@ -38,7 +38,7 @@ singola resta disponibile per i casi occasionali.
 
 Esempio: MST con A0, A1, A2, A3 produce MSTA0, MSTA1, MSTA2, MSTA3.
 La grafia dei colori e i limiti dei campi restano quelli di `CatalogModels`.
-Con **Materiale + Linea + Colore**, ad esempio, si ottiene ZRMSTA3. Una regola
+Con **Testo fisso «ZR» + Linea + Colore**, ad esempio, si ottiene ZRMSTA3. Una regola
 che non distingue i colori genera duplicati segnalati nell'anteprima.
 
 Prodotti e articoli hanno composizioni indipendenti: modificare la regola dei
@@ -58,18 +58,16 @@ conserva il suo codice, se linea e colore non cambiano.
    attivi della linea, anche oltre la pagina caricata. Cambiare linea azzera la selezione precedente.
    L'elenco è più alto e non mostra etichette separate dei prodotti selezionati.
    Non esistono ricerca della linea, opzione «Tutte le linee» o riquadro di riepilogo
-   dei prodotti selezionati. Linea, colore e materiale si ereditano dal prodotto.
+   dei prodotti selezionati. Linea e colore si ereditano dal prodotto.
 2. Si inseriscono uno o più diametri e una serie di altezze.
 3. L'anteprima si aggiorna automaticamente con le combinazioni **prodotti × diametri ×
    altezze**, dopo una pausa di circa 450 ms nella digitazione o nelle selezioni.
    Non serve un pulsante per rigenerare: i conteggi compaiono soltanto a destra.
-4. **Personalizza composizione…** apre un pannello con i blocchi **Materiale**,
-   **Diametro**, **Altezza**, **Prodotto**, per
+4. **Personalizza composizione…** apre un pannello con i blocchi **Diametro**, **Altezza**, **Prodotto**, per
    spostarli con le frecce, aggiungerli o rimuoverli, inserire un **Testo fisso** e
    scegliere un separatore. Non si scrivono formule né parentesi. L'esempio del
    primo articolo si aggiorna subito; **Annulla** conserva la regola precedente.
-   Il materiale è ereditato dalla linea (ZR o ZS); se manca va completato prima
-   di generare un codice che lo usa. Le misure decimali usano il punto nei codici
+   I prefissi ZR o ZS si inseriscono con Testo fisso. Le misure decimali usano il punto nei codici
    e non aggiungono zeri iniziali o decimali superflui: 12,50 diventa 12.5.
 5. Codice articolo, diametro e altezza sono in sola lettura nell'anteprima.
    Le misure si cambiano nei campi comuni e i codici da **Personalizza composizione…**.
@@ -80,17 +78,15 @@ articoli, cinque per ciascun prodotto. Con due diametri diventano trenta.
 
 L'anteprima include la colonna **Prodotto collegato**. Ogni riga mantiene
 l'identificativo del proprio prodotto, indipendentemente dalla composizione
-scelta per il codice. Il componente **Prodotto** compone **codice linea
-senza prefisso materiale + colore commerciale**, usando i dati strutturati della
-riga e non il codice salvato del prodotto. Rimuove una sola occorrenza iniziale
-corrispondente alla materia prima della linea; le altre parti del codice linea
-restano invariate. **Senza colore** non aggiunge un suffisso.
-Il componente **Materiale** usa la materia prima della linea.
+scelta per il codice. Il componente **Prodotto** compone **codice linea + colore
+commerciale**, usando i dati strutturati della riga e non il codice salvato del
+prodotto. **Senza colore** non aggiunge un suffisso. Un Testo fisso iniziale già
+presente nel prodotto sposta quel prefisso davanti al formato senza ripeterlo.
 
-Esempio: le linee ZRMST (ZR) e ZSMST (ZS), entrambe con colore A0, generano
-rispettivamente **ZR9812MSTA0** e **ZS9812MSTA0**. Codici delle linee, codici dei
-prodotti e collegamenti nel DB restano invariati, anche con prodotti dal codice
-personalizzato. Gli articoli già salvati non vengono rinominati.
+Esempio: ZRMST con colore A0, Testo fisso ZR, diametro 98 e altezza 12 genera
+**ZR9812MSTA0**. Codici delle linee, codici dei prodotti e collegamenti nel DB
+restano invariati, anche con prodotti dal codice personalizzato. Gli articoli
+già salvati non vengono rinominati.
 La demo permette di scegliere separatamente una linea ZR o una linea ZS.
 Ogni gruppo contiene prodotti di una sola linea; il servizio ricontrolla questo
 vincolo sul DB anche al salvataggio.
@@ -167,3 +163,11 @@ nella modalità articoli della stessa pagina.
 
 L'inserimento multiplo usa selezioni e combinazioni interne a TON; non include
 importazione da Excel.
+
+## Prefissi espliciti
+
+Il blocco Materiale è stato rimosso. La regola iniziale degli articoli concatena
+Diametro, Altezza e Prodotto (linea + colore). Per `ZR9512MSTA0`, usare Testo fisso
+`ZR`, Diametro, Altezza, Prodotto. Se il prodotto inizia già con quel testo fisso,
+il prefisso viene spostato davanti al formato senza ripeterlo: `ZRMSTA0` →
+`ZR9512MSTA0`. Non viene ricavato dalla materia prima né dalle polveri.

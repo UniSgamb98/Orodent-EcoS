@@ -128,7 +128,7 @@ class BulkCatalogServiceTest {
         Parent first = parents.getFirst();
         single.create(
                         new ArticleDraft(
-                                "ZR9812" + first.code(),
+                                "9812" + first.code(),
                                 "Esistente",
                                 first.id(),
                                 new BigDecimal("98"),
@@ -144,7 +144,6 @@ class BulkCatalogServiceTest {
                         CodeComposition.defaults(CatalogKind.ARTICLES)
                                 .code(
                                         new CodeComposition.Values(
-                                                p.material(),
                                                 p.lineCode(),
                                                 p.color(),
                                                 new BigDecimal("98"),
@@ -165,7 +164,7 @@ class BulkCatalogServiceTest {
                             .filter(x -> x.id() == a.product().id())
                             .findFirst()
                             .orElseThrow();
-            assertTrue(a.code().startsWith(p.material()));
+            assertTrue(a.code().startsWith("98"));
             assertEquals("Nuovi", a.meta().notes());
         }
         assertEquals(15, count("ARTICOLI_REVISIONI"));
@@ -379,7 +378,6 @@ class BulkCatalogServiceTest {
                     CodeComposition.defaults(CatalogKind.ARTICLES)
                             .code(
                                     new CodeComposition.Values(
-                                            parent.material(),
                                             parent.lineCode(),
                                             parent.color(),
                                             new BigDecimal("98"),
@@ -394,7 +392,7 @@ class BulkCatalogServiceTest {
             entries.addAll(bulk.create(preview).join().entries());
         }
         assertEquals(
-                List.of("ZR9812MSTA0", "ZS9812MSTA0"), entries.stream().map(Entry::code).toList());
+                List.of("9812ZRMSTA0", "9812ZSMSTA0"), entries.stream().map(Entry::code).toList());
         assertEquals(
                 List.of(first.id(), second.id()),
                 entries.stream().map(e -> ((Article) e).product().id()).toList());

@@ -212,7 +212,7 @@ public final class BulkParentPicker extends VBox {
             check.setId("ton-bulk-select-product-" + parent.id());
             Label code = new Label(parent.code());
             code.getStyleClass().add("bulk-product-name");
-            Label description = new Label(parent.name() + " · " + parent.material());
+            Label description = new Label(parent.name());
             description.getStyleClass().add("bulk-small");
             description.setWrapText(true);
             VBox labels = new VBox(2, code, description);

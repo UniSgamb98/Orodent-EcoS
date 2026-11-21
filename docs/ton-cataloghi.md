@@ -7,8 +7,8 @@ Gli stessi cataloghi sono raggiungibili dalla Panoramica.
 
 La gerarchia è **Linea → Prodotto → Articolo**:
 
-- Una linea identifica una tecnologia; comprende codice, nome, tecnologia,
-  eventuale materia prima e note.
+- Una linea raggruppa una famiglia di prodotti; comprende codice, nome, note e stato.
+  Tecnologia e Materia prima non sono più richieste né mostrate nell’anagrafica corrente.
 - Un prodotto appartiene a una sola linea e identifica un colore commerciale,
   per esempio A2. **Senza colore** è una scelta esplicita, distinta da un valore
   mancante. Non è il colore Bianca/Gialla/Rosa/Grigia delle polveri.
@@ -87,11 +87,11 @@ al riquadro della revisione. Pannelli, campi, schede e pulsanti condividono la
 palette della scheda polvere. Le colonne dei cataloghi e degli elenchi collegati
 si distribuiscono uniformemente su tutta la larghezza disponibile.
 
-**Tecnologia** è un testo descrittivo facoltativo (massimo 200 caratteri), salvato
-nella linea e nelle revisioni storiche. Può descrivere, per esempio, una famiglia
-multistrato. Non imposta ricette, parametri di cottura o formule di costo. Un
-valore già compilato diventa protetto quando la linea è utilizzata; può essere
-compilato se era rimasto vuoto.
+I precedenti valori di Tecnologia e Materia prima restano conservati nel database e,
+quando presenti, nelle revisioni storiche. Salvare una linea esistente non li cancella.
+Le polveri della composizione e i loro fornitori descrivono i materiali effettivi.
+Nell’inserimento multiplo non esiste più il blocco **Materiale**: per introdurre
+prefissi come `ZR` o `ZS` si usa **Testo fisso**. I codici già salvati rimangono invariati.
 
 ## Anagrafiche e Revisioni
 
@@ -117,8 +117,8 @@ finché la discrepanza non viene verificata.
 
 Le identità strutturali rispettano questi vincoli:
 
-- Una linea usata mantiene tecnologia e materia prima già definite; i campi
-  precedentemente mancanti si possono completare.
+- La linea mantiene i valori storici di tecnologia e materia prima, senza esporli
+  nell’anagrafica corrente.
 - Un prodotto usato mantiene linea e colore già definiti; i mancanti si possono
   completare dopo aver verificato le associazioni precedenti.
 - Il prodotto di appartenenza di un articolo è fisso dal primo salvataggio,
@@ -131,7 +131,7 @@ Le identità strutturali rispettano questi vincoli:
 Codice e nome della linea, codice e descrizione dell'articolo e le note restano
 correggibili con storico. Nel prodotto codice e descrizione seguono le regole
 di generazione descritte sopra. Per rappresentare
-una tecnologia, combinazione o formato diverso si crea una nuova anagrafica.
+una famiglia, combinazione o formato diverso si crea una nuova anagrafica.
 Un codice non può duplicare quello di un elemento archiviato né riutilizzare
 quello conservato nello storico di un'altra identità.
 
