@@ -8,9 +8,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class LoginService {
+
+    public static final String AUTO_LOGIN_OPERATOR_ID = "crm.auto-login.operator-id";
 
     private final Database database;
 
@@ -43,6 +46,36 @@ public class LoginService {
         String name = OperatorManagementService.name(username);
         UUID id = new OperatorManagementService(database).create(name);
         return new LoginUser(id, name, name, "");
+    }
+
+    public Optional<LoginUser> automaticUser(String configuredId) {
+        if (configuredId == null || configuredId.isBlank()) return Optional.empty();
+        UUID id;
+        try {
+            String value = configuredId.strip();
+            id = UUID.fromString(value);
+            if (!id.toString().equalsIgnoreCase(value)) throw new IllegalArgumentException();
+        } catch (IllegalArgumentException failure) {
+            throw new IllegalArgumentException(
+                    "Accesso automatico: "
+                            + AUTO_LOGIN_OPERATOR_ID
+                            + " deve contenere un ID operatore valido. Copialo dalle impostazioni"
+                            + " CRM.",
+                    failure);
+        }
+        return Optional.of(
+                loadUsers().stream()
+                        .filter(user -> user.id().equals(id))
+                        .findFirst()
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "Accesso automatico: operatore '"
+                                                        + id
+                                                        + "' non trovato o disattivato. Seleziona"
+                                                        + " un operatore oppure correggi "
+                                                        + AUTO_LOGIN_OPERATOR_ID
+                                                        + ".")));
     }
 
     public LoginSession login(LoginUser user) {

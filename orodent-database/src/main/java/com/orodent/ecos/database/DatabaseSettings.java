@@ -15,21 +15,27 @@ public final class DatabaseSettings {
         String configuredFile = System.getProperty("orodent.ecos.config");
         boolean explicit = configuredFile != null && !configuredFile.isBlank();
         Path file = explicit ? Path.of(configuredFile) : Path.of("config/development.properties");
-        return load(file, explicit, System.getProperties(), System.getenv("ORODENT_ECOS_DATABASE_HOME"),
+        return load(
+                file,
+                explicit,
+                System.getProperties(),
+                System.getenv("ORODENT_ECOS_DATABASE_HOME"),
                 Path.of(System.getProperty("user.home"), ".orodent-ecos", "development"));
+    }
+
+    /** Settings from the same external file used by the database and the installed launcher. */
+    public static Properties loadApplicationProperties() {
+        String configuredFile = System.getProperty("orodent.ecos.config");
+        boolean explicit = configuredFile != null && !configuredFile.isBlank();
+        return readProperties(
+                explicit ? Path.of(configuredFile) : Path.of("config/development.properties"),
+                explicit);
     }
 
     static DatabaseConfiguration load(Path file, boolean required, Properties overrides,
                                       String environmentHome, Path defaultHome) {
         Path absoluteFile = file.toAbsolutePath().normalize();
-        Properties settings = new Properties();
-        if (required || Files.exists(absoluteFile)) {
-            try (Reader reader = Files.newBufferedReader(absoluteFile, StandardCharsets.UTF_8)) {
-                settings.load(reader);
-            } catch (IOException | IllegalArgumentException failure) {
-                throw new IllegalStateException("Impossibile leggere la configurazione: " + absoluteFile, failure);
-            }
-        }
+        Properties settings = readProperties(absoluteFile, required);
         String home = nonBlank(overrides.getProperty("ton.database.home"));
         if (home == null) home = nonBlank(environmentHome);
         Path databaseHome;
@@ -40,10 +46,30 @@ public final class DatabaseSettings {
             databaseHome = fileHome == null ? defaultHome : absoluteFile.getParent().resolve(fileHome);
         }
         // With no external file, direct IDE starts still use isolated development defaults.
-        return new DatabaseConfiguration(databaseHome,
+        return new DatabaseConfiguration(
+                databaseHome,
                 number(overrides, settings, "ton.database.port", "database.port", 1529),
                 number(overrides, settings, "ton.discovery.port", "discovery.port", 45681),
-                number(overrides, settings, "ton.discovery.timeout.ms", "discovery.timeout.ms", 1500));
+                number(
+                        overrides,
+                        settings,
+                        "ton.discovery.timeout.ms",
+                        "discovery.timeout.ms",
+                        1500));
+    }
+
+    private static Properties readProperties(Path file, boolean required) {
+        Path absoluteFile = file.toAbsolutePath().normalize();
+        Properties settings = new Properties();
+        if (required || Files.exists(absoluteFile)) {
+            try (Reader reader = Files.newBufferedReader(absoluteFile, StandardCharsets.UTF_8)) {
+                settings.load(reader);
+            } catch (IOException | IllegalArgumentException failure) {
+                throw new IllegalStateException(
+                        "Impossibile leggere la configurazione: " + absoluteFile, failure);
+            }
+        }
+        return settings;
     }
 
     private static int number(Properties overrides, Properties settings, String property, String key, int fallback) {
@@ -52,7 +78,8 @@ public final class DatabaseSettings {
         try {
             return value == null ? fallback : Integer.parseInt(value);
         } catch (NumberFormatException failure) {
-            throw new IllegalArgumentException("Valore numerico non valido per " + key + ": " + value, failure);
+            throw new IllegalArgumentException(
+                    "Valore numerico non valido per " + key + ": " + value, failure);
         }
     }
 

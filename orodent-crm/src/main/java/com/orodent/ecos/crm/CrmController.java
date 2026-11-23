@@ -24,6 +24,7 @@ import com.orodent.ecos.crm.feature.clienti.schedacliente.view.SchedaClienteView
 import com.orodent.ecos.crm.feature.impostazioni.controller.ImpostazioniController;
 import com.orodent.ecos.crm.feature.impostazioni.service.ImpostazioniService;
 import com.orodent.ecos.crm.feature.impostazioni.view.ImpostazioniView;
+import com.orodent.ecos.database.DatabaseSettings;
 import com.orodent.ecos.module.*;
 
 import javafx.beans.value.ChangeListener;
@@ -99,7 +100,24 @@ final class CrmController implements ModuleSession, ClientiNav {
                 });
         root.sceneProperty().addListener(sceneListener);
         if (context.operators().current().isPresent()) verifyOperator();
-        else showLogin();
+        else showInitialLogin();
+    }
+
+    private void showInitialLogin() {
+        install(new Label("Verifica operatore…"), false, this::showInitialLogin);
+        var service = new LoginService(database);
+        tasks.run(
+                () ->
+                        service.automaticUser(
+                                DatabaseSettings.loadApplicationProperties()
+                                        .getProperty(LoginService.AUTO_LOGIN_OPERATOR_ID)),
+                user -> {
+                    if (user.isPresent()) {
+                        context.operators().select(user.get().id(), user.get().username());
+                        showClienti();
+                    } else showLogin();
+                },
+                failure -> showLogin(message(failure)));
     }
 
     private void verifyOperator() {
@@ -124,9 +142,14 @@ final class CrmController implements ModuleSession, ClientiNav {
     }
 
     private void showLogin() {
+        showLogin(null);
+    }
+
+    private void showLogin(String problem) {
         LoginView page = new LoginView();
         page.setId("crm-login");
         install(page, false, this::showLogin);
+        if (problem != null) page.showError(problem);
         var service = new LoginService(database);
         page.getLoginButton().setId("crm-select-operator");
         tasks.run(service::loadUsers, page::setUsers, e -> page.showError(message(e)));

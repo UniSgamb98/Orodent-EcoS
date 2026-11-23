@@ -1,5 +1,7 @@
 package com.orodent.ecos.database;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -7,16 +9,34 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 class DatabaseSettingsTest {
     @TempDir Path temporary;
 
     private Path settings() throws Exception {
         Path file = temporary.resolve("config/application.properties");
         Files.createDirectories(file.getParent());
-        Files.writeString(file, "database.home=../données\ndatabase.port=1528\ndiscovery.port=45680\n");
+        Files.writeString(
+                file, "database.home=../données\ndatabase.port=1528\ndiscovery.port=45680\n");
         return file;
+    }
+
+    @Test
+    void modulesReadTheSameExplicitUtf8ConfigurationFile() throws Exception {
+        String previous = System.getProperty("orodent.ecos.config");
+        Path file = settings();
+        Files.writeString(file, "crm.auto-login.operator-id=stable-id\nexample=René\n");
+        try {
+            System.setProperty("orodent.ecos.config", file.toString());
+            Properties settings = DatabaseSettings.loadApplicationProperties();
+            assertEquals("stable-id", settings.getProperty("crm.auto-login.operator-id"));
+            assertEquals("René", settings.getProperty("example"));
+            System.setProperty(
+                    "orodent.ecos.config", temporary.resolve("missing.properties").toString());
+            assertThrows(IllegalStateException.class, DatabaseSettings::loadApplicationProperties);
+        } finally {
+            if (previous == null) System.clearProperty("orodent.ecos.config");
+            else System.setProperty("orodent.ecos.config", previous);
+        }
     }
 
     @Test

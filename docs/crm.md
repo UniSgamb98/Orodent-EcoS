@@ -19,6 +19,26 @@ passando dalla Home agli altri moduli e riaprendo il CRM. Viene verificato che
 l'operatore sia ancora attivo. Non è necessario selezionarlo per usare Statistiche,
 TON o Costi. Preferiti e viste salvate rimangono separati per UUID dell'operatore.
 
+Per una postazione usata normalmente dalla stessa persona, aggiungere al file locale
+`config/application.properties` (oppure `config/development.properties` in sviluppo):
+
+```properties
+crm.auto-login.operator-id=550e8400-e29b-41d4-a716-446655440000
+```
+
+Il valore sopra è un esempio: sostituirlo con l'**ID del proprio operatore**.
+In **CRM → Impostazioni → Operatori**, aprire il menu **⋯** dell'operatore e scegliere
+**Copia ID operatore**, quindi incollare il valore dopo `=`. L'ID resta uguale anche
+quando si rinomina l'operatore: non occorre aggiornare la configurazione.
+Riavviare l'app dopo la modifica. La proprietà identifica un operatore già esistente
+nel database e attivo: non ne crea uno nuovo. Se è vuota o assente, resta la selezione
+manuale; se l'ID non è valido, non esiste o è disattivato, la stessa schermata mostra
+il motivo. Ogni PC può avere un valore diverso, senza cambiare il database condiviso.
+
+**Cambia operatore** continua a permettere una scelta manuale, che prevale sulla
+configurazione per la sessione in corso, anche tornando alla Home e riaprendo il CRM.
+Al successivo avvio dell'app si applica di nuovo il valore del file.
+
 ## Elenco e paesi
 
 La ricerca per azienda, referente, telefono o email e i filtri Stato, Operatore,

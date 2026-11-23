@@ -61,6 +61,9 @@ class CrmUiTest {
                         new VenditeCsvImportService(db, workers),
                         homes::incrementAndGet,
                         operator);
+        Path loginConfig = Files.createTempFile("crm-login-", ".properties");
+        String previousConfig = System.getProperty("orodent.ecos.config");
+        System.setProperty("orodent.ecos.config", loginConfig.toString());
         try {
             fx(
                     () -> {
@@ -203,6 +206,10 @@ class CrmUiTest {
             fx(
                     () -> {
                         assertTrue(operatorAction("crm-operator-remove-" + currentId).isDisable());
+                        operatorAction("crm-operator-copy-id-" + currentId).fire();
+                        assertEquals(
+                                currentId.toString(),
+                                javafx.scene.input.Clipboard.getSystemClipboard().getString());
                         Platform.runLater(() -> fillOperatorName("Lucia"));
                         button("crm-settings-operator-add").fire();
                         return null;
@@ -440,7 +447,70 @@ class CrmUiTest {
                         }
                         return null;
                     });
+            // A fresh app session uses the configured stable ID, including after the rename above.
+            Files.writeString(loginConfig, "crm.auto-login.operator-id=" + currentId + "\n");
+            fx(
+                    () -> {
+                        session.close();
+                        operator.clear();
+                        session = new CrmModule().open(context);
+                        stage.getScene().setRoot(session.root());
+                        return null;
+                    });
+            await(() -> enabledButton("crm-create-lead"));
+            assertEquals(currentId, operator.current().orElseThrow().id());
+            assertEquals("Mario Verdi", operator.current().orElseThrow().username());
+            fx(
+                    () -> {
+                        button("crm-change-operator").fire();
+                        return null;
+                    });
+            await(() -> enabledButton("crm-select-operator"));
+            assertTrue(
+                    operator.current().isEmpty(),
+                    "Explicit operator changes bypass automatic login");
+            fx(
+                    () -> {
+                        button("crm-select-operator").fire();
+                        return null;
+                    });
+            await(() -> enabledButton("crm-create-lead"));
+            // An invalid setting must not replace an existing session or prevent manual selection.
+            Files.writeString(loginConfig, "crm.auto-login.operator-id=invalid\n");
+            fx(
+                    () -> {
+                        session.close();
+                        session = new CrmModule().open(context);
+                        stage.getScene().setRoot(session.root());
+                        return null;
+                    });
+            await(() -> enabledButton("crm-create-lead"));
+            assertEquals(currentId, operator.current().orElseThrow().id());
+            fx(
+                    () -> {
+                        session.close();
+                        operator.clear();
+                        session = new CrmModule().open(context);
+                        stage.getScene().setRoot(session.root());
+                        return null;
+                    });
+            await(() -> enabledButton("crm-select-operator"));
+            fx(
+                    () -> {
+                        Label error = (Label) stage.getScene().lookup(".login-error");
+                        assertTrue(error.isVisible());
+                        assertTrue(error.getText().contains("crm.auto-login.operator-id"));
+                        button("crm-select-operator").fire();
+                        return null;
+                    });
+            await(() -> enabledButton("crm-create-lead"));
+            assertEquals(currentId, operator.current().orElseThrow().id());
+            assertEquals(0, fxSql.get(), "Automatic login must not read JDBC on FX");
+            assertTrue(errors.isEmpty(), errors::toString);
         } finally {
+            if (previousConfig == null) System.clearProperty("orodent.ecos.config");
+            else System.setProperty("orodent.ecos.config", previousConfig);
+            Files.deleteIfExists(loginConfig);
             fx(
                     () -> {
                         if (session != null) session.close();

@@ -4,6 +4,8 @@ import com.orodent.ecos.crm.core.database.service.OperatorManagementService.Oper
 
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.*;
 
 import java.util.*;
@@ -123,7 +125,15 @@ public final class OperatorSettingsSection extends VBox {
             delete.setId("crm-operator-remove-" + operator.id());
             delete.setDisable(operator.current() || operator.linked() && !operator.active());
             delete.setOnAction(e -> remove.accept(operator));
-            MenuButton actions = new MenuButton("⋯", null, toggle, delete);
+            MenuItem copyId = new MenuItem("Copia ID operatore");
+            copyId.setId("crm-operator-copy-id-" + operator.id());
+            copyId.setOnAction(
+                    e -> {
+                        var content = new ClipboardContent();
+                        content.putString(operator.id().toString());
+                        Clipboard.getSystemClipboard().setContent(content);
+                    });
+            MenuButton actions = new MenuButton("⋯", null, copyId, toggle, delete);
             actions.setTooltip(new Tooltip("Azioni operatore"));
             actions.setAccessibleText("Azioni per " + operator.name());
             Label state =

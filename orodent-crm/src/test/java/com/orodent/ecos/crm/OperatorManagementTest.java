@@ -53,6 +53,44 @@ class OperatorManagementTest {
     }
 
     @Test
+    void automaticLoginUsesStableIdAndRejectsMissingInactiveOrInvalidOperators() {
+        var login = new LoginService(db);
+        assertTrue(db.transaction(() -> login.automaticUser(null)).isEmpty());
+        assertTrue(db.transaction(() -> login.automaticUser("  ")).isEmpty());
+        assertEquals(
+                current,
+                db.transaction(() -> login.automaticUser(" " + current + " ")).orElseThrow().id());
+        db.transaction(
+                () -> {
+                    service.rename(current, "Mario Verdi", "Mario Rossi");
+                    return null;
+                });
+        assertEquals(
+                "Mario Verdi",
+                db.transaction(() -> login.automaticUser(current.toString()))
+                        .orElseThrow()
+                        .username());
+        UUID inactive = db.transaction(() -> service.create("Lucia"));
+        db.transaction(
+                () -> {
+                    service.active(inactive, false);
+                    return null;
+                });
+        for (String invalid :
+                List.of(
+                        "Mario Verdi",
+                        "1-1-1-1-1",
+                        UUID.randomUUID().toString(),
+                        inactive.toString())) {
+            assertThrows(
+                    IllegalArgumentException.class,
+                    () -> db.transaction(() -> login.automaticUser(invalid)));
+        }
+        assertEquals(
+                2, db.transaction(service::load).size(), "Automatic login never creates operators");
+    }
+
+    @Test
     void preservesCaseAndRejectsDuplicatesIncludingInactiveOperators() {
         assertEquals("Mario Rossi", db.transaction(service::load).getFirst().name());
         assertThrows(
