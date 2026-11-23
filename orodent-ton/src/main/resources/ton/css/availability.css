@@ -9,7 +9,9 @@
 .ton-availability .availability-current-line { -fx-background-color: #18778c; -fx-text-fill: white; -fx-border-color: #18778c; }
 .ton-availability .availability-current-line:hover { -fx-background-color: #12677a; }
 .ton-availability .availability-table-card { -fx-padding: 10px; -fx-background-color: white; -fx-border-color: #cbdce7; -fx-border-radius: 9px; -fx-background-radius: 9px; }
-.ton-availability .table-row-cell:odd { -fx-background-color: #f8fbfd; }
+.ton-availability .table-row-cell { -fx-background-color: white; }
+.ton-availability .table-row-cell:alternate-product { -fx-background-color: #eaf2f7; }
+.ton-availability .table-row-cell:alternate-product .table-cell { -fx-border-color: transparent transparent white transparent; }
 .ton-availability .table-row-cell:selected { -fx-background-color: #d9eef2; }
 .ton-availability .table-row-cell:jump-target { -fx-background-color: #ccecef; }
 .ton-availability .table-cell { -fx-padding: 7px 14px; -fx-font-size: 14px; -fx-font-weight: normal; -fx-font-family: "System"; }

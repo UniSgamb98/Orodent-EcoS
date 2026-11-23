@@ -48,11 +48,14 @@ public final class AvailabilityView extends VBox {
     private TableColumn<Row, Row> codeColumn, ordersColumn, soldColumn;
     private List<Warehouse> shownWarehouses = List.of();
     private final Map<Long, Button> lineButtons = new HashMap<>();
+    private final Map<Long, Boolean> productBands = new HashMap<>();
     private final List<ContextMenu> menus = new ArrayList<>();
     private final PauseTransition pulse = new PauseTransition(Duration.seconds(1.8));
     private long highlighted = -1;
     private Consumer<Row> open = r -> {};
     private static final PseudoClass JUMP = PseudoClass.getPseudoClass("jump-target");
+    private static final PseudoClass ALTERNATE_PRODUCT =
+            PseudoClass.getPseudoClass("alternate-product");
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     public AvailabilityView() {
@@ -119,6 +122,12 @@ public final class AvailabilityView extends VBox {
                                 @Override
                                 protected void updateItem(Row item, boolean empty) {
                                     super.updateItem(item, empty);
+                                    pseudoClassStateChanged(
+                                            ALTERNATE_PRODUCT,
+                                            !empty
+                                                    && item != null
+                                                    && productBands.getOrDefault(
+                                                            item.article().productId(), false));
                                     pseudoClassStateChanged(
                                             JUMP,
                                             !empty
@@ -291,6 +300,10 @@ public final class AvailabilityView extends VBox {
         menus.clear();
         lineButtons.clear();
         lines.getChildren().clear();
+        productBands.clear();
+        for (var row : data.rows())
+            productBands.computeIfAbsent(
+                    row.article().productId(), id -> productBands.size() % 2 == 1);
         table.getItems().setAll(data.rows());
         var groups = new LinkedHashMap<Long, List<Row>>();
         for (var row : data.rows())

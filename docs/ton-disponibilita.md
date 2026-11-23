@@ -7,6 +7,8 @@ anagrafiche archiviate, riconoscibili dal tooltip; queste non aprono nuove produ
 ## Consultazione
 
 La tabella rimane completa e si ordina per linea, prodotto, diametro e altezza.
+Gli articoli dello stesso prodotto condividono lo sfondo; i gruppi alternano
+bianco e azzurro chiaro, mantenendo una sottile linea di separazione tra le righe.
 Mostra **Codice prodotto**, una colonna per ciascun deposito (**MAGC**, **MAGMOD**),
 **Da evadere** e **Venduti**, mantenendo una riga per codice. Il totale disponibilità
 in alto somma i depositi; ordini e vendite restano complessivi per codice.
