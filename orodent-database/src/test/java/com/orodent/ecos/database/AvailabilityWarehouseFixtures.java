@@ -4,6 +4,7 @@ import java.sql.*;
 
 final class AvailabilityWarehouseFixtures {
     static void beforeV25(Connection c) throws SQLException {
+        CubatureRuleFixtures.beforeV26(c);
         try (var q = c.createStatement()) {
             q.executeUpdate(
                     "ALTER TABLE TON.DISPONIBILITA_VALORI DROP CONSTRAINT fk_ton_disp_magazzino");

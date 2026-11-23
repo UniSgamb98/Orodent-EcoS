@@ -17,6 +17,8 @@ import com.orodent.ecos.ton.features.catalog.view.CatalogView;
 import com.orodent.ecos.ton.features.compositions.controller.CompositionsController;
 import com.orodent.ecos.ton.features.compositions.service.CompositionService;
 import com.orodent.ecos.ton.features.compositions.view.CompositionsView;
+import com.orodent.ecos.ton.features.cubing.controller.CubatureRulesController;
+import com.orodent.ecos.ton.features.cubing.service.CubatureRuleService;
 import com.orodent.ecos.ton.features.cubing.view.CubatureRulesView;
 import com.orodent.ecos.ton.features.diskmodels.controller.DiskModelsController;
 import com.orodent.ecos.ton.features.diskmodels.service.DiskModelService;
@@ -56,6 +58,7 @@ final class TonController {
     private final ProductionService productions;
     private final EquipmentService equipment;
     private final SupplierService suppliers;
+    private final CubatureRuleService cubatureRules;
     private final AvailabilityService availability;
     private AvailabilityView availabilityView;
     private AvailabilityView.Position availabilityPosition = AvailabilityView.Position.initial();
@@ -67,6 +70,7 @@ final class TonController {
     TonController(ModuleContext context) {
         workers = context.workers();
         suppliers = new SupplierService(context.connections(), workers);
+        cubatureRules = new CubatureRuleService(context.connections(), workers);
         availability = new AvailabilityService(context.connections(), workers);
         equipment = new EquipmentService(context.connections(), workers);
         documents = new DocumentTemplateService(context.connections(), workers);
@@ -106,9 +110,10 @@ final class TonController {
         closePage();
         switch (feature) {
             case CUBATURE_RULES -> {
-                activeFeature = feature;
-                section = feature.section();
-                view.showFeature(new CubatureRulesView(), feature);
+                var page = new CubatureRulesView();
+                page.subpageProperty().addListener((o, a, b) -> view.showFeature(page, feature, b));
+                var controller = new CubatureRulesController(page, cubatureRules);
+                install(feature, page, controller, controller::start);
             }
             case PRESSES, MOULDS, FURNACES -> {
                 Kind kind =
@@ -248,7 +253,6 @@ final class TonController {
         var controller =
                 new CatalogController(
                         route.kind(), page, catalogues, specifications, this::openCatalogue);
-        controller.onCalculationRules(() -> showFeature(TonFeature.CUBATURE_RULES));
         install(route.kind().feature(), page, controller, () -> controller.start(route));
     }
 

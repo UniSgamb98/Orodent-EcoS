@@ -39,6 +39,15 @@ class DiskModelServiceTest {
         new DatabaseSchema(db).initialize();
         db.withTransaction(
                 c -> {
+                    com.orodent.ecos.database.CubatureRuleCatalogue.save(
+                            c,
+                            null,
+                            new com.orodent.ecos.database.CubatureRuleCatalogue.Draft(
+                                    "test", "test", "", true));
+                    return null;
+                });
+        db.withTransaction(
+                c -> {
                     try (var q = c.createStatement()) {
                         q.executeUpdate(
                                 "INSERT INTO TON.STAMPI(codice,nome,diametro_mm) VALUES"

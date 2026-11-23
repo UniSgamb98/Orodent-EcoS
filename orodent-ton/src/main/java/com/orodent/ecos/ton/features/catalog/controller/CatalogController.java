@@ -212,11 +212,6 @@ public final class CatalogController implements FeatureController {
         if (editor.specifications() != null) configureSpecifications();
     }
 
-    public void onCalculationRules(Runnable action) {
-        if (view.editor().specifications() != null)
-            on(view.editor().specifications().calculationRules(), action);
-    }
-
     public void start(Navigation route) {
         if (route.parentFilter() != null && kind.parent() != null) {
             var lookup = kind == CatalogKind.PRODUCTS ? view.list().line() : view.list().product();

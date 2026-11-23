@@ -91,7 +91,14 @@ JOIN TON.MODELLI_DISCO m ON m.modello_id=c.modello_id JOIN TON.PRODOTTI a ON a.p
                                     r.getLong(1), r.getString(2) + " · v" + r.getInt(3)));
             }
         }
-        return new SpecificationPage(rows, total, offset, limit, compositions, models);
+        return new SpecificationPage(
+                rows,
+                total,
+                offset,
+                limit,
+                compositions,
+                models,
+                com.orodent.ecos.database.CubatureRuleCatalogue.list(connection, "", true));
     }
 
     public long insert(Product product, SpecificationDraft draft) throws SQLException {
@@ -188,6 +195,8 @@ WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='B
 
     public void validateTechnical(Product product, SpecificationDraft draft, boolean approving)
             throws SQLException {
+        com.orodent.ecos.database.CubatureRuleCatalogue.requireActive(
+                connection, draft.calculation());
         lock("COMPOSIZIONI", "composizione_id", draft.compositionId());
         lock("MODELLI_DISCO", "modello_id", draft.modelId());
         try (var q =

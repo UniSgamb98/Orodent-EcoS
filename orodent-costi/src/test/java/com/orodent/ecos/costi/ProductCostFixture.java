@@ -6,6 +6,8 @@ final class ProductCostFixture {
     static void seed(ConnectionProvider db) {
         execute(
                 db,
+                "INSERT INTO TON.REGOLE_CUBATURA(codice,nome) VALUES ('TON-ORIGINALE','Regola"
+                    + " originale')",
                 "INSERT INTO TON.LINEE(codice,nome) VALUES ('MST','Thor')",
                 "INSERT INTO TON.PRODOTTI(codice,linea_id,colore_commerciale) VALUES"
                         + " ('MSTA2',1,'A2')",

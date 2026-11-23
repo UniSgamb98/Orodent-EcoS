@@ -1,0 +1,15 @@
+CREATE TABLE TON.REGOLE_CUBATURA (
+    regola_id BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    codice VARCHAR(50) NOT NULL UNIQUE,
+    nome VARCHAR(150) NOT NULL,
+    descrizione VARCHAR(1000) NOT NULL DEFAULT '',
+    attivo BOOLEAN NOT NULL DEFAULT TRUE,
+    versione_modifica INT NOT NULL DEFAULT 1,
+    creato_il TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    aggiornato_il TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ck_ton_regola_valori CHECK (LENGTH(TRIM(codice))>0 AND LENGTH(TRIM(nome))>0 AND versione_modifica>0)
+);
+INSERT INTO TON.REGOLE_CUBATURA(codice,nome,descrizione)
+SELECT DISTINCT versione_calcolo,versione_calcolo,'Riferimento importato dalle specifiche di produzione esistenti.'
+FROM TON.CONFIGURAZIONI_PRODOTTO;
+ALTER TABLE TON.CONFIGURAZIONI_PRODOTTO ADD CONSTRAINT fk_ton_cfg_regola_cubatura FOREIGN KEY(versione_calcolo) REFERENCES TON.REGOLE_CUBATURA(codice);

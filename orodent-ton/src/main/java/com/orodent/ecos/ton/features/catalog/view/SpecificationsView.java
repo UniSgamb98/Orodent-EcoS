@@ -1,5 +1,6 @@
 package com.orodent.ecos.ton.features.catalog.view;
 
+import com.orodent.ecos.database.CubatureRuleCatalogue.Entry;
 import com.orodent.ecos.ton.features.catalog.model.CatalogModels.*;
 
 import javafx.scene.control.*;
@@ -11,14 +12,11 @@ public final class SpecificationsView extends VBox {
     private final ComboBox<Specification> versions = new ComboBox<>();
     private final ComboBox<TechnicalChoice> composition = new ComboBox<>(),
             model = new ComboBox<>();
+    private final ComboBox<Entry> calculation = new ComboBox<>();
     private final TextField
             compositionQuery =
                     CatalogUi.field("ton-product-spec-composition-search", "Numero versione"),
-            modelQuery = CatalogUi.field("ton-product-spec-model-search", "Codice del modello"),
-            calculation =
-                    CatalogUi.field(
-                            "ton-product-spec-calculation",
-                            "Riferimento al metodo di calcolo validato");
+            modelQuery = CatalogUi.field("ton-product-spec-model-search", "Codice del modello");
     private final TextArea notes = new TextArea();
     private final Button save = CatalogUi.button("Salva bozza", "ton-product-spec-save", true),
             approve = CatalogUi.button("Salva e approva", "ton-product-spec-approve", true),
@@ -28,8 +26,6 @@ public final class SpecificationsView extends VBox {
             previous = CatalogUi.button("←", "ton-product-spec-previous", false),
             next = CatalogUi.button("→", "ton-product-spec-next", false),
             refresh = CatalogUi.button("Aggiorna versioni", "ton-product-spec-refresh", false);
-    private final Button calculationRules =
-            CatalogUi.button("Regole di cubatura →", "ton-product-spec-calculation-rules", false);
     private final Label configurationNotice =
             CatalogUi.feedback("ton-product-spec-configuration-notice");
     private final Label state = CatalogUi.hint(""),
@@ -50,10 +46,9 @@ public final class SpecificationsView extends VBox {
         notes.setId("ton-product-spec-notes");
         notes.setWrapText(true);
         notes.setPrefRowCount(3);
-        HBox calculationRow = new HBox(10, calculation, calculationRules);
-        calculationRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-        HBox.setHgrow(calculation, Priority.ALWAYS);
-        calculation.setMinWidth(0);
+        calculation.setId("ton-product-spec-calculation");
+        calculation.setPromptText("Seleziona una regola di cubatura");
+        calculation.setMaxWidth(Double.MAX_VALUE);
         var fields =
                 new VBox(
                         12,
@@ -63,7 +58,7 @@ public final class SpecificationsView extends VBox {
                                         new VBox(5, compositionQuery, composition)),
                                 CatalogUi.field(
                                         "Modello approvato", new VBox(5, modelQuery, model))),
-                        CatalogUi.field("Riferimento metodo di calcolo *", calculationRow),
+                        CatalogUi.field("Riferimento metodo di calcolo *", calculation),
                         CatalogUi.field("Note della versione", notes));
         previous.setAccessibleText("Versioni più recenti");
         next.setAccessibleText("Versioni precedenti");
@@ -94,7 +89,8 @@ public final class SpecificationsView extends VBox {
             model.setValue(null);
             compositionQuery.clear();
             modelQuery.clear();
-            calculation.clear();
+            calculation.getItems().clear();
+            calculation.setValue(null);
             notes.clear();
             disableFields(true);
             for (var b : List.of(save, approve, copy, prefer, retire, previous, next))
@@ -156,6 +152,15 @@ public final class SpecificationsView extends VBox {
         try {
             replace(composition, page.compositions());
             replace(model, page.models());
+            Entry selectedRule = calculation.getValue();
+            calculation.getItems().setAll(page.calculationRules());
+            calculation.setValue(
+                    selectedRule == null
+                            ? null
+                            : calculation.getItems().stream()
+                                    .filter(r -> r.code().equals(selectedRule.code()))
+                                    .findFirst()
+                                    .orElse(null));
         } finally {
             updating = before;
         }
@@ -177,12 +182,16 @@ public final class SpecificationsView extends VBox {
             if (selected == null) {
                 composition.setValue(null);
                 model.setValue(null);
-                calculation.clear();
+                calculation.setValue(null);
                 notes.clear();
             } else {
                 select(composition, selected.compositionId(), selected.compositionLabel());
                 select(model, selected.modelId(), selected.modelLabel());
-                calculation.setText(selected.calculation());
+                calculation.setValue(
+                        calculation.getItems().stream()
+                                .filter(r -> r.code().equals(selected.calculation()))
+                                .findFirst()
+                                .orElse(null));
                 notes.setText(selected.notes() == null ? "" : selected.notes());
             }
             boolean locked = selected != null && selected.frozen();
@@ -227,10 +236,12 @@ public final class SpecificationsView extends VBox {
     }
 
     public SpecificationDraft draft() {
+        if (calculation.getValue() == null)
+            throw new IllegalArgumentException("Seleziona una regola di cubatura.");
         return new SpecificationDraft(
                 composition.getValue() == null ? 0 : composition.getValue().id(),
                 model.getValue() == null ? 0 : model.getValue().id(),
-                calculation.getText(),
+                calculation.getValue().code(),
                 notes.getText());
     }
 
@@ -238,7 +249,7 @@ public final class SpecificationsView extends VBox {
         return List.of(
                 composition.getValue() == null ? "" : "" + composition.getValue().id(),
                 model.getValue() == null ? "" : "" + model.getValue().id(),
-                calculation.getText(),
+                calculation.getValue() == null ? "" : calculation.getValue().code(),
                 notes.getText());
     }
 
@@ -266,10 +277,6 @@ public final class SpecificationsView extends VBox {
     private void disableFields(boolean disabled) {
         for (var input : List.of(compositionQuery, composition, modelQuery, model, calculation, notes))
             input.setDisable(disabled);
-    }
-
-    public Button calculationRules() {
-        return calculationRules;
     }
 
     public boolean updating() {

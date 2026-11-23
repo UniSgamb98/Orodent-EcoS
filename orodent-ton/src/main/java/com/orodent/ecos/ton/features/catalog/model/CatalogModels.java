@@ -383,7 +383,7 @@ public final class CatalogModels {
         public SpecificationDraft {
             if (compositionId <= 0 || modelId <= 0)
                 throw invalid("Seleziona composizione e modello.");
-            calculation = required(calculation, 50, "versione di calcolo");
+            calculation = required(calculation, 50, "regola di cubatura");
             notes = limited(notes, 1000, "Note");
         }
     }
@@ -401,11 +401,13 @@ public final class CatalogModels {
             int offset,
             int limit,
             List<TechnicalChoice> compositions,
-            List<TechnicalChoice> models) {
+            List<TechnicalChoice> models,
+            List<com.orodent.ecos.database.CubatureRuleCatalogue.Entry> calculationRules) {
         public SpecificationPage {
             rows = List.copyOf(rows);
             compositions = List.copyOf(compositions);
             models = List.copyOf(models);
+            calculationRules = List.copyOf(calculationRules);
         }
 
         public boolean hasNext() {

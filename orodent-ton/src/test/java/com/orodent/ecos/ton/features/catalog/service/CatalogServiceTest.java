@@ -39,6 +39,35 @@ class CatalogServiceTest {
                     }
                 };
         new DatabaseSchema(db).initialize();
+        db.withTransaction(
+                c -> {
+                    com.orodent.ecos.database.CubatureRuleCatalogue.save(
+                            c,
+                            null,
+                            new com.orodent.ecos.database.CubatureRuleCatalogue.Draft(
+                                    "legacy", "legacy", "", true));
+                    com.orodent.ecos.database.CubatureRuleCatalogue.save(
+                            c,
+                            null,
+                            new com.orodent.ecos.database.CubatureRuleCatalogue.Draft(
+                                    "dosi-v1", "dosi-v1", "", true));
+                    com.orodent.ecos.database.CubatureRuleCatalogue.save(
+                            c,
+                            null,
+                            new com.orodent.ecos.database.CubatureRuleCatalogue.Draft(
+                                    "other", "other", "", true));
+                    com.orodent.ecos.database.CubatureRuleCatalogue.save(
+                            c,
+                            null,
+                            new com.orodent.ecos.database.CubatureRuleCatalogue.Draft(
+                                    "v1", "v1", "", true));
+                    com.orodent.ecos.database.CubatureRuleCatalogue.save(
+                            c,
+                            null,
+                            new com.orodent.ecos.database.CubatureRuleCatalogue.Draft(
+                                    "v2", "v2", "", true));
+                    return null;
+                });
         workers = Executors.newFixedThreadPool(2, r -> new Thread(r, "catalogue-worker"));
         ConnectionProvider tracked =
                 () -> {
@@ -666,6 +695,46 @@ class CatalogServiceTest {
         Product retired = (Product) service.load(CatalogKind.PRODUCTS, a.id()).join().entry();
         assertNull(retired.defaultSpecification());
         assertEquals(2, specs.page(retired, 0, "", "").join().total());
+    }
+
+    @Test
+    void productionSpecificationSelectsRegisteredRulesAndRejectsUnknownOrArchivedRules() {
+        Product product = product(line(), "A2");
+        technical(product.id());
+        assertTrue(
+                specs.page(product, 0, "", "").join().calculationRules().stream()
+                        .anyMatch(r -> r.code().equals("v1")));
+        assertThrows(
+                CompletionException.class,
+                () ->
+                        specs.save(
+                                        product,
+                                        null,
+                                        new SpecificationDraft(1, 1, "sconosciuta", ""),
+                                        false)
+                                .join());
+        specs.save(product, null, new SpecificationDraft(1, 1, "v1", "Scelta dal catalogo"), false)
+                .join();
+        var draft = specs.page(product, 0, "", "").join().rows().getFirst();
+        assertEquals("v1", draft.calculation());
+        db.withTransaction(
+                c -> {
+                    var other =
+                            com.orodent.ecos.database.CubatureRuleCatalogue.list(c, "v2", true)
+                                    .getFirst();
+                    com.orodent.ecos.database.CubatureRuleCatalogue.save(
+                            c,
+                            other,
+                            new com.orodent.ecos.database.CubatureRuleCatalogue.Draft(
+                                    other.code(), other.name(), "", false));
+                    return null;
+                });
+        assertThrows(
+                CompletionException.class,
+                () ->
+                        specs.save(product, draft, new SpecificationDraft(1, 1, "v2", ""), false)
+                                .join());
+        assertEquals("v1", specs.page(product, 0, "", "").join().rows().getFirst().calculation());
     }
 
     @Test

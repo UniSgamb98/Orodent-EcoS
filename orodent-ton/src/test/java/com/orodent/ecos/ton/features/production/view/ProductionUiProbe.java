@@ -291,13 +291,87 @@ public final class ProductionUiProbe {
                         assertTrue(selected.preferred());
                         assertTrue(node("ton-product-spec-composition").isDisabled());
                         screenshot("target/product-shared-production-specifications.png");
-                        assertFalse(button("ton-product-spec-calculation-rules").isDisabled());
-                        button("ton-product-spec-calculation-rules").fire();
-                        assertNotNull(node("ton-cubature-rules-page"));
+                        assertNull(node("ton-product-spec-calculation-rules"));
+                        var rule = (ComboBox<?>) node("ton-product-spec-calculation");
+                        assertFalse(rule.isEditable());
+                        assertTrue(rule.isDisabled());
+                        assertEquals(
+                                "COSTI-NOMINALE-1",
+                                ((com.orodent.ecos.database.CubatureRuleCatalogue.Entry)
+                                                rule.getValue())
+                                        .code());
+                        button("ton-nav-cubing").fire();
+                        button("ton-tech-cubature_rules-button").fire();
                         assertEquals(
                                 "TON › Cubaggio › Regole di cubatura",
                                 ((Label) node("ton-breadcrumb")).getText());
-                        screenshot("target/cubature-rules-from-specifications.png");
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-cubature-rules-table") instanceof TableView<?> t
+                                    && !t.getItems().isEmpty());
+            fx(
+                    () -> {
+                        button("ton-cubature-rules-new").fire();
+                        ((TextField) node("ton-cubature-rules-code")).setText("CUBO-UI");
+                        ((TextField) node("ton-cubature-rules-name")).setText("Regola di prova");
+                        ((TextArea) node("ton-cubature-rules-description"))
+                                .setText("Descrizione del metodo");
+                        screenshot("target/cubature-rule-editor.png");
+                        button("ton-cubature-rules-save").fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-cubature-rules-table") instanceof TableView<?> t
+                                    && t.getItems().stream()
+                                            .anyMatch(
+                                                    r ->
+                                                            ((com.orodent.ecos.database
+                                                                                    .CubatureRuleCatalogue
+                                                                                    .Entry)
+                                                                            r)
+                                                                    .code()
+                                                                    .equals("CUBO-UI")));
+            fx(
+                    () -> {
+                        screenshot("target/cubature-rules-list.png");
+                        button("ton-nav-technical").fire();
+                        button("ton-tech-products-button").fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-products-table") instanceof TableView<?> t
+                                    && !t.getItems().isEmpty());
+            fx(
+                    () -> {
+                        var table = (TableView<?>) node("ton-products-table");
+                        table.getSelectionModel().selectFirst();
+                        table.fireEvent(doubleClick());
+                        return null;
+                    });
+            await(() -> node("ton-product-tabs") != null);
+            fx(
+                    () -> {
+                        ((TabPane) node("ton-product-tabs")).getSelectionModel().select(2);
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-product-spec-calculation") instanceof ComboBox<?> b
+                                    && b.getItems().stream()
+                                            .anyMatch(
+                                                    r ->
+                                                            ((com.orodent.ecos.database
+                                                                                    .CubatureRuleCatalogue
+                                                                                    .Entry)
+                                                                            r)
+                                                                    .code()
+                                                                    .equals("CUBO-UI")));
+            fx(
+                    () -> {
                         button("ton-nav-technical").fire();
                         button("ton-tech-models-button").fire();
                         return null;
