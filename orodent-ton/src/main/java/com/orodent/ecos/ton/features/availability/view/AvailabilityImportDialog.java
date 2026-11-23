@@ -28,14 +28,15 @@ public final class AvailabilityImportDialog extends Dialog<Void> {
     private final ComboBox<String> delimiter = new ComboBox<>(),
             encoding = new ComboBox<>(),
             code = new ComboBox<>(),
-            quantity = new ComboBox<>();
+            quantity = new ComboBox<>(),
+            warehouse = new ComboBox<>();
     private final ComboBox<Numbers> numbers = new ComboBox<>();
     private final DatePicker date = new DatePicker(LocalDate.now());
     private final CheckBox duplicates = new CheckBox("Somma le righe con lo stesso codice"),
             zero = new CheckBox("Considera zero i codici assenti dal file");
     private final Button read = new Button("Leggi file"), previewButton = new Button("Anteprima");
     private final Label status = new Label();
-    private final TableView<Map.Entry<String, java.math.BigDecimal>> table = new TableView<>();
+    private final TableView<Map.Entry<QuantityKey, java.math.BigDecimal>> table = new TableView<>();
     private final Button apply;
     private CsvDocument document;
     private Preview preview;
@@ -75,10 +76,16 @@ public final class AvailabilityImportDialog extends Dialog<Void> {
         numbers.setId("ton-availability-import-numbers");
         code.setId("ton-availability-import-code");
         quantity.setId("ton-availability-import-quantity");
+        warehouse.setId("ton-availability-import-warehouse");
         date.setId("ton-availability-import-date");
         duplicates.setId("ton-availability-import-duplicates");
         zero.setId("ton-availability-import-zero");
         duplicates.setSelected(kind == Kind.ORDINI);
+        if (kind == Kind.DISPONIBILITA)
+            duplicates.setText("Somma le righe con lo stesso codice e deposito");
+        zero.setSelected(kind == Kind.DISPONIBILITA);
+        zero.setVisible(kind == Kind.ORDINI);
+        zero.setManaged(kind == Kind.ORDINI);
         read.setId("ton-availability-import-read");
         previewButton.setId("ton-availability-import-preview");
         status.setId("ton-availability-import-status");
@@ -87,7 +94,9 @@ public final class AvailabilityImportDialog extends Dialog<Void> {
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
         table.setPrefHeight(240);
         table.setPlaceholder(new Label("Scegli le colonne e genera l’anteprima."));
-        TechnicalUi.column(table, "Codice CSV", 200, Map.Entry::getKey);
+        TechnicalUi.column(table, "Codice CSV", 200, e -> e.getKey().code());
+        if (kind == Kind.DISPONIBILITA)
+            TechnicalUi.column(table, "Deposito", 140, e -> e.getKey().warehouse());
         TechnicalUi.column(table, "Quantità", 140, e -> AvailabilityView.number(e.getValue()));
         TechnicalUi.column(
                 table,
@@ -96,11 +105,16 @@ public final class AvailabilityImportDialog extends Dialog<Void> {
                 e ->
                         preview == null
                                 ? ""
-                                : preview.matches().getOrDefault(e.getKey(), "Non associato"));
+                                : preview.matches()
+                                        .getOrDefault(e.getKey().code(), "Non associato"));
         var note =
                 TechnicalUi.label(
-                        "Il file sostituisce l’ultima importazione di questa fonte. Le altre fonti"
-                            + " restano indipendenti.",
+                        kind == Kind.DISPONIBILITA
+                                ? "Fotografia completa: sostituisce le giacenze di tutti i"
+                                      + " depositi. I codici assenti diventano zero. Gli ordini"
+                                      + " restano separati."
+                                : "Il file sostituisce gli ordini da evadere. Le giacenze restano"
+                                      + " indipendenti.",
                         "muted-label");
         HBox format =
                 new HBox(
@@ -109,9 +123,10 @@ public final class AvailabilityImportDialog extends Dialog<Void> {
                         TechnicalUi.field("Codifica", encoding),
                         read);
         format.setAlignment(javafx.geometry.Pos.BOTTOM_LEFT);
-        HBox fields =
-                new HBox(
+        FlowPane fields =
+                new FlowPane(
                         12,
+                        8,
                         TechnicalUi.field("Colonna codice", code),
                         TechnicalUi.field(
                                 kind == Kind.ORDINI
@@ -120,7 +135,9 @@ public final class AvailabilityImportDialog extends Dialog<Void> {
                                 quantity),
                         TechnicalUi.field("Numeri", numbers),
                         TechnicalUi.field("Data dei dati", date));
-        for (var n : List.of(code, quantity)) {
+        if (kind == Kind.DISPONIBILITA)
+            fields.getChildren().add(2, TechnicalUi.field("Deposito", warehouse));
+        for (var n : List.of(code, quantity, warehouse)) {
             n.setMaxWidth(Double.MAX_VALUE);
         }
         VBox box =
@@ -141,6 +158,7 @@ public final class AvailabilityImportDialog extends Dialog<Void> {
         encoding.valueProperty().addListener((o, a, b) -> resetDocument());
         code.valueProperty().addListener((o, a, b) -> invalidate());
         quantity.valueProperty().addListener((o, a, b) -> invalidate());
+        warehouse.valueProperty().addListener((o, a, b) -> invalidate());
         numbers.valueProperty().addListener((o, a, b) -> invalidate());
         date.valueProperty().addListener((o, a, b) -> invalidate());
         duplicates.selectedProperty().addListener((o, a, b) -> invalidate());
@@ -172,6 +190,7 @@ public final class AvailabilityImportDialog extends Dialog<Void> {
         updating = true;
         code.getItems().clear();
         quantity.getItems().clear();
+        warehouse.getItems().clear();
         updating = false;
         invalidate();
     }
@@ -217,6 +236,12 @@ public final class AvailabilityImportDialog extends Dialog<Void> {
                                                     updating = true;
                                                     code.getItems().setAll(value.headers());
                                                     quantity.getItems().setAll(value.headers());
+                                                    warehouse.getItems().setAll(value.headers());
+                                                    warehouse.setValue(
+                                                            guess(
+                                                                    value.headers(),
+                                                                    "deposito",
+                                                                    "magazzino"));
                                                     code.setValue(
                                                             guess(
                                                                     value.headers(),
@@ -237,6 +262,8 @@ public final class AvailabilityImportDialog extends Dialog<Void> {
                                                                             "quantita")
                                                                     : guess(
                                                                             value.headers(),
+                                                                            "quantità attuale",
+                                                                            "quantita attuale",
                                                                             "disponibilità",
                                                                             "disponibilita",
                                                                             "giacenza",
@@ -270,6 +297,7 @@ public final class AvailabilityImportDialog extends Dialog<Void> {
                                 date.getValue(),
                                 code.getValue(),
                                 quantity.getValue(),
+                                warehouse.getValue(),
                                 numbers.getValue(),
                                 duplicates.isSelected(),
                                 zero.isSelected())
@@ -292,26 +320,38 @@ public final class AvailabilityImportDialog extends Dialog<Void> {
                                                                             .stream()
                                                                             .limit(100)
                                                                             .toList());
-                                                    status.setText(
-                                                            value.errors().isEmpty()
-                                                                    ? value.values().size()
-                                                                            + " codici · "
-                                                                            + value.duplicates()
-                                                                            + " righe ripetute · "
-                                                                            + value.unmatched()
-                                                                            + " codici non"
-                                                                            + " associati."
-                                                                            + " Anteprima dei primi"
-                                                                            + " 100 codici.\n"
-                                                                            + "I codici non"
-                                                                            + " associati restano"
-                                                                            + " conservati; non"
-                                                                            + " entrano nei totali"
-                                                                            + " TON."
-                                                                    : String.join(
-                                                                            "\n", value.errors()));
+                                                    status.setText(previewMessage(value));
                                                     apply.setDisable(!value.errors().isEmpty());
                                                 }));
+    }
+
+    private static String previewMessage(Preview value) {
+        if (!value.errors().isEmpty()) return String.join("\n", value.errors());
+        String unit = value.kind() == Kind.DISPONIBILITA ? "giacenze per deposito" : "codici";
+        String text =
+                value.values().size()
+                        + " "
+                        + unit
+                        + " · "
+                        + value.duplicates()
+                        + " righe ripetute · "
+                        + value.unmatched()
+                        + " codici non associati. Anteprima delle prime 100 righe aggregate.\n"
+                        + "I codici non associati restano conservati; non entrano nei totali TON.";
+        if (value.kind() == Kind.DISPONIBILITA)
+            text +=
+                    "\n"
+                            + (value.values().isEmpty()
+                                    ? "Tutti i depositi saranno azzerati."
+                                    : "Depositi letti: "
+                                            + String.join(
+                                                    ", ",
+                                                    value.values().keySet().stream()
+                                                            .map(QuantityKey::warehouse)
+                                                            .distinct()
+                                                            .sorted()
+                                                            .toList()));
+        return text;
     }
 
     private void apply() {
@@ -346,6 +386,7 @@ public final class AvailabilityImportDialog extends Dialog<Void> {
                         encoding,
                         code,
                         quantity,
+                        warehouse,
                         numbers,
                         date,
                         duplicates,

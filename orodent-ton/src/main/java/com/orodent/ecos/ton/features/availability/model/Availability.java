@@ -60,7 +60,31 @@ public final class Availability {
         }
     }
 
-    public record Row(Article article, BigDecimal stock, BigDecimal orders, BigDecimal sold) {}
+    public static final String UNALLOCATED = "NON_SPECIFICATO";
+
+    public record Warehouse(String code, String name) {}
+
+    public record QuantityKey(String code, String warehouse) {
+        public QuantityKey {
+            code = Availability.code(code);
+            warehouse = Availability.warehouse(warehouse);
+        }
+    }
+
+    public record Row(
+            Article article,
+            BigDecimal stock,
+            BigDecimal orders,
+            BigDecimal sold,
+            Map<String, BigDecimal> stockByWarehouse) {
+        public Row {
+            stockByWarehouse = Map.copyOf(stockByWarehouse);
+        }
+
+        public BigDecimal stockAt(String warehouse) {
+            return stockByWarehouse.get(warehouse);
+        }
+    }
 
     public record Source(
             Kind kind,
@@ -70,7 +94,8 @@ public final class Availability {
             LocalDate date,
             LocalDateTime imported,
             boolean missingZero,
-            Map<String, BigDecimal> values) {
+            Map<QuantityKey, BigDecimal> values,
+            boolean separateWarehouses) {
         public Source {
             values = Map.copyOf(values);
         }
@@ -87,8 +112,10 @@ public final class Availability {
             LocalDate through,
             LocalDate lastSale,
             int unmatchedStock,
-            int unmatchedOrders) {
+            int unmatchedOrders,
+            List<Warehouse> warehouses) {
         public Snapshot {
+            warehouses = List.copyOf(warehouses);
             rows = List.copyOf(rows);
             sources = Map.copyOf(sources);
         }
@@ -131,7 +158,7 @@ public final class Availability {
             String file,
             LocalDate date,
             boolean missingZero,
-            Map<String, BigDecimal> values,
+            Map<QuantityKey, BigDecimal> values,
             int inputRows,
             int duplicates,
             Map<String, String> matches,
@@ -142,10 +169,16 @@ public final class Availability {
             file = Objects.requireNonNull(file);
             if (file.isBlank() || file.length() > 300)
                 throw new IllegalArgumentException("Nome file non valido.");
-            var checked = new LinkedHashMap<String, BigDecimal>();
+            var checked = new LinkedHashMap<QuantityKey, BigDecimal>();
             values.forEach(
-                    (code, value) -> {
-                        String key = code(code);
+                    (key, value) -> {
+                        Objects.requireNonNull(key);
+                        if (kind == Kind.DISPONIBILITA && key.warehouse().equals(UNALLOCATED))
+                            throw new IllegalArgumentException(
+                                    "Indica un deposito reale per ogni giacenza.");
+                        if (kind == Kind.ORDINI && !key.warehouse().equals(UNALLOCATED))
+                            throw new IllegalArgumentException(
+                                    "Gli ordini non sono assegnati a un magazzino.");
                         BigDecimal n = quantity(value);
                         if (kind == Kind.ORDINI && n.signum() < 0)
                             throw new IllegalArgumentException(
@@ -153,6 +186,7 @@ public final class Availability {
                         if (checked.put(key, n) != null)
                             throw new IllegalArgumentException("Codice duplicato: " + key);
                     });
+            missingZero = kind == Kind.DISPONIBILITA || missingZero;
             values = Collections.unmodifiableMap(checked);
             matches = Map.copyOf(matches);
             errors = List.copyOf(errors);
@@ -161,7 +195,11 @@ public final class Availability {
         }
 
         public long unmatched() {
-            return values.keySet().stream().filter(k -> !matches.containsKey(k)).count();
+            return values.keySet().stream()
+                    .map(QuantityKey::code)
+                    .distinct()
+                    .filter(k -> !matches.containsKey(k))
+                    .count();
         }
     }
 
@@ -169,6 +207,13 @@ public final class Availability {
         String value = Objects.requireNonNullElse(s, "").strip().toUpperCase(Locale.ROOT);
         if (value.isBlank() || value.length() > 80)
             throw new IllegalArgumentException("Codice obbligatorio, massimo 80 caratteri.");
+        return value;
+    }
+
+    public static String warehouse(String raw) {
+        String value = Objects.requireNonNullElse(raw, "").strip().toUpperCase(Locale.ROOT);
+        if (value.isBlank() || value.length() > 40)
+            throw new IllegalArgumentException("Deposito obbligatorio, massimo 40 caratteri.");
         return value;
     }
 

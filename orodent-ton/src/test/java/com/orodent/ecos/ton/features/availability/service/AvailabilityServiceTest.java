@@ -83,6 +83,12 @@ class AvailabilityServiceTest {
     }
 
     Preview preview(Kind kind, String csv, boolean sum, boolean zero) {
+        if (kind == Kind.DISPONIBILITA) {
+            var lines = csv.lines().toList();
+            var withWarehouse = new StringBuilder(lines.getFirst() + ";Deposito\n");
+            lines.stream().skip(1).forEach(line -> withWarehouse.append(line).append(";MAGC\n"));
+            csv = withWarehouse.toString();
+        }
         var doc = new CsvReader().read(new StringReader(csv), CsvReadOptions.semicolonSeparated());
         return service.preview(
                         kind,
@@ -91,6 +97,7 @@ class AvailabilityServiceTest {
                         LocalDate.of(2026, 11, 21),
                         "Codice",
                         "Quantità",
+                        kind == Kind.DISPONIBILITA ? "Deposito" : null,
                         Numbers.ITALIAN,
                         sum,
                         zero)
@@ -118,7 +125,7 @@ class AvailabilityServiceTest {
         assertEquals(0, new BigDecimal("10").compareTo(loaded.total(Row::orders)));
         apply(Kind.DISPONIBILITA, "UNKNOWN;12\n", false, false);
         loaded = service.load(Period.DAYS_90).join();
-        assertNull(loaded.rows().getFirst().stock());
+        assertEquals(0, loaded.rows().getFirst().stock().signum());
         assertEquals(1, loaded.unmatchedStock());
         apply(Kind.DISPONIBILITA, "UNKNOWN;12\n", false, true);
         assertEquals(0, service.load(Period.DAYS_90).join().rows().getFirst().stock().signum());
@@ -133,6 +140,169 @@ class AvailabilityServiceTest {
                     }
                     return null;
                 });
+    }
+
+    @Test
+    void realCsvKeepsWarehousesSeparateAndReplacesTheEntireStockSnapshot() {
+        String header =
+                "Articolo;Descrizione;Quantità Attuale;ImpDaCli;Qta Venduta;Valore"
+                    + " Venduto;Deposito\n";
+        var document =
+                new CsvReader()
+                        .read(
+                                new StringReader(
+                                        header
+                                                + article.code()
+                                                + ";Thor;18;-1;5;360;MAGC\n"
+                                                + article.code()
+                                                + ";Thor;7;-2;99;123,45;MAGMOD\n"),
+                                CsvReadOptions.semicolonSeparated());
+        var preview =
+                service.preview(
+                                Kind.DISPONIBILITA,
+                                document,
+                                "stock.csv",
+                                LocalDate.now(),
+                                "Articolo",
+                                "Quantità Attuale",
+                                "Deposito",
+                                Numbers.ITALIAN,
+                                false,
+                                false)
+                        .join();
+        assertTrue(preview.errors().isEmpty());
+        assertEquals(0, preview.duplicates());
+        assertTrue(preview.missingZero());
+        service.apply(preview).join();
+        var row = service.load(Period.DAYS_90).join().rows().getFirst();
+        assertEquals(0, new BigDecimal("18").compareTo(row.stockAt("MAGC")));
+        assertEquals(0, new BigDecimal("7").compareTo(row.stockAt("MAGMOD")));
+        assertEquals(0, new BigDecimal("25").compareTo(row.stock()));
+        assertNull(row.sold());
+        String orders =
+                "Cons. prev.;Articolo;Quantita;Consegnata;Da consegn.\n13/10/2026;"
+                        + article.code()
+                        + ";5;2;3\n13/10/2026;"
+                        + article.code()
+                        + ";10;9;1\n";
+        var pending =
+                new CsvReader().read(new StringReader(orders), CsvReadOptions.semicolonSeparated());
+        service.apply(
+                        service.preview(
+                                        Kind.ORDINI,
+                                        pending,
+                                        "orders.csv",
+                                        LocalDate.now(),
+                                        "Articolo",
+                                        "Da consegn.",
+                                        null,
+                                        Numbers.ITALIAN,
+                                        true,
+                                        true)
+                                .join())
+                .join();
+        apply(Kind.DISPONIBILITA, article.code() + ";2\n", false, false);
+        row = service.load(Period.DAYS_90).join().rows().getFirst();
+        assertEquals(0, new BigDecimal("2").compareTo(row.stockAt("MAGC")));
+        assertEquals(0, row.stockAt("MAGMOD").signum());
+        assertEquals(0, new BigDecimal("4").compareTo(row.orders()));
+        apply(Kind.DISPONIBILITA, "", false, false);
+        row = service.load(Period.DAYS_90).join().rows().getFirst();
+        assertEquals(0, row.stock().signum());
+        assertEquals(0, row.stockAt("MAGC").signum());
+        assertEquals(0, row.stockAt("MAGMOD").signum());
+        assertEquals(0, new BigDecimal("4").compareTo(row.orders()));
+    }
+
+    @Test
+    void oldSnapshotsRemainUnallocatedUntilACompleteWarehouseFileReplacesThem() {
+        db.withTransaction(
+                c -> {
+                    long id;
+                    try (var q =
+                            c.prepareStatement(
+                                    "INSERT INTO"
+                                        + " TON.DISPONIBILITA_IMPORT(tipo,nome_file,data_riferimento,codici_assenti_zero,righe)"
+                                        + " VALUES"
+                                        + " ('DISPONIBILITA','old.csv',CURRENT_DATE,FALSE,1)",
+                                    Statement.RETURN_GENERATED_KEYS)) {
+                        q.executeUpdate();
+                        try (var r = q.getGeneratedKeys()) {
+                            r.next();
+                            id = r.getLong(1);
+                        }
+                    }
+                    try (var q =
+                            c.prepareStatement(
+                                    "INSERT INTO"
+                                        + " TON.DISPONIBILITA_VALORI(import_id,codice,quantita)"
+                                        + " VALUES (?,?,12)")) {
+                        q.setLong(1, id);
+                        q.setString(2, article.code());
+                        q.executeUpdate();
+                    }
+                    try (var q =
+                            c.prepareStatement(
+                                    "UPDATE TON.DISPONIBILITA_FONTI SET import_id=? WHERE"
+                                        + " tipo='DISPONIBILITA'")) {
+                        q.setLong(1, id);
+                        q.executeUpdate();
+                    }
+                    return null;
+                });
+        var legacy = service.load(Period.DAYS_90).join();
+        var row = legacy.rows().getFirst();
+        assertEquals(0, new BigDecimal("12").compareTo(row.stockAt(UNALLOCATED)));
+        assertNull(row.stockAt("MAGC"));
+        assertNull(row.stockAt("MAGMOD"));
+        assertTrue(legacy.warehouses().stream().anyMatch(w -> w.code().equals(UNALLOCATED)));
+        apply(Kind.DISPONIBILITA, article.code() + ";2\n", false, false);
+        assertFalse(
+                service.load(Period.DAYS_90).join().warehouses().stream()
+                        .anyMatch(w -> w.code().equals(UNALLOCATED)));
+        assertEquals(
+                0,
+                new BigDecimal("2")
+                        .compareTo(service.load(Period.DAYS_90).join().total(Row::stock)));
+    }
+
+    @Test
+    void missingDepotInvalidatesTheWholeFileWithoutReplacingEitherWarehouse() {
+        apply(Kind.DISPONIBILITA, article.code() + ";8\n", false, false);
+        var document =
+                new CsvReader()
+                        .read(
+                                new StringReader(
+                                        "Articolo;Quantità Attuale;Deposito\n"
+                                                + article.code()
+                                                + ";2;MAGC\n"
+                                                + article.code()
+                                                + ";3;\n"),
+                                CsvReadOptions.semicolonSeparated());
+        var preview =
+                service.preview(
+                                Kind.DISPONIBILITA,
+                                document,
+                                "bad.csv",
+                                LocalDate.now(),
+                                "Articolo",
+                                "Quantità Attuale",
+                                "Deposito",
+                                Numbers.ITALIAN,
+                                false,
+                                true)
+                        .join();
+        assertFalse(preview.errors().isEmpty());
+        assertThrows(CompletionException.class, () -> service.apply(preview).join());
+        assertEquals(
+                0,
+                new BigDecimal("8")
+                        .compareTo(
+                                service.load(Period.DAYS_90)
+                                        .join()
+                                        .rows()
+                                        .getFirst()
+                                        .stockAt("MAGC")));
     }
 
     @Test

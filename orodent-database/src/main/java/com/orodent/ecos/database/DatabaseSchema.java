@@ -130,6 +130,11 @@ public final class DatabaseSchema {
                     24,
                     "Transactional CRM activity register",
                     "/database/migrations/V24__crm_audit.sql");
+    private static final SchemaMigration AVAILABILITY_WAREHOUSES =
+            new SchemaMigration(
+                    25,
+                    "TON availability by warehouse",
+                    "/database/migrations/V25__availability_warehouses.sql");
     private static final List<SchemaMigration> MIGRATIONS =
             List.of(
                     BASELINE,
@@ -155,7 +160,8 @@ public final class DatabaseSchema {
                     TON_PRODUCT_SPECIFICATIONS,
                     SUPPLIERS,
                     AVAILABILITY,
-                    CRM_AUDIT);
+                    CRM_AUDIT,
+                    AVAILABILITY_WAREHOUSES);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS =
             List.of(
@@ -256,6 +262,8 @@ public final class DatabaseSchema {
                                 SupplierMigration.apply(connection);
                             if (migration.version() == CRM_AUDIT.version())
                                 CrmAuditMigration.apply(connection);
+                            if (migration.version() == AVAILABILITY_WAREHOUSES.version())
+                                AvailabilityWarehouseMigration.apply(connection);
                             recordMigration(connection, "ECOS", migration);
                         }
                     }
@@ -333,6 +341,8 @@ public final class DatabaseSchema {
             if (version >= SUPPLIERS.version()) SupplierSchema.verify(connection);
             if (version >= AVAILABILITY.version()) AvailabilitySchema.verify(connection);
             if (version >= CRM_AUDIT.version()) CrmAuditMigration.verify(connection);
+            if (version >= AVAILABILITY_WAREHOUSES.version())
+                AvailabilityWarehouseMigration.verify(connection);
             return version;
         }
         if (tableExists(connection, "APP", HISTORY)) {

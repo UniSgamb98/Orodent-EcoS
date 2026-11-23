@@ -87,7 +87,7 @@ public final class AvailabilityUiProbe {
                         catalog.create(ProductDraft.configured(eos.id(), "A0", "", true))
                                 .join()
                                 .entry();
-        StringBuilder csv = new StringBuilder("Codice;Quantità\n");
+        StringBuilder csv = new StringBuilder("Codice;Quantità;Deposito\n");
         long expectedTotal = 0;
         for (int i = 1; i <= 80; i++) {
             String code = "ZR98" + String.format("%02d", i) + "MSTA0";
@@ -101,7 +101,7 @@ public final class AvailabilityUiProbe {
                                     "",
                                     true))
                     .join();
-            csv.append(code).append(';').append(i).append('\n');
+            csv.append(code).append(';').append(i).append(";MAGC\n");
             expectedTotal += i;
         }
         Article target =
@@ -137,7 +137,12 @@ public final class AvailabilityUiProbe {
                                 "",
                                 true))
                 .join();
-        csv.append("ZR9512MSTA1;0\nZR9516MSTA1;4\nZR9812MSA0;6\n");
+        csv.append(
+                "ZR9512MSTA1;0;MAGC\n"
+                    + "ZR9516MSTA1;4;MAGC\n"
+                    + "ZR9812MSA0;6;MAGC\n"
+                    + "ZR9516MSTA1;3;MAGMOD\n");
+        expectedTotal += 3;
         expectedTotal += 10;
         var parsed =
                 new CsvReader()
@@ -152,6 +157,7 @@ public final class AvailabilityUiProbe {
                                 LocalDate.now(),
                                 "Codice",
                                 "Quantità",
+                                "Deposito",
                                 Numbers.ITALIAN,
                                 false,
                                 false)
@@ -239,7 +245,17 @@ public final class AvailabilityUiProbe {
                                                                 .getText()
                                                                 .lastIndexOf(" › ")
                                                         + 3));
-                        assertEquals(4, table().getColumns().size());
+                        assertEquals(5, table().getColumns().size());
+                        assertEquals("MAGC", table().getColumns().get(1).getText());
+                        assertEquals("MAGMOD", table().getColumns().get(2).getText());
+                        var warehouses =
+                                table().getItems().stream()
+                                        .filter(r -> r.article().code().equals("ZR9516MSTA1"))
+                                        .findFirst()
+                                        .orElseThrow();
+                        assertEquals(0, new BigDecimal("4").compareTo(warehouses.stockAt("MAGC")));
+                        assertEquals(
+                                0, new BigDecimal("3").compareTo(warehouses.stockAt("MAGMOD")));
                         assertTrue(
                                 node("ton-availability-view").lookupAll(".text-field").isEmpty());
                         assertEquals(
@@ -411,6 +427,89 @@ public final class AvailabilityUiProbe {
                         assertTrue(failures.isEmpty(), failures.toString());
                         return null;
                     });
+            Path stockFile = Path.of("target/availability-warehouses.csv");
+            Files.writeString(
+                    stockFile,
+                    "Articolo;Descrizione;Quantità Attuale;ImpDaCli;Qta Venduta;Valore"
+                        + " Venduto;Deposito\n"
+                        + "ZR9512MSTA1;Thor;12;-1;99;120,54;MAGC\n"
+                        + "ZR9512MSTA1;Thor;5;0;10;720;MAGMOD\n");
+            imported.set(false);
+            fx(
+                    () -> {
+                        new AvailabilityImportDialog(
+                                        stage,
+                                        Kind.DISPONIBILITA,
+                                        stockFile,
+                                        service,
+                                        b -> {},
+                                        () -> imported.set(true))
+                                .show();
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-availability-import-warehouse") instanceof ComboBox<?> box
+                                    && box.getValue() != null);
+            fx(
+                    () -> {
+                        assertEquals(
+                                "Articolo",
+                                ((ComboBox<?>) node("ton-availability-import-code")).getValue());
+                        assertEquals(
+                                "Quantità Attuale",
+                                ((ComboBox<?>) node("ton-availability-import-quantity"))
+                                        .getValue());
+                        assertEquals(
+                                "Deposito",
+                                ((ComboBox<?>) node("ton-availability-import-warehouse"))
+                                        .getValue());
+                        assertFalse(node("ton-availability-import-zero").isVisible());
+                        button("ton-availability-import-preview").fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-availability-import-apply") instanceof Button b
+                                    && !b.isDisabled());
+            fx(
+                    () -> {
+                        var previewTable = (TableView<?>) node("ton-availability-import-table");
+                        assertEquals(2, previewTable.getItems().size());
+                        assertEquals(4, previewTable.getColumns().size());
+                        assertTrue(
+                                ((Label) node("ton-availability-import-status"))
+                                        .getText()
+                                        .contains("MAGC, MAGMOD"));
+                        screenshot("target/availability-warehouse-import.png");
+                        button("ton-availability-import-apply").fire();
+                        return null;
+                    });
+            await(imported::get);
+            fx(
+                    () -> {
+                        button("ton-availability-refresh").fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-availability-stock-total") instanceof Label label
+                                    && label.getText().equals("17"));
+            fx(
+                    () -> {
+                        var selected =
+                                table().getItems().stream()
+                                        .filter(r -> r.article().id() == target.id())
+                                        .findFirst()
+                                        .orElseThrow();
+                        assertEquals(0, new BigDecimal("12").compareTo(selected.stockAt("MAGC")));
+                        assertEquals(0, new BigDecimal("5").compareTo(selected.stockAt("MAGMOD")));
+                        assertEquals(
+                                "7", ((Label) node("ton-availability-orders-total")).getText());
+                        assertTrue(failures.isEmpty(), failures.toString());
+                        return null;
+                    });
+
         } finally {
             fx(
                     () -> {

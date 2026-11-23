@@ -45,6 +45,8 @@ public final class AvailabilityView extends VBox {
     private final Label stockTotal = numberLabel("ton-availability-stock-total"),
             ordersTotal = numberLabel("ton-availability-orders-total"),
             soldTotal = numberLabel("ton-availability-sold-total");
+    private TableColumn<Row, Row> codeColumn, ordersColumn, soldColumn;
+    private List<Warehouse> shownWarehouses = List.of();
     private final Map<Long, Button> lineButtons = new HashMap<>();
     private final List<ContextMenu> menus = new ArrayList<>();
     private final PauseTransition pulse = new PauseTransition(Duration.seconds(1.8));
@@ -105,10 +107,10 @@ public final class AvailabilityView extends VBox {
         table.setMinSize(300, 100);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
         table.setFixedCellSize(36);
-        column("Codice prodotto", r -> r.article().code(), false, null, 460);
-        column("Disponibilità", r -> number(r.stock()), true, Row::stock, 220);
-        column("Da evadere", r -> number(r.orders()), true, null, 220);
-        column("Venduti", r -> number(r.sold()), true, null, 220);
+        codeColumn = column("Codice prodotto", r -> r.article().code(), false, null, 460);
+        ordersColumn = column("Da evadere", r -> number(r.orders()), true, null, 220);
+        soldColumn = column("Venduti", r -> number(r.sold()), true, null, 220);
+        showWarehouses(List.of(new Warehouse("MAGC", "MAGC"), new Warehouse("MAGMOD", "MAGMOD")));
         table.setPlaceholder(new Label("Nessun articolo nel catalogo TON."));
         table.setRowFactory(
                 t -> {
@@ -197,7 +199,7 @@ public final class AvailabilityView extends VBox {
         return value == null ? "—" : value.stripTrailingZeros().toPlainString().replace('.', ',');
     }
 
-    private void column(
+    private TableColumn<Row, Row> column(
             String title,
             Function<Row, String> format,
             boolean numeric,
@@ -242,6 +244,25 @@ public final class AvailabilityView extends VBox {
                             }
                         });
         table.getColumns().add(c);
+        return c;
+    }
+
+    private void showWarehouses(List<Warehouse> warehouses) {
+        if (shownWarehouses.equals(warehouses)) return;
+        var columns = new ArrayList<TableColumn<Row, ?>>();
+        columns.add(codeColumn);
+        for (var warehouse : warehouses)
+            columns.add(
+                    column(
+                            warehouse.name(),
+                            r -> number(r.stockAt(warehouse.code())),
+                            true,
+                            r -> r.stockAt(warehouse.code()),
+                            170));
+        columns.add(ordersColumn);
+        columns.add(soldColumn);
+        table.getColumns().setAll(columns);
+        shownWarehouses = List.copyOf(warehouses);
     }
 
     public void onOpen(Consumer<Row> action) {
@@ -265,6 +286,7 @@ public final class AvailabilityView extends VBox {
     }
 
     public void show(Snapshot data, Position position) {
+        showWarehouses(data.warehouses());
         menus.forEach(ContextMenu::hide);
         menus.clear();
         lineButtons.clear();
@@ -326,7 +348,7 @@ public final class AvailabilityView extends VBox {
                                 + " al "
                                 + DATE.format(data.through())
                                 + ". Resi e note di credito esclusi."));
-        table.getColumns().get(3).setText("Venduti · " + period.getValue().days() + " gg");
+        soldColumn.setText("Venduti · " + period.getValue().days() + " gg");
         freshness.setText(
                 sourceLabel(data.sources().get(Kind.DISPONIBILITA))
                         + "     ·     "

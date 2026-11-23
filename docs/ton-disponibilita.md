@@ -7,7 +7,9 @@ anagrafiche archiviate, riconoscibili dal tooltip; queste non aprono nuove produ
 ## Consultazione
 
 La tabella rimane completa e si ordina per linea, prodotto, diametro e altezza.
-Mostra solo **Codice prodotto**, **Disponibilità**, **Da evadere** e **Venduti**.
+Mostra **Codice prodotto**, una colonna per ciascun deposito (**MAGC**, **MAGMOD**),
+**Da evadere** e **Venduti**, mantenendo una riga per codice. Il totale disponibilità
+in alto somma i depositi; ordini e vendite restano complessivi per codice.
 Le quantità sono allineate a destra; giacenze nulle o negative sono evidenziate.
 L’indice verticale a sinistra ha larghezza fissa, calcolata sul pulsante con il
 nome di linea più lungo, compresi margini e spazio per lo scorrimento verticale.
@@ -34,8 +36,15 @@ separatamente le date delle due fonti e l’intervallo delle vendite.
 **Importa disponibilità** e **Importa ordini** aggiornano due fotografie distinte.
 L’anteprima permette di scegliere separatore (punto e virgola, virgola, tabulazione),
 codifica UTF-8 o Windows-1252, colonna del codice, colonna della quantità e data
-a cui i dati si riferiscono. Per gli ordini scegliere la **quantità residua da
-evadere**, senza includere quanto già consegnato.
+a cui i dati si riferiscono. Per le giacenze è obbligatoria anche la colonna **Deposito**.
+Il formato del gestionale viene riconosciuto automaticamente:
+
+- Disponibilità: **Articolo**, **Quantità Attuale**, **Deposito**.
+- Ordini: **Articolo**, **Da consegn.**; le righe dello stesso articolo vengono sommate.
+
+`ImpDaCli`, `Qta Venduta`, `Valore Venduto`, quantità ordinata e già consegnata non
+vengono sommati alle giacenze o al residuo da evadere. Il CSV degli ordini non
+assegna un deposito: gli ordini restano complessivi.
 
 Il formato dei numeri è esplicito: virgola decimale italiana con eventuali punti
 per le migliaia, oppure punto decimale senza raggruppamento. Non vengono
@@ -43,17 +52,22 @@ arrotondati i dati importati; sono ammessi fino a tre decimali. Le disponibilit�
 possono essere negative; le quantità da evadere devono essere non negative.
 I codici sono normalizzati in maiuscolo e hanno il limite del catalogo (80 caratteri).
 
-**Somma le righe con lo stesso codice** permette di aggregare righe distinte,
-per esempio più ordini dello stesso articolo; è preselezionato per gli ordini.
-Per le giacenze è una scelta esplicita, da usare se le righe rappresentano
-quantità distinte da sommare. I duplicati non autorizzati e le righe non valide
-bloccano l’intera importazione. Il file ha intestazioni e deve essere entro
-16 MiB e 100.000 righe.
+La fotografia delle giacenze è **completa e sostitutiva per tutti i depositi**:
+il CSV contiene prima MAGC e poi MAGMOD, ma l'ordine delle righe è indifferente.
+Ogni nuova importazione sostituisce entrambe le giacenze insieme; codici o coppie
+codice/deposito assenti diventano **zero**, anche se erano presenti nel file precedente.
+Una fonte mai importata mostra invece `—`.
 
-**Considera zero i codici assenti dal file** è una scelta esplicita, inizialmente
-disattivata. Senza questa scelta, l’assenza di un codice significa **dato non
-disponibile**, rappresentato con `—`. Anche una fonte mai importata mostra `—`.
-Un file vuoto con intestazioni può svuotare la fonte: verificare l’anteprima.
+**Somma le righe con lo stesso codice e deposito** riguarda le giacenze; lo stesso
+codice presente in MAGC e MAGMOD è una coppia di giacenze distinte e non è un duplicato.
+Per gli ordini la somma riguarda il solo codice ed è preselezionata. Duplicati non
+autorizzati e righe prive di deposito o con quantità errate bloccano l'intera importazione.
+Il file ha intestazioni e deve essere entro 16 MiB e 100.000 righe.
+
+**Considera zero i codici assenti dal file** resta una scelta esplicita per gli ordini,
+inizialmente disattivata. Per le giacenze lo zero è sempre applicato perché il file
+è completo. Un file con sole intestazioni svuota la fonte: l'anteprima va comunque
+verificata e confermata con **Importa**.
 
 Con **Importa** si sostituisce la fotografia corrente della sola fonte scelta;
 non si aggiunge la quantità al caricamento precedente. Le fotografie precedenti
@@ -78,6 +92,12 @@ non sottrae ordini dalla disponibilità. Vendite, bozze e produzioni preparate
 non modificano automaticamente le giacenze importate.
 
 ## Database e verifiche
+
+La V25 aggiunge `TON.MAGAZZINI`, estende la chiave dei valori a importazione/codice/deposito
+e distingue le nuove fotografie complete per magazzino. I nuovi codici deposito
+presenti nel CSV vengono registrati automaticamente. Le vecchie fotografie restano
+**Deposito non specificato**, senza attribuirle arbitrariamente a MAGC o MAGMOD:
+questa colonna scompare dalla vista corrente dopo la prima nuova importazione completa.
 
 La V23 aggiunge `TON.DISPONIBILITA_IMPORT`, `TON.DISPONIBILITA_VALORI` e
 `TON.DISPONIBILITA_FONTI`. Le due fonti iniziali sono metadati vuoti, senza

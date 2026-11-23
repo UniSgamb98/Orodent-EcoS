@@ -5,6 +5,7 @@ import java.util.*;
 
 final class AuditFixtures {
     static void beforeV24(Connection c) throws SQLException {
+        AvailabilityWarehouseFixtures.beforeV25(c);
         var triggers = new ArrayList<String>();
         try (var q = c.createStatement();
                 var r =

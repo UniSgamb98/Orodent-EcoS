@@ -77,6 +77,7 @@ public final class AvailabilityService {
             LocalDate date,
             String codeColumn,
             String quantityColumn,
+            String warehouseColumn,
             Numbers numbers,
             boolean sumDuplicates,
             boolean missingZero) {
@@ -84,17 +85,35 @@ public final class AvailabilityService {
                 () -> {
                     if (date == null)
                         throw new IllegalArgumentException("Indica la data dei dati importati.");
-                    if (!document.headers().contains(codeColumn)
+                    if (codeColumn == null
+                            || quantityColumn == null
+                            || !document.headers().contains(codeColumn)
                             || !document.headers().contains(quantityColumn)
                             || Objects.equals(codeColumn, quantityColumn))
                         throw new IllegalArgumentException(
                                 "Scegli due colonne distinte per codice e quantità.");
-                    var values = new LinkedHashMap<String, BigDecimal>();
+                    if (kind == Kind.DISPONIBILITA
+                            && (warehouseColumn == null
+                                    || !document.headers().contains(warehouseColumn)
+                                    || Objects.equals(codeColumn, warehouseColumn)
+                                    || Objects.equals(quantityColumn, warehouseColumn)))
+                        throw new IllegalArgumentException(
+                                "Scegli una colonna distinta per il deposito.");
+                    var values = new LinkedHashMap<QuantityKey, BigDecimal>();
                     var errors = new ArrayList<String>();
                     int duplicates = 0;
                     for (var row : document.rows()) {
                         try {
-                            String key = code(row.requiredValue(codeColumn));
+                            var key =
+                                    new QuantityKey(
+                                            row.requiredValue(codeColumn),
+                                            kind == Kind.ORDINI
+                                                    ? UNALLOCATED
+                                                    : row.requiredValue(warehouseColumn));
+                            if (kind == Kind.DISPONIBILITA && key.warehouse().equals(UNALLOCATED))
+                                throw new IllegalArgumentException(
+                                        "Deposito riservato ai dati precedenti: scegli un deposito"
+                                            + " reale.");
                             BigDecimal n = numbers.parse(row.requiredValue(quantityColumn));
                             if (kind == Kind.ORDINI && n.signum() < 0)
                                 throw new IllegalArgumentException(
@@ -103,8 +122,12 @@ public final class AvailabilityService {
                                 duplicates++;
                                 if (!sumDuplicates)
                                     throw new IllegalArgumentException(
-                                            "Codice ripetuto: "
-                                                    + key
+                                            (kind == Kind.DISPONIBILITA
+                                                            ? "Codice e deposito ripetuti: "
+                                                                    + key.code()
+                                                                    + " / "
+                                                                    + key.warehouse()
+                                                            : "Codice ripetuto: " + key.code())
                                                     + ". Abilita la somma delle righe se"
                                                     + " rappresentano quantità distinte.");
                                 n = quantity(values.get(key).add(n));
@@ -126,8 +149,8 @@ public final class AvailabilityService {
                                 values.keySet()
                                         .forEach(
                                                 k -> {
-                                                    var a = aliases.get(k);
-                                                    if (a != null) matches.put(k, a.code());
+                                                    var a = aliases.get(k.code());
+                                                    if (a != null) matches.put(k.code(), a.code());
                                                 });
                                 return new Preview(
                                         kind,

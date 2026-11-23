@@ -88,23 +88,25 @@ public final class AvailabilityRepository {
         try (var q =
                 c.prepareStatement(
                         "SELECT"
-                            + " f.versione_modifica,i.import_id,i.nome_file,i.data_riferimento,i.importato_il,i.codici_assenti_zero"
+                            + " f.versione_modifica,i.import_id,i.nome_file,i.data_riferimento,i.importato_il,i.codici_assenti_zero,i.magazzini_distinti"
                             + " FROM TON.DISPONIBILITA_FONTI f LEFT JOIN TON.DISPONIBILITA_IMPORT i"
                             + " ON i.import_id=f.import_id WHERE f.tipo=?")) {
             q.setString(1, kind.name());
             try (var r = q.executeQuery()) {
                 if (!r.next()) throw new SQLException("Fonte disponibilità mancante.");
                 Long id = (Long) r.getObject(2);
-                var values = new LinkedHashMap<String, BigDecimal>();
+                var values = new LinkedHashMap<QuantityKey, BigDecimal>();
                 if (id != null)
                     try (var v =
                             c.prepareStatement(
-                                    "SELECT codice,quantita FROM TON.DISPONIBILITA_VALORI WHERE"
-                                        + " import_id=? ORDER BY codice")) {
+                                    "SELECT codice,quantita,magazzino FROM TON.DISPONIBILITA_VALORI"
+                                        + " WHERE import_id=? ORDER BY codice")) {
                         v.setLong(1, id);
                         try (var data = v.executeQuery()) {
                             while (data.next())
-                                values.put(data.getString(1), data.getBigDecimal(2));
+                                values.put(
+                                        new QuantityKey(data.getString(1), data.getString(3)),
+                                        data.getBigDecimal(2));
                         }
                     }
                 return new Source(
@@ -115,7 +117,8 @@ public final class AvailabilityRepository {
                         r.getDate(4) == null ? null : r.getDate(4).toLocalDate(),
                         r.getTimestamp(5) == null ? null : r.getTimestamp(5).toLocalDateTime(),
                         r.getBoolean(6),
-                        values);
+                        values,
+                        r.getBoolean(7));
             }
         }
     }
@@ -125,8 +128,23 @@ public final class AvailabilityRepository {
         var aliases = aliases(articles);
         var stock = source(Kind.DISPONIBILITA);
         var orders = source(Kind.ORDINI);
-        var quantities = aggregate(stock.values(), aliases);
-        var pending = aggregate(orders.values(), aliases);
+        var quantities = aggregate(codeTotals(stock.values()), aliases);
+        var pending = aggregate(codeTotals(orders.values()), aliases);
+        var warehouses = warehouses(stock.present() && !stock.separateWarehouses());
+        var warehouseAmounts = new LinkedHashMap<String, Map<Long, BigDecimal>>();
+        for (var warehouse : warehouses) {
+            if (!stock.present()
+                    || (stock.separateWarehouses() == warehouse.code().equals(UNALLOCATED)))
+                continue;
+            var subset = new LinkedHashMap<String, BigDecimal>();
+            stock.values()
+                    .forEach(
+                            (k, n) -> {
+                                if (k.warehouse().equals(warehouse.code()))
+                                    subset.merge(k.code(), n, BigDecimal::add);
+                            });
+            warehouseAmounts.put(warehouse.code(), aggregate(subset, aliases));
+        }
         LocalDate last = null;
         try (var q =
                 c.prepareStatement(
@@ -155,13 +173,21 @@ public final class AvailabilityRepository {
         }
         var sold = aggregate(sales, aliases);
         var rows = new ArrayList<Row>();
-        for (var a : articles)
+        for (var a : articles) {
+            var perWarehouse = new LinkedHashMap<String, BigDecimal>();
+            warehouseAmounts.forEach(
+                    (warehouse, amounts) -> {
+                        var n = amount(stock, amounts, a.id());
+                        if (n != null) perWarehouse.put(warehouse, n);
+                    });
             rows.add(
                     new Row(
                             a,
                             amount(stock, quantities, a.id()),
                             amount(orders, pending, a.id()),
-                            last == null ? null : sold.getOrDefault(a.id(), BigDecimal.ZERO)));
+                            last == null ? null : sold.getOrDefault(a.id(), BigDecimal.ZERO),
+                            perWarehouse));
+        }
         return new Snapshot(
                 rows,
                 Map.of(Kind.DISPONIBILITA, stock, Kind.ORDINI, orders),
@@ -169,7 +195,8 @@ public final class AvailabilityRepository {
                 through,
                 last,
                 unknown(stock, aliases),
-                unknown(orders, aliases));
+                unknown(orders, aliases),
+                warehouses);
     }
 
     private static BigDecimal amount(Source source, Map<Long, BigDecimal> values, long id) {
@@ -178,7 +205,29 @@ public final class AvailabilityRepository {
     }
 
     private static int unknown(Source source, Map<String, Article> aliases) {
-        return (int) source.values().keySet().stream().filter(k -> !aliases.containsKey(k)).count();
+        return (int)
+                source.values().keySet().stream()
+                        .map(QuantityKey::code)
+                        .distinct()
+                        .filter(k -> !aliases.containsKey(k))
+                        .count();
+    }
+
+    private static Map<String, BigDecimal> codeTotals(Map<QuantityKey, BigDecimal> values) {
+        var result = new LinkedHashMap<String, BigDecimal>();
+        values.forEach((key, n) -> result.merge(key.code(), n, BigDecimal::add));
+        return result;
+    }
+
+    private List<Warehouse> warehouses(boolean includeUnallocated) throws SQLException {
+        var values = new ArrayList<Warehouse>();
+        try (var q = c.createStatement();
+                var r = q.executeQuery("SELECT codice,nome FROM TON.MAGAZZINI ORDER BY codice")) {
+            while (r.next())
+                if (includeUnallocated || !r.getString(1).equals(UNALLOCATED))
+                    values.add(new Warehouse(r.getString(1), r.getString(2)));
+        }
+        return List.copyOf(values);
     }
 
     private static Map<Long, BigDecimal> aggregate(
@@ -203,18 +252,32 @@ public final class AvailabilityRepository {
             q.setInt(2, preview.expectedRevision());
             if (q.executeUpdate() != 1) throw new Conflict();
         }
+        if (preview.kind() == Kind.DISPONIBILITA) {
+            var known = new HashSet<String>();
+            warehouses(true).forEach(w -> known.add(w.code()));
+            try (var q =
+                    c.prepareStatement("INSERT INTO TON.MAGAZZINI(codice,nome) VALUES (?,?)")) {
+                for (var key : preview.values().keySet())
+                    if (known.add(key.warehouse())) {
+                        q.setString(1, key.warehouse());
+                        q.setString(2, key.warehouse());
+                        q.executeUpdate();
+                    }
+            }
+        }
         long id;
         try (var q =
                 c.prepareStatement(
                         "INSERT INTO"
-                            + " TON.DISPONIBILITA_IMPORT(tipo,nome_file,data_riferimento,codici_assenti_zero,righe)"
-                            + " VALUES (?,?,?,?,?)",
+                            + " TON.DISPONIBILITA_IMPORT(tipo,nome_file,data_riferimento,codici_assenti_zero,righe,magazzini_distinti)"
+                            + " VALUES (?,?,?,?,?,?)",
                         Statement.RETURN_GENERATED_KEYS)) {
             q.setString(1, preview.kind().name());
             q.setString(2, preview.file());
             q.setDate(3, java.sql.Date.valueOf(preview.date()));
             q.setBoolean(4, preview.missingZero());
             q.setInt(5, preview.inputRows());
+            q.setBoolean(6, preview.kind() == Kind.DISPONIBILITA);
             q.executeUpdate();
             try (var r = q.getGeneratedKeys()) {
                 r.next();
@@ -223,12 +286,13 @@ public final class AvailabilityRepository {
         }
         try (var q =
                 c.prepareStatement(
-                        "INSERT INTO TON.DISPONIBILITA_VALORI(import_id,codice,quantita) VALUES"
-                            + " (?,?,?)")) {
+                        "INSERT INTO TON.DISPONIBILITA_VALORI(import_id,codice,quantita,magazzino)"
+                            + " VALUES (?,?,?,?)")) {
             for (var e : preview.values().entrySet()) {
                 q.setLong(1, id);
-                q.setString(2, e.getKey());
+                q.setString(2, e.getKey().code());
                 q.setBigDecimal(3, e.getValue());
+                q.setString(4, e.getKey().warehouse());
                 q.addBatch();
             }
             q.executeBatch();
