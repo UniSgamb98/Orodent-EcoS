@@ -1,6 +1,8 @@
-package com.orodent.ecos.misurazioni;
+package com.orodent.ecos.misurazioni.devices;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import com.orodent.ecos.misurazioni.config.MeasurementSettings;
 
 import org.junit.jupiter.api.Test;
 

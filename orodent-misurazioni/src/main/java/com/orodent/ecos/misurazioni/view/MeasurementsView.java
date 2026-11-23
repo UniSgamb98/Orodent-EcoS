@@ -1,6 +1,9 @@
-package com.orodent.ecos.misurazioni;
+package com.orodent.ecos.misurazioni.view;
 
-import static com.orodent.ecos.misurazioni.MeasurementBatch.Instrument.*;
+import static com.orodent.ecos.misurazioni.model.Instrument.*;
+
+import com.orodent.ecos.misurazioni.model.Instrument;
+import com.orodent.ecos.misurazioni.model.MeasurementBatch;
 
 import javafx.geometry.*;
 import javafx.scene.control.*;
@@ -13,23 +16,21 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-final class MeasurementsView extends BorderPane {
-    final Button home = button("⌂ Home Orodent-EcoS", "measurements-home"),
+public final class MeasurementsView extends BorderPane {
+    public final Button home = button("⌂ Home Orodent-EcoS", "measurements-home"),
             reset = button("Reset", "measurements-reset"),
             acquire = button("Acquisisci da\nmicrometro", "measurements-acquire"),
             swap = button("Cambia strumento", "measurements-swap"),
             copy = button("Copia su appunti", "measurements-copy");
-    final ListView<MeasurementBatch.Measurement> list = new ListView<>();
-    final Label feedback = new Label();
-    private final Map<MeasurementBatch.Instrument, Button> connections =
-            new EnumMap<>(MeasurementBatch.Instrument.class);
-    private final Map<MeasurementBatch.Instrument, Circle> lights =
-            new EnumMap<>(MeasurementBatch.Instrument.class);
+    public final ListView<MeasurementBatch.Measurement> list = new ListView<>();
+    public final Label feedback = new Label();
+    private final Map<Instrument, Button> connections = new EnumMap<>(Instrument.class);
+    private final Map<Instrument, Circle> lights = new EnumMap<>(Instrument.class);
     private final Image micrometer = image("eyeIcon.png"), scale = image("scaleIcon.png");
     private final ImageView instrumentImage = new ImageView(micrometer);
-    private BiConsumer<Integer, MeasurementBatch.Instrument> remove = (index, instrument) -> {};
+    private BiConsumer<Integer, Instrument> remove = (index, instrument) -> {};
 
-    MeasurementsView() {
+    public MeasurementsView() {
         setId("misurazioni-module");
         getStylesheets()
                 .add(getClass().getResource("/misurazioni/measurements.css").toExternalForm());
@@ -88,12 +89,12 @@ final class MeasurementsView extends BorderPane {
         setBottom(bottom);
     }
 
-    private Button connection(MeasurementBatch.Instrument instrument) {
+    private Button connection(Instrument instrument) {
         Circle light = new Circle(5, Color.web("#c94747"));
         lights.put(instrument, light);
         Button button =
                 button(
-                        instrument.label,
+                        instrument.label(),
                         "measurements-connect-"
                                 + instrument.name().toLowerCase(java.util.Locale.ROOT));
         button.setGraphic(light);
@@ -101,35 +102,35 @@ final class MeasurementsView extends BorderPane {
         button.setTooltip(
                 new Tooltip(
                         "Clic per collegare o scollegare "
-                                + instrument.label.toLowerCase(java.util.Locale.ROOT)));
+                                + instrument.label().toLowerCase(java.util.Locale.ROOT)));
         connections.put(instrument, button);
         return button;
     }
 
-    Button connectionButton(MeasurementBatch.Instrument instrument) {
+    public Button connectionButton(Instrument instrument) {
         return connections.get(instrument);
     }
 
-    void connectionState(MeasurementBatch.Instrument instrument, boolean connected, boolean busy) {
+    public void connectionState(Instrument instrument, boolean connected, boolean busy) {
         lights.get(instrument)
                 .setFill(Color.web(busy ? "#d79b27" : connected ? "#43a05b" : "#c94747"));
         connections.get(instrument).setDisable(busy);
         connections
                 .get(instrument)
                 .setAccessibleText(
-                        instrument.label
+                        instrument.label()
                                 + (busy
                                         ? ": operazione in corso"
                                         : connected ? ": collegato" : ": scollegato"));
     }
 
-    void active(MeasurementBatch.Instrument instrument, boolean ready) {
-        acquire.setText("Acquisisci da\n" + instrument.label.toLowerCase(java.util.Locale.ROOT));
+    public void active(Instrument instrument, boolean ready) {
+        acquire.setText("Acquisisci da\n" + instrument.label().toLowerCase(java.util.Locale.ROOT));
         instrumentImage.setImage(instrument == MICROMETER ? micrometer : scale);
         acquire.setDisable(!ready);
     }
 
-    void onRemove(BiConsumer<Integer, MeasurementBatch.Instrument> action) {
+    public void onRemove(BiConsumer<Integer, Instrument> action) {
         remove = action;
     }
 

@@ -1,6 +1,6 @@
-package com.orodent.ecos.misurazioni;
+package com.orodent.ecos.misurazioni.model;
 
-import static com.orodent.ecos.misurazioni.MeasurementBatch.Instrument.*;
+import static com.orodent.ecos.misurazioni.model.Instrument.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 

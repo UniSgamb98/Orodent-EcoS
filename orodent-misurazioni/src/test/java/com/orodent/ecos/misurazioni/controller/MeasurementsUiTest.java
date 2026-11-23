@@ -1,8 +1,11 @@
-package com.orodent.ecos.misurazioni;
+package com.orodent.ecos.misurazioni.controller;
 
-import static com.orodent.ecos.misurazioni.MeasurementBatch.Instrument.*;
+import static com.orodent.ecos.misurazioni.model.Instrument.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import com.orodent.ecos.misurazioni.devices.MeasurementDevice;
+import com.orodent.ecos.misurazioni.view.MeasurementsView;
 
 import javafx.application.Platform;
 import javafx.scene.Scene;

@@ -1,9 +1,10 @@
-package com.orodent.ecos.misurazioni;
+package com.orodent.ecos.misurazioni.devices;
 
 import com.ghgande.j2mod.modbus.io.ModbusTCPTransaction;
 import com.ghgande.j2mod.modbus.msg.ReadMultipleRegistersRequest;
 import com.ghgande.j2mod.modbus.msg.ReadMultipleRegistersResponse;
 import com.ghgande.j2mod.modbus.net.TCPMasterConnection;
+import com.orodent.ecos.misurazioni.config.MeasurementSettings;
 
 import java.io.IOException;
 import java.math.BigDecimal;

@@ -1,6 +1,8 @@
 package com.orodent.ecos.misurazioni;
 
 import com.orodent.ecos.database.DatabaseSettings;
+import com.orodent.ecos.misurazioni.config.MeasurementSettings;
+import com.orodent.ecos.misurazioni.controller.MeasurementsController;
 import com.orodent.ecos.module.*;
 
 public final class MisurazioniModule implements EcosModule {

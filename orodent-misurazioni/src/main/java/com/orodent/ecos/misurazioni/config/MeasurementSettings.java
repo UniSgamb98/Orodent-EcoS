@@ -1,11 +1,11 @@
-package com.orodent.ecos.misurazioni;
+package com.orodent.ecos.misurazioni.config;
 
 import java.util.Properties;
 
-record MeasurementSettings(Endpoint micrometer, Endpoint scale, int timeoutMs) {
-    record Endpoint(String host, int port) {}
+public record MeasurementSettings(Endpoint micrometer, Endpoint scale, int timeoutMs) {
+    public record Endpoint(String host, int port) {}
 
-    static MeasurementSettings from(Properties settings) {
+    public static MeasurementSettings from(Properties settings) {
         return new MeasurementSettings(
                 endpoint(settings, "micrometro", "192.168.1.150", 8600),
                 endpoint(settings, "bilancia", "192.168.1.201", 1800),

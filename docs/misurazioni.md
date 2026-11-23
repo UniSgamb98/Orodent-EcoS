@@ -37,3 +37,16 @@ disconnessioni sono mostrati senza aggiungere zeri o `NaN` all'elenco.
 Non sono ancora inclusi calcoli di temperatura, etichette, cotture o collegamenti
 alle produzioni. Le verifiche automatiche usano strumenti TCP simulati; la prova
 con gli strumenti fisici va eseguita sulla postazione di misurazione.
+
+## Organizzazione del codice
+
+`MisurazioniModule` è il punto d'ingresso del modulo. Le responsabilità sono
+distribuite tra `view` (schermata), `controller` (azioni e pedale), `model`
+(misure, abbinamento e formato per Excel), `devices` (collegamenti e protocolli)
+e `config` (impostazioni della postazione). I test seguono gli stessi package.
+
+`DeviceConnections` gestisce connessioni, letture in background e chiusura degli
+strumenti; consegna i risultati al controller tramite callback sul thread della UI.
+Il controller gestisce la sessione e l'elenco delle misure. I driver Keyence e
+bilancia restano interni al package `devices`; i package del modulo non sono
+esportati alle altre applicazioni di EcoS.

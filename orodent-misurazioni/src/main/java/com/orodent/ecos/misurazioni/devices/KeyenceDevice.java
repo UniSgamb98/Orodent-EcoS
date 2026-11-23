@@ -1,4 +1,6 @@
-package com.orodent.ecos.misurazioni;
+package com.orodent.ecos.misurazioni.devices;
+
+import com.orodent.ecos.misurazioni.config.MeasurementSettings;
 
 import java.io.*;
 import java.net.*;

@@ -1,4 +1,4 @@
-package com.orodent.ecos.misurazioni;
+package com.orodent.ecos.misurazioni.controller;
 
 import javafx.animation.PauseTransition;
 import javafx.event.EventHandler;
