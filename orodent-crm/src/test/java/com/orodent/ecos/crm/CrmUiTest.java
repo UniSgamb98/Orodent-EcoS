@@ -571,7 +571,8 @@ class CrmUiTest {
                                                     + "Parlato con il referente. Il laboratorio sta"
                                                     + " valutando la nuova zirconia; inviare la"
                                                     + " documentazione tecnica e ricontattare dopo"
-                                                    + " le prove."),
+                                                    + " le prove.",
+                                                "Mario Rossi"),
                                         new InteractionPreview(
                                                 UUID.randomUUID(),
                                                 UUID.randomUUID(),
@@ -613,7 +614,8 @@ class CrmUiTest {
                                         InteractionType.NOTA,
                                         null,
                                         null,
-                                        "Inviata la scheda tecnica richiesta dal laboratorio."));
+                                        "Inviata la scheda tecnica richiesta dal laboratorio.",
+                                        "Lucia Bianchi"));
                         var model =
                                 new ClienteProfile(
                                         UUID.randomUUID(),
@@ -733,6 +735,11 @@ class CrmUiTest {
                         assertFalse(imported.isExpanded());
                         assertNotNull(root.lookup(".client-profile-overdue"));
                         snapshot("target/crm-profile-redesign.png");
+                        assertEquals(
+                                Set.of("Operatore: Mario Rossi", "Operatore: Lucia Bianchi"),
+                                root.lookupAll(".crm-activity-author").stream()
+                                        .map(n -> ((Label) n).getText())
+                                        .collect(java.util.stream.Collectors.toSet()));
                         var toggles =
                                 root.lookupAll(".crm-activity-toggle").stream()
                                         .map(n -> (Button) n)
@@ -882,6 +889,13 @@ class CrmUiTest {
                                 page.collectEditDraft().ragioneSociale());
                         snapshot("target/crm-profile-wide-restored.png");
                         page.renderInlineProfile(sample[0]);
+                        rootLayout();
+                        assertEquals(
+                                2,
+                                stage.getScene()
+                                        .getRoot()
+                                        .lookupAll(".crm-activity-author")
+                                        .size());
                         assertFalse(page.hasUnsavedChanges());
                         assertFalse(page.getSaveProfileEditButton().isVisible());
                         var original =
@@ -892,6 +906,13 @@ class CrmUiTest {
                                 original,
                                 page.collectWorkspace().profile().interazioni().stream()
                                         .map(InteractionEditInput::testo)
+                                        .toList());
+                        assertEquals(
+                                sample[0].interazioni().stream()
+                                        .map(InteractionPreview::operatorName)
+                                        .toList(),
+                                page.collectWorkspace().profile().interazioni().stream()
+                                        .map(InteractionEditInput::operatorName)
                                         .toList());
                         page.filterInline(TimelineFilter.NOTES);
                         page.filterInline(TimelineFilter.ALL);
@@ -938,6 +959,27 @@ class CrmUiTest {
                         assertThrows(IllegalArgumentException.class, page::captureForSave);
                         assertEquals("data non valida", date.getEditor().getText());
                         date.getEditor().setText(valid);
+                        assertFalse(page.hasUnsavedChanges());
+                        var authoredCall =
+                                stage
+                                        .getScene()
+                                        .getRoot()
+                                        .lookupAll(".crm-activity-toggle")
+                                        .stream()
+                                        .map(n -> (Button) n)
+                                        .filter(n -> n.getAccessibleText().contains("Mario Rossi"))
+                                        .findFirst()
+                                        .orElseThrow();
+                        var authoredCard = authoredCall.getParent().getParent();
+                        var outcome =
+                                (ChoiceBox<CallOutcome>)
+                                        authoredCard.lookup(".client-profile-call-outcome-choice");
+                        outcome.setValue(CallOutcome.CAMPIONE);
+                        rootLayout();
+                        assertEquals(
+                                "Operatore: Mario Rossi",
+                                ((Label) authoredCard.lookup(".crm-activity-author")).getText());
+                        outcome.setValue(CallOutcome.LISTINO);
                         assertFalse(page.hasUnsavedChanges());
                         snapshot("target/crm-profile-inline.png");
                         verifyExpandableResources(page);

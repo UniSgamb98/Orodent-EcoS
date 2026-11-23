@@ -240,7 +240,8 @@ public class SchedaClienteService {
                 type,
                 record.prossimoContatto(),
                 record.esito(),
-                record.testo());
+                record.testo(),
+                record.operatorName());
     }
 
     private ClienteProfile emptyProfile() {

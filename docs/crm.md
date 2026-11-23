@@ -39,6 +39,13 @@ il motivo. Ogni PC può avere un valore diverso, senza cambiare il database cond
 configurazione per la sessione in corso, anche tornando alla Home e riaprendo il CRM.
 Al successivo avvio dell'app si applica di nuovo il valore del file.
 
+Nello storico di chiamate e note della scheda cliente, l'intestazione di ogni attività
+mostra anche **Operatore: nome**, accanto alla data. Il nome viene letto dall'ID
+dell'autore salvato sull'attività, anche se disattivato o rinominato; non dipende
+dall'operatore assegnato al cliente né da chi apre o modifica la scheda. Le attività
+precedenti prive di autore mostrano **Operatore non indicato**. Le nuove bozze
+mostrano l'autore dopo il salvataggio.
+
 ## Elenco e paesi
 
 La ricerca per azienda, referente, telefono o email e i filtri Stato, Operatore,

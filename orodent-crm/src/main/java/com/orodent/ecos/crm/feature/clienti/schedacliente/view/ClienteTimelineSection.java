@@ -13,6 +13,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TitledPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
@@ -158,7 +159,17 @@ final class ClienteTimelineSection extends VBox {
         activityCount.setText(count + " attività · " + calls + " chiamate");
         for (InteractionPreview interaction : interactions) {
             if (isImportedSummary(interaction)) {
-                VBox source = new VBox(8, createInfoLabel(interaction.testo()));
+                VBox source =
+                        new VBox(
+                                8,
+                                createTimelineHeader(
+                                        interaction.data(),
+                                        interaction.createdAt(),
+                                        interaction.type(),
+                                        false,
+                                        interaction.esito(),
+                                        interaction.operatorName()),
+                                createInfoLabel(interaction.testo()));
                 importedNotes.getChildren().add(source);
             } else timelineList.getChildren().add(createActivity(interaction));
         }
@@ -196,7 +207,8 @@ final class ClienteTimelineSection extends VBox {
                         interaction.createdAt(),
                         interaction.type(),
                         false,
-                        interaction.esito());
+                        interaction.esito(),
+                        interaction.operatorName());
         if (interaction.type() == InteractionType.CHIAMATA) heading.getChildren().removeFirst();
         else {
             var type = heading.getChildren().removeFirst();
@@ -235,7 +247,11 @@ final class ClienteTimelineSection extends VBox {
                         + (interaction.data() == null
                                 ? "Data non indicata"
                                 : DATE_FORMATTER.format(interaction.data()))
-                        + (interaction.esito() == null ? "" : " · " + interaction.esito().label()));
+                        + (interaction.esito() == null ? "" : " · " + interaction.esito().label())
+                        + (interaction.operatorName() == null
+                                        || interaction.operatorName().isBlank()
+                                ? ""
+                                : " · Operatore: " + interaction.operatorName()));
         graphic.prefWidthProperty().bind(toggle.widthProperty().subtract(24));
         Label preview = createInfoLabel(previewText(parsed.body()));
         preview.getStyleClass().add("crm-activity-preview");
@@ -442,7 +458,8 @@ final class ClienteTimelineSection extends VBox {
                                     activity.createdAt(),
                                     activity.type(),
                                     false,
-                                    outcome.getValue());
+                                    outcome.getValue(),
+                                    activity.operatorName());
                     if (activity.type() == InteractionType.CHIAMATA)
                         heading.getChildren().removeFirst();
                     if (outcome.getValue() == CallOutcome.NON_TROVATO)
@@ -557,7 +574,8 @@ final class ClienteTimelineSection extends VBox {
                     activity.type(),
                     next.getValue(),
                     outcome.getValue(),
-                    value);
+                    value,
+                    activity.operatorName());
         }
     }
 
@@ -582,7 +600,8 @@ final class ClienteTimelineSection extends VBox {
                             interaction.createdAt(),
                             interaction.type(),
                             interaction.prossimoContatto() != null,
-                            interaction.esito());
+                            interaction.esito(),
+                            interaction.operatorName());
             DatePicker nextCallPicker = null;
             ChoiceBox<CallOutcome> outcomeChoiceBox = null;
             if (interaction.type() == InteractionType.CHIAMATA) {
@@ -604,7 +623,8 @@ final class ClienteTimelineSection extends VBox {
                             interaction.esito(),
                             outcomeChoiceBox,
                             nextCallPicker,
-                            textArea);
+                            textArea,
+                            interaction.operatorName());
             Button deleteButton =
                     createDeleteInteractionButton(
                             () -> {
@@ -643,7 +663,8 @@ final class ClienteTimelineSection extends VBox {
                                         field.outcomeChoiceBox() == null
                                                 ? field.esito()
                                                 : field.outcomeChoiceBox().getValue(),
-                                        field.textArea().getText()))
+                                        field.textArea().getText(),
+                                        field.operatorName()))
                 .toList();
     }
 
@@ -740,7 +761,8 @@ final class ClienteTimelineSection extends VBox {
             LocalDateTime createdAt,
             InteractionType type,
             boolean hasNextContact,
-            CallOutcome outcome) {
+            CallOutcome outcome,
+            String operatorName) {
         FlowPane header = new FlowPane(8, 6);
         header.getStyleClass().add("client-profile-timeline-card-header");
         Label typeBadge = new Label(type.label());
@@ -760,6 +782,13 @@ final class ClienteTimelineSection extends VBox {
         Label title = createInfoLabel(dateAndTime);
         title.getStyleClass().add("client-profile-timeline-title");
         header.getChildren().addAll(typeBadge, title);
+        if (operatorName != null && !operatorName.isBlank()) {
+            Label author = new Label("Operatore: " + operatorName);
+            author.getStyleClass().add("crm-activity-author");
+            author.setMaxWidth(240);
+            author.setTooltip(new Tooltip(author.getText()));
+            header.getChildren().add(author);
+        }
         if (outcome != null) {
             Label outcomeBadge = new Label(outcome.label());
             outcomeBadge.getStyleClass().add("client-profile-timeline-outcome-badge");
@@ -890,5 +919,6 @@ final class ClienteTimelineSection extends VBox {
             CallOutcome esito,
             ChoiceBox<CallOutcome> outcomeChoiceBox,
             DatePicker nextCallPicker,
-            TextArea textArea) {}
+            TextArea textArea,
+            String operatorName) {}
 }

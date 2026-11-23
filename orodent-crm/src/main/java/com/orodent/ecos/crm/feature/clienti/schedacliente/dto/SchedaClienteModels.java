@@ -423,7 +423,20 @@ public final class SchedaClienteModels {
             InteractionType type,
             LocalDate prossimoContatto,
             CallOutcome esito,
-            String testo) {
+            String testo,
+            String operatorName) {
+        public InteractionEditInput(
+                UUID notaId,
+                UUID interazioneId,
+                LocalDate data,
+                LocalDateTime createdAt,
+                InteractionType type,
+                LocalDate prossimoContatto,
+                CallOutcome esito,
+                String testo) {
+            this(notaId, interazioneId, data, createdAt, type, prossimoContatto, esito, testo, "");
+        }
+
         public static InteractionEditInput from(InteractionPreview interaction) {
             return new InteractionEditInput(
                     interaction.notaId(),
@@ -433,7 +446,8 @@ public final class SchedaClienteModels {
                     interaction.type(),
                     interaction.prossimoContatto(),
                     interaction.esito(),
-                    interaction.testo());
+                    interaction.testo(),
+                    interaction.operatorName());
         }
     }
 
@@ -445,5 +459,18 @@ public final class SchedaClienteModels {
             InteractionType type,
             LocalDate prossimoContatto,
             CallOutcome esito,
-            String testo) {}
+            String testo,
+            String operatorName) {
+        public InteractionPreview(
+                UUID notaId,
+                UUID interazioneId,
+                LocalDate data,
+                LocalDateTime createdAt,
+                InteractionType type,
+                LocalDate prossimoContatto,
+                CallOutcome esito,
+                String testo) {
+            this(notaId, interazioneId, data, createdAt, type, prossimoContatto, esito, testo, "");
+        }
+    }
 }

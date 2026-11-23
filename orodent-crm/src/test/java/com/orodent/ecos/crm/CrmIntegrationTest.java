@@ -124,6 +124,64 @@ class CrmIntegrationTest {
     }
 
     @Test
+    void timelineShowsEachOriginalAuthorIncludingInactiveOperatorsAndCallsWithoutNotes() {
+        UUID id = lead();
+        UUID first = db.operators().currentOperatoreId();
+        var sheet = new SchedaClienteService(db);
+        db.transaction(() -> sheet.loadProfile(id));
+        db.transaction(() -> sheet.addNota("Nota del primo operatore"));
+        db.transaction(() -> sheet.addChiamata("", null, CallOutcome.NON_TROVATO));
+        var operators = new OperatorManagementService(db);
+        UUID second = db.transaction(() -> operators.create("Lucia"));
+        session.select(second, "Lucia");
+        db.transaction(() -> sheet.addNota("Nota del secondo operatore"));
+        db.transaction(
+                () -> sheet.addChiamata("Conversazione di Lucia", null, CallOutcome.LISTINO));
+        db.transaction(
+                () -> {
+                    operators.active(first, false);
+                    return null;
+                });
+        connections.withTransaction(
+                c -> {
+                    try (var q =
+                            c.prepareStatement(
+                                    "UPDATE ECOS.OPERATORI SET NOME='Mario', COGNOME='Rossi' WHERE"
+                                        + " ID=?")) {
+                        q.setString(1, first.toString());
+                        q.executeUpdate();
+                    }
+                    try (var q =
+                            c.prepareStatement(
+                                    "INSERT INTO CRM.NOTE_CLIENTE(ID,CLIENTE_ID,TESTO) VALUES"
+                                        + " (?,?,'Nota senza autore')")) {
+                        q.setString(1, UUID.randomUUID().toString());
+                        q.setString(2, id.toString());
+                        q.executeUpdate();
+                    }
+                    return null;
+                });
+        var profile = db.transaction(() -> sheet.loadProfile(id));
+        assertEquals(5, profile.interazioni().size());
+        var authors =
+                profile.interazioni().stream()
+                        .collect(
+                                java.util.stream.Collectors.toMap(
+                                        InteractionPreview::testo,
+                                        InteractionPreview::operatorName));
+        assertEquals("Mario Rossi", authors.get("Nota del primo operatore"));
+        assertEquals("Mario Rossi", authors.get("Chiamata registrata."));
+        assertEquals("Lucia", authors.get("Nota del secondo operatore"));
+        assertEquals("Lucia", authors.get("Conversazione di Lucia"));
+        assertEquals("Operatore non indicato", authors.get("Nota senza autore"));
+        assertEquals(
+                profile.interazioni().stream().map(InteractionPreview::operatorName).toList(),
+                EditProfileDraft.from(profile).interazioni().stream()
+                        .map(InteractionEditInput::operatorName)
+                        .toList());
+    }
+
+    @Test
     void assignmentChangesOnlyClientAndKeepsHistoricalAuthorsAndSession() {
         UUID id = lead();
         UUID current = db.operators().currentOperatoreId();

@@ -181,7 +181,10 @@ public final class DerbyClienteProfileQuery implements ClienteProfileQuery {
 
     private List<TimelineRecord> findStandaloneNotes(UUID clienteId) throws SQLException {
         String sql =
-                "SELECT N.ID, N.TESTO, N.CREATED_AT FROM NOTE_CLIENTE N WHERE N.CLIENTE_ID = ? AND"
+                "SELECT N.ID, N.TESTO, N.CREATED_AT, O.NOME AS OPERATORE_NOME,"
+                        + " O.COGNOME AS OPERATORE_COGNOME, O.USERNAME AS OPERATORE_USERNAME"
+                        + " FROM NOTE_CLIENTE N LEFT JOIN ECOS.OPERATORI O ON O.ID=N.OPERATORE_ID"
+                        + " WHERE N.CLIENTE_ID = ? AND"
                         + " NOT EXISTS (SELECT 1 FROM INTERAZIONI I WHERE I.NOTA_ID = N.ID)";
         try (PreparedStatement statement = database.getConnection().prepareStatement(sql)) {
             statement.setString(1, clienteId.toString());
@@ -197,7 +200,8 @@ public final class DerbyClienteProfileQuery implements ClienteProfileQuery {
                                     TimelineType.NOTA,
                                     null,
                                     null,
-                                    getClobText(resultSet, "TESTO")));
+                                    getClobText(resultSet, "TESTO"),
+                                    operatorName(resultSet)));
                 }
                 return notes;
             }
@@ -207,8 +211,10 @@ public final class DerbyClienteProfileQuery implements ClienteProfileQuery {
     private List<TimelineRecord> findInterazioni(UUID clienteId) throws SQLException {
         String sql =
                 "SELECT I.ID, I.NOTA_ID, I.DATA_CONTATTO, I.PROSSIMO_CONTATTO, I.ESITO,"
-                        + " I.CREATED_AT, N.TESTO FROM INTERAZIONI I LEFT JOIN NOTE_CLIENTE N ON"
-                        + " I.NOTA_ID = N.ID WHERE I.CLIENTE_ID = ?";
+                    + " I.CREATED_AT, N.TESTO, O.NOME AS OPERATORE_NOME, O.COGNOME AS"
+                    + " OPERATORE_COGNOME, O.USERNAME AS OPERATORE_USERNAME FROM INTERAZIONI I LEFT"
+                    + " JOIN NOTE_CLIENTE N ON I.NOTA_ID = N.ID LEFT JOIN ECOS.OPERATORI O ON"
+                    + " O.ID=I.OPERATORE_ID WHERE I.CLIENTE_ID = ?";
         try (PreparedStatement statement = database.getConnection().prepareStatement(sql)) {
             statement.setString(1, clienteId.toString());
             try (ResultSet resultSet = statement.executeQuery()) {
@@ -228,11 +234,25 @@ public final class DerbyClienteProfileQuery implements ClienteProfileQuery {
                                             resultSet.getString("ESITO")),
                                     valueOrDefault(
                                             getClobText(resultSet, "TESTO"),
-                                            "Chiamata registrata.")));
+                                            "Chiamata registrata."),
+                                    operatorName(resultSet)));
                 }
                 return interazioni;
             }
         }
+    }
+
+    private String operatorName(ResultSet resultSet) throws SQLException {
+        String fullName =
+                String.join(
+                                " ",
+                                valueOrEmpty(resultSet.getString("OPERATORE_NOME")).trim(),
+                                valueOrEmpty(resultSet.getString("OPERATORE_COGNOME")).trim())
+                        .trim();
+        return fullName.isBlank()
+                ? valueOrDefault(
+                        resultSet.getString("OPERATORE_USERNAME"), "Operatore non indicato")
+                : fullName;
     }
 
     private UUID getUuid(ResultSet resultSet, String column) throws SQLException {

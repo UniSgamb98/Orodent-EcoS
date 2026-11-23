@@ -71,5 +71,6 @@ public interface ClienteProfileQuery {
             TimelineType type,
             LocalDate prossimoContatto,
             CallOutcome esito,
-            String testo) {}
+            String testo,
+            String operatorName) {}
 }
