@@ -16,6 +16,7 @@
     <module>orodent-costi</module>
     <module>orodent-crm</module>
     <module>orodent-registro</module>
+    <module>orodent-misurazioni</module>
     <module>orodent-app</module>
     <module>orodent-launcher</module>
   </modules>
@@ -38,6 +39,7 @@
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-costi</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-crm</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-registro</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.orodent</groupId><artifactId>orodent-misurazioni</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>org.openjfx</groupId><artifactId>javafx-base</artifactId><version>${javafx.version}</version></dependency>
     <dependency><groupId>org.openjfx</groupId><artifactId>javafx-graphics</artifactId><version>${javafx.version}</version></dependency>
     <dependency><groupId>org.openjfx</groupId><artifactId>javafx-controls</artifactId><version>${javafx.version}</version></dependency>

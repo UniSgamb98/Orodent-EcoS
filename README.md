@@ -79,6 +79,7 @@ Excel italiano. [Contratto e utilizzo](docs/csv-export.md).
 | `orodent-module-api` | Contratto dei moduli, metadati, servizi condivisi e ciclo di vita della UI |
 | `orodent-ton` | Laboratorio TON: linee, prodotti, articoli e polveri, storico e specifiche versionate |
 | `orodent-registro` | [Registro attività CRM](docs/registro-attivita.md), nascosto con Ctrl+L, con autore, postazione e confronto prima/dopo |
+| `orodent-misurazioni` | [Misurazioni](docs/misurazioni.md), sempre visibile: micrometro Keyence, bilancia, pedale e copia per Excel da Marzia 1.0.1 |
 | `orodent-crm` | Lead e contatti commerciali, schede, note/chiamate, calendario, preferiti, viste salvate e cataloghi dei laboratori |
 | `orodent-costi` | Prezzi e lotti, costi per articolo, consumi, scenari versionati con basi congelate e confronto per linea/prodotto/articolo, CSV |
 | `orodent-statistiche` | Dashboard vendite, analisi clienti/prodotti/sconti/resi, archivio e importazioni CSV |

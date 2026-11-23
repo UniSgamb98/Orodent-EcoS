@@ -10,7 +10,7 @@ class ModuleDiscoveryProbe {
         for (Object descriptor : descriptors) {
             ids.add((String) descriptor.getClass().getMethod("id").invoke(descriptor));
         }
-        if (!ids.equals(List.of("costi", "crm", "statistiche", "ton"))) throw new AssertionError("Provider JPMS mancanti: " + ids);
-        System.out.println("DISCOVERED costi,crm,statistiche,ton");
+        if (!ids.equals(List.of("costi", "crm", "misurazioni", "registro", "statistiche", "ton"))) throw new AssertionError("Provider JPMS mancanti: " + ids);
+        System.out.println("DISCOVERED costi,crm,misurazioni,registro,statistiche,ton");
     }
 }

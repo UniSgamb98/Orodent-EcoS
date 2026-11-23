@@ -37,6 +37,7 @@ class RegistroHomeTest {
                             assertFalse(home.lookup("#module-" + id).isManaged());
                         }
                         assertTrue(home.lookup("#module-crm").isVisible());
+                        assertTrue(home.lookup("#module-misurazioni").isVisible());
                         home.showHiddenModules(true);
                         for (String id : java.util.List.of("ton", "costi", "registro")) {
                             assertTrue(home.lookup("#module-" + id).isVisible());
@@ -44,6 +45,8 @@ class RegistroHomeTest {
                         }
                         home.showHiddenModules(false);
                         assertFalse(home.lookup("#module-registro").isManaged());
+                        assertTrue(home.lookup("#module-misurazioni").isVisible());
+                        assertTrue(home.lookup("#module-misurazioni").isManaged());
                         result.complete(null);
                     } catch (Throwable e) {
                         result.completeExceptionally(e);

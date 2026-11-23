@@ -16,6 +16,7 @@
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-costi</artifactId></dependency>
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-crm</artifactId></dependency>
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-registro</artifactId></dependency>
+    <dependency><groupId>com.orodent</groupId><artifactId>orodent-misurazioni</artifactId></dependency>
     <dependency><groupId>com.orodent</groupId><artifactId>orodent-statistiche</artifactId></dependency>
     <dependency><groupId>org.openjfx</groupId><artifactId>javafx-controls</artifactId></dependency>
     <dependency><groupId>net.java.dev.jna</groupId><artifactId>jna</artifactId><version>5.17.0</version></dependency>
