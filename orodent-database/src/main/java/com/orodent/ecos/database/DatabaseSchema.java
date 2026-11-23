@@ -125,6 +125,11 @@ public final class DatabaseSchema {
                     23,
                     "TON article availability snapshots",
                     "/database/migrations/V23__ton_availability.sql");
+    private static final SchemaMigration CRM_AUDIT =
+            new SchemaMigration(
+                    24,
+                    "Transactional CRM activity register",
+                    "/database/migrations/V24__crm_audit.sql");
     private static final List<SchemaMigration> MIGRATIONS =
             List.of(
                     BASELINE,
@@ -149,7 +154,8 @@ public final class DatabaseSchema {
                     TON_MODEL_DIAMETERS,
                     TON_PRODUCT_SPECIFICATIONS,
                     SUPPLIERS,
-                    AVAILABILITY);
+                    AVAILABILITY,
+                    CRM_AUDIT);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS =
             List.of(
@@ -248,6 +254,8 @@ public final class DatabaseSchema {
                                 ProductSpecificationMigration.apply(connection);
                             if (migration.version() == SUPPLIERS.version())
                                 SupplierMigration.apply(connection);
+                            if (migration.version() == CRM_AUDIT.version())
+                                CrmAuditMigration.apply(connection);
                             recordMigration(connection, "ECOS", migration);
                         }
                     }
@@ -324,6 +332,7 @@ public final class DatabaseSchema {
                 ProductSpecificationSchema.verify(connection);
             if (version >= SUPPLIERS.version()) SupplierSchema.verify(connection);
             if (version >= AVAILABILITY.version()) AvailabilitySchema.verify(connection);
+            if (version >= CRM_AUDIT.version()) CrmAuditMigration.verify(connection);
             return version;
         }
         if (tableExists(connection, "APP", HISTORY)) {

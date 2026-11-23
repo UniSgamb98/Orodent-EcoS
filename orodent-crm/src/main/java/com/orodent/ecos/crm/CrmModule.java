@@ -12,6 +12,10 @@ public final class CrmModule implements EcosModule {
                 "M3 4h18v16H3z M7 8h4v4H7z M14 8h4 M14 12h4 M7 16h11");
     }
 
+    public ModuleSession openRecord(ModuleContext context, String recordId) {
+        return new CrmController(context, java.util.UUID.fromString(recordId));
+    }
+
     public ModuleSession open(ModuleContext context) {
         return new CrmController(context);
     }

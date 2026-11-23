@@ -505,6 +505,23 @@ class CrmUiTest {
                     });
             await(() -> enabledButton("crm-create-lead"));
             assertEquals(currentId, operator.current().orElseThrow().id());
+            UUID requestedClient =
+                    db.withConnection(
+                            c -> {
+                                try (var q = c.createStatement();
+                                        var r = q.executeQuery("SELECT ID FROM CRM.CLIENTI")) {
+                                    assertTrue(r.next());
+                                    return UUID.fromString(r.getString(1));
+                                }
+                            });
+            fx(
+                    () -> {
+                        session.close();
+                        session = new CrmModule().openRecord(context, requestedClient.toString());
+                        stage.getScene().setRoot(session.root());
+                        return null;
+                    });
+            await(() -> enabledButton("crm-new-call"));
             assertEquals(0, fxSql.get(), "Automatic login must not read JDBC on FX");
             assertTrue(errors.isEmpty(), errors::toString);
         } finally {

@@ -23,12 +23,12 @@ lettera ed è unico nell'ecosistema. Gli ID duplicati interrompono l'avvio.
 La Home ordina le applicazioni per nome e crea una scheda con icona, descrizione
 e pulsante. I metadati non dipendono dal database.
 
-Le schede TON (`ton`) e Costi e consumi (`costi`) sono nascoste all'avvio.
+Le schede TON (`ton`), Costi e consumi (`costi`) e Registro attività (`registro`) sono nascoste all'avvio.
 `Ctrl+L` le mostra o le nasconde insieme, senza lasciare spazi nel catalogo.
 La scelta dura fino alla chiusura di EcoS: tornando alla Home resta invariata.
 La scorciatoia funziona anche dentro un modulo, senza cambiarne la pagina o
 chiudere la sessione attiva. Gli altri moduli restano visibili; i provider e i
-dati di TON e Costi e consumi rimangono caricati normalmente.
+dati dei tre moduli rimangono caricati normalmente.
 
 `open(context)` viene chiamato sul thread JavaFX, dopo l'avvio dei servizi.
 Ogni apertura restituisce una nuova `ModuleSession`. Tornando alla Home,
@@ -38,6 +38,10 @@ operazioni pendenti e impedisce ai callback già in coda di aggiornare una pagin
 chiusa. Non chiude database, executor o servizi CSV ricevuti dal contesto.
 Query e calcoli si eseguono fuori dal thread JavaFX; gli aggiornamenti visivi
 tornano sul thread JavaFX. Le transazioni passano da `ConnectionProvider`.
+
+`ModuleContext.openRecord()` permette di aprire un elemento in un altro modulo;
+`EcosModule.openRecord(context, id)` può gestire la destinazione specifica. Il CRM
+apre la scheda cliente dopo la verifica dell’operatore.
 
 ## Aggiungere un modulo
 

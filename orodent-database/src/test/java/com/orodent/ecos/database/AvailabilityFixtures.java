@@ -4,6 +4,7 @@ import java.sql.*;
 
 final class AvailabilityFixtures {
     static void beforeV23(Connection c) throws SQLException {
+        AuditFixtures.beforeV24(c);
         try (var q = c.createStatement()) {
             q.executeUpdate("DROP TABLE TON.DISPONIBILITA_FONTI");
             q.executeUpdate("DROP TABLE TON.DISPONIBILITA_VALORI");

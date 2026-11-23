@@ -7,9 +7,10 @@ import com.orodent.ecos.module.EcosModule;
 import com.orodent.ecos.module.ModuleContext;
 import com.orodent.ecos.module.ModuleSession;
 import com.orodent.ecos.module.OperatorSession;
+
+import javafx.application.Platform;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.application.Platform;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
@@ -65,10 +66,22 @@ public final class AppController implements AppNavigator {
 
     @Override
     public void showModule(String moduleId) {
+        showModuleRecord(moduleId, null);
+    }
+
+    private void showModuleRecord(String moduleId, String recordId) {
         EcosModule module = app.modules().require(moduleId);
-        ModuleSession session = module.open(new ModuleContext(
-                app.connectionProvider(), app.backgroundExecutor(),
-                app.clientiCsvImportService(), app.venditeCsvImportService(), this::showHome, operators));
+        ModuleContext context =
+                new ModuleContext(
+                        app.connectionProvider(),
+                        app.backgroundExecutor(),
+                        app.clientiCsvImportService(),
+                        app.venditeCsvImportService(),
+                        this::showHome,
+                        operators,
+                        this::showModuleRecord);
+        ModuleSession session =
+                recordId == null ? module.open(context) : module.openRecord(context, recordId);
         showView(session.root(), session::close);
         stage.setTitle("Orodent-EcoS - " + module.descriptor().name());
     }
@@ -118,7 +131,8 @@ public final class AppController implements AppNavigator {
         try {
             activePageCleanup.run();
         } catch (RuntimeException exception) {
-            System.err.println("Errore durante la chiusura della pagina: " + exception.getMessage());
+            System.err.println(
+                    "Errore durante la chiusura della pagina: " + exception.getMessage());
         }
     }
 

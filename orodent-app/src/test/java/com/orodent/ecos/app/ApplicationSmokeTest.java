@@ -1270,7 +1270,7 @@ class ApplicationSmokeTest {
     }
 
     private static void assertHiddenModulesVisibility(Stage stage, boolean expected) {
-        for (String id : List.of("ton", "costi")) {
+        for (String id : List.of("ton", "costi", "registro")) {
             Node card = stage.getScene().lookup("#module-" + id);
             assertNotNull(card);
             assertEquals(expected, card.isVisible(), id);

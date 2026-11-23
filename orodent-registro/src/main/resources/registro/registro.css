@@ -1,0 +1,28 @@
+.registro-page { -fx-padding: 20 26; -fx-background-color: #e4eff4; -fx-font-weight: normal; }
+.registro-title { -fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #164664; }
+.registro-details { -fx-padding: 16; -fx-background-color: white; }
+.registro-detail-title { -fx-font-size: 15px; -fx-font-weight: bold; }
+.registro-field-name { -fx-font-size: 11px; -fx-text-fill: #526e80; -fx-font-weight: bold; }
+.registro-details .text-area { -fx-font-size: 12px; -fx-control-inner-background: #f4f8fb; }
+.registro-stat { -fx-padding: 10 22; -fx-min-width: 145; -fx-background-color: white; -fx-background-radius: 8; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #195771; }
+#registro-total-created { -fx-text-fill: #27754e; }
+#registro-total-deleted { -fx-text-fill: #a33f34; }
+.registro-page .button { -fx-background-color: white; -fx-text-fill: #164664; -fx-border-color: #c7dce8; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 8 12; -fx-cursor: hand; -fx-font-weight: bold; }
+.registro-page .button:hover { -fx-background-color: #edf5f9; }
+.registro-page .button:disabled { -fx-opacity: 0.45; }
+#registro-home, #registro-apply { -fx-background-color: #19758b; -fx-text-fill: white; -fx-border-color: #19758b; }
+.registro-page .text-field, .registro-page .choice-box, .registro-page .date-picker { -fx-background-color: white; -fx-border-color: #c7dce8; -fx-border-radius: 6; -fx-background-radius: 6; -fx-min-height: 34; -fx-text-fill: #164664; }
+.registro-page .date-picker > .text-field { -fx-border-width: 0; }
+.registro-page .date-picker > .arrow-button { -fx-background-color: transparent; }
+.registro-page .choice-box > .label { -fx-font-weight: normal; }
+.registro-page .table-view { -fx-background-color: white; -fx-border-color: #c7dce8; }
+.registro-page .table-view .column-header-background, .registro-page .table-view .column-header, .registro-page .table-view .filler { -fx-background-color: #dbeaf1; }
+.registro-page .table-view .column-header { -fx-border-color: transparent; -fx-padding: 7 4; }
+.registro-page .table-row-cell { -fx-background-color: white; -fx-cell-size: 38; }
+.registro-page .table-row-cell:odd { -fx-background-color: #f4f8fb; }
+.registro-page .table-row-cell:selected { -fx-background-color: #d5edf1; }
+.registro-page .table-cell { -fx-border-color: transparent transparent #e1edf3 transparent; -fx-padding: 8 5; -fx-text-fill: #164664; -fx-font-weight: normal; }
+.registro-details .titled-pane > .title { -fx-padding: 10; -fx-background-color: #edf5f9; -fx-border-color: #d5e5ed; }
+.registro-details .registro-change-delete > .title { -fx-background-color: #fbe6e3; }
+.registro-details .registro-change-insert > .title { -fx-background-color: #e1f2e9; }
+.registro-details .registro-change-update > .title { -fx-background-color: #e2eff8; }

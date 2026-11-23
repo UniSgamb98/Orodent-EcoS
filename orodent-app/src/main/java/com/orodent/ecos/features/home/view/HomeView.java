@@ -21,7 +21,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 public final class HomeView extends BorderPane {
-    private static final Set<String> HIDDEN_MODULE_IDS = Set.of("ton", "costi");
+    private static final Set<String> HIDDEN_MODULE_IDS = Set.of("ton", "costi", "registro");
     private final FlowPane catalog = new FlowPane(20, 20);
     private final List<VBox> hiddenModuleCards = new ArrayList<>();
     private final Label emptyCatalog = new Label("Nessuna applicazione disponibile.");

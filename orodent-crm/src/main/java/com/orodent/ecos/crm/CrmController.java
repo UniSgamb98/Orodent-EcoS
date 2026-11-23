@@ -50,6 +50,7 @@ final class CrmController implements ModuleSession, ClientiNav {
     private EditorGuard guard;
     private boolean initial, disposed;
     private Runnable currentRoute;
+    private UUID initialClienteId;
     private Window window;
     private final EventHandler<WindowEvent> closing =
             e -> {
@@ -64,6 +65,11 @@ final class CrmController implements ModuleSession, ClientiNav {
             };
 
     CrmController(ModuleContext context) {
+        this(context, null);
+    }
+
+    CrmController(ModuleContext context, UUID initialClienteId) {
+        this.initialClienteId = initialClienteId;
         this.context = context;
         database = new Database(context.connections(), context.operators());
         root.setId("crm-module");
@@ -189,6 +195,12 @@ final class CrmController implements ModuleSession, ClientiNav {
 
     public void showClienti() {
         if (!navigate()) return;
+        if (initialClienteId != null) {
+            UUID requested = initialClienteId;
+            initialClienteId = null;
+            showSchedaCliente(requested);
+            return;
+        }
         ClientiView page = new ClientiView();
         install(
                 page,

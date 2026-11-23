@@ -1,5 +1,7 @@
 package com.orodent.ecos.crm.migration;
 
+import com.orodent.ecos.database.audit.AuditContext;
+
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -295,6 +297,7 @@ public final class LegacyCrmImport {
         c.setAutoCommit(false);
         int executed = 0;
         try {
+            AuditContext.begin(c, null, null, "Importazione CRM2");
             try (var q = c.createStatement()) {
                 // Same catalogue/row order used by the operator editor.
                 q.executeUpdate(

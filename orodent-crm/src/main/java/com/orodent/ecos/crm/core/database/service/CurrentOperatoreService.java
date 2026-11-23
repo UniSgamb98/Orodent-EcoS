@@ -16,6 +16,14 @@ public final class CurrentOperatoreService {
         return session.current().map(operator -> operator.id().equals(id)).orElse(false);
     }
 
+    public UUID currentOperatoreIdOrNull() {
+        return session.current().map(OperatorSession.Operator::id).orElse(null);
+    }
+
+    public String currentUsernameOrNull() {
+        return session.current().map(OperatorSession.Operator::username).orElse(null);
+    }
+
     public UUID currentOperatoreId() {
         return session.current()
                 .orElseThrow(() -> new IllegalStateException("Seleziona l'operatore CRM."))

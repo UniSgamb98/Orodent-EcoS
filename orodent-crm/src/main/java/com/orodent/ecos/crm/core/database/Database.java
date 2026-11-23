@@ -2,6 +2,7 @@ package com.orodent.ecos.crm.core.database;
 
 import com.orodent.ecos.core.ConnectionProvider;
 import com.orodent.ecos.crm.core.database.service.CurrentOperatoreService;
+import com.orodent.ecos.database.audit.AuditContext;
 import com.orodent.ecos.module.OperatorSession;
 
 import java.sql.*;
@@ -56,6 +57,11 @@ public final class Database {
                         c -> {
                             c.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
                             c.setSchema("CRM");
+                            AuditContext.begin(
+                                    c,
+                                    operators.currentOperatoreIdOrNull(),
+                                    operators.currentUsernameOrNull(),
+                                    "CRM");
                             Scope scope = new Scope(c);
                             current.set(scope);
                             try {
