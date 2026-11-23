@@ -291,6 +291,13 @@ public final class ProductionUiProbe {
                         assertTrue(selected.preferred());
                         assertTrue(node("ton-product-spec-composition").isDisabled());
                         screenshot("target/product-shared-production-specifications.png");
+                        assertFalse(button("ton-product-spec-calculation-rules").isDisabled());
+                        button("ton-product-spec-calculation-rules").fire();
+                        assertNotNull(node("ton-cubature-rules-page"));
+                        assertEquals(
+                                "TON › Cubaggio › Regole di cubatura",
+                                ((Label) node("ton-breadcrumb")).getText());
+                        screenshot("target/cubature-rules-from-specifications.png");
                         button("ton-nav-technical").fire();
                         button("ton-tech-models-button").fire();
                         return null;

@@ -26,6 +26,10 @@ public enum TonFeature {
             TonSection.FIRING,
             "Cotture ed esiti",
             "Segui i cicli effettivi: forno, inizio, conclusione, pezzi buoni e scarti."),
+    CUBATURE_RULES(
+            TonSection.CUBING,
+            "Regole di cubatura",
+            "Metodi di calcolo da applicare alle letture del micrometro e della bilancia."),
     PRESSES(
             TonSection.EQUIPMENT,
             "Presse",
@@ -119,6 +123,7 @@ public enum TonFeature {
 
     public boolean available() {
         return this == AVAILABILITY
+                || this == CUBATURE_RULES
                 || this == SUPPLIERS
                 || this == PRESSES
                 || this == MOULDS

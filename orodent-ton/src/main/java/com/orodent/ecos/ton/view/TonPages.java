@@ -112,10 +112,18 @@ final class TonPages {
                                                                       + " dei documenti emessi sarà"
                                                                       + " collegato alle"
                                                                       + " produzioni."
-                                                                : "Area in preparazione. Qui trovi"
-                                                                      + " le funzioni previste; le"
-                                                                      + " operazioni non sono"
-                                                                      + " ancora disponibili.",
+                                                                : section == TonSection.CUBING
+                                                                        ? "Le regole saranno"
+                                                                              + " richiamate dalle"
+                                                                              + " Specifiche di"
+                                                                              + " produzione dei"
+                                                                              + " prodotti."
+                                                                        : "Area in preparazione."
+                                                                              + " Qui trovi le"
+                                                                              + " funzioni previste;"
+                                                                              + " le operazioni non"
+                                                                              + " sono ancora"
+                                                                              + " disponibili.",
                                 "ton-area-status"));
         List<Node> cards =
                 TonFeature.in(section).stream()
@@ -136,8 +144,11 @@ final class TonPages {
                                                 ? "Editor disponibile"
                                                 : section == TonSection.PRODUCTION
                                                         ? "Preparazione disponibile"
-                                                        : "In preparazione",
+                                                        : section == TonSection.CUBING
+                                                                ? "Pagina disponibile"
+                                                                : "In preparazione",
                                 section == TonSection.TECHNICAL
+                                        || section == TonSection.CUBING
                                         || section == TonSection.EQUIPMENT
                                         || section == TonSection.DOCUMENTS
                                         || section == TonSection.PRODUCTION),
@@ -170,6 +181,7 @@ final class TonPages {
                     switch (feature) {
                         case AVAILABILITY -> "Apri disponibilità";
                         case PRODUCTIONS -> "Apri produzioni";
+                        case CUBATURE_RULES -> "Apri regole di cubatura";
                         case PRESSES -> "Apri presse";
                         case MOULDS -> "Apri stampi";
                         case FURNACES -> "Apri forni";

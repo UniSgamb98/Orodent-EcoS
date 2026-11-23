@@ -65,7 +65,8 @@ public final class TonView extends BorderPane {
         sidebar.setId("ton-sidebar"); sidebar.getStyleClass().add("ton-sidebar");
         sidebar.disableProperty().bind(navigationBlocked);
         sidebar.getChildren().addAll(groupLabel("SPAZIO TON"), navigation(TonSection.OVERVIEW), groupLabel("LAVORO"),
-                navigation(TonSection.PRODUCTION), navigation(TonSection.FIRING), groupLabel("PREPARAZIONE"),
+                navigation(TonSection.PRODUCTION), navigation(TonSection.FIRING),
+                navigation(TonSection.CUBING), groupLabel("PREPARAZIONE"),
                 navigation(TonSection.TECHNICAL), navigation(TonSection.EQUIPMENT), groupLabel("CONSULTAZIONE"),
                 navigation(TonSection.TRACEABILITY), navigation(TonSection.DOCUMENTS));
         viewport.setId("ton-page-scroll"); viewport.setFitToWidth(true); viewport.setFitToHeight(true);

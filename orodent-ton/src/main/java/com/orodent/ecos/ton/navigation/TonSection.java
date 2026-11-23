@@ -19,6 +19,11 @@ public enum TonSection {
             "Cotture",
             "Prepara i carichi e segui le cotture, dalla pianificazione all'esito.",
             "M5 2h14v20H5z M8 5v3h8V5z M8 11v7h8v-7z"),
+    CUBING(
+            "cubing",
+            "Cubaggio",
+            "Organizza i metodi di calcolo per elaborare le misurazioni dei dischi.",
+            "M3 7l9-5 9 5v10l-9 5-9-5z M3 7l9 5 9-5 M12 12v10"),
     TECHNICAL(
             "technical",
             "Dati tecnici",

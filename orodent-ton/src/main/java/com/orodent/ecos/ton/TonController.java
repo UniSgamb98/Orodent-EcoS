@@ -17,6 +17,7 @@ import com.orodent.ecos.ton.features.catalog.view.CatalogView;
 import com.orodent.ecos.ton.features.compositions.controller.CompositionsController;
 import com.orodent.ecos.ton.features.compositions.service.CompositionService;
 import com.orodent.ecos.ton.features.compositions.view.CompositionsView;
+import com.orodent.ecos.ton.features.cubing.view.CubatureRulesView;
 import com.orodent.ecos.ton.features.diskmodels.controller.DiskModelsController;
 import com.orodent.ecos.ton.features.diskmodels.service.DiskModelService;
 import com.orodent.ecos.ton.features.diskmodels.view.DiskModelsView;
@@ -94,7 +95,7 @@ final class TonController {
     }
 
     private void showSection(TonSection next) {
-        if ((active == null && section == next) || !canLeave()) return;
+        if ((activeFeature == null && section == next) || !canLeave()) return;
         closePage();
         section = next;
         view.showSection(next);
@@ -104,6 +105,11 @@ final class TonController {
         if (activeFeature == feature || !canLeave()) return;
         closePage();
         switch (feature) {
+            case CUBATURE_RULES -> {
+                activeFeature = feature;
+                section = feature.section();
+                view.showFeature(new CubatureRulesView(), feature);
+            }
             case PRESSES, MOULDS, FURNACES -> {
                 Kind kind =
                         switch (feature) {
@@ -242,6 +248,7 @@ final class TonController {
         var controller =
                 new CatalogController(
                         route.kind(), page, catalogues, specifications, this::openCatalogue);
+        controller.onCalculationRules(() -> showFeature(TonFeature.CUBATURE_RULES));
         install(route.kind().feature(), page, controller, () -> controller.start(route));
     }
 

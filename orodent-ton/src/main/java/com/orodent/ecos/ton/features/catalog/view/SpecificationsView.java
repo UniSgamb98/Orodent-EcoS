@@ -28,12 +28,13 @@ public final class SpecificationsView extends VBox {
             previous = CatalogUi.button("←", "ton-product-spec-previous", false),
             next = CatalogUi.button("→", "ton-product-spec-next", false),
             refresh = CatalogUi.button("Aggiorna versioni", "ton-product-spec-refresh", false);
+    private final Button calculationRules =
+            CatalogUi.button("Regole di cubatura →", "ton-product-spec-calculation-rules", false);
     private final Label configurationNotice =
             CatalogUi.feedback("ton-product-spec-configuration-notice");
     private final Label state = CatalogUi.hint(""),
             result = new Label(),
             feedback = CatalogUi.feedback("ton-product-spec-feedback");
-    private final VBox fields;
     private boolean updating, available;
 
     public SpecificationsView() {
@@ -49,7 +50,11 @@ public final class SpecificationsView extends VBox {
         notes.setId("ton-product-spec-notes");
         notes.setWrapText(true);
         notes.setPrefRowCount(3);
-        fields =
+        HBox calculationRow = new HBox(10, calculation, calculationRules);
+        calculationRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        HBox.setHgrow(calculation, Priority.ALWAYS);
+        calculation.setMinWidth(0);
+        var fields =
                 new VBox(
                         12,
                         CatalogUi.fields(
@@ -58,7 +63,7 @@ public final class SpecificationsView extends VBox {
                                         new VBox(5, compositionQuery, composition)),
                                 CatalogUi.field(
                                         "Modello approvato", new VBox(5, modelQuery, model))),
-                        CatalogUi.field("Riferimento metodo di calcolo *", calculation),
+                        CatalogUi.field("Riferimento metodo di calcolo *", calculationRow),
                         CatalogUi.field("Note della versione", notes));
         previous.setAccessibleText("Versioni più recenti");
         next.setAccessibleText("Versioni precedenti");
@@ -91,7 +96,7 @@ public final class SpecificationsView extends VBox {
             modelQuery.clear();
             calculation.clear();
             notes.clear();
-            fields.setDisable(true);
+            disableFields(true);
             for (var b : List.of(save, approve, copy, prefer, retire, previous, next))
                 b.setDisable(true);
             refresh.setDisable(!saved);
@@ -181,7 +186,7 @@ public final class SpecificationsView extends VBox {
                 notes.setText(selected.notes() == null ? "" : selected.notes());
             }
             boolean locked = selected != null && selected.frozen();
-            fields.setDisable(locked || !available);
+            disableFields(locked || !available);
             CatalogUi.visible(save, !locked);
             CatalogUi.visible(approve, !locked);
             save.setDisable(!available);
@@ -251,11 +256,20 @@ public final class SpecificationsView extends VBox {
     }
 
     public void loading() {
-        fields.setDisable(true);
+        disableFields(true);
         versions.setDisable(true);
         for (var b : List.of(save, approve, copy, prefer, retire, previous, next))
             b.setDisable(true);
         state.setText("Caricamento versioni…");
+    }
+
+    private void disableFields(boolean disabled) {
+        for (var input : List.of(compositionQuery, composition, modelQuery, model, calculation, notes))
+            input.setDisable(disabled);
+    }
+
+    public Button calculationRules() {
+        return calculationRules;
     }
 
     public boolean updating() {
