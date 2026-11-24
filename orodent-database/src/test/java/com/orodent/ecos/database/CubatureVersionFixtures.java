@@ -5,6 +5,14 @@ import java.sql.*;
 final class CubatureVersionFixtures {
     static void beforeV27(Connection c) throws SQLException {
         try (var q = c.createStatement()) {
+            q.executeUpdate("DROP TABLE TON.CARICO_DISCHI");
+            q.executeUpdate("DROP TABLE TON.DISCHI_PRODOTTI");
+            q.executeUpdate("DROP TABLE TON.ESECUZIONI_PIANO");
+            for (String column :
+                    new String[] {"caricato_il", "forno_codice", "forno_nome", "forno_revisione"})
+                q.executeUpdate(
+                        "ALTER TABLE TON.CICLI_COTTURA DROP COLUMN " + column + " RESTRICT");
+            q.executeUpdate("DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version=29");
             q.executeUpdate("DROP TABLE TON.MARCATURA_VERSIONI");
             q.executeUpdate("DROP TABLE TON.MODELLI_MARCATURA");
             q.executeUpdate("DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version=28");

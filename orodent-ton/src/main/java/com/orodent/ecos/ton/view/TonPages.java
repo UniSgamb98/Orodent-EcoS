@@ -106,24 +106,38 @@ final class TonPages {
                                                               + " bozze sono disponibili. Scarti ed"
                                                               + " esecuzione fisica saranno"
                                                               + " collegati successivamente."
-                                                        : section == TonSection.DOCUMENTS
-                                                                ? "L’editor dei modelli è"
-                                                                      + " disponibile. L’archivio"
-                                                                      + " dei documenti emessi sarà"
-                                                                      + " collegato alle"
-                                                                      + " produzioni."
-                                                                : section == TonSection.CUBING
-                                                                        ? "Le regole saranno"
-                                                                              + " richiamate dalle"
-                                                                              + " Specifiche di"
-                                                                              + " produzione dei"
-                                                                              + " prodotti."
-                                                                        : "Area in preparazione."
-                                                                              + " Qui trovi le"
-                                                                              + " funzioni previste;"
-                                                                              + " le operazioni non"
-                                                                              + " sono ancora"
-                                                                              + " disponibili.",
+                                                        : section == TonSection.FIRING
+                                                                ? "I dischi prodotti e i carichi"
+                                                                      + " sono disponibili."
+                                                                      + " Programmi ed esiti di"
+                                                                      + " cottura saranno collegati"
+                                                                      + " successivamente."
+                                                                : section == TonSection.DOCUMENTS
+                                                                        ? "L’editor dei modelli è"
+                                                                              + " disponibile."
+                                                                              + " L’archivio dei"
+                                                                              + " documenti emessi"
+                                                                              + " sarà collegato"
+                                                                              + " alle produzioni."
+                                                                        : section
+                                                                                        == TonSection
+                                                                                                .CUBING
+                                                                                ? "Le regole"
+                                                                                      + " saranno"
+                                                                                      + " richiamate"
+                                                                                      + " dalle"
+                                                                                      + " Specifiche"
+                                                                                      + " di produzione"
+                                                                                      + " dei prodotti."
+                                                                                : "Area in"
+                                                                                      + " preparazione."
+                                                                                      + " Qui trovi"
+                                                                                      + " le funzioni"
+                                                                                      + " previste;"
+                                                                                      + " le operazioni"
+                                                                                      + " non sono"
+                                                                                      + " ancora"
+                                                                                      + " disponibili.",
                                 "ton-area-status"));
         List<Node> cards =
                 TonFeature.in(section).stream()
@@ -144,14 +158,17 @@ final class TonPages {
                                                 ? "Editor disponibile"
                                                 : section == TonSection.PRODUCTION
                                                         ? "Preparazione disponibile"
-                                                        : section == TonSection.CUBING
-                                                                ? "Pagina disponibile"
-                                                                : "In preparazione",
+                                                        : section == TonSection.FIRING
+                                                                ? "Carichi disponibili"
+                                                                : section == TonSection.CUBING
+                                                                        ? "Pagina disponibile"
+                                                                        : "In preparazione",
                                 section == TonSection.TECHNICAL
                                         || section == TonSection.CUBING
                                         || section == TonSection.EQUIPMENT
                                         || section == TonSection.DOCUMENTS
-                                        || section == TonSection.PRODUCTION),
+                                        || section == TonSection.PRODUCTION
+                                        || section == TonSection.FIRING),
                         label(section.title(), "ton-card-title"),
                         label(section.description(), "ton-description"));
         Region space = new Region();
@@ -181,6 +198,7 @@ final class TonPages {
                     switch (feature) {
                         case AVAILABILITY -> "Apri disponibilità";
                         case PRODUCTIONS -> "Apri produzioni";
+                        case PLANNING -> "Apri dischi da caricare";
                         case CUBATURE_RULES -> "Apri regole di cubatura";
                         case PRESSES -> "Apri presse";
                         case MOULDS -> "Apri stampi";

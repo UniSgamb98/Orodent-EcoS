@@ -3,6 +3,8 @@ package com.orodent.ecos.ton.features.production.service;
 import static com.orodent.ecos.ton.features.production.model.Production.*;
 
 import com.orodent.ecos.core.ConnectionProvider;
+import com.orodent.ecos.ton.features.production.model.ProductionExecution;
+import com.orodent.ecos.ton.features.production.repository.ProductionExecutionRepository;
 import com.orodent.ecos.ton.features.production.repository.ProductionRepository;
 
 import java.math.BigDecimal;
@@ -43,6 +45,23 @@ public final class ProductionService {
 
     public CompletableFuture<Saved> load(long id) {
         return async(() -> db.withConnection(c -> new ProductionRepository(c).load(id)));
+    }
+
+    public CompletableFuture<ProductionExecution.Workspace> execution(long planId) {
+        return async(
+                () ->
+                        db.withConnection(
+                                c -> new ProductionExecutionRepository(c).workspace(planId)));
+    }
+
+    public CompletableFuture<ProductionExecution.Receipt> register(
+            ProductionExecution.Workspace expected, ProductionExecution.Request request) {
+        return async(
+                () ->
+                        db.withTransaction(
+                                c ->
+                                        new ProductionExecutionRepository(c)
+                                                .register(expected, request)));
     }
 
     public CompletableFuture<Saved> save(

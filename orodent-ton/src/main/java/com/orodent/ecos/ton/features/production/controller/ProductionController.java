@@ -3,6 +3,7 @@ package com.orodent.ecos.ton.features.production.controller;
 import static com.orodent.ecos.ton.features.production.model.Production.*;
 
 import com.orodent.ecos.ton.features.production.service.*;
+import com.orodent.ecos.ton.features.production.view.ProductionExecutionDialog;
 import com.orodent.ecos.ton.features.production.view.ProductionView;
 import com.orodent.ecos.ton.navigation.FeatureController;
 
@@ -111,6 +112,7 @@ public final class ProductionController implements FeatureController {
         view.save.setOnAction(e -> save(false));
         view.prepare.setOnAction(e -> save(true));
         view.duplicate.setOnAction(e -> duplicate());
+        view.register.setOnAction(e -> registerDiscs());
         view.tabs
                 .getSelectionModel()
                 .selectedIndexProperty()
@@ -576,6 +578,68 @@ public final class ProductionController implements FeatureController {
                                         }));
     }
 
+    private void registerDiscs() {
+        if (saved == null || saved.state() != State.PREPARATA || saving.get()) return;
+        view.register.setDisable(true);
+        read(
+                "execution",
+                service.execution(saved.id()),
+                execution -> {
+                    view.register.setDisable(false);
+                    if (execution.remaining() == 0) {
+                        view.feedback(
+                                "Tutti i dischi di questa produzione sono già stati registrati.",
+                                false);
+                        return;
+                    }
+                    var dialog =
+                            new ProductionExecutionDialog(
+                                    view.getScene() == null ? null : view.getScene().getWindow(),
+                                    execution);
+                    dialog.showAndWait()
+                            .ifPresent(
+                                    request -> {
+                                        saving.set(true);
+                                        controls();
+                                        service.register(execution, request)
+                                                .whenComplete(
+                                                        (receipt, error) ->
+                                                                Platform.runLater(
+                                                                        () -> {
+                                                                            saving.set(false);
+                                                                            if (disposed) return;
+                                                                            if (error != null)
+                                                                                view.feedback(
+                                                                                        message(
+                                                                                                error));
+                                                                            else {
+                                                                                saved =
+                                                                                        receipt
+                                                                                                .prepared();
+                                                                                view.state(saved);
+                                                                                view.feedback(
+                                                                                        receipt
+                                                                                                        .count()
+                                                                                                + " dischi"
+                                                                                                + " prodotti"
+                                                                                                + " registrati."
+                                                                                                + " Sono"
+                                                                                                + " disponibili"
+                                                                                                + " in Cotture"
+                                                                                                + " → Pianificazione"
+                                                                                                + " e carichi.",
+                                                                                        false);
+                                                                            }
+                                                                            controls();
+                                                                        }));
+                                    });
+                },
+                error -> {
+                    view.register.setDisable(false);
+                    view.feedback(error);
+                });
+    }
+
     private void duplicate() {
         if (saved == null || saving.get()) return;
         var quantities = saved.plan().quantities();
@@ -748,6 +812,7 @@ public final class ProductionController implements FeatureController {
                         view.save,
                         view.prepare,
                         view.duplicate,
+                        view.register,
                         view.print,
                         view.previewPrint,
                         view.listing.create(),

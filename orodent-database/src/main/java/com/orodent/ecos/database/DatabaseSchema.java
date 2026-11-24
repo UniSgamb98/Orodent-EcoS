@@ -150,6 +150,11 @@ public final class DatabaseSchema {
                     28,
                     "Versioned disk marking templates",
                     "/database/migrations/V28__disk_marking_templates.sql");
+    private static final SchemaMigration PRODUCED_DISCS =
+            new SchemaMigration(
+                    29,
+                    "Produced discs and traceable furnace loads",
+                    "/database/migrations/V29__produced_discs_and_furnace_loads.sql");
     private static final List<SchemaMigration> MIGRATIONS =
             List.of(
                     BASELINE,
@@ -179,7 +184,8 @@ public final class DatabaseSchema {
                     AVAILABILITY_WAREHOUSES,
                     CUBATURE_RULES,
                     CUBATURE_FORMULAS,
-                    DISK_MARKING);
+                    DISK_MARKING,
+                    PRODUCED_DISCS);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS =
             List.of(

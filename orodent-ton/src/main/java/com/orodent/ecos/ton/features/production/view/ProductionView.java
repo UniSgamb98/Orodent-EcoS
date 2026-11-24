@@ -46,6 +46,7 @@ public final class ProductionView extends BorderPane {
             save = button("Salva bozza", "save", false),
             prepare = button("Prepara produzione", "prepare", true),
             duplicate = button("Duplica", "duplicate", false),
+            register = button("Registra dischi prodotti", "register", true),
             print = button("Stampa foglio operativo", "print", true),
             previewPrint = button("Stampa anteprima", "preview-print", false);
     public final ComboBox<LineChoice> line = new ComboBox<>();
@@ -385,7 +386,7 @@ public final class ProductionView extends BorderPane {
                         (o, a, b) -> leftColumn.setPrefWidth(b.doubleValue() < 1150 ? 295 : 340));
         back.getStyleClass().add("production-link");
         refresh.getStyleClass().add("production-refresh");
-        var toolbar = new HBox(12, back, state, spacer(), refresh);
+        var toolbar = new HBox(12, back, state, spacer(), register, refresh);
         toolbar.setAlignment(Pos.CENTER_LEFT);
         editor.setMinSize(0, 0);
         editor.getStyleClass().add("production-editor");
@@ -707,6 +708,7 @@ public final class ProductionView extends BorderPane {
         visible(save, !frozen);
         visible(prepare, !frozen);
         visible(duplicate, frozen);
+        visible(register, frozen);
         visible(print, frozen);
         previewPrint.setText(frozen ? "Stampa foglio operativo" : "Stampa anteprima");
         subpage.set(saved == null ? "Nuova produzione" : saved.number());

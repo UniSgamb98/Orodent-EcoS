@@ -30,6 +30,9 @@ import com.orodent.ecos.ton.features.equipment.controller.EquipmentController;
 import com.orodent.ecos.ton.features.equipment.model.Equipment.Kind;
 import com.orodent.ecos.ton.features.equipment.service.EquipmentService;
 import com.orodent.ecos.ton.features.equipment.view.EquipmentView;
+import com.orodent.ecos.ton.features.firing.controller.FiringController;
+import com.orodent.ecos.ton.features.firing.service.FiringService;
+import com.orodent.ecos.ton.features.firing.view.FiringView;
 import com.orodent.ecos.ton.features.marking.controller.MarkingTemplatesController;
 import com.orodent.ecos.ton.features.marking.service.MarkingTemplateService;
 import com.orodent.ecos.ton.features.marking.view.MarkingTemplatesView;
@@ -59,6 +62,7 @@ final class TonController {
     private final CompositionService compositions;
     private final DocumentTemplateService documents;
     private final ProductionService productions;
+    private final FiringService firing;
     private final EquipmentService equipment;
     private final SupplierService suppliers;
     private final CubatureRuleService cubatureRules;
@@ -80,6 +84,7 @@ final class TonController {
         equipment = new EquipmentService(context.connections(), workers);
         documents = new DocumentTemplateService(context.connections(), workers);
         productions = new ProductionService(context.connections(), workers);
+        firing = new FiringService(context.connections(), workers);
         catalogues = new CatalogService(context.connections(), context.workers());
         bulkCatalogues = new BulkCatalogService(context.connections(), context.workers());
         specifications = new SpecificationService(context.connections(), context.workers());
@@ -142,6 +147,12 @@ final class TonController {
             }
             case AVAILABILITY -> installAvailability();
             case PRODUCTIONS -> installProductions(null);
+            case PLANNING -> {
+                var page = new FiringView();
+                var controller =
+                        new FiringController(page, firing, () -> showSection(TonSection.FIRING));
+                install(feature, page, controller, controller::start);
+            }
             case PRODUCTS -> {
                 installCatalogue(Navigation.list(CatalogKind.PRODUCTS));
             }

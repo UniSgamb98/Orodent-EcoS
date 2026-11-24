@@ -21,7 +21,8 @@ public enum TonFeature {
     PLANNING(
             TonSection.FIRING,
             "Pianificazione e carichi",
-            "Prepara la presinterizzazione e assegna ai forni i pezzi da lavorare."),
+            "Consulta i dischi prodotti ancora da caricare e assegna forno e lotto ai pezzi"
+                + " selezionati."),
     FIRINGS(
             TonSection.FIRING,
             "Cotture ed esiti",
@@ -141,7 +142,8 @@ public enum TonFeature {
                 || this == MODELS
                 || this == COMPOSITIONS
                 || this == DOCUMENT_TEMPLATES
-                || this == DISK_MARKING;
+                || this == DISK_MARKING
+                || this == PLANNING;
     }
 
     public static List<TonFeature> in(TonSection section) {
