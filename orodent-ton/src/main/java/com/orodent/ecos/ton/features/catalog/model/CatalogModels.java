@@ -355,7 +355,43 @@ public final class CatalogModels {
             LocalDateTime approvedAt,
             Integer lineRevision,
             Integer productRevision,
-            boolean preferred) {
+            boolean preferred,
+            Long calculationVersionId) {
+        public Specification(
+                long id,
+                long productId,
+                int number,
+                int revision,
+                String state,
+                long compositionId,
+                String compositionLabel,
+                long modelId,
+                String modelLabel,
+                String calculation,
+                String notes,
+                LocalDateTime approvedAt,
+                Integer lineRevision,
+                Integer productRevision,
+                boolean preferred) {
+            this(
+                    id,
+                    productId,
+                    number,
+                    revision,
+                    state,
+                    compositionId,
+                    compositionLabel,
+                    modelId,
+                    modelLabel,
+                    calculation,
+                    notes,
+                    approvedAt,
+                    lineRevision,
+                    productRevision,
+                    preferred,
+                    null);
+        }
+
         public boolean frozen() {
             return !"BOZZA".equals(state);
         }
@@ -379,7 +415,16 @@ public final class CatalogModels {
     }
 
     public record SpecificationDraft(
-            long compositionId, long modelId, String calculation, String notes) {
+            long compositionId,
+            long modelId,
+            String calculation,
+            String notes,
+            Long calculationVersionId) {
+        public SpecificationDraft(
+                long compositionId, long modelId, String calculation, String notes) {
+            this(compositionId, modelId, calculation, notes, null);
+        }
+
         public SpecificationDraft {
             if (compositionId <= 0 || modelId <= 0)
                 throw invalid("Seleziona composizione e modello.");
@@ -402,7 +447,7 @@ public final class CatalogModels {
             int limit,
             List<TechnicalChoice> compositions,
             List<TechnicalChoice> models,
-            List<com.orodent.ecos.database.CubatureRuleCatalogue.Entry> calculationRules) {
+            List<com.orodent.ecos.database.CubatureRuleVersions.Version> calculationRules) {
         public SpecificationPage {
             rows = List.copyOf(rows);
             compositions = List.copyOf(compositions);

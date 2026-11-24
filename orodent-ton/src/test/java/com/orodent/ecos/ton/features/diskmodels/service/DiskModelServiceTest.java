@@ -39,11 +39,7 @@ class DiskModelServiceTest {
         new DatabaseSchema(db).initialize();
         db.withTransaction(
                 c -> {
-                    com.orodent.ecos.database.CubatureRuleCatalogue.save(
-                            c,
-                            null,
-                            new com.orodent.ecos.database.CubatureRuleCatalogue.Draft(
-                                    "test", "test", "", true));
+                    com.orodent.ecos.ton.CubatureTestRules.register(c, "test");
                     return null;
                 });
         db.withTransaction(

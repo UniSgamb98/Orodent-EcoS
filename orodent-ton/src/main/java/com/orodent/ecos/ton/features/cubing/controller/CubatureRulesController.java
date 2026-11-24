@@ -1,6 +1,7 @@
 package com.orodent.ecos.ton.features.cubing.controller;
 
 import com.orodent.ecos.database.CubatureRuleCatalogue.*;
+import com.orodent.ecos.database.CubatureRuleVersions.*;
 import com.orodent.ecos.ton.features.cubing.service.CubatureRuleService;
 import com.orodent.ecos.ton.features.cubing.view.CubatureRulesView;
 import com.orodent.ecos.ton.navigation.FeatureController;
@@ -25,6 +26,7 @@ public final class CubatureRulesController implements FeatureController {
     private CompletableFuture<?> reading;
     private long request;
     private Entry original;
+    private Version selected;
     private List<String> baseline = List.of();
     private volatile boolean disposed;
 
@@ -43,21 +45,37 @@ public final class CubatureRulesController implements FeatureController {
                             if (saving.get()) return;
                             cancelRead();
                             original = null;
-                            view.showEntry(null);
+                            selected = null;
+                            view.showDetail(null);
                             baseline = view.fingerprint();
                         });
         view.listing.onOpen(
                 () -> {
                     var selected = view.listing.table().getSelectionModel().getSelectedItem();
-                    if (selected != null) open(selected.id());
+                    if (selected != null) open(selected.id(), null);
                 });
         view.back.setOnAction(e -> back());
         view.cancel.setOnAction(e -> back());
         view.reload.setOnAction(
                 e -> {
-                    if (original != null && canLeave()) open(original.id());
+                    if (original != null && canLeave())
+                        open(original.id(), selected == null ? null : selected.id());
                 });
-        view.save.setOnAction(e -> save());
+        view.save.setOnAction(e -> save(false));
+        view.approve.setOnAction(e -> save(true));
+        view.copy.setOnAction(e -> copy());
+        view.versions
+                .refresh()
+                .setOnAction(
+                        e -> {
+                            if (original != null && canLeave())
+                                open(original.id(), selected == null ? null : selected.id());
+                        });
+        view.versions.onOpen(
+                () -> {
+                    var version = view.versions.table().getSelectionModel().getSelectedItem();
+                    if (version != null && canLeave()) open(version.ruleId(), version.id());
+                });
     }
 
     public void start() {
@@ -89,13 +107,13 @@ public final class CubatureRulesController implements FeatureController {
                                                 }));
     }
 
-    private void open(long id) {
+    private void open(long id, Long version) {
         if (disposed || saving.get()) return;
         cancelRead();
         long token = request;
         view.busy(true);
         reading =
-                service.load(id)
+                service.load(id, version)
                         .whenComplete(
                                 (row, error) ->
                                         Platform.runLater(
@@ -108,13 +126,14 @@ public final class CubatureRulesController implements FeatureController {
                                                         else view.listing.error(message(error));
                                                         return;
                                                     }
-                                                    original = row;
-                                                    view.showEntry(row);
+                                                    original = row.rule();
+                                                    selected = row.selected();
+                                                    view.showDetail(row);
                                                     baseline = view.fingerprint();
                                                 }));
     }
 
-    private void save() {
+    private void save(boolean approve) {
         if (disposed || saving.get() || !view.editing()) return;
         Draft draft;
         try {
@@ -126,7 +145,7 @@ public final class CubatureRulesController implements FeatureController {
         cancelRead();
         saving.set(true);
         view.busy(true);
-        service.save(original, draft)
+        service.save(original, selected, draft, view.formulas.source.getText(), approve)
                 .whenComplete(
                         (row, error) ->
                                 Platform.runLater(
@@ -138,10 +157,34 @@ public final class CubatureRulesController implements FeatureController {
                                                 view.feedback(message(error), true);
                                                 return;
                                             }
-                                            original = row;
-                                            view.showList();
-                                            baseline = List.of();
-                                            loadList();
+                                            original = row.rule();
+                                            selected = row.selected();
+                                            view.showDetail(row);
+                                            baseline = view.fingerprint();
+                                        }));
+    }
+
+    private void copy() {
+        if (original == null || selected == null || !canLeave()) return;
+        cancelRead();
+        saving.set(true);
+        view.busy(true);
+        service.copy(original, selected)
+                .whenComplete(
+                        (detail, error) ->
+                                Platform.runLater(
+                                        () -> {
+                                            saving.set(false);
+                                            if (disposed) return;
+                                            view.busy(false);
+                                            if (error != null) {
+                                                view.feedback(message(error), true);
+                                                return;
+                                            }
+                                            original = detail.rule();
+                                            selected = detail.selected();
+                                            view.showDetail(detail);
+                                            baseline = view.fingerprint();
                                         }));
     }
 
@@ -193,7 +236,9 @@ public final class CubatureRulesController implements FeatureController {
         view.listing.refresh().setOnAction(null);
         view.archived.setOnAction(null);
         view.listing.create().setOnAction(null);
-        for (var b : List.of(view.back, view.reload, view.cancel, view.save)) b.setOnAction(null);
+        for (var b :
+                List.of(view.back, view.reload, view.cancel, view.save, view.approve, view.copy))
+            b.setOnAction(null);
         view.dispose();
     }
 }

@@ -297,7 +297,7 @@ public final class ProductionUiProbe {
                         assertTrue(rule.isDisabled());
                         assertEquals(
                                 "COSTI-NOMINALE-1",
-                                ((com.orodent.ecos.database.CubatureRuleCatalogue.Entry)
+                                ((com.orodent.ecos.database.CubatureRuleVersions.Version)
                                                 rule.getValue())
                                         .code());
                         button("ton-nav-cubing").fire();
@@ -318,8 +318,87 @@ public final class ProductionUiProbe {
                         ((TextField) node("ton-cubature-rules-name")).setText("Regola di prova");
                         ((TextArea) node("ton-cubature-rules-description"))
                                 .setText("Descrizione del metodo");
+                        ((TabPane) node("ton-cubature-rules-tabs")).getSelectionModel().select(1);
+                        ((TextArea) node("ton-cubature-rules-formulas"))
+                                .setText("D + Hmedia = a1\na1 * P = risultato");
+                        button("ton-cubature-rules-test").fire();
+                        assertEquals(
+                                2,
+                                ((TableView<?>) node("ton-cubature-rules-test-results"))
+                                        .getItems()
+                                        .size());
                         screenshot("target/cubature-rule-editor.png");
                         button("ton-cubature-rules-save").fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-cubature-rules-versions-table") instanceof TableView<?> t
+                                    && t.getItems().size() == 1
+                                    && !node("ton-cubature-rules-editor").isDisabled());
+            fx(
+                    () -> {
+                        button("ton-cubature-rules-approve").fire();
+                        return null;
+                    });
+            await(() -> !((TextArea) node("ton-cubature-rules-formulas")).isEditable());
+            fx(
+                    () -> {
+                        button("ton-cubature-rules-copy").fire();
+                        return null;
+                    });
+            await(() -> ((TextArea) node("ton-cubature-rules-formulas")).isEditable());
+            fx(
+                    () -> {
+                        ((TextArea) node("ton-cubature-rules-formulas"))
+                                .setText("D * Hmedia = area\narea * P = risultato");
+                        button("ton-cubature-rules-approve").fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            !((TextArea) node("ton-cubature-rules-formulas")).isEditable()
+                                    && ((TableView<?>) node("ton-cubature-rules-versions-table"))
+                                                    .getItems()
+                                                    .size()
+                                            == 4);
+            fx(
+                    () -> {
+                        ((TabPane) node("ton-cubature-rules-tabs")).getSelectionModel().select(2);
+                        screenshot("target/cubature-rule-versions.png");
+                        var table =
+                                (TableView<com.orodent.ecos.database.CubatureRuleVersions.Version>)
+                                        node("ton-cubature-rules-versions-table");
+                        var old =
+                                table.getItems().stream()
+                                        .filter(
+                                                v ->
+                                                        v.number() == 1
+                                                                && v.state().equals("APPROVATA"))
+                                        .findFirst()
+                                        .orElseThrow();
+                        table.getSelectionModel().select(old);
+                        table.fireEvent(
+                                new KeyEvent(
+                                        KeyEvent.KEY_PRESSED,
+                                        "",
+                                        "",
+                                        KeyCode.ENTER,
+                                        false,
+                                        false,
+                                        false,
+                                        false));
+                        return null;
+                    });
+            await(
+                    () ->
+                            ((TextArea) node("ton-cubature-rules-formulas"))
+                                    .getText()
+                                    .startsWith("D + Hmedia"));
+            fx(
+                    () -> {
+                        assertFalse(((TextArea) node("ton-cubature-rules-formulas")).isEditable());
+                        button("ton-cubature-rules-back").fire();
                         return null;
                     });
             await(
@@ -365,8 +444,8 @@ public final class ProductionUiProbe {
                                             .anyMatch(
                                                     r ->
                                                             ((com.orodent.ecos.database
-                                                                                    .CubatureRuleCatalogue
-                                                                                    .Entry)
+                                                                                    .CubatureRuleVersions
+                                                                                    .Version)
                                                                             r)
                                                                     .code()
                                                                     .equals("CUBO-UI")));

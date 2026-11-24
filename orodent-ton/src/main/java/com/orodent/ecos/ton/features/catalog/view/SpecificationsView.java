@@ -1,6 +1,6 @@
 package com.orodent.ecos.ton.features.catalog.view;
 
-import com.orodent.ecos.database.CubatureRuleCatalogue.Entry;
+import com.orodent.ecos.database.CubatureRuleVersions.Version;
 import com.orodent.ecos.ton.features.catalog.model.CatalogModels.*;
 
 import javafx.scene.control.*;
@@ -12,7 +12,7 @@ public final class SpecificationsView extends VBox {
     private final ComboBox<Specification> versions = new ComboBox<>();
     private final ComboBox<TechnicalChoice> composition = new ComboBox<>(),
             model = new ComboBox<>();
-    private final ComboBox<Entry> calculation = new ComboBox<>();
+    private final ComboBox<Version> calculation = new ComboBox<>();
     private final TextField
             compositionQuery =
                     CatalogUi.field("ton-product-spec-composition-search", "Numero versione"),
@@ -152,13 +152,13 @@ public final class SpecificationsView extends VBox {
         try {
             replace(composition, page.compositions());
             replace(model, page.models());
-            Entry selectedRule = calculation.getValue();
+            Version selectedRule = calculation.getValue();
             calculation.getItems().setAll(page.calculationRules());
             calculation.setValue(
                     selectedRule == null
                             ? null
                             : calculation.getItems().stream()
-                                    .filter(r -> r.code().equals(selectedRule.code()))
+                                    .filter(r -> r.id() == selectedRule.id())
                                     .findFirst()
                                     .orElse(null));
         } finally {
@@ -189,7 +189,11 @@ public final class SpecificationsView extends VBox {
                 select(model, selected.modelId(), selected.modelLabel());
                 calculation.setValue(
                         calculation.getItems().stream()
-                                .filter(r -> r.code().equals(selected.calculation()))
+                                .filter(
+                                        r ->
+                                                selected.calculationVersionId() != null
+                                                        ? r.id() == selected.calculationVersionId()
+                                                        : r.code().equals(selected.calculation()))
                                 .findFirst()
                                 .orElse(null));
                 notes.setText(selected.notes() == null ? "" : selected.notes());
@@ -242,14 +246,15 @@ public final class SpecificationsView extends VBox {
                 composition.getValue() == null ? 0 : composition.getValue().id(),
                 model.getValue() == null ? 0 : model.getValue().id(),
                 calculation.getValue().code(),
-                notes.getText());
+                notes.getText(),
+                calculation.getValue().id());
     }
 
     public List<String> fingerprint() {
         return List.of(
                 composition.getValue() == null ? "" : "" + composition.getValue().id(),
                 model.getValue() == null ? "" : "" + model.getValue().id(),
-                calculation.getValue() == null ? "" : calculation.getValue().code(),
+                calculation.getValue() == null ? "" : "" + calculation.getValue().id(),
                 notes.getText());
     }
 

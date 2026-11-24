@@ -55,7 +55,8 @@ public final class SpecificationService {
                                 c -> {
                                     Product product = lock(c, expected);
                                     var repo = new SpecificationRepository(c);
-                                    repo.validateTechnical(product, draft, approve);
+                                    var resolved = repo.resolveCalculation(draft);
+                                    repo.validateTechnical(product, resolved, approve);
                                     Line line =
                                             (Line)
                                                     new CatalogRepository(c)
@@ -67,7 +68,7 @@ public final class SpecificationService {
                                     history.verifyCurrent(line);
                                     Specification current =
                                             version == null
-                                                    ? repo.load(repo.insert(product, draft))
+                                                    ? repo.load(repo.insert(product, resolved))
                                                     : repo.load(version.id());
                                     if (current.productId() != product.id())
                                         throw invalid(
@@ -75,7 +76,7 @@ public final class SpecificationService {
                                                         + " selezionato.");
                                     if (version != null && current.revision() != version.revision())
                                         throw new Conflict();
-                                    repo.update(current, draft, approve, line, product);
+                                    repo.update(current, resolved, approve, line, product);
                                     if (approve
                                             && product.defaultSpecification() == null
                                             && !product.specificationConflict()) {
@@ -116,7 +117,8 @@ public final class SpecificationService {
                                                     current.compositionId(),
                                                     current.modelId(),
                                                     current.calculation(),
-                                                    current.notes());
+                                                    current.notes(),
+                                                    current.calculationVersionId());
                                     repo.insert(product, draft);
                                     return CatalogService.detail(
                                             c,
@@ -155,7 +157,8 @@ public final class SpecificationService {
                                                     current.compositionId(),
                                                     current.modelId(),
                                                     current.calculation(),
-                                                    current.notes()),
+                                                    current.notes(),
+                                                    current.calculationVersionId()),
                                             true);
                                     if (!Objects.equals(
                                             product.defaultSpecification(), current.id())) {

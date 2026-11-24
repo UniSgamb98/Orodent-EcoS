@@ -41,31 +41,11 @@ class CatalogServiceTest {
         new DatabaseSchema(db).initialize();
         db.withTransaction(
                 c -> {
-                    com.orodent.ecos.database.CubatureRuleCatalogue.save(
-                            c,
-                            null,
-                            new com.orodent.ecos.database.CubatureRuleCatalogue.Draft(
-                                    "legacy", "legacy", "", true));
-                    com.orodent.ecos.database.CubatureRuleCatalogue.save(
-                            c,
-                            null,
-                            new com.orodent.ecos.database.CubatureRuleCatalogue.Draft(
-                                    "dosi-v1", "dosi-v1", "", true));
-                    com.orodent.ecos.database.CubatureRuleCatalogue.save(
-                            c,
-                            null,
-                            new com.orodent.ecos.database.CubatureRuleCatalogue.Draft(
-                                    "other", "other", "", true));
-                    com.orodent.ecos.database.CubatureRuleCatalogue.save(
-                            c,
-                            null,
-                            new com.orodent.ecos.database.CubatureRuleCatalogue.Draft(
-                                    "v1", "v1", "", true));
-                    com.orodent.ecos.database.CubatureRuleCatalogue.save(
-                            c,
-                            null,
-                            new com.orodent.ecos.database.CubatureRuleCatalogue.Draft(
-                                    "v2", "v2", "", true));
+                    com.orodent.ecos.ton.CubatureTestRules.register(c, "legacy");
+                    com.orodent.ecos.ton.CubatureTestRules.register(c, "dosi-v1");
+                    com.orodent.ecos.ton.CubatureTestRules.register(c, "other");
+                    com.orodent.ecos.ton.CubatureTestRules.register(c, "v1");
+                    com.orodent.ecos.ton.CubatureTestRules.register(c, "v2");
                     return null;
                 });
         workers = Executors.newFixedThreadPool(2, r -> new Thread(r, "catalogue-worker"));

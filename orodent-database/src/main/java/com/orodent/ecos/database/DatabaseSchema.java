@@ -140,6 +140,11 @@ public final class DatabaseSchema {
                     26,
                     "TON cubature rules and production specification references",
                     "/database/migrations/V26__ton_cubature_rules.sql");
+    private static final SchemaMigration CUBATURE_FORMULAS =
+            new SchemaMigration(
+                    27,
+                    "Versioned cubature formulas and pinned specifications",
+                    "/database/migrations/V27__cubature_formula_versions.sql");
     private static final List<SchemaMigration> MIGRATIONS =
             List.of(
                     BASELINE,
@@ -167,7 +172,8 @@ public final class DatabaseSchema {
                     AVAILABILITY,
                     CRM_AUDIT,
                     AVAILABILITY_WAREHOUSES,
-                    CUBATURE_RULES);
+                    CUBATURE_RULES,
+                    CUBATURE_FORMULAS);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS =
             List.of(

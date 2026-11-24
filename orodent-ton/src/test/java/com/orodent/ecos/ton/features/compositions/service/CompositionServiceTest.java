@@ -39,11 +39,7 @@ class CompositionServiceTest {
         new DatabaseSchema(db).initialize();
         db.withTransaction(
                 c -> {
-                    com.orodent.ecos.database.CubatureRuleCatalogue.save(
-                            c,
-                            null,
-                            new com.orodent.ecos.database.CubatureRuleCatalogue.Draft(
-                                    "test", "test", "", true));
+                    com.orodent.ecos.ton.CubatureTestRules.register(c, "test");
                     return null;
                 });
         workers = Executors.newFixedThreadPool(2, r -> new Thread(r, "recipe-worker"));

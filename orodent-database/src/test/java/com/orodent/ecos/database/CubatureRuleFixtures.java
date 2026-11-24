@@ -4,6 +4,7 @@ import java.sql.*;
 
 final class CubatureRuleFixtures {
     static void beforeV26(Connection c) throws SQLException {
+        CubatureVersionFixtures.beforeV27(c);
         try (var q = c.createStatement()) {
             q.executeUpdate(
                     "ALTER TABLE TON.CONFIGURAZIONI_PRODOTTO DROP CONSTRAINT"

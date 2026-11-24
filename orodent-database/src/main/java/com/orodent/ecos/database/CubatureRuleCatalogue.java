@@ -89,6 +89,12 @@ public final class CubatureRuleCatalogue {
     }
 
     public static Entry save(Connection c, Entry expected, Draft draft) throws SQLException {
+        Entry saved = saveIdentity(c, expected, draft);
+        CubatureRuleVersions.recordMetadata(c, saved);
+        return saved;
+    }
+
+    static Entry saveIdentity(Connection c, Entry expected, Draft draft) throws SQLException {
         try {
             long id;
             if (expected == null) {
@@ -114,10 +120,11 @@ public final class CubatureRuleCatalogue {
                 }
                 Entry current = load(c, id);
                 if (current.revision() != expected.revision()) throw new Conflict();
-                if (current.used() && !current.code().equals(draft.code()))
+                if ((current.used() || CubatureRuleVersions.hasPublished(c, id))
+                        && !current.code().equals(draft.code()))
                     throw new IllegalArgumentException(
                             "Il codice della regola è già utilizzato dalle specifiche e non può"
-                                + " essere cambiato.");
+                                    + " essere cambiato.");
                 try (var q =
                         c.prepareStatement(
                                 "UPDATE TON.REGOLE_CUBATURA SET"

@@ -30,11 +30,7 @@ public final class ProductionFixture {
         db.withTransaction(
                 c -> {
                     for (String code : List.of("COSTI-NOMINALE-1", "v2"))
-                        com.orodent.ecos.database.CubatureRuleCatalogue.save(
-                                c,
-                                null,
-                                new com.orodent.ecos.database.CubatureRuleCatalogue.Draft(
-                                        code, code, "", true));
+                        com.orodent.ecos.ton.CubatureTestRules.register(c, code);
                     return null;
                 });
         service = new ProductionService(db, workers);

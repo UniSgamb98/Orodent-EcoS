@@ -98,7 +98,19 @@ JOIN TON.MODELLI_DISCO m ON m.modello_id=c.modello_id JOIN TON.PRODOTTI a ON a.p
                 limit,
                 compositions,
                 models,
-                com.orodent.ecos.database.CubatureRuleCatalogue.list(connection, "", true));
+                com.orodent.ecos.database.CubatureRuleVersions.choices(connection));
+    }
+
+    public SpecificationDraft resolveCalculation(SpecificationDraft draft) throws SQLException {
+        var version =
+                com.orodent.ecos.database.CubatureRuleVersions.assignment(
+                        connection, draft.calculation(), draft.calculationVersionId());
+        return new SpecificationDraft(
+                draft.compositionId(),
+                draft.modelId(),
+                draft.calculation(),
+                draft.notes(),
+                version.id());
     }
 
     public long insert(Product product, SpecificationDraft draft) throws SQLException {
@@ -119,8 +131,8 @@ JOIN TON.MODELLI_DISCO m ON m.modello_id=c.modello_id JOIN TON.PRODOTTI a ON a.p
         try (var q =
                 connection.prepareStatement(
                         "INSERT INTO"
-                            + " TON.CONFIGURAZIONI_PRODOTTO(prodotto_id,numero_versione,composizione_id,modello_id,versione_calcolo,note)"
-                            + " VALUES (?,?,?,?,?,?)",
+                            + " TON.CONFIGURAZIONI_PRODOTTO(prodotto_id,numero_versione,composizione_id,modello_id,versione_calcolo,note,calcolo_versione_id)"
+                            + " VALUES (?,?,?,?,?,?,?)",
                         Statement.RETURN_GENERATED_KEYS)) {
             q.setLong(1, product.id());
             q.setInt(2, number);
@@ -128,6 +140,11 @@ JOIN TON.MODELLI_DISCO m ON m.modello_id=c.modello_id JOIN TON.PRODOTTI a ON a.p
             q.setLong(4, draft.modelId());
             q.setString(5, draft.calculation());
             q.setString(6, draft.notes());
+            q.setLong(
+                    7,
+                    draft.calculationVersionId() == null
+                            ? resolveCalculation(draft).calculationVersionId()
+                            : draft.calculationVersionId());
             q.executeUpdate();
             try (var keys = q.getGeneratedKeys()) {
                 if (!keys.next()) throw new SQLException("ID configurazione non disponibile.");
@@ -148,7 +165,7 @@ JOIN TON.MODELLI_DISCO m ON m.modello_id=c.modello_id JOIN TON.PRODOTTI a ON a.p
                         """
 UPDATE TON.CONFIGURAZIONI_PRODOTTO SET composizione_id=?,modello_id=?,versione_calcolo=?,note=?,
 stato=?,approvato_il=%s,linea_id=?,linea_revisione=?,prodotto_revisione=?,
-versione_modifica=versione_modifica+1,aggiornato_il=CURRENT_TIMESTAMP
+versione_modifica=versione_modifica+1,aggiornato_il=CURRENT_TIMESTAMP,calcolo_versione_id=?
 WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='BOZZA'
 """
                                 .formatted(approve ? "CURRENT_TIMESTAMP" : "NULL"))) {
@@ -160,9 +177,10 @@ WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='B
             q.setObject(6, approve ? line.id() : null, Types.BIGINT);
             q.setObject(7, approve ? line.revision() : null, Types.INTEGER);
             q.setObject(8, approve ? product.revision() : null, Types.INTEGER);
-            q.setLong(9, expected.id());
-            q.setLong(10, product.id());
-            q.setInt(11, expected.revision());
+            q.setLong(9, draft.calculationVersionId());
+            q.setLong(10, expected.id());
+            q.setLong(11, product.id());
+            q.setInt(12, expected.revision());
             if (q.executeUpdate() != 1) throw new Conflict();
         }
     }
@@ -344,6 +362,7 @@ WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='B
                 date == null ? null : date.toLocalDateTime(),
                 (Integer) r.getObject("linea_revisione"),
                 (Integer) r.getObject("prodotto_revisione"),
-                Objects.equals((Long) r.getObject("preferred_id"), id));
+                Objects.equals((Long) r.getObject("preferred_id"), id),
+                (Long) r.getObject("calcolo_versione_id"));
     }
 }
