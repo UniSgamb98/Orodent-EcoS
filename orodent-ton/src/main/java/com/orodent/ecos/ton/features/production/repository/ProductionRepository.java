@@ -443,7 +443,7 @@ public final class ProductionRepository {
                         "UPDATE TON.PIANI_PRODUZIONE SET versione_modifica=versione_modifica WHERE"
                             + " piano_id=? AND stato='PREPARATA'")) {
             lock.setLong(1, id);
-            if (lock.executeUpdate() != 1) throw invalid("Prima prepara la produzione.");
+            if (lock.executeUpdate() != 1) throw invalid("Prima conferma la produzione.");
         }
         var saved = load(id);
         if (saved.plan().template() == null) throw invalid("Nessun modello documento selezionato.");

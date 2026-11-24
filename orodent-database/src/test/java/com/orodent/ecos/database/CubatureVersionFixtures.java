@@ -5,6 +5,9 @@ import java.sql.*;
 final class CubatureVersionFixtures {
     static void beforeV27(Connection c) throws SQLException {
         try (var q = c.createStatement()) {
+            q.executeUpdate(
+                    "ALTER TABLE TON.PIANI_PRODUZIONE DROP COLUMN dischi_confermati_il RESTRICT");
+            q.executeUpdate("DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version=30");
             q.executeUpdate("DROP TABLE TON.CARICO_DISCHI");
             q.executeUpdate("DROP TABLE TON.DISCHI_PRODOTTI");
             q.executeUpdate("DROP TABLE TON.ESECUZIONI_PIANO");

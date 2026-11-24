@@ -4,8 +4,9 @@ Aprire **TON → Produzione → Produzioni e bozze → Nuova produzione**.
 In alternativa, il doppio clic in [Disponibilità](ton-disponibilita.md)
 preseleziona prodotto e diametro del codice e consente di tornare alla
 consultazione mantenendo il punto nell’elenco.
-La pagina descrive i dischi da realizzare e calcola quanto pesare: non registra
-pezzi già prodotti e non movimenta magazzino, scarti, lotti o cotture.
+La pagina calcola le pesate e permette di salvare bozze. **Conferma produzione**
+registra tutti i dischi indicati e li rende disponibili in [Cotture](ton-cotture.md),
+conservando quantità e riferimenti tecnici. Le giacenze CSV restano indipendenti.
 
 ## Preparare il lavoro
 
@@ -15,8 +16,8 @@ pezzi già prodotti e non movimenta magazzino, scarti, lotti o cotture.
    quantità complessive di ogni polvere nelle miscele da preparare.
 4. Scegliere facoltativamente un modello documento approvato e scrivere le note.
    **Documento** mostra il modello dell'utente compilato con i dati correnti.
-5. **Salva bozza** permette di riprendere il lavoro; **Prepara produzione**, dopo
-   il riepilogo di conferma, fissa quantità, specifiche e calcoli di lavorazione.
+5. **Salva bozza** permette di riprendere il lavoro; **Conferma produzione**, dopo
+   il riepilogo di conferma, fissa quantità, specifiche e calcoli di lavorazione e crea i singoli dischi.
 
 Una produzione comprende un solo prodotto/colore e più formati dello stesso
 diametro. I formati devono utilizzare la stessa versione di composizione e
@@ -62,7 +63,7 @@ selezionato per il prodotto; un riferimento ritirato viene segnalato e impedisce
 la preparazione. Le bozze anteriori alla V21 ricaricano invece la specifica
 condivisa corrente, con un avviso di verifica prima del nuovo salvataggio.
 
-La produzione preparata è di sola lettura. Si riapre dalla fotografia conservata,
+La produzione confermata è di sola lettura. Si riapre dalla fotografia conservata,
 senza cambiare dosi se successivamente vengono aggiornati i cataloghi. **Duplica**
 crea un nuovo lavoro modificabile e rilegge le specifiche disponibili correnti.
 
@@ -73,7 +74,7 @@ lavorazione**. In progettazione il modello continua a usare dati dimostrativi.
 
 La preparazione conserva una sola emissione **HTML autosufficiente** nel DB.
 Le ristampe usano quel contenuto. Se la generazione fallisce dopo il salvataggio,
-il piano rimane preparato e il documento può essere rigenerato dalla sua fotografia
+il piano rimane confermato e il documento può essere rigenerato dalla sua fotografia
 riaprendo la scheda Documento. La stampa usa il dialogo nativo della postazione;
 non è ancora implementata l'archiviazione automatica di un PDF.
 

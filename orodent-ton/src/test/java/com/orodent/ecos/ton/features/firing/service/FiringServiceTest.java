@@ -4,10 +4,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.orodent.ecos.core.ConnectionProvider;
 import com.orodent.ecos.database.DatabaseSchema;
+import com.orodent.ecos.database.ProducedDiscs;
 import com.orodent.ecos.ton.features.equipment.model.Equipment;
 import com.orodent.ecos.ton.features.equipment.service.EquipmentService;
 import com.orodent.ecos.ton.features.firing.model.Firing;
-import com.orodent.ecos.ton.features.production.model.ProductionExecution;
+import com.orodent.ecos.ton.features.production.model.Production;
 import com.orodent.ecos.ton.features.production.service.ProductionFixture;
 
 import org.junit.jupiter.api.*;
@@ -24,7 +25,7 @@ class FiringServiceTest {
     ProductionFixture fixture;
     FiringService service;
     EquipmentService equipment;
-    final LocalDate produced = LocalDate.of(2026, 11, 20), loaded = LocalDate.of(2026, 11, 21);
+    final LocalDate loaded = LocalDate.of(2026, 11, 21);
 
     @BeforeEach
     void setup() {
@@ -37,7 +38,6 @@ class FiringServiceTest {
                         throw new IllegalStateException(failure);
                     }
                 };
-        new DatabaseSchema(db).initialize();
         new DatabaseSchema(db).initialize();
         workers = Executors.newFixedThreadPool(3);
         fixture = new ProductionFixture(db, workers);
@@ -68,27 +68,16 @@ class FiringServiceTest {
         }
     }
 
-    ProductionExecution.Workspace prepare() {
-        var plan =
-                fixture.service
-                        .save(null, fixture.workspace(), fixture.request(false), true)
-                        .join();
-        return fixture.service.execution(plan.id()).join();
+    Production.Saved confirm() {
+        return fixture.service.save(null, fixture.workspace(), fixture.request(false), true).join();
     }
 
-    void registerAll(ProductionExecution.Workspace work) {
-        fixture.service
-                .register(
-                        work,
-                        new ProductionExecution.Request(
-                                produced,
-                                work.prepared().plan().quantities(),
-                                "Pressati e controllati"))
-                .join();
+    Firing.Quantity quantity(Firing.Group group, int count) {
+        return new Firing.Quantity(group.key(), count);
     }
 
-    Firing.Request load(Firing.Furnace furnace, String lot, List<Long> ids) {
-        return new Firing.Request(furnace, lot, loaded, "Carico registrato", ids);
+    Firing.Request load(Firing.Furnace furnace, String lot, Firing.Quantity... quantities) {
+        return new Firing.Request(furnace, lot, loaded, "Carico registrato", List.of(quantities));
     }
 
     int count(String table) {
@@ -103,58 +92,95 @@ class FiringServiceTest {
     }
 
     @Test
-    void onlyDeclaredOutputEntersTheQueueAndPartialOrStaleRegistrationsCannotCreateExtraDiscs() {
+    void confirmationCreatesAllDiscsOnceAndOutputFailureRollsBackTheDraftAsWell() {
         var draft =
                 fixture.service
                         .save(null, fixture.workspace(), fixture.request(false), false)
                         .join();
-        assertThrows(CompletionException.class, () -> fixture.service.execution(draft.id()).join());
-        var work = prepare();
-        assertEquals(0, service.workspace().join().pending().size());
-        var request =
-                new ProductionExecution.Request(
-                        produced, Map.of(fixture.articles.get(14), 2), "Due pezzi prodotti");
-        fixture.service.register(work, request).join();
-        assertEquals(2, service.workspace().join().pending().size());
-        assertEquals(62, fixture.service.execution(work.prepared().id()).join().remaining());
-        assertThrows(
-                CompletionException.class, () -> fixture.service.register(work, request).join());
-        var current = fixture.service.execution(work.prepared().id()).join();
+        assertEquals(0, count("DISCHI_PRODOTTI"));
+        db.withTransaction(
+                c -> {
+                    try (var q = c.createStatement()) {
+                        q.executeUpdate(
+                                "ALTER TABLE TON.DISCHI_PRODOTTI ADD CONSTRAINT reject_test_output"
+                                    + " CHECK (articolo_codice<>'ZR9814MSTA4')");
+                    }
+                    return null;
+                });
         assertThrows(
                 CompletionException.class,
                 () ->
                         fixture.service
-                                .register(
-                                        current,
-                                        new ProductionExecution.Request(
-                                                produced, Map.of(fixture.articles.get(14), 15), ""))
+                                .save(draft, fixture.workspace(), fixture.request(false), true)
                                 .join());
-        assertEquals(2, count("DISCHI_PRODOTTI"));
+        assertEquals(Production.State.BOZZA, fixture.service.load(draft.id()).join().state());
+        assertEquals(0, count("DISCHI_PRODOTTI"));
+        assertEquals(0, count("ESECUZIONI_PIANO"));
+        db.withTransaction(
+                c -> {
+                    try (var q = c.createStatement()) {
+                        q.executeUpdate(
+                                "ALTER TABLE TON.DISCHI_PRODOTTI DROP CONSTRAINT"
+                                    + " reject_test_output");
+                    }
+                    return null;
+                });
+        var saved =
+                fixture.service
+                        .save(draft, fixture.workspace(), fixture.request(false), true)
+                        .join();
+        assertEquals(64, service.workspace().join().pending().size());
+        assertEquals(3, Firing.group(service.workspace().join().pending()).size());
+        db.withTransaction(
+                c -> {
+                    ProducedDiscs.confirm(c, saved.id());
+                    return null;
+                });
+        assertEquals(64, count("DISCHI_PRODOTTI"));
         assertEquals(1, count("ESECUZIONI_PIANO"));
+        assertThrows(
+                CompletionException.class,
+                () ->
+                        fixture.service
+                                .save(draft, fixture.workspace(), fixture.request(false), true)
+                                .join());
+        assertEquals(saved.plan(), fixture.service.load(saved.id()).join().plan());
+        confirm();
+        var groups = Firing.group(service.workspace().join().pending());
+        assertEquals(6, groups.size());
         assertEquals(
-                current.prepared().token(),
-                fixture.service.load(current.prepared().id()).join().token());
+                2,
+                groups.stream().filter(g -> g.reference().article().equals("ZR9814MSTA4")).count());
     }
 
     @Test
-    void
-            splitsPhysicalDiscsBetweenFurnacesAndKeepsTheOriginalArticleSpecificationAndFurnaceSnapshot() {
-        var work = prepare();
-        registerAll(work);
+    void quantitiesSplitAGroupBetweenFurnacesAndPreserveIndividualIdentitiesAndSnapshots() {
+        var saved = confirm();
         var before = service.workspace().join();
-        assertEquals(64, before.pending().size());
-        var firstIds = before.pending().subList(0, 3).stream().map(Firing.Disc::id).toList();
-        var secondIds = before.pending().subList(3, 5).stream().map(Firing.Disc::id).toList();
+        var group = Firing.group(before.pending()).getFirst();
+        assertEquals(16, group.count());
+        var original =
+                before.pending().stream()
+                        .filter(
+                                d ->
+                                        d.planId() == group.key().planId()
+                                                && d.row() == group.key().row())
+                        .map(Firing.Disc::id)
+                        .toList();
         var first =
-                service.create(load(before.furnaces().getFirst(), " lotto-a ", firstIds)).join();
-        var second = service.create(load(before.furnaces().getLast(), "LOTTO-B", secondIds)).join();
+                service.create(load(before.furnaces().getFirst(), " lotto-a ", quantity(group, 3)))
+                        .join();
+        var second =
+                service.create(load(before.furnaces().getLast(), "LOTTO-B", quantity(group, 2)))
+                        .join();
         assertEquals("LOTTO-A", first.lot());
         assertEquals(59, service.workspace().join().pending().size());
-        assertEquals(2, service.workspace().join().loads().size());
+        assertEquals(11, Firing.group(service.workspace().join().pending()).getFirst().count());
         assertEquals(
-                firstIds, service.loaded(first.id()).join().stream().map(Firing.Disc::id).toList());
+                original.subList(0, 3),
+                service.loaded(first.id()).join().stream().map(Firing.Disc::id).toList());
         assertEquals(
-                secondIds,
+                original.subList(3, 5),
                 service.loaded(second.id()).join().stream().map(Firing.Disc::id).toList());
         db.withTransaction(
                 c -> {
@@ -180,8 +206,7 @@ class FiringServiceTest {
         assertEquals("Forno uno", stored.furnaceName());
         assertEquals(1, stored.furnaceRevision());
         assertEquals("ZR9814MSTA4", service.loaded(first.id()).join().getFirst().article());
-        long specification =
-                work.prepared().plan().formats().getFirst().article().specificationId();
+        long specification = saved.plan().formats().getFirst().article().specificationId();
         db.withConnection(
                 c -> {
                     try (var q =
@@ -209,18 +234,18 @@ class FiringServiceTest {
     }
 
     @Test
-    void duplicateLotsStaleFurnacesAndAlreadyLoadedDiscsRollBackTheEntireLoad() {
-        registerAll(prepare());
+    void duplicateLotsInsufficientQuantitiesAndStaleFurnacesRollBackTheWholeLoad() {
+        confirm();
         var data = service.workspace().join();
-        long a = data.pending().get(0).id(), b = data.pending().get(1).id();
+        var group = Firing.group(data.pending()).getFirst();
         var furnace = data.furnaces().getFirst();
-        service.create(load(furnace, "LOTTO-UNICO", List.of(a))).join();
+        service.create(load(furnace, "LOTTO-UNICO", quantity(group, 1))).join();
         assertThrows(
                 CompletionException.class,
-                () -> service.create(load(furnace, "LOTTO-UNICO", List.of(b))).join());
+                () -> service.create(load(furnace, "LOTTO-UNICO", quantity(group, 1))).join());
         assertThrows(
                 CompletionException.class,
-                () -> service.create(load(furnace, "ALTRO", List.of(a, b))).join());
+                () -> service.create(load(furnace, "ALTRO", quantity(group, 16))).join());
         assertThrows(
                 CompletionException.class,
                 () ->
@@ -228,9 +253,9 @@ class FiringServiceTest {
                                         new Firing.Request(
                                                 furnace,
                                                 "PRIMA",
-                                                produced.minusDays(1),
+                                                LocalDate.of(2026, 11, 18),
                                                 "",
-                                                List.of(b)))
+                                                List.of(quantity(group, 1))))
                                 .join());
         db.withTransaction(
                 c -> {
@@ -245,7 +270,7 @@ class FiringServiceTest {
                 });
         assertThrows(
                 CompletionException.class,
-                () -> service.create(load(furnace, "ARCHIVIATO", List.of(b))).join());
+                () -> service.create(load(furnace, "ARCHIVIATO", quantity(group, 1))).join());
         assertEquals(1, count("CICLI_COTTURA"));
         assertEquals(1, count("LOTTI_COTTURA"));
         assertEquals(1, count("CARICO_DISCHI"));
@@ -253,19 +278,89 @@ class FiringServiceTest {
     }
 
     @Test
-    void concurrentOperatorsCannotAssignTheSameDiscTwice() {
-        registerAll(prepare());
+    void concurrentOperatorsCannotOverAllocateTheSameGroup() {
+        confirm();
         var data = service.workspace().join();
-        long id = data.pending().getFirst().id();
-        var one = service.create(load(data.furnaces().getFirst(), "CONCORRENTE-A", List.of(id)));
-        var two = service.create(load(data.furnaces().getLast(), "CONCORRENTE-B", List.of(id)));
+        var group = Firing.group(data.pending()).getFirst();
+        var one =
+                service.create(
+                        load(data.furnaces().getFirst(), "CONCORRENTE-A", quantity(group, 16)));
+        var two =
+                service.create(
+                        load(data.furnaces().getLast(), "CONCORRENTE-B", quantity(group, 16)));
         var outcomes =
                 List.of(one, two).stream()
                         .map(f -> f.handle((value, error) -> error == null).join())
                         .toList();
         assertEquals(1, outcomes.stream().filter(Boolean::booleanValue).count());
-        assertEquals(1, count("CARICO_DISCHI"));
+        assertEquals(16, count("CARICO_DISCHI"));
         assertEquals(1, count("CICLI_COTTURA"));
+        assertEquals(48, service.workspace().join().pending().size());
+    }
+
+    @Test
+    void concurrentPartialLoadsAllocateDifferentDiscs() {
+        confirm();
+        var data = service.workspace().join();
+        var group = Firing.group(data.pending()).getFirst();
+        var one =
+                service.create(load(data.furnaces().getFirst(), "PARZIALE-A", quantity(group, 8)));
+        var two = service.create(load(data.furnaces().getLast(), "PARZIALE-B", quantity(group, 8)));
+        var first = one.join();
+        var second = two.join();
+        var ids =
+                new HashSet<>(
+                        service.loaded(first.id()).join().stream().map(Firing.Disc::id).toList());
+        assertTrue(
+                Collections.disjoint(
+                        ids,
+                        service.loaded(second.id()).join().stream().map(Firing.Disc::id).toList()));
+        assertEquals(16, count("CARICO_DISCHI"));
+        assertEquals(48, service.workspace().join().pending().size());
+    }
+
+    @Test
+    void upgradesAlreadyPreparedPlansWithoutDuplicatingRegisteredOrLoadedDiscs() {
+        var saved = confirm();
+        var initial = service.workspace().join();
+        var group = Firing.group(initial.pending()).getFirst();
+        var load =
+                service.create(
+                                load(
+                                        initial.furnaces().getFirst(),
+                                        "PRIMA-UPDATE",
+                                        quantity(group, 1)))
+                        .join();
+        long originalId = service.loaded(load.id()).join().getFirst().id();
+        db.withTransaction(
+                c -> {
+                    try (var q = c.createStatement()) {
+                        q.executeUpdate(
+                                "DELETE FROM TON.DISCHI_PRODOTTI WHERE piano_id="
+                                        + saved.id()
+                                        + " AND (numero_riga>1 OR progressivo>3)");
+                        q.executeUpdate(
+                                "UPDATE TON.ARTICOLI SET codice='CODICE-NUOVO' WHERE articolo_id="
+                                        + fixture.articles.get(14));
+                        q.executeUpdate(
+                                "ALTER TABLE TON.PIANI_PRODUZIONE DROP COLUMN dischi_confermati_il"
+                                    + " RESTRICT");
+                        q.executeUpdate("DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version=30");
+                    }
+                    return null;
+                });
+        new DatabaseSchema(db).initialize();
+        new DatabaseSchema(db).initialize();
+        assertEquals(64, count("DISCHI_PRODOTTI"));
         assertEquals(63, service.workspace().join().pending().size());
+        assertEquals(originalId, service.loaded(load.id()).join().getFirst().id());
+        assertEquals(
+                "ZR9814MSTA4",
+                Firing.group(service.workspace().join().pending())
+                        .getFirst()
+                        .reference()
+                        .article());
+        assertEquals(saved.plan(), fixture.service.load(saved.id()).join().plan());
+        assertEquals(2, count("ESECUZIONI_PIANO"));
     }
 }

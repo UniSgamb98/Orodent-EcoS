@@ -1,42 +1,51 @@
 # Dischi prodotti e carichi forno
 
-## Registrazione della produzione effettiva
+## Conferma della produzione
 
-Una produzione **Preparata** conserva richieste, specifiche e pesate. Quando i
-dischi sono stati realizzati, aprire la produzione e usare **Registra dischi prodotti**.
-Il dialogo mostra per ciascun articolo quantità prevista, quantità già registrata
-e quantità da registrare ora. Indicare data e note della produzione effettiva.
+In **Produzioni e bozze**, **Conferma produzione** salva quantità, specifiche,
+pesate e tutti i singoli dischi nella stessa transazione. La produzione diventa
+**Confermata**, in sola lettura, e i pezzi compaiono subito in Cotture.
+**Salva bozza** permette invece di continuare a modificare il lavoro e non genera
+pezzi. Il passaggio separato «Registra dischi prodotti» è stato rimosso.
 
-Sono ammesse registrazioni parziali successive. Ogni registrazione deve contenere
-da 1 a 10000 dischi e non può superare la quantità ancora prevista per un formato.
-Una bozza non può generare dischi. Il salvataggio crea un record per ciascun disco,
-con un identificativo interno `D-00000001`, e conserva la registrazione di origine.
-Un doppio invio o una modifica concorrente richiedono di ricaricare i dati.
+Ogni disco conserva un'identità interna distinta per la tracciabilità. Errori nel
+salvataggio dei pezzi annullano anche la conferma del piano: non possono rimanere
+produzioni confermate solo parzialmente. La conferma è idempotente e conserva le
+versioni tecniche originali. Le giacenze importate dai CSV restano indipendenti.
 
-I piani preparati esistenti non vengono convertiti automaticamente in output
-fisico. Quantità, documenti e riferimenti originali del piano restano conservati.
-I vecchi piani con specifiche articolo mantengono il riferimento storico preciso;
-i piani correnti mantengono la versione delle specifiche di prodotto.
+La migrazione **V30** adegua anche i piani precedentemente **Preparati** con
+fotografia JSON supportata: crea soltanto i pezzi mancanti, conserva le identità
+esistenti e i dischi già caricati, usando i codici e i formati del piano salvato.
+I vecchi segnaposto importati privi di un piano leggibile restano invariati.
+L'istante di registrazione automatica è conservato in `dischi_confermati_il`.
 
 ## Cotture → Pianificazione e carichi
 
-La scheda **Da caricare** mostra tutti i dischi dichiarati prodotti che non sono
-ancora assegnati a un carico. Ogni riga corrisponde a un disco fisico: ID interno,
-codice articolo, prodotto, formato, produzione di origine e data di produzione.
-Le righe sono raggruppate visivamente per prodotto. La ricerca considera anche
-linea e numero della produzione. Cambiare ricerca azzera la selezione.
+La scheda **Da caricare** mostra una riga per coppia **produzione + articolo**,
+con formato, quantità disponibile e **Da caricare**. Produzioni diverse dello
+stesso articolo rimangono separate. Ogni riga rappresenta tutti i pezzi ancora
+in attesa di quel formato, pur mantenendo i record individuali nel database.
 
-Selezionare singoli dischi oppure **Seleziona visibili**, scegliere un forno
-attivo, inserire il **lotto manuale**, la data e le eventuali note, quindi premere
-**Registra carico**. Tutti i dischi selezionati ricevono quel forno e quel lotto.
-Per dividerli tra forni diversi registrare carichi separati. Il lotto è normalizzato
-in maiuscolo e deve identificare un solo carico; un codice già usato viene respinto.
-La data del carico non può precedere la produzione di uno dei dischi selezionati.
+Inserire le quantità da assegnare al forno; zero esclude la riga. **Seleziona
+visibili** riempie le quantità con tutti i pezzi disponibili delle righe mostrate;
+**Deseleziona** le azzera. La ricerca considera articolo, prodotto, linea e numero
+della produzione; cambiarla azzera le quantità selezionate.
 
-Dopo il salvataggio i dischi escono dalla coda. La scheda **Carichi registrati**
-mostra forno, data, lotto e numero di dischi. Selezionare un carico per consultarne
-i singoli dischi e la provenienza. Le assegnazioni vengono conservate; questa
-pagina non prevede cancellazioni o riassegnazioni dei carichi registrati.
+Scegliere un forno attivo, inserire il **lotto manuale**, data e note, poi premere
+**Registra carico**. Le quantità indicate ricevono lo stesso forno e lotto.
+Si possono assegnare, per esempio, 20 pezzi su 30 a un forno e caricare i 10
+rimanenti in un altro carico. EcoS assegna i singoli record internamente, in
+ordine stabile di identificativo, evitando sovrapposizioni tra carichi.
+
+Il lotto è normalizzato in maiuscolo e deve identificare un solo carico.
+Sono ammessi da 1 a 10000 pezzi per carico. Quantità superiori alla disponibilità,
+anche a causa di un altro operatore, vengono respinte senza salvataggi parziali.
+La data del carico non può precedere quella della produzione dei pezzi assegnati.
+
+Dopo il salvataggio le disponibilità diminuiscono e le righe esaurite scompaiono.
+La scheda **Carichi registrati** conserva forno, lotto, data e numero di pezzi.
+Anche il dettaglio del carico mostra produzione, articolo, formato e quantità
+raggruppati. Le assegnazioni rimangono conservate per la successiva tracciabilità.
 
 ## Dati per la tracciabilità
 
@@ -45,7 +54,7 @@ Il percorso conservato è:
 ```text
 codice articolo + lotto
   → singolo disco → carico → forno e sua revisione al caricamento
-  → registrazione di produzione → piano preparato
+  → registrazione di produzione → piano confermato
   → specifiche precise → composizione, polveri e modello utilizzati
 ```
 

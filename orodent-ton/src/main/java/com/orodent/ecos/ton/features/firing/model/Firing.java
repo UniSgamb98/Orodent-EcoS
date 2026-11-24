@@ -41,6 +41,33 @@ public final class Firing {
         }
     }
 
+    public record GroupKey(long planId, int row) {}
+
+    public record Group(GroupKey key, Disc reference, int count) {}
+
+    public record Quantity(GroupKey key, int count) {
+        public Quantity {
+            if (key == null || key.planId() <= 0 || key.row() <= 0 || count <= 0)
+                throw new IllegalArgumentException(
+                        "Indica una quantità positiva per ogni articolo scelto.");
+        }
+    }
+
+    public static List<Group> group(List<Disc> discs) {
+        var grouped = new LinkedHashMap<GroupKey, Group>();
+        for (var disc : discs) {
+            var key = new GroupKey(disc.planId(), disc.row());
+            var previous = grouped.get(key);
+            grouped.put(
+                    key,
+                    new Group(
+                            key,
+                            previous == null ? disc : previous.reference(),
+                            previous == null ? 1 : previous.count() + 1));
+        }
+        return List.copyOf(grouped.values());
+    }
+
     public record Load(
             long id,
             long furnaceId,
@@ -70,7 +97,7 @@ public final class Firing {
     }
 
     public record Request(
-            Furnace furnace, String lot, LocalDate date, String notes, List<Long> discs) {
+            Furnace furnace, String lot, LocalDate date, String notes, List<Quantity> quantities) {
         public Request {
             if (furnace == null || furnace.id() <= 0)
                 throw new IllegalArgumentException("Scegli un forno attivo.");
@@ -81,13 +108,14 @@ public final class Firing {
             notes = Objects.requireNonNullElse(notes, "").strip();
             if (notes.length() > 1000)
                 throw new IllegalArgumentException("Note: massimo 1000 caratteri.");
-            discs = List.copyOf(discs);
-            if (discs.isEmpty()
-                    || discs.size() > 10000
-                    || discs.stream().anyMatch(id -> id <= 0)
-                    || new HashSet<>(discs).size() != discs.size())
+            quantities = List.copyOf(quantities);
+            if (quantities.isEmpty()
+                    || quantities.stream().mapToLong(Quantity::count).sum() > 10000
+                    || quantities.stream().map(Quantity::key).distinct().count()
+                            != quantities.size())
                 throw new IllegalArgumentException(
-                        "Seleziona da 1 a 10000 dischi distinti da caricare.");
+                        "Indica da 1 a 10000 dischi da caricare, senza ripetere gli articoli della"
+                            + " stessa produzione.");
         }
     }
 

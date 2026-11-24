@@ -198,6 +198,7 @@ public final class ProductionUiProbe {
             assertEquals(1, count("PIANI_DOCUMENTI"));
             assertEquals(0, count("PRODUZIONI"));
             assertEquals(0, count("PRODUZIONE_RIGHE"));
+            assertEquals(64, count("DISCHI_PRODOTTI"));
             var saved = fixture.service.load(1).join();
             assertEquals(64, saved.plan().count());
             assertTrue(saved.document().contains("MODELLO UTENTE"));

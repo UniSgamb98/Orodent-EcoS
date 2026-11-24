@@ -147,7 +147,7 @@ singole di 2 MB. Nel browser separato gli stessi comandi sono Apri/Esporta model
 
 **Verifica** segnala eventuali blocchi mancanti per una scheda operativa TON.
 **Anteprima** nell’editor mostra il contenuto compilato con esempi. La scheda
-Documento della produzione usa invece i calcoli reali. **Prepara produzione**
+Documento della produzione usa invece i calcoli reali. **Conferma produzione**
 conserva il foglio HTML nel DB; la stampa usa il dialogo nativo e ristampa lo
 stesso contenuto. Non viene archiviato automaticamente un PDF. La stampa dalla
 pagina separata nel browser non costituisce un’emissione archiviata.

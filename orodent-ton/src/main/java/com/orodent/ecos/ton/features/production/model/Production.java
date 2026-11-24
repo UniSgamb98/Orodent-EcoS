@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
 
-/** Requested discs, never a declaration of completed production or physical stock. */
+/** Draft quantities and confirmed output, independent of finished-goods CSV stock. */
 public final class Production {
     private Production() {}
 
@@ -14,7 +14,7 @@ public final class Production {
 
     public enum State {
         BOZZA("Bozza"),
-        PREPARATA("Preparata");
+        PREPARATA("Confermata");
         private final String label;
 
         State(String label) {
@@ -131,7 +131,7 @@ public final class Production {
             String notes,
             Map<Long, Integer> quantities) {
         public Request {
-            if (date == null) throw invalid("Indica la data di preparazione.");
+            if (date == null) throw invalid("Indica la data di produzione.");
             if (productId <= 0 || diameter == null || diameter.signum() <= 0)
                 throw invalid("Seleziona prodotto e diametro.");
             notes = notes == null ? "" : notes.strip();

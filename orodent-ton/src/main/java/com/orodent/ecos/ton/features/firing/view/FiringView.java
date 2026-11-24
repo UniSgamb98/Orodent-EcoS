@@ -14,25 +14,37 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-/** One row per physical disc; a load can contain individually selected discs from several plans. */
+/** Quantities are grouped by production and article. Individual identities stay in persistence. */
 public final class FiringView extends TechnicalDetailView {
     private static final DateTimeFormatter DATE =
             DateTimeFormatter.ofPattern("dd/MM/uuuu")
                     .withResolverStyle(java.time.format.ResolverStyle.STRICT);
     private static final String ID = "ton-firing";
 
-    public static final class DiscRow {
-        public final Disc disc;
-        public final BooleanProperty selected = new SimpleBooleanProperty();
+    public static final class GroupRow {
+        public final Group group;
+        public final TextField quantity = new TextField("0");
 
-        DiscRow(Disc disc) {
-            this.disc = disc;
+        GroupRow(Group group) {
+            this.group = group;
+            quantity.setId("ton-firing-quantity-" + group.key().planId() + "-" + group.key().row());
+            quantity.setTextFormatter(
+                    new TextFormatter<String>(
+                            change ->
+                                    change.getControlNewText().matches("[0-9]{0,7}")
+                                            ? change
+                                            : null));
+            quantity.setTooltip(new Tooltip("Disponibili: " + group.count()));
+        }
+
+        public int count() {
+            return quantity.getText().isBlank() ? 0 : Integer.parseInt(quantity.getText());
         }
     }
 
-    public final TableView<DiscRow> pending = new TableView<>();
+    public final TableView<GroupRow> pending = new TableView<>();
     public final TableView<Load> loads = new TableView<>();
-    public final TableView<Disc> loaded = new TableView<>();
+    public final TableView<Group> loaded = new TableView<>();
     public final ComboBox<Furnace> furnace = new ComboBox<>();
     public final TextField lot = TechnicalUi.input(ID + "-lot", "Codice lotto manuale");
     public final DatePicker date = new DatePicker(LocalDate.now());
@@ -52,9 +64,9 @@ public final class FiringView extends TechnicalDetailView {
                             "Nessun forno attivo. Aggiungine uno in Attrezzature e Fornitori →"
                                     + " Forni.",
                             "ton-error-feedback");
-    private List<DiscRow> rows = List.of();
+    private List<GroupRow> rows = List.of();
     private boolean bulkSelection;
-    private final Map<Long, Integer> groups = new HashMap<>();
+    private final Map<GroupKey, Integer> groups = new HashMap<>();
 
     public FiringView() {
         super(ID, "← Torna a Cotture");
@@ -67,49 +79,37 @@ public final class FiringView extends TechnicalDetailView {
         pending.setMinSize(0, 140);
         pending.setPlaceholder(
                 new Label(
-                        "Nessun disco in attesa. Nelle produzioni preparate usa Registra dischi"
-                                + " prodotti."));
-        var check = new TableColumn<DiscRow, DiscRow>("");
-        check.setCellValueFactory(v -> new SimpleObjectProperty<>(v.getValue()));
-        check.setMinWidth(42);
-        check.setMaxWidth(42);
-        check.setSortable(false);
-        check.setCellFactory(
+                        "Nessun disco in attesa. Conferma una produzione per renderne disponibili i"
+                            + " pezzi."));
+        TechnicalUi.column(pending, "Produzione", 130, r -> r.group.reference().production());
+        TechnicalUi.column(pending, "Articolo", 180, r -> r.group.reference().article());
+        TechnicalUi.column(pending, "Formato", 130, r -> r.group.reference().format());
+        TechnicalUi.column(pending, "Disponibili", 100, r -> "" + r.group.count());
+        var quantity = new TableColumn<GroupRow, GroupRow>("Da caricare");
+        quantity.setCellValueFactory(v -> new SimpleObjectProperty<>(v.getValue()));
+        quantity.setSortable(false);
+        quantity.setCellFactory(
                 c ->
                         new TableCell<>() {
-                            final CheckBox box = new CheckBox();
-                            DiscRow bound;
-
                             @Override
-                            protected void updateItem(DiscRow item, boolean empty) {
-                                super.updateItem(item, empty);
-                                if (bound != null)
-                                    box.selectedProperty().unbindBidirectional(bound.selected);
-                                bound = empty ? null : item;
-                                if (bound != null)
-                                    box.selectedProperty().bindBidirectional(bound.selected);
-                                setGraphic(bound == null ? null : box);
-                                setAlignment(Pos.CENTER);
+                            protected void updateItem(GroupRow row, boolean empty) {
+                                super.updateItem(row, empty);
+                                setGraphic(empty || row == null ? null : row.quantity);
                             }
                         });
-        pending.getColumns().add(check);
-        TechnicalUi.column(pending, "ID disco", 135, r -> r.disc.identity());
-        TechnicalUi.column(pending, "Articolo", 180, r -> r.disc.article());
-        TechnicalUi.column(pending, "Prodotto", 140, r -> r.disc.product());
-        TechnicalUi.column(pending, "Formato", 130, r -> r.disc.format());
-        TechnicalUi.column(pending, "Produzione", 130, r -> r.disc.production());
-        TechnicalUi.column(pending, "Prodotto il", 120, r -> DATE.format(r.disc.producedAt()));
+        pending.getColumns().add(quantity);
         pending.setRowFactory(
                 t ->
                         new TableRow<>() {
                             @Override
-                            protected void updateItem(DiscRow row, boolean empty) {
+                            protected void updateItem(GroupRow row, boolean empty) {
                                 super.updateItem(row, empty);
                                 setStyle(
                                         empty || row == null
                                                 ? ""
                                                 : "-fx-background-color: "
-                                                        + (groups.getOrDefault(row.disc.id(), 0) % 2
+                                                        + (groups.getOrDefault(row.group.key(), 0)
+                                                                                % 2
                                                                         == 0
                                                                 ? "white"
                                                                 : "#edf5f9")
@@ -128,7 +128,7 @@ public final class FiringView extends TechnicalDetailView {
                 e -> {
                     bulkSelection = true;
                     try {
-                        pending.getItems().forEach(r -> r.selected.set(true));
+                        pending.getItems().forEach(r -> r.quantity.setText("" + r.group.count()));
                     } finally {
                         bulkSelection = false;
                     }
@@ -170,7 +170,7 @@ public final class FiringView extends TechnicalDetailView {
         var assignment =
                 TechnicalUi.panel(
                         "Nuovo carico",
-                        "I dischi selezionati riceveranno lo stesso forno e lotto.",
+                        "Le quantità indicate riceveranno lo stesso forno e lotto.",
                         inputScroll,
                         selected,
                         create);
@@ -198,12 +198,12 @@ public final class FiringView extends TechnicalDetailView {
         loaded.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
         loaded.setMinHeight(120);
         loaded.setPlaceholder(new Label("Seleziona un carico."));
-        TechnicalUi.column(loaded, "ID disco", 130, Disc::identity);
-        TechnicalUi.column(loaded, "Articolo", 180, Disc::article);
-        TechnicalUi.column(loaded, "Prodotto", 140, Disc::product);
-        TechnicalUi.column(loaded, "Formato", 130, Disc::format);
-        TechnicalUi.column(loaded, "Produzione", 130, Disc::production);
-        TechnicalUi.column(loaded, "Prodotto il", 130, d -> DATE.format(d.producedAt()));
+        TechnicalUi.column(loaded, "Produzione", 130, g -> g.reference().production());
+        TechnicalUi.column(loaded, "Articolo", 180, g -> g.reference().article());
+
+        TechnicalUi.column(loaded, "Formato", 130, g -> g.reference().format());
+        TechnicalUi.column(loaded, "Quantità", 100, g -> "" + g.count());
+
         historyDetails.setId(ID + "-load-details");
         var detail = new VBox(12, historyDetails, loaded);
         VBox.setVgrow(loaded, Priority.ALWAYS);
@@ -216,16 +216,24 @@ public final class FiringView extends TechnicalDetailView {
     }
 
     public void show(Workspace data) {
-        var selectedIds = new HashSet<>(selectedIds());
-        rows = data.pending().stream().map(DiscRow::new).toList();
+        var previousQuantities = new HashMap<GroupKey, String>();
+        rows.forEach(row -> previousQuantities.put(row.group.key(), row.quantity.getText()));
+        rows = group(data.pending()).stream().map(GroupRow::new).toList();
         groups.clear();
         var products = new LinkedHashMap<String, Integer>();
         for (var row : rows) {
             groups.put(
-                    row.disc.id(),
-                    products.computeIfAbsent(row.disc.product(), k -> products.size()));
-            row.selected.set(selectedIds.contains(row.disc.id()));
-            row.selected.addListener((o, a, b) -> selectionChanged());
+                    row.group.key(),
+                    products.computeIfAbsent(
+                            row.group.reference().product(), k -> products.size()));
+            row.quantity.setText(previousQuantities.getOrDefault(row.group.key(), "0"));
+            row.quantity
+                    .textProperty()
+                    .addListener(
+                            (o, a, b) -> {
+                                feedback("", false);
+                                selectionChanged();
+                            });
         }
         Furnace previous = furnace.getValue();
         furnace.getItems().setAll(data.furnaces());
@@ -269,15 +277,15 @@ public final class FiringView extends TechnicalDetailView {
                         rows.stream()
                                 .filter(
                                         r ->
-                                                (r.disc.identity()
+                                                (r.group.reference().production()
                                                                 + " "
-                                                                + r.disc.article()
+                                                                + r.group.reference().article()
                                                                 + " "
-                                                                + r.disc.product()
+                                                                + r.group.reference().product()
                                                                 + " "
-                                                                + r.disc.line()
+                                                                + r.group.reference().line()
                                                                 + " "
-                                                                + r.disc.production())
+                                                                + r.group.reference().production())
                                                         .toLowerCase(Locale.ROOT)
                                                         .contains(query))
                                 .toList()));
@@ -285,7 +293,7 @@ public final class FiringView extends TechnicalDetailView {
 
     private void selectionChanged() {
         if (bulkSelection) return;
-        int count = selectedIds().size();
+        long count = rows.stream().mapToLong(GroupRow::count).sum();
         selected.setText(count == 1 ? "1 disco selezionato" : count + " dischi selezionati");
         create.setDisable(
                 count == 0
@@ -294,8 +302,19 @@ public final class FiringView extends TechnicalDetailView {
                         || date.getValue() == null);
     }
 
-    public List<Long> selectedIds() {
-        return rows.stream().filter(r -> r.selected.get()).map(r -> r.disc.id()).toList();
+    public List<Quantity> quantities() {
+        var values = new ArrayList<Quantity>();
+        for (var row : rows) {
+            int count = row.count();
+            if (count > row.group.count())
+                throw new IllegalArgumentException(
+                        row.group.reference().article()
+                                + ": disponibili "
+                                + row.group.count()
+                                + " dischi.");
+            if (count > 0) values.add(new Quantity(row.group.key(), count));
+        }
+        return List.copyOf(values);
     }
 
     public Request request() {
@@ -305,14 +324,13 @@ public final class FiringView extends TechnicalDetailView {
         } catch (RuntimeException invalid) {
             throw new IllegalArgumentException("Data del carico: usa gg/mm/aaaa.");
         }
-        return new Request(
-                furnace.getValue(), lot.getText(), value, notes.getText(), selectedIds());
+        return new Request(furnace.getValue(), lot.getText(), value, notes.getText(), quantities());
     }
 
     public void deselect() {
         bulkSelection = true;
         try {
-            rows.forEach(r -> r.selected.set(false));
+            rows.forEach(r -> r.quantity.setText("0"));
         } finally {
             bulkSelection = false;
         }
@@ -320,7 +338,9 @@ public final class FiringView extends TechnicalDetailView {
     }
 
     public boolean dirty() {
-        return !selectedIds().isEmpty() || !lot.getText().isBlank() || !notes.getText().isBlank();
+        return rows.stream().anyMatch(r -> r.count() > 0)
+                || !lot.getText().isBlank()
+                || !notes.getText().isBlank();
     }
 
     public void resetAssignment() {
@@ -330,7 +350,7 @@ public final class FiringView extends TechnicalDetailView {
     }
 
     public void details(Load load, List<Disc> discs) {
-        loaded.getItems().setAll(discs);
+        loaded.getItems().setAll(group(discs));
         historyDetails.setText(
                 load == null
                         ? "Seleziona un carico per consultare i dischi."

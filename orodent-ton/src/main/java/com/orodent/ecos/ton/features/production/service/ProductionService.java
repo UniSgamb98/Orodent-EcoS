@@ -3,8 +3,6 @@ package com.orodent.ecos.ton.features.production.service;
 import static com.orodent.ecos.ton.features.production.model.Production.*;
 
 import com.orodent.ecos.core.ConnectionProvider;
-import com.orodent.ecos.ton.features.production.model.ProductionExecution;
-import com.orodent.ecos.ton.features.production.repository.ProductionExecutionRepository;
 import com.orodent.ecos.ton.features.production.repository.ProductionRepository;
 
 import java.math.BigDecimal;
@@ -47,23 +45,6 @@ public final class ProductionService {
         return async(() -> db.withConnection(c -> new ProductionRepository(c).load(id)));
     }
 
-    public CompletableFuture<ProductionExecution.Workspace> execution(long planId) {
-        return async(
-                () ->
-                        db.withConnection(
-                                c -> new ProductionExecutionRepository(c).workspace(planId)));
-    }
-
-    public CompletableFuture<ProductionExecution.Receipt> register(
-            ProductionExecution.Workspace expected, ProductionExecution.Request request) {
-        return async(
-                () ->
-                        db.withTransaction(
-                                c ->
-                                        new ProductionExecutionRepository(c)
-                                                .register(expected, request)));
-    }
-
     public CompletableFuture<Saved> save(
             Saved expected, Workspace workspace, Request request, boolean prepare) {
         if (workspace.product().id() != request.productId()
@@ -71,7 +52,8 @@ public final class ProductionService {
             throw invalid("La selezione è cambiata. Aggiorna i dati.");
         if (expected != null && expected.state() != State.BOZZA)
             throw invalid(
-                    "Una produzione preparata è di sola lettura. Usa Duplica per un nuovo lavoro.");
+                    "Una produzione confermata è di sola lettura. Usa Duplica per un nuovo"
+                        + " lavoro.");
         return async(
                 () ->
                         db.withTransaction(
@@ -99,7 +81,11 @@ public final class ProductionService {
                                     if (prepare && plan.count() == 0)
                                         throw invalid(
                                                 "Inserisci almeno una quantità maggiore di zero.");
-                                    return repo.save(expected, plan, prepare);
+                                    var saved = repo.save(expected, plan, prepare);
+                                    if (prepare)
+                                        com.orodent.ecos.database.ProducedDiscs.confirm(
+                                                c, saved.id());
+                                    return saved;
                                 }));
     }
 

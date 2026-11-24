@@ -1,6 +1,7 @@
 module com.orodent.ecos.database {
     requires transitive com.orodent.ecos.core;
     requires java.sql.rowset;
+    requires com.google.gson;
     requires org.apache.derby.server;
     requires org.apache.derby.tools;
     requires org.apache.derby.client;

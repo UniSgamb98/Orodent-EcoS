@@ -87,7 +87,48 @@ public final class FiringRepository {
                                 r.getString(2));
             }
         }
-        var ids = request.discs().stream().sorted().toList();
+        // Serialize allocation by production before resolving quantities into individual IDs.
+        for (long plan :
+                request.quantities().stream()
+                        .map(q -> q.key().planId())
+                        .distinct()
+                        .sorted()
+                        .toList()) {
+            try (var q =
+                    c.prepareStatement(
+                            "UPDATE TON.PIANI_PRODUZIONE SET versione_modifica=versione_modifica"
+                                + " WHERE piano_id=? AND stato='PREPARATA'")) {
+                q.setLong(1, plan);
+                if (q.executeUpdate() != 1)
+                    throw new IllegalArgumentException(
+                            "Produzione non disponibile. Aggiorna l’elenco.");
+            }
+        }
+        var chosen = new ArrayList<Long>();
+        for (var quantity : request.quantities()) {
+            int found = 0;
+            try (var q =
+                    c.prepareStatement(
+                            "SELECT d.disco_id FROM TON.DISCHI_PRODOTTI d WHERE d.piano_id=? AND"
+                                + " d.numero_riga=? AND NOT EXISTS(SELECT 1 FROM TON.CARICO_DISCHI"
+                                + " a WHERE a.disco_id=d.disco_id) ORDER BY d.disco_id FETCH FIRST"
+                                + " ? ROWS ONLY")) {
+                q.setLong(1, quantity.key().planId());
+                q.setInt(2, quantity.key().row());
+                q.setInt(3, quantity.count());
+                try (var r = q.executeQuery()) {
+                    while (r.next()) {
+                        chosen.add(r.getLong(1));
+                        found++;
+                    }
+                }
+            }
+            if (found != quantity.count())
+                throw new IllegalArgumentException(
+                        "La quantità richiesta supera i dischi ancora disponibili per un articolo."
+                            + " Aggiorna l’elenco.");
+        }
+        var ids = chosen.stream().sorted().toList();
         for (long id : ids) {
             try (var q =
                     c.prepareStatement(

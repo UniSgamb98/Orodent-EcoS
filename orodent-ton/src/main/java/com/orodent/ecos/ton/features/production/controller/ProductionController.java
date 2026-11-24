@@ -3,7 +3,6 @@ package com.orodent.ecos.ton.features.production.controller;
 import static com.orodent.ecos.ton.features.production.model.Production.*;
 
 import com.orodent.ecos.ton.features.production.service.*;
-import com.orodent.ecos.ton.features.production.view.ProductionExecutionDialog;
 import com.orodent.ecos.ton.features.production.view.ProductionView;
 import com.orodent.ecos.ton.navigation.FeatureController;
 
@@ -112,7 +111,6 @@ public final class ProductionController implements FeatureController {
         view.save.setOnAction(e -> save(false));
         view.prepare.setOnAction(e -> save(true));
         view.duplicate.setOnAction(e -> duplicate());
-        view.register.setOnAction(e -> registerDiscs());
         view.tabs
                 .getSelectionModel()
                 .selectedIndexProperty()
@@ -528,16 +526,17 @@ public final class ProductionController implements FeatureController {
         if (plan == null || workspace == null) return;
         if (prepare
                 && !confirm(
-                        "Preparare questa produzione?",
+                        "Confermare questa produzione?",
                         plan.count()
                                 + " dischi · "
                                 + plan.formats().size()
                                 + " formati · "
                                 + product.code()
-                                + "\nDa preparare: "
+                                + "\nMiscela: "
                                 + ProductionDocumentData.number(plan.prepared())
                                 + " g, maggiorazione compresa.\n"
-                                + "Le specifiche e le dosi di lavoro verranno fissate."))
+                                + "I dischi saranno registrati e disponibili in Cotture. Le"
+                                + " specifiche e le dosi verranno conservate."))
             return;
         Request request = request();
         saving.set(true);
@@ -563,10 +562,10 @@ public final class ProductionController implements FeatureController {
                                             view.plan(plan);
                                             view.feedback(
                                                     prepare
-                                                            ? "Produzione preparata. Specifiche e"
-                                                                  + " dosi di lavoro conservate."
+                                                            ? "Produzione confermata. Dischi"
+                                                                  + " disponibili in Cotture."
                                                             : "Bozza salvata nel database"
-                                                                  + " condiviso.",
+                                                                    + " condiviso.",
                                                     false);
                                             if (prepare && plan.template() != null) {
                                                 renderDocument(true);
@@ -576,68 +575,6 @@ public final class ProductionController implements FeatureController {
                                                 if (view.documentSelected()) renderDocument(false);
                                             }
                                         }));
-    }
-
-    private void registerDiscs() {
-        if (saved == null || saved.state() != State.PREPARATA || saving.get()) return;
-        view.register.setDisable(true);
-        read(
-                "execution",
-                service.execution(saved.id()),
-                execution -> {
-                    view.register.setDisable(false);
-                    if (execution.remaining() == 0) {
-                        view.feedback(
-                                "Tutti i dischi di questa produzione sono già stati registrati.",
-                                false);
-                        return;
-                    }
-                    var dialog =
-                            new ProductionExecutionDialog(
-                                    view.getScene() == null ? null : view.getScene().getWindow(),
-                                    execution);
-                    dialog.showAndWait()
-                            .ifPresent(
-                                    request -> {
-                                        saving.set(true);
-                                        controls();
-                                        service.register(execution, request)
-                                                .whenComplete(
-                                                        (receipt, error) ->
-                                                                Platform.runLater(
-                                                                        () -> {
-                                                                            saving.set(false);
-                                                                            if (disposed) return;
-                                                                            if (error != null)
-                                                                                view.feedback(
-                                                                                        message(
-                                                                                                error));
-                                                                            else {
-                                                                                saved =
-                                                                                        receipt
-                                                                                                .prepared();
-                                                                                view.state(saved);
-                                                                                view.feedback(
-                                                                                        receipt
-                                                                                                        .count()
-                                                                                                + " dischi"
-                                                                                                + " prodotti"
-                                                                                                + " registrati."
-                                                                                                + " Sono"
-                                                                                                + " disponibili"
-                                                                                                + " in Cotture"
-                                                                                                + " → Pianificazione"
-                                                                                                + " e carichi.",
-                                                                                        false);
-                                                                            }
-                                                                            controls();
-                                                                        }));
-                                    });
-                },
-                error -> {
-                    view.register.setDisable(false);
-                    view.feedback(error);
-                });
     }
 
     private void duplicate() {
@@ -701,7 +638,7 @@ public final class ProductionController implements FeatureController {
                                                             saving.set(false);
                                                             if (error != null)
                                                                 view.feedback(
-                                                                        "Produzione preparata, ma"
+                                                                        "Produzione confermata, ma"
                                                                             + " il documento non è"
                                                                             + " stato conservato: "
                                                                                 + message(error));
@@ -714,7 +651,7 @@ public final class ProductionController implements FeatureController {
                                                                                 record.plan(),
                                                                                 document);
                                                                 view.feedback(
-                                                                        "Produzione preparata e"
+                                                                        "Produzione confermata e"
                                                                             + " foglio operativo"
                                                                             + " conservato.",
                                                                         false);
@@ -732,7 +669,7 @@ public final class ProductionController implements FeatureController {
                     renderedVersion = -1;
                     saving.set(false);
                     view.feedback(
-                            (store ? "Produzione preparata; documento da generare: " : "") + text);
+                            (store ? "Produzione confermata; documento da generare: " : "") + text);
                     controls();
                 });
     }
@@ -812,7 +749,6 @@ public final class ProductionController implements FeatureController {
                         view.save,
                         view.prepare,
                         view.duplicate,
-                        view.register,
                         view.print,
                         view.previewPrint,
                         view.listing.create(),

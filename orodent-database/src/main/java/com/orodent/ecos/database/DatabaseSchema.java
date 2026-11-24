@@ -155,6 +155,11 @@ public final class DatabaseSchema {
                     29,
                     "Produced discs and traceable furnace loads",
                     "/database/migrations/V29__produced_discs_and_furnace_loads.sql");
+    private static final SchemaMigration CONFIRMED_OUTPUT =
+            new SchemaMigration(
+                    30,
+                    "Confirm all production output atomically",
+                    "/database/migrations/V30__confirm_production_output.sql");
     private static final List<SchemaMigration> MIGRATIONS =
             List.of(
                     BASELINE,
@@ -185,7 +190,8 @@ public final class DatabaseSchema {
                     CUBATURE_RULES,
                     CUBATURE_FORMULAS,
                     DISK_MARKING,
-                    PRODUCED_DISCS);
+                    PRODUCED_DISCS,
+                    CONFIRMED_OUTPUT);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS =
             List.of(
@@ -288,6 +294,8 @@ public final class DatabaseSchema {
                                 CrmAuditMigration.apply(connection);
                             if (migration.version() == AVAILABILITY_WAREHOUSES.version())
                                 AvailabilityWarehouseMigration.apply(connection);
+                            if (migration.version() == CONFIRMED_OUTPUT.version())
+                                ProducedDiscs.upgradePrepared(connection);
                             recordMigration(connection, "ECOS", migration);
                         }
                     }

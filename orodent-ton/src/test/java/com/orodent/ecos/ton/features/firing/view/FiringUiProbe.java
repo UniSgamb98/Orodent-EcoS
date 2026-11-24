@@ -51,7 +51,7 @@ public final class FiringUiProbe {
         new DatabaseSchema(db).initialize();
         var workers = Executors.newFixedThreadPool(3);
         var fixture = new ProductionFixture(db, workers);
-        fixture.service.save(null, fixture.workspace(), fixture.request(false), true).join();
+        fixture.service.save(null, fixture.workspace(), fixture.request(false), false).join();
         new EquipmentService(db, workers)
                 .save(
                         Equipment.Kind.FURNACES,
@@ -114,23 +114,16 @@ public final class FiringUiProbe {
                     });
             await(
                     () ->
-                            node("ton-production-register") != null
-                                    && node("ton-production-register").isVisible());
+                            node("ton-production-prepare") != null
+                                    && !node("ton-production-prepare").isDisabled());
             fx(
                     () -> {
-                        click("ton-production-register");
-                        return null;
-                    });
-            await(() -> executionDialog() != null);
-            fx(
-                    () -> {
-                        var pane = executionDialog();
-                        for (var id : fixture.articles.values()) {
-                            var input = (TextField) pane.lookup("#ton-production-actual-" + id);
-                            if (input != null)
-                                input.setText(id.equals(fixture.articles.get(14)) ? "2" : "0");
-                        }
-                        ((Button) pane.lookup("#ton-production-execution-confirm")).fire();
+                        assertEquals(
+                                "Conferma produzione",
+                                ((Button) node("ton-production-prepare")).getText());
+                        assertNull(node("ton-production-register"));
+                        Platform.runLater(() -> answer(ButtonType.OK));
+                        click("ton-production-prepare");
                         return null;
                     });
             await(
@@ -141,8 +134,8 @@ public final class FiringUiProbe {
                                                     n instanceof Label l
                                                             && l.getText()
                                                                     .contains(
-                                                                            "2 dischi prodotti"
-                                                                                + " registrati")));
+                                                                            "Produzione"
+                                                                                + " confermata")));
             fx(
                     () -> {
                         click("ton-nav-firing");
@@ -152,33 +145,44 @@ public final class FiringUiProbe {
             await(
                     () ->
                             node("ton-firing-pending-table") != null
-                                    && table("ton-firing-pending-table").getItems().size() == 2
+                                    && table("ton-firing-pending-table").getItems().size() == 3
                                     && !node("ton-firing-editor").isDisabled());
-            long disc =
-                    fx(
-                            () -> {
-                                var row =
-                                        (FiringView.DiscRow)
-                                                table("ton-firing-pending-table")
-                                                        .getItems()
-                                                        .getFirst();
-                                row.selected.set(true);
-                                ((ComboBox<?>) node("ton-firing-furnace"))
-                                        .getSelectionModel()
-                                        .selectFirst();
-                                ((TextField) node("ton-firing-lot")).setText("LOTTO-OPERAIO");
-                                screenshot("target/firing-pending.png");
-                                assertFalse(node("ton-firing-create").isDisabled());
-                                click("ton-firing-create");
-                                return row.disc.id();
-                            });
+            fx(
+                    () -> {
+                        assertTrue(
+                                table("ton-firing-pending-table").getColumns().stream()
+                                        .noneMatch(c -> c.getText().equals("ID disco")));
+                        var row =
+                                (FiringView.GroupRow)
+                                        table("ton-firing-pending-table").getItems().getFirst();
+                        assertEquals(16, row.group.count());
+                        row.quantity.setText("17");
+                        ((ComboBox<?>) node("ton-firing-furnace"))
+                                .getSelectionModel()
+                                .selectFirst();
+                        ((TextField) node("ton-firing-lot")).setText("LOTTO-OPERAIO");
+                        click("ton-firing-create");
+                        assertTrue(((Label) node("ton-firing-feedback")).getText().contains("16"));
+                        assertEquals(0, table("ton-firing-loads-table").getItems().size());
+                        row.quantity.setText("3");
+                        screenshot("target/firing-pending.png");
+                        click("ton-firing-create");
+                        return null;
+                    });
             await(
                     () ->
-                            table("ton-firing-pending-table").getItems().size() == 1
+                            table("ton-firing-pending-table").getItems().size() == 3
                                     && table("ton-firing-loads-table").getItems().size() == 1
                                     && !node("ton-firing-editor").isDisabled());
             fx(
                     () -> {
+                        assertEquals(
+                                13,
+                                ((FiringView.GroupRow)
+                                                table("ton-firing-pending-table")
+                                                        .getItems()
+                                                        .getFirst())
+                                        .group.count());
                         ((TabPane) node("ton-firing-tabs")).getSelectionModel().select(1);
                         table("ton-firing-loads-table").getSelectionModel().selectFirst();
                         return null;
@@ -187,10 +191,10 @@ public final class FiringUiProbe {
             fx(
                     () -> {
                         var loaded =
-                                (com.orodent.ecos.ton.features.firing.model.Firing.Disc)
+                                (com.orodent.ecos.ton.features.firing.model.Firing.Group)
                                         table("ton-firing-loaded-table").getItems().getFirst();
-                        assertEquals(disc, loaded.id());
-                        assertEquals("ZR9814MSTA4", loaded.article());
+                        assertEquals(3, loaded.count());
+                        assertEquals("ZR9814MSTA4", loaded.reference().article());
                         assertTrue(
                                 ((Label) node("ton-firing-load-details"))
                                         .getText()
@@ -232,19 +236,17 @@ public final class FiringUiProbe {
         }
     }
 
-    DialogPane executionDialog() {
-        return Window.getWindows().stream()
-                .filter(Window::isShowing)
-                .filter(w -> w.getScene() != null)
-                .map(w -> w.getScene().getRoot())
-                .filter(DialogPane.class::isInstance)
-                .map(DialogPane.class::cast)
-                .filter(
-                        p ->
-                                p.getId() != null
-                                        && p.getId().equals("ton-production-execution-dialog"))
-                .findFirst()
-                .orElse(null);
+    void answer(ButtonType answer) {
+        var pane =
+                Window.getWindows().stream()
+                        .filter(Window::isShowing)
+                        .filter(w -> w.getScene() != null)
+                        .map(w -> w.getScene().getRoot())
+                        .filter(DialogPane.class::isInstance)
+                        .map(DialogPane.class::cast)
+                        .findFirst()
+                        .orElseThrow();
+        ((Button) pane.lookupButton(answer)).fire();
     }
 
     Node node(String id) {
