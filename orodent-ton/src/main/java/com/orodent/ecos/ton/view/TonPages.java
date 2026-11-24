@@ -192,6 +192,7 @@ final class TonPages {
                         case MODELS -> "Apri modelli disco";
                         case COMPOSITIONS -> "Apri composizioni";
                         case DOCUMENT_TEMPLATES -> "Apri modelli documento";
+                        case DISK_MARKING -> "Apri marcatura dischi";
                         default -> "Apri catalogo prodotti";
                     };
             card.getChildren()

@@ -5,6 +5,9 @@ import java.sql.*;
 final class CubatureVersionFixtures {
     static void beforeV27(Connection c) throws SQLException {
         try (var q = c.createStatement()) {
+            q.executeUpdate("DROP TABLE TON.MARCATURA_VERSIONI");
+            q.executeUpdate("DROP TABLE TON.MODELLI_MARCATURA");
+            q.executeUpdate("DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version=28");
             q.executeUpdate(
                     "ALTER TABLE TON.CONFIGURAZIONI_PRODOTTO DROP CONSTRAINT"
                         + " fk_ton_cfg_calcolo_versione");

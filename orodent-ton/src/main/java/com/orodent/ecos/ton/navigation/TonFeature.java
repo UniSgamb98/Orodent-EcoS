@@ -94,6 +94,11 @@ public enum TonFeature {
             TonSection.DOCUMENTS,
             "Documenti emessi",
             "Consulta e riapri le schede di produzione e di cottura conservate nell'archivio."),
+    DISK_MARKING(
+            TonSection.DOCUMENTS,
+            "Marcatura dischi",
+            "Componi la scritta sul dorso con dati del disco e risultati di cubatura; scegli i"
+                + " decimali e conserva le versioni."),
     DOCUMENT_TEMPLATES(
             TonSection.DOCUMENTS,
             "Modelli documento",
@@ -135,7 +140,8 @@ public enum TonFeature {
                 || this == ARTICLES
                 || this == MODELS
                 || this == COMPOSITIONS
-                || this == DOCUMENT_TEMPLATES;
+                || this == DOCUMENT_TEMPLATES
+                || this == DISK_MARKING;
     }
 
     public static List<TonFeature> in(TonSection section) {

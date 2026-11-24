@@ -30,6 +30,9 @@ import com.orodent.ecos.ton.features.equipment.controller.EquipmentController;
 import com.orodent.ecos.ton.features.equipment.model.Equipment.Kind;
 import com.orodent.ecos.ton.features.equipment.service.EquipmentService;
 import com.orodent.ecos.ton.features.equipment.view.EquipmentView;
+import com.orodent.ecos.ton.features.marking.controller.MarkingTemplatesController;
+import com.orodent.ecos.ton.features.marking.service.MarkingTemplateService;
+import com.orodent.ecos.ton.features.marking.view.MarkingTemplatesView;
 import com.orodent.ecos.ton.features.powders.controller.PowdersController;
 import com.orodent.ecos.ton.features.powders.service.PowderService;
 import com.orodent.ecos.ton.features.powders.view.PowdersView;
@@ -59,6 +62,7 @@ final class TonController {
     private final EquipmentService equipment;
     private final SupplierService suppliers;
     private final CubatureRuleService cubatureRules;
+    private final MarkingTemplateService markingTemplates;
     private final AvailabilityService availability;
     private AvailabilityView availabilityView;
     private AvailabilityView.Position availabilityPosition = AvailabilityView.Position.initial();
@@ -71,6 +75,7 @@ final class TonController {
         workers = context.workers();
         suppliers = new SupplierService(context.connections(), workers);
         cubatureRules = new CubatureRuleService(context.connections(), workers);
+        markingTemplates = new MarkingTemplateService(context.connections(), workers);
         availability = new AvailabilityService(context.connections(), workers);
         equipment = new EquipmentService(context.connections(), workers);
         documents = new DocumentTemplateService(context.connections(), workers);
@@ -156,6 +161,12 @@ final class TonController {
                 install(feature, page, controller, controller::loadInitialData);
             }
             case MODELS -> installModels(null);
+            case DISK_MARKING -> {
+                var page = new MarkingTemplatesView();
+                page.subpageProperty().addListener((o, a, b) -> view.showFeature(page, feature, b));
+                var controller = new MarkingTemplatesController(page, markingTemplates);
+                install(feature, page, controller, controller::start);
+            }
             case DOCUMENT_TEMPLATES -> {
                 var page = new DocumentTemplatesView();
                 var controller = new DocumentTemplatesController(page, documents, workers);

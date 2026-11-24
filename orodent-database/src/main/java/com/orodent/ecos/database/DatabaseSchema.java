@@ -145,6 +145,11 @@ public final class DatabaseSchema {
                     27,
                     "Versioned cubature formulas and pinned specifications",
                     "/database/migrations/V27__cubature_formula_versions.sql");
+    private static final SchemaMigration DISK_MARKING =
+            new SchemaMigration(
+                    28,
+                    "Versioned disk marking templates",
+                    "/database/migrations/V28__disk_marking_templates.sql");
     private static final List<SchemaMigration> MIGRATIONS =
             List.of(
                     BASELINE,
@@ -173,7 +178,8 @@ public final class DatabaseSchema {
                     CRM_AUDIT,
                     AVAILABILITY_WAREHOUSES,
                     CUBATURE_RULES,
-                    CUBATURE_FORMULAS);
+                    CUBATURE_FORMULAS,
+                    DISK_MARKING);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS =
             List.of(
