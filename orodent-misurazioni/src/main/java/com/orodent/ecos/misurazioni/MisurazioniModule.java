@@ -16,9 +16,17 @@ public final class MisurazioniModule implements EcosModule {
     }
 
     @Override
+    public boolean enabled() {
+        return MeasurementSettings.enabled(DatabaseSettings.loadApplicationProperties());
+    }
+
+    @Override
     public ModuleSession open(ModuleContext context) {
-        return new MeasurementsController(
-                context.showHome(),
-                MeasurementSettings.from(DatabaseSettings.loadApplicationProperties()));
+        var properties = DatabaseSettings.loadApplicationProperties();
+        if (!MeasurementSettings.enabled(properties))
+            throw new IllegalStateException(
+                    "Misurazioni non abilitate su questa postazione. Imposta"
+                        + " misurazioni.enabled=true nel file application.properties.");
+        return new MeasurementsController(context.showHome(), MeasurementSettings.from(properties));
     }
 }

@@ -4,6 +4,11 @@ package com.orodent.ecos.module;
 public interface EcosModule {
     ModuleDescriptor descriptor();
 
+    /** Whether this workstation is configured to open the module. Metadata stays visible. */
+    default boolean enabled() {
+        return true;
+    }
+
     /** Called on the JavaFX thread, after ecosystem services have started. */
     ModuleSession open(ModuleContext context);
 

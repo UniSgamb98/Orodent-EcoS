@@ -57,7 +57,12 @@ public final class AppController implements AppNavigator {
 
     @Override
     public void showHome() {
-        HomeView view = new HomeView(app.databaseMode(), app.modules().descriptors(), this::showModule);
+        HomeView view =
+                new HomeView(
+                        app.databaseMode(),
+                        app.modules().descriptors(),
+                        this::showModule,
+                        id -> app.modules().require(id).enabled());
         view.showHiddenModules(hiddenModulesVisible);
         view.homeButton().setOnAction(event -> showHome());
         showView(view, () -> { });
@@ -71,6 +76,7 @@ public final class AppController implements AppNavigator {
 
     private void showModuleRecord(String moduleId, String recordId) {
         EcosModule module = app.modules().require(moduleId);
+        if (!module.enabled()) return;
         ModuleContext context =
                 new ModuleContext(
                         app.connectionProvider(),

@@ -3,6 +3,14 @@
 Modulo autonomo, sempre visibile nella Home di EcoS, che riprende la schermata e
 il flusso di [Marzia 1.0.1](https://github.com/UniSgamb98/Marzia/commit/849773dc7e02c086efee27b0a2596b3216f8ec4e).
 
+L'apertura è disabilitata per impostazione predefinita. Solo sulla postazione
+che acquisisce dagli strumenti impostare `misurazioni.enabled=true` nel file
+`application.properties` (in sviluppo `config/development.properties`). Sugli
+altri PC lasciare `false`. Una proprietà assente o diversa da `true` mantiene
+il modulo disabilitato: la voce nella Home rimane visibile, ma non è apribile e
+non vengono avviate connessioni, nemmeno richiedendo direttamente il modulo.
+Dopo una modifica del file, tornare alla Home o riavviare EcoS.
+
 - All'apertura tenta il collegamento a micrometro e bilancia in background.
   Stato verde: collegato; rosso: scollegato; giallo: operazione in corso.
   Clic sullo stato per scollegare o riprovare il collegamento.
@@ -22,6 +30,7 @@ Gli indirizzi sono configurabili nel file `application.properties` dell'installa
 (in sviluppo `config/development.properties`):
 
 ```properties
+misurazioni.enabled=false
 misurazioni.micrometro.host=192.168.1.150
 misurazioni.micrometro.port=8600
 misurazioni.bilancia.host=192.168.1.201

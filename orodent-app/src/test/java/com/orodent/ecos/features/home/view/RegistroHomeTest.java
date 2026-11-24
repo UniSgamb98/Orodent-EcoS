@@ -47,6 +47,34 @@ class RegistroHomeTest {
                         assertFalse(home.lookup("#module-registro").isManaged());
                         assertTrue(home.lookup("#module-misurazioni").isVisible());
                         assertTrue(home.lookup("#module-misurazioni").isManaged());
+                        var opened = new java.util.concurrent.atomic.AtomicReference<String>();
+                        var modules = ModuleCatalog.discover().descriptors();
+                        var disabled =
+                                new HomeView(
+                                        DatabaseMode.HOST,
+                                        modules,
+                                        opened::set,
+                                        id -> !id.equals("misurazioni"));
+                        new javafx.scene.Scene(disabled, 1120, 760);
+                        disabled.applyCss();
+                        disabled.layout();
+                        var disabledButton =
+                                (javafx.scene.control.Button)
+                                        disabled.lookup("#open-misurazioni-button");
+                        assertTrue(disabled.lookup("#module-misurazioni").isVisible());
+                        assertTrue(disabledButton.isDisabled());
+                        disabled.showHiddenModules(true);
+                        disabledButton.fire();
+                        assertNull(opened.get());
+                        assertTrue(disabledButton.isDisabled());
+                        var enabled =
+                                new HomeView(DatabaseMode.HOST, modules, opened::set, id -> true);
+                        new javafx.scene.Scene(enabled, 1120, 760);
+                        enabled.applyCss();
+                        enabled.layout();
+                        ((javafx.scene.control.Button) enabled.lookup("#open-misurazioni-button"))
+                                .fire();
+                        assertEquals("misurazioni", opened.get());
                         result.complete(null);
                     } catch (Throwable e) {
                         result.completeExceptionally(e);

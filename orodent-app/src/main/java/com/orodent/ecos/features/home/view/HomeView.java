@@ -2,11 +2,13 @@ package com.orodent.ecos.features.home.view;
 
 import com.orodent.ecos.database.DatabaseMode;
 import com.orodent.ecos.module.ModuleDescriptor;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
@@ -19,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public final class HomeView extends BorderPane {
     private static final Set<String> HIDDEN_MODULE_IDS = Set.of("ton", "costi", "registro");
@@ -29,6 +32,14 @@ public final class HomeView extends BorderPane {
     private final Label databaseStatus = new Label();
 
     public HomeView(DatabaseMode mode, List<ModuleDescriptor> modules, Consumer<String> openModule) {
+        this(mode, modules, openModule, id -> true);
+    }
+
+    public HomeView(
+            DatabaseMode mode,
+            List<ModuleDescriptor> modules,
+            Consumer<String> openModule,
+            Predicate<String> enabled) {
         getStyleClass().add("page");
         Label brand = new Label("ORODENT-ECOS");
         brand.getStyleClass().add("brand-label");
@@ -50,12 +61,13 @@ public final class HomeView extends BorderPane {
         databaseStatus.setText("Database connesso · Modalità " + mode);
         databaseStatus.setId("database-status");
         databaseStatus.getStyleClass().add("muted-label");
-        Label version = new Label("Versione " + System.getProperty("orodent.ecos.version", "sviluppo"));
+        Label version =
+                new Label("Versione " + System.getProperty("orodent.ecos.version", "sviluppo"));
         version.setId("app-version");
         version.getStyleClass().add("muted-label");
         catalog.setId("module-catalog");
         for (ModuleDescriptor module : modules) {
-            VBox card = moduleCard(module, openModule);
+            VBox card = moduleCard(module, openModule, enabled.test(module.id()));
             catalog.getChildren().add(card);
             if (HIDDEN_MODULE_IDS.contains(module.id())) hiddenModuleCards.add(card);
         }
@@ -69,7 +81,7 @@ public final class HomeView extends BorderPane {
         setCenter(scroll);
     }
 
-    private VBox moduleCard(ModuleDescriptor module, Consumer<String> openModule) {
+    private VBox moduleCard(ModuleDescriptor module, Consumer<String> openModule, boolean enabled) {
         SVGPath icon = new SVGPath();
         icon.setContent(module.iconSvgPath());
         icon.getStyleClass().add("module-icon");
@@ -92,6 +104,8 @@ public final class HomeView extends BorderPane {
         Button open = new Button("Apri " + module.name());
         open.setId("open-" + module.id() + "-button");
         open.getStyleClass().add("primary-button");
+        open.setDisable(!enabled);
+        if (!enabled) open.setTooltip(new Tooltip("Modulo non abilitato su questa postazione."));
         open.setOnAction(event -> openModule.accept(module.id()));
         VBox card = new VBox(18, heading, description, open);
         card.setId("module-" + module.id());

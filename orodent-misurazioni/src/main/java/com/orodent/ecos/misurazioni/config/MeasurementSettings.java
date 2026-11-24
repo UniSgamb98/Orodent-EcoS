@@ -5,6 +5,10 @@ import java.util.Properties;
 public record MeasurementSettings(Endpoint micrometer, Endpoint scale, int timeoutMs) {
     public record Endpoint(String host, int port) {}
 
+    public static boolean enabled(Properties settings) {
+        return Boolean.parseBoolean(settings.getProperty("misurazioni.enabled", "false").strip());
+    }
+
     public static MeasurementSettings from(Properties settings) {
         return new MeasurementSettings(
                 endpoint(settings, "micrometro", "192.168.1.150", 8600),
