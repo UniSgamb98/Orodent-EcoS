@@ -17,6 +17,9 @@ import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.stage.Window;
 
+import java.util.*;
+import java.util.function.*;
+
 public final class MeasurementsController implements ModuleSession {
     final MeasurementsView view = new MeasurementsView();
     private final MeasurementBatch batch = new MeasurementBatch();
@@ -28,7 +31,52 @@ public final class MeasurementsController implements ModuleSession {
     private Window window;
     private Instrument active = MICROMETER;
     private int batchGeneration;
-    private boolean closed;
+    private boolean closed, tracked, persistenceBusy, persistenceBlocked, reading;
+    private Consumer<List<MeasurementBatch.Measurement>> changed = rows -> {};
+    private BiConsumer<Instrument, DeviceConnections.State> connectionListener =
+            (instrument, state) -> {};
+
+    public void restore(List<MeasurementBatch.Measurement> rows) {
+        int selected = view.list.getSelectionModel().getSelectedIndex();
+        batchGeneration++;
+        tracked = true;
+        batch.restore(rows);
+        refreshRows(selected);
+    }
+
+    public void onChanged(Consumer<List<MeasurementBatch.Measurement>> action) {
+        changed = action;
+    }
+
+    public void onConnectionState(BiConsumer<Instrument, DeviceConnections.State> action) {
+        connectionListener = action;
+        updateState();
+    }
+
+    public void persistenceState(boolean busy, boolean blocked) {
+        persistenceBusy = busy;
+        persistenceBlocked = blocked;
+        updateState();
+    }
+
+    public boolean reading() {
+        return reading;
+    }
+
+    public List<MeasurementBatch.Measurement> readings() {
+        return batch.rows();
+    }
+
+    public void clearReadings() {
+        batchGeneration++;
+        batch.reset();
+        refreshRows(-1);
+        changed.accept(batch.rows());
+    }
+
+    public void toggleConnection(Instrument instrument) {
+        toggle(instrument);
+    }
 
     public MeasurementsController(Runnable home, MeasurementSettings settings) {
         this(home, DeviceConnections.fromSettings(settings));
@@ -43,15 +91,14 @@ public final class MeasurementsController implements ModuleSession {
         view.swap.setOnAction(e -> swap());
         view.reset.setOnAction(
                 e -> {
-                    batchGeneration++;
-                    batch.reset();
-                    refreshRows(-1);
+                    clearReadings();
                     view.feedback.setText("");
                 });
         view.onRemove(
                 (index, instrument) -> {
                     batch.clearValue(index, instrument);
                     refreshRows(index);
+                    changed.accept(batch.rows());
                 });
         view.copy.setOnAction(
                 e -> {
@@ -92,24 +139,38 @@ public final class MeasurementsController implements ModuleSession {
 
     private void acquire() {
         var instrument = active;
+        if (persistenceBusy
+                || persistenceBlocked
+                || tracked && reading
+                || !connections.state(instrument).ready()) return;
+        reading = true;
+        updateState();
         int generation = batchGeneration;
         connections.read(
                 instrument,
                 value -> {
-                    if (generation != batchGeneration) return;
+                    reading = false;
+                    if (generation != batchGeneration) {
+                        updateState();
+                        return;
+                    }
                     try {
                         refreshRows(batch.acquire(instrument, value));
                         view.feedback.setText("");
+                        changed.accept(batch.rows());
                     } catch (IllegalArgumentException invalid) {
                         view.feedback.setText(message(invalid));
                     }
                 },
-                failure ->
-                        view.feedback.setText(
-                                instrument.label()
-                                        + ": "
-                                        + message(failure)
-                                        + " Ricollega lo strumento per riprovare."));
+                failure -> {
+                    reading = false;
+                    view.feedback.setText(
+                            instrument.label()
+                                    + ": "
+                                    + message(failure)
+                                    + " Ricollega lo strumento per riprovare.");
+                    updateState();
+                });
     }
 
     private void swap() {
@@ -123,7 +184,9 @@ public final class MeasurementsController implements ModuleSession {
             view.list.getSelectionModel().select(index);
             view.list.scrollTo(index);
         }
-        view.copy.setDisable(batch.rows().isEmpty());
+        view.copy.setDisable(
+                batch.rows().stream()
+                        .noneMatch(r -> !r.micrometer().isEmpty() || !r.scale().isEmpty()));
         updateState();
     }
 
@@ -131,8 +194,16 @@ public final class MeasurementsController implements ModuleSession {
         for (var instrument : Instrument.values()) {
             var state = connections.state(instrument);
             view.connectionState(instrument, state.connected(), state.busy());
+            connectionListener.accept(instrument, state);
         }
-        view.active(active, connections.state(active).ready());
+        view.active(
+                active,
+                connections.state(active).ready()
+                        && !persistenceBusy
+                        && !persistenceBlocked
+                        && (!tracked || !reading));
+        view.reset.setDisable(persistenceBusy || persistenceBlocked || tracked && reading);
+        view.list.setDisable(persistenceBusy || persistenceBlocked || tracked && reading);
     }
 
     private static String message(Exception failure) {

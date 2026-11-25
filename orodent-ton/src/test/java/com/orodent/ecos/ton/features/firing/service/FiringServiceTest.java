@@ -640,36 +640,37 @@ class FiringServiceTest {
                         // migrations.
                         for (String sql :
                                 List.of(
+                                        "DROP TABLE TON.DISCO_MISURE_REVISIONI",
                                         "ALTER TABLE TON.CICLI_COTTURA DROP CONSTRAINT"
-                                            + " fk_ton_cic_prog_precedente",
+                                                + " fk_ton_cic_prog_precedente",
                                         "ALTER TABLE TON.CICLI_COTTURA DROP CONSTRAINT"
-                                            + " ck_ton_cic_target",
+                                                + " ck_ton_cic_target",
                                         "ALTER TABLE TON.CICLI_COTTURA DROP CONSTRAINT"
-                                            + " ck_ton_cic_prog_precedente",
+                                                + " ck_ton_cic_prog_precedente",
                                         "ALTER TABLE TON.CICLI_COTTURA DROP COLUMN"
-                                            + " programma_precedente_id RESTRICT",
+                                                + " programma_precedente_id RESTRICT",
                                         "ALTER TABLE TON.CICLI_COTTURA DROP COLUMN"
-                                            + " temperatura_finale_c RESTRICT",
+                                                + " temperatura_finale_c RESTRICT",
                                         "UPDATE TON.PROGRAMMA_PASSI SET"
-                                            + " temperatura_obiettivo_c=1450 WHERE"
-                                            + " temperatura_obiettivo_c IS NULL",
+                                                + " temperatura_obiettivo_c=1450 WHERE"
+                                                + " temperatura_obiettivo_c IS NULL",
                                         "ALTER TABLE TON.PROGRAMMA_PASSI ALTER COLUMN"
-                                            + " temperatura_obiettivo_c NOT NULL",
+                                                + " temperatura_obiettivo_c NOT NULL",
                                         "ALTER TABLE TON.PROGRAMMI_COTTURA DROP CONSTRAINT"
-                                            + " fk_ton_programma_famiglia",
+                                                + " fk_ton_programma_famiglia",
                                         "ALTER TABLE TON.PROGRAMMI_COTTURA DROP CONSTRAINT"
-                                            + " uq_ton_prog_revisione",
+                                                + " uq_ton_prog_revisione",
                                         "ALTER TABLE TON.PROGRAMMI_COTTURA DROP CONSTRAINT"
-                                            + " ck_ton_prog_num_rev",
+                                                + " ck_ton_prog_num_rev",
                                         "ALTER TABLE TON.PROGRAMMI_COTTURA DROP COLUMN famiglia_id"
-                                            + " RESTRICT",
+                                                + " RESTRICT",
                                         "ALTER TABLE TON.PROGRAMMI_COTTURA DROP COLUMN"
-                                            + " numero_revisione RESTRICT",
+                                                + " numero_revisione RESTRICT",
                                         "ALTER TABLE TON.PROGRAMMI_COTTURA DROP COLUMN attivo"
-                                            + " RESTRICT",
+                                                + " RESTRICT",
                                         "ALTER TABLE TON.PROGRAMMI_COTTURA ADD CONSTRAINT"
-                                            + " uq_ton_prog_versione"
-                                            + " UNIQUE(codice,numero_versione)",
+                                                + " uq_ton_prog_versione"
+                                                + " UNIQUE(codice,numero_versione)",
                                         "DROP TABLE TON.PROGRAMMI_FAMIGLIE",
                                         "DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version>=30"))
                             q.executeUpdate(sql);

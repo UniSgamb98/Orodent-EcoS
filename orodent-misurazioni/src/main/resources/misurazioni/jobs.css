@@ -1,0 +1,32 @@
+#measurement-jobs-module { -fx-background-color: #e4eff4; -fx-font-family: "Segoe UI", "System"; -fx-text-fill: #173f59; }
+#measurement-jobs-module .label { -fx-text-fill: #173f59; }
+#measurement-jobs-module .jobs-header { -fx-background-color: white; -fx-padding: 14px 20px; }
+#measurement-jobs-module .jobs-header .label { -fx-font-size: 18px; -fx-font-weight: bold; }
+#measurement-jobs-module .button { -fx-padding: 9px 13px; -fx-background-color: white; -fx-text-fill: #173f59; -fx-border-color: #c5dae6; -fx-border-radius: 6px; -fx-background-radius: 6px; -fx-cursor: hand; }
+#measurement-jobs-module .button:hover { -fx-background-color: #e1f3f2; }
+#measurement-jobs-module .jobs-primary { -fx-background-color: #13798b; -fx-text-fill: white; -fx-font-weight: bold; }
+#measurement-jobs-module .jobs-navigation { -fx-padding: 22px 12px; -fx-background-color: white; }
+#measurement-jobs-module .jobs-navigation .button { -fx-alignment: center-left; -fx-max-width: infinity; }
+#measurement-jobs-module .jobs-main { -fx-padding: 22px; }
+#measurement-jobs-module .jobs-title { -fx-font-size: 25px; -fx-font-weight: bold; }
+#measurement-jobs-module .jobs-panel-title { -fx-font-size: 18px; -fx-font-weight: bold; }
+#measurement-jobs-module .jobs-section { -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 12px 0 4px 0; }
+#measurement-jobs-module .jobs-card { -fx-background-color: white; -fx-padding: 16px; -fx-border-color: #c5dae6; -fx-border-radius: 10px; -fx-background-radius: 10px; }
+#measurement-jobs-module .jobs-products { -fx-padding: 0 12px 0 0; }
+#measurement-jobs-module .jobs-products .scroll-pane, #measurement-jobs-module .jobs-products .viewport { -fx-background-color: white; }
+#measurement-jobs-module .text-field { -fx-padding: 9px; -fx-background-color: white; -fx-border-color: #c5dae6; -fx-border-radius: 5px; -fx-background-radius: 5px; }
+#measurement-jobs-module .table-view { -fx-background-color: white; -fx-border-color: #d3e3ec; }
+#measurement-jobs-module .table-view .column-header { -fx-background-color: #eaf3f8; -fx-size: 36px; }
+#measurement-jobs-module .table-row-cell { -fx-cell-size: 74px; -fx-background-color: white; -fx-border-color: transparent transparent #e1eaf0 transparent; }
+#measurement-jobs-module .table-cell { -fx-alignment: center-left; -fx-border-color: transparent; -fx-padding: 7px 10px; }
+#measurement-jobs-module .table-row-cell:product-group { -fx-cell-size: 42px; -fx-background-color: #d8e9f1; -fx-font-weight: bold; }
+#measurement-jobs-module .table-row-cell:selected { -fx-background-color: #d1efed; }
+#measurement-jobs-module .table-row-cell:empty { -fx-background-color: white; -fx-border-color: transparent; }
+#measurement-jobs-module .table-view .progress-bar { -fx-accent: #168b91; }
+#measurement-jobs-module .jobs-feedback { -fx-text-fill: #96512b; }
+#measurement-jobs-module #jobs-context { -fx-font-size: 15px; }
+#measurement-jobs-module #jobs-save-state { -fx-font-weight: bold; }
+#measurement-jobs-module .jobs-navigation .button:active-section { -fx-background-color: #d1efed; -fx-font-weight: bold; }
+#measurement-jobs-module .jobs-status { -fx-padding: 5px 8px; -fx-background-color: #eaf5f5; -fx-background-radius: 5px; }
+#measurement-jobs-module .jobs-status:in-progress { -fx-background-color: #fff0cb; -fx-text-fill: #875b13; }
+#measurement-jobs-module .jobs-total { -fx-font-size: 25px; -fx-font-weight: bold; -fx-text-fill: #13798b; }

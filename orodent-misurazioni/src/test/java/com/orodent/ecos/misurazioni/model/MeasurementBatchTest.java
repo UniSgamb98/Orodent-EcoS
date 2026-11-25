@@ -32,4 +32,22 @@ class MeasurementBatchTest {
             assertThrows(IllegalArgumentException.class, () -> batch.acquire(SCALE, value));
         assertTrue(batch.rows().isEmpty());
     }
+
+    @Test
+    void restoredWorkKeepsPhysicalRowsAndCannotAcquireBeyondTheAssignedDiscs() {
+        var batch = new MeasurementBatch();
+        batch.restore(
+                java.util.List.of(
+                        new MeasurementBatch.Measurement("98\t14", ""),
+                        new MeasurementBatch.Measurement("", "")));
+        assertEquals(0, batch.acquire(SCALE, "330"));
+        assertEquals(1, batch.acquire(MICROMETER, "99\t15"));
+        assertThrows(IllegalArgumentException.class, () -> batch.acquire(MICROMETER, "100\t16"));
+        assertEquals(2, batch.rows().size());
+        batch.reset();
+        assertEquals(2, batch.rows().size());
+        assertEquals("", batch.clipboardText());
+        assertEquals(0, batch.acquire(MICROMETER, "98\t14"));
+        assertEquals("98\t14\t", batch.clipboardText());
+    }
 }

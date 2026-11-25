@@ -26,6 +26,8 @@ final class FiringProgramFixtures {
 
     static void beforeV32(Connection c) throws SQLException {
         try (var q = c.createStatement()) {
+            q.executeUpdate("DROP TABLE TON.DISCO_MISURE_REVISIONI");
+            q.executeUpdate("DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version=33");
             q.executeUpdate(
                     "ALTER TABLE TON.CICLI_COTTURA DROP CONSTRAINT fk_ton_cic_prog_precedente");
             q.executeUpdate("ALTER TABLE TON.CICLI_COTTURA DROP CONSTRAINT ck_ton_cic_target");

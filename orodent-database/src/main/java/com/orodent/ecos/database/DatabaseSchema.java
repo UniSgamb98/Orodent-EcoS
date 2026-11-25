@@ -170,6 +170,11 @@ public final class DatabaseSchema {
                     32,
                     "Load-specific firing temperature and exact program version",
                     "/database/migrations/V32__firing_load_program_temperature.sql");
+    private static final SchemaMigration DISC_MEASUREMENTS =
+            new SchemaMigration(
+                    33,
+                    "Resumable versioned readings per produced disc",
+                    "/database/migrations/V33__resumable_disc_measurements.sql");
     private static final List<SchemaMigration> MIGRATIONS =
             List.of(
                     BASELINE,
@@ -203,7 +208,8 @@ public final class DatabaseSchema {
                     PRODUCED_DISCS,
                     CONFIRMED_OUTPUT,
                     FIRING_PROGRAMS,
-                    FIRING_LOAD_PROGRAM);
+                    FIRING_LOAD_PROGRAM,
+                    DISC_MEASUREMENTS);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS =
             List.of(

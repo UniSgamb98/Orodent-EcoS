@@ -28,6 +28,7 @@ public final class MeasurementsView extends BorderPane {
     private final Map<Instrument, Circle> lights = new EnumMap<>(Instrument.class);
     private final Image micrometer = image("eyeIcon.png"), scale = image("scaleIcon.png");
     private final ImageView instrumentImage = new ImageView(micrometer);
+    private HBox embeddedHeader;
     private BiConsumer<Integer, Instrument> remove = (index, instrument) -> {};
 
     public MeasurementsView() {
@@ -43,6 +44,7 @@ public final class MeasurementsView extends BorderPane {
         tools.setAlignment(Pos.CENTER_LEFT);
         tools.setPadding(new Insets(14, 18, 8, 18));
         setTop(new VBox(header, tools));
+        embeddedHeader = header;
 
         instrumentImage.setFitWidth(120);
         instrumentImage.setPreserveRatio(true);
@@ -87,6 +89,11 @@ public final class MeasurementsView extends BorderPane {
         VBox bottom = new VBox(8, feedback, copy);
         bottom.setPadding(new Insets(4, 18, 18, 18));
         setBottom(bottom);
+    }
+
+    public void embedded() {
+        embeddedHeader.setVisible(false);
+        embeddedHeader.setManaged(false);
     }
 
     private Button connection(Instrument instrument) {

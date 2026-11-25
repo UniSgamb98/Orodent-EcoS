@@ -369,6 +369,16 @@ final class TonSchema {
                 column("TEMPERATURA_FINALE_C", Types.DECIMAL, 7, 2, true, false, null),
                 column("PROGRAMMA_PRECEDENTE_ID", Types.BIGINT, 0, 0, true, false, null)),
                 List.of("FK_TON_CIC_PROG_PRECEDENTE", "CK_TON_CIC_TARGET", "CK_TON_CIC_PROG_PRECEDENTE")));
+        if (schemaVersion >= 33) tables.add(new Table("DISCO_MISURE_REVISIONI", List.of(
+                column("DISCO_ID", Types.BIGINT, 0, 0, false, false, null),
+                column("NUMERO_REVISIONE", Types.INTEGER, 0, 0, false, false, null),
+                column("MICROMETRO", Types.VARCHAR, 4000, 0, false, false, null),
+                column("BILANCIA", Types.VARCHAR, 1000, 0, false, false, null),
+                column("CALCOLO_VERSIONE_ID", Types.BIGINT, 0, 0, true, false, null),
+                column("OPERATORE_ID", Types.VARCHAR, 36, 0, true, false, null),
+                column("OPERATORE_NOME", Types.VARCHAR, 150, 0, true, false, null),
+                column("REGISTRATO_IL", Types.TIMESTAMP, 0, 0, false, false, "CURRENT_TIMESTAMP")),
+                List.of("PK_TON_DISCO_MISURE", "FK_TON_MISURE_DISCO", "FK_TON_MISURE_CALCOLO", "CK_TON_MISURE_REV", "CK_TON_MISURE_OPERATORE")));
         for (Table table : tables) {
             Map<String, Column> columns = actual.getOrDefault(table.name(), Map.of());
             for (Column declared : table.columns()) {
