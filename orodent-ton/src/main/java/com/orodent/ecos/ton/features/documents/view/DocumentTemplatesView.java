@@ -26,15 +26,12 @@ public final class DocumentTemplatesView extends BorderPane {
     public final TextField search = listing.search();
     public final TableView<Template> table = listing.table();
     public final Button create = listing.create();
-    public final Button createLabel = button("Nuova etichetta", "ton-document-new-label", true);
     public final Button refresh = listing.refresh();
     public final Button back = button("← Elenco modelli", "ton-document-back", false);
     public final Button save = button("Salva bozza", "ton-document-save", true);
     public final Button approve = button("Salva e approva", "ton-document-approve", true);
     public final Button newVersion = button("Nuova versione", "ton-document-new-version", false);
     public final Button delete = button("Elimina bozza", "ton-document-delete", false);
-    public final Button importFile = button("Importa JSON", "ton-document-import", false);
-    public final Button exportFile = button("Esporta JSON", "ton-document-export", false);
     public final Button reload = button("Ricarica versione", "ton-document-reload", false);
     public final TextField code = input("ton-document-code", "Es. PRESSATURA");
     public final ComboBox<Template> versions = new ComboBox<>();
@@ -47,9 +44,8 @@ public final class DocumentTemplatesView extends BorderPane {
     public DocumentTemplatesView() {
         setId("ton-document-templates-view");
         setMinSize(0, 0);
-        listing.addAction(createLabel);
         table.setId("ton-document-table");
-        table.setPlaceholder(new Label("Nessun modello. Crea il primo foglio operativo."));
+        table.setPlaceholder(new Label("Nessun modello. Crea il primo documento."));
         column(table, "Codice", 180, Template::code);
         column(table, "Nome", 280, Template::name);
         column(
@@ -79,8 +75,7 @@ public final class DocumentTemplatesView extends BorderPane {
                         versions,
                         state);
         meta.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-        actions.getChildren()
-                .addAll(save, approve, newVersion, reload, importFile, exportFile, delete);
+        actions.getChildren().addAll(save, approve, newVersion, reload, delete);
         var controls = new VBox(8, meta, actions);
         controls.setPadding(new Insets(8, 12, 8, 12));
         editing.setTop(controls);
@@ -140,14 +135,15 @@ public final class DocumentTemplatesView extends BorderPane {
         approve.setDisable(busy || !ready || !draft);
         newVersion.setDisable(busy || !ready || draft);
         delete.setDisable(busy || !ready || selected == null || !draft);
-        importFile.setDisable(busy || !ready || !draft);
-        exportFile.setDisable(busy || !ready);
         reload.setDisable(busy || selected == null || !ready);
         state.setText(
                 selected == null
                         ? "Nuovo · non salvato"
                         : stateLabel(selected.state()) + (draft ? "" : " · Sola lettura"));
-        if (editor != null) editor.editable(ready && draft && !busy);
+        if (editor != null) {
+            editor.purposeEditable(ready && selected == null && !busy);
+            editor.editable(ready && draft && !busy);
+        }
     }
 
     public void feedback(String message, boolean error) {

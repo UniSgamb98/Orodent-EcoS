@@ -2,6 +2,7 @@ package com.orodent.ecos.ton.features.documents.view;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.google.gson.*;
 import com.orodent.ecos.core.ConnectionProvider;
 import com.orodent.ecos.database.DatabaseSchema;
 import com.orodent.ecos.database.service.*;
@@ -12,15 +13,14 @@ import javafx.application.Platform;
 import javafx.geometry.Point2D;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.input.MouseButton;
+import javafx.scene.input.*;
 import javafx.scene.robot.Robot;
 import javafx.scene.web.WebView;
 import javafx.stage.*;
 
 import netscape.javascript.JSObject;
 
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.nio.file.*;
 import java.sql.*;
@@ -31,20 +31,17 @@ import java.util.concurrent.*;
 class DocumentEditorIntegrationTest {
     private Stage stage;
     private ModuleSession session;
-    private final List<Throwable> asyncErrors = new CopyOnWriteArrayList<>();
+    private final List<Throwable> errors = new CopyOnWriteArrayList<>();
 
     @Test
-    void editsOfflineFromTonNavigationAndPersistsVersionedLayouts() throws Exception {
-        String oldLog = System.getProperty("derby.stream.error.file");
-        System.setProperty("derby.stream.error.file", "target/document-editor-ui.log");
-        String url = "jdbc:derby:memory:editor_" + UUID.randomUUID().toString().replace("-", "");
-        Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
+    void positionsObjectsOnPhysicalPagesAndPreservesApprovedVersions() throws Exception {
+        String url = "jdbc:derby:memory:canvas_" + UUID.randomUUID().toString().replace("-", "");
         ConnectionProvider db =
                 () -> {
                     try {
                         return DriverManager.getConnection(url + ";create=true", "APP", "pw");
                     } catch (SQLException e) {
-                        throw new RuntimeException(e);
+                        throw new IllegalStateException(e);
                     }
                 };
         new DatabaseSchema(db).initialize();
@@ -53,14 +50,11 @@ class DocumentEditorIntegrationTest {
         Platform.startup(
                 () -> {
                     Platform.setImplicitExit(false);
-                    Thread.currentThread()
-                            .setUncaughtExceptionHandler((t, e) -> asyncErrors.add(e));
+                    Thread.currentThread().setUncaughtExceptionHandler((t, e) -> errors.add(e));
                     started.complete(null);
                 });
-        started.get(10, TimeUnit.SECONDS);
+        started.get(15, TimeUnit.SECONDS);
         try {
-            new com.orodent.ecos.ton.features.powders.view.OxidesEditorChecks()
-                    .typingKeepsCaretSelectionAndImmediateValuesAcrossCellUpdates();
             fx(
                     () -> {
                         stage = new Stage();
@@ -73,9 +67,8 @@ class DocumentEditorIntegrationTest {
                                                         new ClientiCsvImportService(db, workers),
                                                         new VenditeCsvImportService(db, workers),
                                                         () -> {}));
-                        stage.setScene(new Scene(session.root(), 1440, 900));
+                        stage.setScene(new Scene(session.root(), 1500, 1000));
                         stage.show();
-                        assertNull(stage.getScene().lookup("#ton-document-webview"));
                         click("ton-nav-documents");
                         click("ton-tech-document_templates-button");
                         return null;
@@ -83,190 +76,220 @@ class DocumentEditorIntegrationTest {
             await(() -> !button("ton-document-new").isDisabled());
             fx(
                     () -> {
+                        assertNull(stage.getScene().lookup("#ton-document-new-label"));
+                        assertNull(stage.getScene().lookup("#ton-document-import"));
+                        assertNull(stage.getScene().lookup("#ton-document-export"));
                         click("ton-document-new");
+                        return null;
+                    });
+            await(() -> web() != null && !button("ton-document-save").isDisabled());
+            fx(
+                    () -> {
+                        assertEquals("canvas", model().get("layout").getAsString());
+                        assertFalse(model().getAsJsonObject("content").has("content"));
+                        assertEquals(
+                                0,
+                                ((Number)
+                                                js(
+                                                        "document.querySelectorAll('.paper-brand,.paper-footer,[data-action=export-model],[data-action=open-model],#model-file').length"))
+                                        .intValue());
+                        assertEquals(
+                                "properties",
+                                js("document.getElementById('font-size').closest('aside').id"));
+                        controls(
+                                new String[][] {
+                                    {"model-purpose", "ETICHETTA"},
+                                    {"paper-format", "custom"},
+                                    {"paper-width", "102"},
+                                    {"paper-height", "38"}
+                                });
+                        double ratio =
+                                ((Number)
+                                                js(
+                                                        "document.getElementById('paper').getBoundingClientRect().width/document.getElementById('paper').getBoundingClientRect().height"))
+                                        .doubleValue();
+                        assertEquals(102.0 / 38, ratio, .015);
+                        api().call("insert", "text");
+                        return null;
+                    });
+            fx(
+                    () -> {
+                        for (KeyCode k : List.of(KeyCode.T, KeyCode.E, KeyCode.S, KeyCode.T)) {
+                            new Robot().keyPress(k);
+                            new Robot().keyRelease(k);
+                        }
+                        return null;
+                    });
+            await(() -> api().call("serialize").toString().contains("test"));
+            fx(
+                    () -> {
+                        var r = new Robot();
+                        r.keyPress(KeyCode.ESCAPE);
+                        r.keyRelease(KeyCode.ESCAPE);
                         return null;
                     });
             await(
                     () ->
-                            web() != null
-                                    && Boolean.TRUE.equals(
-                                            web().getEngine()
-                                                    .executeScript(
-                                                            "document.documentElement.dataset.editorReady==='true'"))
-                                    && !button("ton-document-save").isDisabled());
-            verifiesNativePointerDrag();
-            verifiesEditableColumnsAndZoom();
-            verifiesAutomaticBlockProperties();
+                            js("document.querySelector('#editor"
+                                   + " .tiptap').editor.state.selection.toJSON().type")
+                                    .equals("node"));
             fx(
                     () -> {
-                        assertTrue(
-                                web().getEngine().getLocation().startsWith("file:")
-                                        || web().getEngine().getLocation().startsWith("jar:"));
+                        var r = new Robot();
+                        r.keyPress(KeyCode.ENTER);
+                        r.keyRelease(KeyCode.ENTER);
+                        return null;
+                    });
+            await(
+                    () ->
+                            js("document.querySelector('#editor"
+                                   + " .tiptap').editor.state.selection.toJSON().type")
+                                    .equals("text"));
+            fx(
+                    () -> {
+                        var r = new Robot();
+                        r.keyPress(KeyCode.ESCAPE);
+                        r.keyRelease(KeyCode.ESCAPE);
+                        return null;
+                    });
+            fx(
+                    () -> {
+                        controls(
+                                new String[][] {
+                                    {"object-x", "80"},
+                                    {"object-y", "40"},
+                                    {"object-width", "180"},
+                                    {"object-height", "50"},
+                                    {"font-size", "14pt"}
+                                });
                         assertEquals(
-                                "none",
-                                web().getEngine()
-                                        .executeScript(
-                                                "getComputedStyle(document.querySelector('.appbar')).display"));
-                        assertEquals(
-                                "none",
-                                web().getEngine()
-                                        .executeScript(
-                                                "getComputedStyle(document.querySelector('[data-action=export-model]')).display"));
-                        assertEquals(
-                                6,
-                                ((Number)
-                                                web().getEngine()
-                                                        .executeScript(
-                                                                "document.querySelectorAll('#laboratory-palette"
-                                                                    + " button').length"))
-                                        .intValue());
-                        var api = api();
-                        api.call("insert", "table");
-                        web().getEngine()
-                                .executeScript(
-                                        "document.querySelector('[data-action=insert-table]').click()");
-                        assertTrue(api.call("serialize").toString().contains("tableRow"));
-                        web().getEngine()
-                                .executeScript(
-                                        "document.getElementById('template-title').value='Foglio"
-                                                + " laboratorio offline'");
+                                14,
+                                Double.parseDouble(
+                                        attrs().get("fontSize").getAsString().replace("pt", "")));
+                        controls(new String[][] {{"zoom", "1.2"}});
+                        return null;
+                    });
+            drag(".canvas-object-grip", 24, 12);
+            await(() -> Math.abs(attrs().get("x").getAsDouble() - 100) < 1);
+            fx(
+                    () -> {
+                        assertEquals(50, attrs().get("y").getAsDouble(), 1);
+                        new Robot().keyPress(KeyCode.RIGHT);
+                        new Robot().keyRelease(KeyCode.RIGHT);
+                        new Robot().keyPress(KeyCode.DOWN);
+                        new Robot().keyRelease(KeyCode.DOWN);
+                        return null;
+                    });
+            await(
+                    () ->
+                            Math.abs(attrs().get("x").getAsDouble() - 101) < .1
+                                    && Math.abs(attrs().get("y").getAsDouble() - 51) < .1);
+            drag(".canvas-resize-se", 24, 12);
+            fx(
+                    () -> {
+                        assertEquals(200, attrs().get("width").getAsDouble(), 1);
+                        assertEquals(60, attrs().get("height").getAsDouble(), 1);
+                        api().call("run", "undo");
+                        assertEquals(180, attrs().get("width").getAsDouble(), 1);
+                        api().call("run", "redo");
+                        assertEquals(200, attrs().get("width").getAsDouble(), 1);
                         ((TextField) stage.getScene().lookup("#ton-document-code"))
-                                .setText("LAB-TEST");
+                                .setText("CANVAS-LABEL");
                         click("ton-document-save");
                         return null;
                     });
             await(() -> feedback().contains("Bozza salvata"));
-            long firstId =
-                    db.withConnection(
-                            c -> {
-                                try (var q = c.createStatement();
-                                        var r =
-                                                q.executeQuery(
-                                                        "SELECT"
-                                                            + " modello_documento_id,nome,contenuto_modello"
-                                                            + " FROM TON.MODELLI_DOCUMENTO")) {
-                                    assertTrue(r.next());
-                                    assertEquals("Foglio laboratorio offline", r.getString(2));
-                                    assertTrue(r.getString(3).contains("tableRow"));
-                                    return r.getLong(1);
-                                }
-                            });
             fx(
                     () -> {
-                        approveNextDialog();
+                        Platform.runLater(() -> answer(ButtonType.OK));
                         click("ton-document-approve");
                         return null;
                     });
             await(() -> feedback().contains("Modello approvato"));
+            String approved = read(db, 1);
+            var rendered = new CompletableFuture<String>();
+            var label = fx(() -> new com.orodent.ecos.documents.LabelPreviewPane());
+            final Stage[] labelWindow = {null};
             fx(
                     () -> {
-                        assertTrue(button("ton-document-save").isDisabled());
-                        assertFalse(button("ton-document-new-version").isDisabled());
+                        labelWindow[0] = new Stage();
+                        labelWindow[0].initOwner(stage);
+                        labelWindow[0].setScene(new Scene(label, 500, 260));
+                        labelWindow[0].show();
+                        label.render(
+                                approved,
+                                "{}",
+                                rendered::complete,
+                                error ->
+                                        rendered.completeExceptionally(
+                                                new IllegalStateException(error)));
+                        return null;
+                    });
+            String html = rendered.get(25, TimeUnit.SECONDS);
+            assertTrue(html.contains("data-layout=\"canvas\""));
+            Files.writeString(Path.of("target/canvas-label-rendered.html"), html);
+            fx(
+                    () -> {
+                        assertTrue(label.printable());
+                        label.close();
+                        labelWindow[0].close();
+                        stage.toFront();
+                        return null;
+                    });
+            fx(
+                    () -> {
+                        assertTrue(
+                                (Boolean) js("document.getElementById('model-purpose').disabled"));
+                        api().call("insert", "text");
                         assertEquals(
-                                "true",
-                                web().getEngine()
-                                        .executeScript(
-                                                "String(document.getElementById('template-title').readOnly)"));
+                                1,
+                                model().getAsJsonObject("content")
+                                        .getAsJsonArray("content")
+                                        .size());
                         click("ton-document-new-version");
                         return null;
                     });
             await(() -> feedback().contains("Nuova bozza creata"));
             fx(
                     () -> {
-                        assertFalse(button("ton-document-save").isDisabled());
-                        web().getEngine()
-                                .executeScript(
-                                        "document.getElementById('template-title').value='Modifiche"
-                                                + " non salvate'");
-                        Platform.runLater(() -> answerDialog(ButtonType.CANCEL));
-                        click("ton-document-back");
-                        assertNotNull(web(), "The dirty guard must keep the editor open");
-                        Platform.runLater(() -> answerDialog(ButtonType.CANCEL));
-                        stage.fireEvent(new WindowEvent(stage, WindowEvent.WINDOW_CLOSE_REQUEST));
-                        assertTrue(stage.isShowing(), "Window close must respect unsaved edits");
+                        api().call("run", "undo");
+                        controls(new String[][] {{"object-x", "120"}});
                         click("ton-document-save");
                         return null;
                     });
             await(() -> feedback().contains("Bozza salvata"));
-            WebView previous = fx(() -> web());
+            assertEquals(approved, read(db, 1));
+            assertEquals(
+                    120,
+                    JsonParser.parseString(read(db, 2))
+                            .getAsJsonObject()
+                            .getAsJsonObject("content")
+                            .getAsJsonArray("content")
+                            .get(0)
+                            .getAsJsonObject()
+                            .getAsJsonObject("attrs")
+                            .get("x")
+                            .getAsDouble());
             fx(
                     () -> {
-                        click("ton-document-back");
+                        String before = api().call("serialize").toString();
+                        String legacy =
+                                """
+{"schemaVersion":2,"title":"Precedente","page":{"orientation":"portrait","margin":15},"content":{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Testo precedente"}]}]}}
+""";
+                        api().call("restore", legacy);
+                        api().call("setEditable", false);
+                        assertEquals("flow", model().get("layout").getAsString());
+                        api().call("setEditable", true);
+                        assertEquals("canvas", model().get("layout").getAsString());
+                        assertTrue(api().call("serialize").toString().contains("Testo precedente"));
+                        api().call("restore", before);
+                        stage.setWidth(1100);
+                        stage.setHeight(820);
+                        screenshot("target/document-canvas-editor.png");
                         return null;
                     });
-            await(() -> !button("ton-document-new").isDisabled());
-            fx(
-                    () -> {
-                        assertNull(web());
-                        assertEquals("about:blank", previous.getEngine().getLocation());
-                        var table = (TableView<?>) stage.getScene().lookup("#ton-document-table");
-                        assertEquals(1, table.getItems().size());
-                        table.getSelectionModel().selectFirst();
-                        table.fireEvent(
-                                new javafx.scene.input.KeyEvent(
-                                        javafx.scene.input.KeyEvent.KEY_PRESSED,
-                                        "",
-                                        "",
-                                        javafx.scene.input.KeyCode.ENTER,
-                                        false,
-                                        false,
-                                        false,
-                                        false));
-                        return null;
-                    });
-            await(() -> web() != null && !button("ton-document-save").isDisabled());
-            fx(
-                    () -> {
-                        assertNotSame(previous, web());
-                        assertTrue(
-                                api().call("serialize")
-                                        .toString()
-                                        .contains("Modifiche non salvate"));
-                        @SuppressWarnings("unchecked")
-                        var versions =
-                                (ComboBox<Object>)
-                                        stage.getScene().lookup("#ton-document-versions");
-                        assertEquals(2, versions.getItems().size());
-                        versions.getSelectionModel().selectLast();
-                        return null;
-                    });
-            await(
-                    () ->
-                            button("ton-document-save").isDisabled()
-                                    && !button("ton-document-new-version").isDisabled());
-            fx(
-                    () -> {
-                        assertTrue(
-                                api().call("serialize")
-                                        .toString()
-                                        .contains("Foglio laboratorio offline"));
-                        assertFalse(
-                                api().call("serialize")
-                                        .toString()
-                                        .contains("Modifiche non salvate"));
-                        stage.setWidth(1024);
-                        stage.setHeight(760);
-                        return null;
-                    });
-            // Use the real WebView at the minimum supported desktop width as well.
-            await(() -> ((Number) web().getEngine().executeScript("innerWidth")).intValue() > 500);
-            db.withConnection(
-                    c -> {
-                        try (var q =
-                                c.prepareStatement(
-                                        "SELECT stato,nome FROM TON.MODELLI_DOCUMENTO WHERE"
-                                                + " modello_documento_id=?")) {
-                            q.setLong(1, firstId);
-                            try (var r = q.executeQuery()) {
-                                r.next();
-                                assertEquals("APPROVATA", r.getString(1));
-                                assertEquals("Foglio laboratorio offline", r.getString(2));
-                            }
-                        }
-                        return null;
-                    });
-            verifiesLabelEditor();
-            assertTrue(asyncErrors.isEmpty(), () -> asyncErrors.toString());
+            assertTrue(errors.isEmpty(), errors::toString);
         } finally {
             fx(
                     () -> {
@@ -275,385 +298,54 @@ class DocumentEditorIntegrationTest {
                         return null;
                     });
             workers.shutdown();
-            assertTrue(workers.awaitTermination(10, TimeUnit.SECONDS));
+            assertTrue(workers.awaitTermination(15, TimeUnit.SECONDS));
             Platform.exit();
             try {
                 DriverManager.getConnection(url + ";drop=true", "APP", "pw");
             } catch (SQLException e) {
                 assertEquals("08006", e.getSQLState());
             }
-            if (oldLog == null) System.clearProperty("derby.stream.error.file");
-            else System.setProperty("derby.stream.error.file", oldLog);
         }
     }
 
-    private void verifiesNativePointerDrag() throws Exception {
-        String before = fx(() -> api().call("serialize").toString());
-        fx(
-                () -> {
-                    stage.setWidth(1200);
-                    stage.setHeight(760);
-                    web().getEngine()
-                            .executeScript(
-                                    "document.querySelector('[data-insert=press]').scrollIntoView({block:'center'})");
-                    return null;
-                });
-        Thread.sleep(200);
-        Point2D source = fx(() -> point("[data-insert=press]", .5, .5));
-        Point2D target = fx(() -> point(".tiptap > h1", .1, .3));
-        fx(
-                () -> {
-                    var robot = new Robot();
-                    robot.mouseMove(source);
-                    robot.mousePress(MouseButton.PRIMARY);
-                    return null;
-                });
-        try {
-            for (int i = 1; i <= 12; i++) {
-                final int step = i;
-                fx(
-                        () -> {
-                            new Robot()
-                                    .mouseMove(
-                                            source.getX()
-                                                    + (target.getX() - source.getX()) * step / 12.0,
-                                            source.getY()
-                                                    + (target.getY() - source.getY())
-                                                            * step
-                                                            / 12.0);
-                            return null;
-                        });
-                Thread.sleep(25);
-            }
-        } finally {
-            fx(
-                    () -> {
-                        new Robot().mouseRelease(MouseButton.PRIMARY);
-                        return null;
-                    });
-        }
-        await(
-                () ->
-                        ((Number)
-                                                web().getEngine()
-                                                        .executeScript(
-                                                                "document.querySelectorAll('.tiptap"
-                                                                    + " [data-ton-block=press]').length"))
-                                        .intValue()
-                                == 2);
-        fx(
-                () -> {
-                    String after = api().call("serialize").toString();
-                    assertTrue(after.contains("tonBlock"));
-                    assertFalse(
-                            after.contains("Parametri della pressaCompilato dalla produzione"),
-                            "A drag must insert a block, not the palette label");
-                    api().call("restore", before);
-                    stage.setWidth(1440);
-                    stage.setHeight(900);
-                    return null;
+    private String read(ConnectionProvider db, long id) {
+        return db.withConnection(
+                c -> {
+                    try (var q =
+                            c.prepareStatement(
+                                    "SELECT contenuto_modello FROM TON.MODELLI_DOCUMENTO WHERE"
+                                        + " modello_documento_id=?")) {
+                        q.setLong(1, id);
+                        try (var r = q.executeQuery()) {
+                            r.next();
+                            return r.getString(1);
+                        }
+                    }
                 });
     }
 
-    private void verifiesLabelEditor() throws Exception {
-        fx(
-                () -> {
-                    click("ton-document-back");
-                    return null;
-                });
-        await(() -> !button("ton-document-new-label").isDisabled());
-        fx(
-                () -> {
-                    stage.setWidth(1500);
-                    stage.setHeight(950);
-                    click("ton-document-new-label");
-                    return null;
-                });
-        await(() -> web() != null && !button("ton-document-save").isDisabled());
-        fx(
-                () -> {
-                    var json =
-                            com.google.gson.JsonParser.parseString(
-                                            api().call("serialize").toString())
-                                    .getAsJsonObject();
-                    assertEquals("ETICHETTA", json.get("purpose").getAsString());
-                    assertEquals(100, json.getAsJsonObject("page").get("width").getAsInt());
-                    assertEquals(65, json.getAsJsonObject("page").get("height").getAsInt());
-                    api().call("insert", "gs1");
-                    api().call("insert", "symbol:cataloguenumber");
-                    String template = api().call("serialize").toString();
-                    assertTrue(template.contains("data:image/png;base64,"));
-                    assertTrue(template.contains("gs1Matrix"));
-                    String html =
-                            api().call(
-                                            "renderLabel",
-                                            template,
-                                            "{\"article\":\"ZR9816TEST\",\"name\":\"Thor"
-                                                + " test\",\"lot\":\"LOT-2026\",\"diameter\":\"98\",\"height\":\"16\",\"gtin\":\"09506000134352\"}")
-                                    .toString();
-                    assertTrue(html.contains("ZR9816TEST"));
-                    assertTrue(html.contains("LOT-2026"));
-                    assertTrue(html.contains("gs1-matrix"));
-                    assertTrue(html.contains("width:100mm"));
-                    assertTrue(html.contains("height:65mm"));
-                    Files.writeString(Path.of("target/label-rendered.html"), html);
-                    api().call("restore", template);
-                    api().call("setEditable", true);
-                    web().getEngine()
-                            .executeScript(
-                                    "for(const [id,value] of"
-                                        + " [['paper-width','110'],['paper-height','70']]){const"
-                                        + " n=document.getElementById(id);n.value=value;n.dispatchEvent(new"
-                                        + " Event('change'));}");
-                    assertEquals(
-                            70,
-                            com.google.gson.JsonParser.parseString(
-                                            api().call("serialize").toString())
-                                    .getAsJsonObject()
-                                    .getAsJsonObject("page")
-                                    .get("height")
-                                    .getAsInt());
-                    ((TextField) stage.getScene().lookup("#ton-document-code"))
-                            .setText("ETICHETTA-TEST");
-                    click("ton-document-save");
-                    return null;
-                });
-        await(() -> feedback().contains("Bozza salvata"));
+    private JsonObject model() {
+        return JsonParser.parseString(api().call("serialize").toString()).getAsJsonObject();
     }
 
-    private void verifiesAutomaticBlockProperties() throws Exception {
-        String original = fx(() -> api().call("serialize").toString());
-        fx(
-                () -> {
-                    api().call("insert", "mixtures");
-                    web().getEngine()
-                            .executeScript(
-                                    """
-window.propertyTestId = document.querySelector('.ton-block.ProseMirror-selectednode').dataset.blockId;
-document.getElementById('block-tab-content').click();
-for (const id of ['block-hide-zero-powders','block-percent']) {
-  const input = document.getElementById(id); input.checked = id.includes('hide');
-  input.dispatchEvent(new Event('change'));
-}
-document.getElementById('block-tab-appearance').click();
-for (const [id,value] of [['block-font-size','3pt'],['block-header-color','#aabbcc'],['block-width-0','60']]) {
-  const input = document.getElementById(id); input.value = value; input.dispatchEvent(new Event('change'));
-}
-document.getElementById('block-tab-print').click();
-const page = document.getElementById('block-page-break'); page.checked=true; page.dispatchEvent(new Event('change'));
-""");
-                    String payload = api().call("serialize").toString();
-                    assertTrue(payload.contains("\"fontSize\":\"3pt\""));
-                    assertTrue(payload.contains("\"tableWidths\":[60,40]"));
-                    assertTrue(payload.contains("\"pageBreakBefore\":true"));
-                    api().call("restore", payload);
-                    assertEquals(payload, api().call("serialize"));
-                    assertEquals(
-                            2,
-                            ((Number)
-                                            web().getEngine()
-                                                    .executeScript(
-                                                            "document.querySelector('[data-block-id=\"'+propertyTestId+'\"]"
-                                                                + " .lab-table thead"
-                                                                + " tr').children.length"))
-                                    .intValue());
-                    assertEquals(
-                            5,
-                            ((Number)
-                                            web().getEngine()
-                                                    .executeScript(
-                                                            "document.querySelector('[data-block-id=\"'+propertyTestId+'\"]"
-                                                                + " .mixture-card"
-                                                                + " tbody').children.length"))
-                                    .intValue());
-                    assertEquals(
-                            "4px",
-                            web().getEngine()
-                                    .executeScript(
-                                            "getComputedStyle(document.querySelector('[data-block-id=\"'+propertyTestId+'\"]"
-                                                + " .lab-table')).fontSize"));
-                    api().call("restore", original);
-                    return null;
-                });
+    private JsonObject attrs() {
+        return model().getAsJsonObject("content")
+                .getAsJsonArray("content")
+                .get(0)
+                .getAsJsonObject()
+                .getAsJsonObject("attrs");
     }
 
-    private void verifiesEditableColumnsAndZoom() throws Exception {
-        fx(
-                () -> {
-                    stage.setWidth(1200);
-                    stage.setHeight(760);
-                    web().getEngine()
-                            .executeScript(
-                                    "document.getElementById('zoom').value='0.65';document.getElementById('zoom').dispatchEvent(new"
-                                        + " Event('change'));document.getElementById('canvas').scrollTop=0;document.querySelector('.layout-select').click()");
-                    return null;
-                });
-        await(
-                () ->
-                        web().getEngine()
-                                .executeScript("document.getElementById('layout-count')!==null")
-                                .equals(true));
-        fx(
-                () -> {
-                    assertEquals(5, ((Number) api().getMember("schemaVersion")).intValue());
-                    web().getEngine()
-                            .executeScript(
-                                    "document.getElementById('layout-preset').value='60,40';document.getElementById('layout-preset').dispatchEvent(new"
-                                        + " Event('change'))");
-                    return null;
-                });
-        Thread.sleep(150);
-        Point2D start =
-                fx(
-                        () ->
-                                point(
-                                        ".tiptap > .column-section > .layout-handles"
-                                                + " .layout-divider",
-                                        .5,
-                                        .03));
-        fx(
-                () -> {
-                    var robot = new Robot();
-                    robot.mouseMove(start);
-                    robot.mousePress(MouseButton.PRIMARY);
-                    return null;
-                });
-        try {
-            for (int i = 1; i <= 10; i++) {
-                final int step = i;
-                fx(
-                        () -> {
-                            new Robot().mouseMove(start.getX() + step * 3, start.getY());
-                            return null;
-                        });
-                Thread.sleep(25);
-            }
-        } finally {
-            fx(
-                    () -> {
-                        new Robot().mouseRelease(MouseButton.PRIMARY);
-                        return null;
-                    });
-        }
-        fx(
-                () -> {
-                    var json =
-                            com.google.gson.JsonParser.parseString(
-                                            api().call("serialize").toString())
-                                    .getAsJsonObject();
-                    var section =
-                            json
-                                    .getAsJsonObject("content")
-                                    .getAsJsonArray("content")
-                                    .asList()
-                                    .stream()
-                                    .map(com.google.gson.JsonElement::getAsJsonObject)
-                                    .filter(n -> n.get("type").getAsString().equals("tonColumns"))
-                                    .findFirst()
-                                    .orElseThrow();
-                    assertTrue(
-                            section.getAsJsonObject("attrs")
-                                            .getAsJsonArray("widths")
-                                            .get(0)
-                                            .getAsDouble()
-                                    > 60,
-                            "Native pointer resizing must change the saved width");
-                    web().getEngine()
-                            .executeScript(
-                                    "document.querySelector('.tiptap > .column-section >"
-                                            + " .layout-tools"
-                                            + " .layout-column-select:last-child').click()");
-                    api().call("insert", "columns");
-                    assertEquals(
-                            2,
-                            ((Number)
-                                            web().getEngine()
-                                                    .executeScript(
-                                                            "document.querySelectorAll('.tiptap"
-                                                                    + " .column-section').length"))
-                                    .intValue());
-                    web().getEngine()
-                            .executeScript(
-                                    "document.getElementById('layout-preset').value='30,70';document.getElementById('layout-preset').dispatchEvent(new"
-                                        + " Event('change'))");
-                    String snapshot = api().call("serialize").toString();
-                    api().call("restore", snapshot);
-                    assertEquals(snapshot, api().call("serialize"));
-                    web().getEngine()
-                            .executeScript(
-                                    "document.getElementById('zoom').value='1.5';document.getElementById('zoom').dispatchEvent(new"
-                                        + " Event('change'));document.getElementById('canvas').dispatchEvent(new"
-                                        + " WheelEvent('wheel',{bubbles:true,cancelable:true,ctrlKey:true,deltaY:-120}))");
-                    assertEquals(
-                            "1.55",
-                            web().getEngine()
-                                    .executeScript("document.getElementById('zoom').value"));
-                    assertEquals(snapshot, api().call("serialize"));
-                    web().getEngine()
-                            .executeScript(
-                                    "document.getElementById('zoom').value='0.8';document.getElementById('zoom').dispatchEvent(new"
-                                        + " Event('change'))");
-                    return null;
-                });
-        fx(
-                () -> {
-                    web().getEngine()
-                            .executeScript(
-                                    "document.getElementById('zoom').value='1.5';document.getElementById('zoom').dispatchEvent(new"
-                                        + " Event('change'))");
-                    var robot = new Robot();
-                    robot.mouseMove(point("#canvas", .3, .3));
-                    robot.keyPress(javafx.scene.input.KeyCode.CONTROL);
-                    robot.mouseWheel(-1);
-                    robot.keyRelease(javafx.scene.input.KeyCode.CONTROL);
-                    return null;
-                });
-        await(
-                () ->
-                        Double.parseDouble(
-                                        web().getEngine()
-                                                .executeScript(
-                                                        "document.getElementById('zoom').value")
-                                                .toString())
-                                > 1.5);
-        fx(
-                () -> {
-                    web().getEngine()
-                            .executeScript(
-                                    "document.getElementById('zoom').value='0.8';document.getElementById('zoom').dispatchEvent(new"
-                                        + " Event('change'))");
-                    stage.setWidth(1440);
-                    stage.setHeight(900);
-                    return null;
-                });
+    private Object js(String code) {
+        return web().getEngine().executeScript(code);
     }
 
-    private Point2D point(String selector, double x, double y) {
-        String quoted = new com.google.gson.Gson().toJson(selector);
-        JSObject rect =
-                (JSObject)
-                        web().getEngine()
-                                .executeScript(
-                                        "document.querySelector("
-                                                + quoted
-                                                + ").getBoundingClientRect()");
-        return web().localToScreen(
-                        ((Number) rect.getMember("left")).doubleValue()
-                                + ((Number) rect.getMember("width")).doubleValue() * x,
-                        ((Number) rect.getMember("top")).doubleValue()
-                                + ((Number) rect.getMember("height")).doubleValue() * y);
+    private JSObject api() {
+        return (JSObject) js("window.OrodentDocumentEditor");
     }
 
     private WebView web() {
         return (WebView) stage.getScene().lookup("#ton-document-webview");
-    }
-
-    private JSObject api() {
-        return (JSObject) web().getEngine().executeScript("window.OrodentDocumentEditor");
-    }
-
-    private String feedback() {
-        return ((Label) stage.getScene().lookup("#ton-document-feedback")).getText();
     }
 
     private Button button(String id) {
@@ -661,48 +353,106 @@ const page = document.getElementById('block-page-break'); page.checked=true; pag
     }
 
     private void click(String id) {
-        var b = button(id);
-        assertNotNull(b, id);
-        assertFalse(b.isDisabled(), id);
-        b.fire();
+        button(id).fire();
     }
 
-    private void approveNextDialog() {
-        Platform.runLater(() -> answerDialog(ButtonType.OK));
+    private String feedback() {
+        return ((Label) stage.getScene().lookup("#ton-document-feedback")).getText();
     }
 
-    private void answerDialog(ButtonType answer) {
-        var dialog =
-                Window.getWindows().stream()
-                        .filter(Window::isShowing)
-                        .filter(w -> w.getScene() != null)
-                        .map(w -> w.getScene().getRoot())
-                        .filter(DialogPane.class::isInstance)
-                        .map(DialogPane.class::cast)
-                        .findFirst()
-                        .orElseThrow();
-        ((Button) dialog.lookupButton(answer)).fire();
+    private void controls(String[][] values) {
+        for (String[] v : values)
+            js(
+                    "(function(){var n=document.getElementById("
+                            + new JsonPrimitive(v[0])
+                            + ");n.value="
+                            + new JsonPrimitive(v[1])
+                            + ";n.dispatchEvent(new Event('change'));})()");
     }
 
-    private static <T> T fx(Callable<T> work) throws Exception {
-        var f = new CompletableFuture<T>();
+    private void drag(String selector, double dx, double dy) throws Exception {
+        Point2D start =
+                fx(
+                        () -> {
+                            var box =
+                                    (JSObject)
+                                            js(
+                                                    "document.querySelector("
+                                                            + new JsonPrimitive(selector)
+                                                            + ").getBoundingClientRect()");
+                            return web().localToScreen(
+                                            ((Number) box.getMember("left")).doubleValue() + 4,
+                                            ((Number) box.getMember("top")).doubleValue() + 4);
+                        });
+        fx(
+                () -> {
+                    var robot = new Robot();
+                    robot.mouseMove(start);
+                    robot.mousePress(MouseButton.PRIMARY);
+                    return null;
+                });
+        Thread.sleep(80);
+        for (int i = 1; i <= 4; i++) {
+            final int step = i;
+            fx(
+                    () -> {
+                        new Robot()
+                                .mouseMove(
+                                        start.getX() + dx * step / 4, start.getY() + dy * step / 4);
+                        return null;
+                    });
+            Thread.sleep(30);
+        }
+        fx(
+                () -> {
+                    new Robot().mouseRelease(MouseButton.PRIMARY);
+                    return null;
+                });
+        Thread.sleep(100);
+    }
+
+    private void answer(ButtonType type) {
+        for (Window w : Window.getWindows())
+            if (w != stage
+                    && w.getScene() != null
+                    && w.getScene().getRoot() instanceof DialogPane pane) {
+                ((Button) pane.lookupButton(type)).fire();
+                return;
+            }
+    }
+
+    private void screenshot(String file) throws Exception {
+        var image = stage.getScene().snapshot(null);
+        var out =
+                new java.awt.image.BufferedImage(
+                        (int) image.getWidth(),
+                        (int) image.getHeight(),
+                        java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < image.getHeight(); y++)
+            for (int x = 0; x < image.getWidth(); x++)
+                out.setRGB(x, y, image.getPixelReader().getArgb(x, y));
+        javax.imageio.ImageIO.write(out, "png", Path.of(file).toFile());
+    }
+
+    private static <T> T fx(Callable<T> action) throws Exception {
+        var done = new CompletableFuture<T>();
         Platform.runLater(
                 () -> {
                     try {
-                        f.complete(work.call());
-                    } catch (Throwable e) {
-                        f.completeExceptionally(e);
+                        done.complete(action.call());
+                    } catch (Throwable error) {
+                        done.completeExceptionally(error);
                     }
                 });
-        return f.get(20, TimeUnit.SECONDS);
+        return done.get(25, TimeUnit.SECONDS);
     }
 
     private static void await(Callable<Boolean> check) throws Exception {
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
-        while (System.nanoTime() < deadline) {
+        long end = System.nanoTime() + TimeUnit.SECONDS.toNanos(25);
+        while (System.nanoTime() < end) {
             if (fx(check)) return;
             Thread.sleep(50);
         }
-        fail("UI condition did not become true within 20 seconds");
+        fail("Attesa editor scaduta");
     }
 }

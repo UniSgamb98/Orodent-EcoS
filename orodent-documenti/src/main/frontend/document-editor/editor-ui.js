@@ -1,348 +1,758 @@
+import { editorKey } from './keyboard.js';
+import { GapCursor } from '@tiptap/pm/gapcursor';
+import { NodeSelection } from '@tiptap/pm/state';
 import { labelFields, validateMatrix } from './label-elements.js';
 import symbols from './symbols.json';
+import { blockTypes, fields, escape, checkOperationalContent } from './laboratory-blocks.js';
 import { blockProperties, bindBlockProperties } from './block-properties.js';
 import { mountEditorZoom } from './editor-zoom.js';
-import { sectionPath, sectionBreadcrumb, columnProperties, bindColumnControls } from './column-controls.js';
-import { mountEditorDrag } from './editor-drag.js';
-import { NodeSelection } from '@tiptap/pm/state';
-import { blockTypes, fields, escape, checkOperationalContent } from './laboratory-blocks.js';
+import { selectedObject, updateObject, selectObjectText } from './canvas-object.js';
+import { pagePixels, px, mm, clampGeometry } from './canvas-model.js';
 
-const $ = id => document.getElementById(id);
-
+const $ = (id) => document.getElementById(id);
+const kindNames = {
+  text: 'Riquadro di testo',
+  image: 'Immagine',
+  matrix: 'GS1 DataMatrix',
+  table: 'Tabella',
+  block: 'Blocco automatico',
+  group: 'Gruppo',
+};
 export function mountEditorUI(editor, model) {
   const cleanup = [];
-  const urls = new Set();
-  let disposed = false, toastTimer, nextId = 1, propertyKey = '', preview = false, printPreview = false, blockTab = 'content';
-  const notify = message => {
-    clearTimeout(toastTimer); $('toast').textContent = message; $('toast').hidden = false;
-    toastTimer = setTimeout(() => { $('toast').hidden = true; }, 4500);
+  let disposed = false,
+    timer,
+    propertyKey = '',
+    blockTab = 'content',
+    printPreview = false,
+    replaceImage = false;
+  const on = (node, event, callback) => {
+    node.addEventListener(event, callback);
+    cleanup.push(() => node.removeEventListener(event, callback));
   };
-  const on = (node, event, handler) => {
-    node.addEventListener(event, handler); cleanup.push(() => node.removeEventListener(event, handler));
-  };
+  function notify(message) {
+    clearTimeout(timer);
+    $('toast').textContent = message;
+    $('toast').hidden = false;
+    timer = setTimeout(() => {
+      $('toast').hidden = true;
+    }, 5000);
+  }
+  function safe(action) {
+    try {
+      return action();
+    } catch (error) {
+      notify(error.message);
+      return false;
+    }
+  }
   function uniqueId() {
-    let id, found;
-    do { id = `block-${nextId++}`; found = false; editor.state.doc.descendants(n => { if (n.attrs.id === id) found = true; }); } while (found);
+    let id;
+    do {
+      id = 'obj-' + model.nextId();
+    } while (editor.state.doc.content.content.some((n) => n.attrs.id === id));
     return id;
   }
-  const makeBlock = kind => ({ type: 'tonBlock', attrs: { id: uniqueId(), kind, title: blockTypes[kind], compact: true, showPpm: false, showCoefficient: false } });
-  function insert(kind, position) {
+  function add(content, kind, dimensions = {}, point) {
     if (!editor.isEditable) return;
-    if (typeof kind !== 'string' || (!Object.prototype.hasOwnProperty.call(blockTypes, kind)
-        && !['table', 'image', 'columns', 'heading', 'text', 'gs1'].includes(kind)
-        && !(kind.startsWith('label:') && Object.hasOwn(labelFields,kind.slice(6)))
-        && !(kind.startsWith('symbol:') && symbols.some(s=>s.key===kind.slice(7)))
-        && !(kind.startsWith('field:') && Object.prototype.hasOwnProperty.call(fields, kind.slice(6))))) {
-      throw new Error('Elemento da inserire non supportato.');
+    model.ensureCanvas();
+    const size = pagePixels(model.page()),
+      current = selectedObject(editor.state),
+      count = editor.state.doc.childCount;
+    const inset = Math.min(px(model.page().margin), size.width / 4, size.height / 4),
+      offset = (count % 7) * 8;
+    const defaults = {
+      text: [220, 42],
+      image: [160, 120],
+      matrix: [px(20), px(20)],
+      table: [340, 140],
+      block: [size.width - inset * 2, 200],
+      group: [300, 200],
+    }[kind];
+    const attrs = clampGeometry(
+      {
+        id: uniqueId(),
+        kind,
+        x: point?.x ?? inset + offset,
+        y: point?.y ?? inset + offset,
+        width: dimensions.width ?? defaults[0],
+        height: dimensions.height ?? defaults[1],
+        page: point?.page ?? current?.node.attrs.page ?? 0,
+        z: Math.max(0, ...editor.state.doc.content.content.map((n) => n.attrs.z ?? 0)) + 1,
+      },
+      size,
+    );
+    if (['image', 'matrix'].includes(kind)) {
+      const ratio = (dimensions.width ?? defaults[0]) / (dimensions.height ?? defaults[1]);
+      const factor = Math.min(
+        1,
+        attrs.width / (dimensions.width ?? defaults[0]),
+        attrs.height / (dimensions.height ?? defaults[1]),
+      );
+      attrs.width = (dimensions.width ?? defaults[0]) * factor;
+      attrs.height = attrs.width / ratio;
+      attrs.keepRatio = true;
     }
-    if(kind.startsWith('symbol:')) {const symbol=symbols.find(s=>s.key===kind.slice(7));return editor.chain().focus().setImage({src:symbol.src,alt:symbol.title,width:'8mm'}).run();}
-    if (kind === 'table') return openTableDialog();
-    if (kind === 'image') return $('image-file').click();
-    let content;
-    if(kind==='gs1') content={type:'gs1Matrix'};
-    else if(kind.startsWith('label:')) content={type:'labelField',attrs:{key:kind.slice(6)}};
-    else if (Object.prototype.hasOwnProperty.call(blockTypes, kind)) content = makeBlock(kind);
-    else if (kind.startsWith('field:')) content = { type: 'tonField', attrs: { key: kind.slice(6) } };
-    else if (kind === 'columns') content = { type: 'tonColumns', attrs: { widths: [50, 50], gap: 4 }, content: [0, 1].map(() => ({ type: 'tonColumn', content: [{ type: 'paragraph' }] })) };
-    else if (kind === 'heading') content = { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Nuovo titolo' }] };
-    else content = { type: 'paragraph', content: [{ type: 'text', text: 'Scrivi il tuo testo…' }] };
-    const existingSections = new Set();
-    if (content.type === 'tonColumns') editor.state.doc.descendants(node => { if (node.type.name === 'tonColumns') existingSections.add(node); });
-    const chain = editor.chain().focus();
-    if (position === undefined && kind === 'columns' && editor.state.selection instanceof NodeSelection) chain.insertContentAt(editor.state.selection.node.type.name === 'tonColumn' ? editor.state.selection.to - 1 : editor.state.selection.to, content).run();
-    else if (position === undefined) chain.insertContent(content).run(); else chain.insertContentAt(position, content).run();
-    if (content.type === 'tonBlock') {
-      let pos; editor.state.doc.descendants((node, offset) => { if (node.attrs.id === content.attrs.id) pos = offset; });
-      if (pos !== undefined) editor.commands.setNodeSelection(pos);
+    if (!Array.isArray(content)) content = [content];
+    content = content.map((n) =>
+      ['labelField', 'tonField'].includes(n.type) ? { type: 'paragraph', content: [n] } : n,
+    );
+    const node = editor.schema.nodeFromJSON({ type: 'canvasObject', attrs, content });
+    const pos = editor.state.doc.content.size;
+    editor.view.dispatch(editor.state.tr.insert(pos, node));
+    // The selection must be built against the inserted document (the old doc can be empty).
+    editor.commands.setNodeSelection(pos);
+    editor.view.focus();
+    refresh(true);
+    return pos;
+  }
+  function selectText(pos) {
+    const node = editor.state.doc.nodeAt(pos);
+    editor.commands.setTextSelection(pos + 2);
+    editor.view.focus();
+    return node;
+  }
+  function insert(kind) {
+    if (!editor.isEditable) return;
+    if (kind === 'image') {
+      replaceImage = false;
+      $('image-file').click();
+      return;
     }
-    if (content.type === 'tonColumns') {
-      // Schema fitting keeps a caret paragraph after each section. Select the new
-      // section itself rather than leaving its properties on an outer container.
-      let pos;
-      editor.state.doc.descendants((node, offset) => {
-        if (node.type.name === 'tonColumns' && !existingSections.has(node)
-            && [...Array(node.childCount)].every((_, i) => node.child(i).childCount === 1 && node.child(i).firstChild.type.name === 'paragraph' && node.child(i).firstChild.content.size === 0)) pos = offset;
-      });
-      if (pos !== undefined) editor.commands.setNodeSelection(pos);
+    if (kind === 'table') {
+      $('table-dialog').hidden = false;
+      $('table-rows').focus();
+      return;
     }
-    $('insert-panel').classList.remove('open');
+    if (kind.startsWith('symbol:')) {
+      const symbol = symbols.find((s) => s.key === kind.slice(7));
+      if (!symbol) throw Error('Simbolo non disponibile.');
+      return add(
+        { type: 'image', attrs: { src: symbol.src, alt: symbol.title, width: '100%' } },
+        'image',
+        { width: px(8), height: px(8) },
+      );
+    }
+    if (kind === 'gs1') return add({ type: 'gs1Matrix' }, 'matrix');
+    if (Object.hasOwn(blockTypes, kind))
+      return add(
+        {
+          type: 'tonBlock',
+          attrs: { id: 'block-' + model.nextId(), kind, title: blockTypes[kind], compact: true },
+        },
+        'block',
+      );
+    if (kind.startsWith('label:') || kind.startsWith('field:')) {
+      const label = kind.startsWith('label:'),
+        key = kind.slice(6);
+      if (!(key in (label ? labelFields : fields))) throw Error('Campo non disponibile.');
+      const content = { type: label ? 'labelField' : 'tonField', attrs: { key } },
+        object = selectedObject(editor.state);
+      if (object?.node.attrs.kind === 'text' && !(editor.state.selection instanceof NodeSelection))
+        return editor.chain().focus().insertContent(content).run();
+      return add(content, 'text');
+    }
+    if (!['text', 'heading'].includes(kind)) throw Error('Elemento non supportato.');
+    const pos = add(
+      {
+        type: kind === 'heading' ? 'heading' : 'paragraph',
+        ...(kind === 'heading' ? { attrs: { level: 2 } } : {}),
+        content: [],
+      },
+      'text',
+    );
+    if (kind === 'heading')
+      updateObject(editor, selectedObject(editor.state), { fontSize: '18pt', height: 48 });
+    return pos;
+  }
+  function table() {
+    const rows = Number($('table-rows').value),
+      cols = Number($('table-cols').value),
+      header = $('table-header').checked;
+    if (
+      !Number.isInteger(rows) ||
+      rows < 1 ||
+      rows > 20 ||
+      !Number.isInteger(cols) ||
+      cols < 1 ||
+      cols > 8
+    )
+      return notify('Scegli da 1 a 20 righe e da 1 a 8 colonne.');
+    add(
+      {
+        type: 'table',
+        attrs: { compact: true },
+        content: Array.from({ length: rows + (header ? 1 : 0) }, (_, i) => ({
+          type: 'tableRow',
+          content: Array.from({ length: cols }, () => ({
+            type: header && i === 0 ? 'tableHeader' : 'tableCell',
+            content: [{ type: 'paragraph' }],
+          })),
+        })),
+      },
+      'table',
+    );
+    $('table-dialog').hidden = true;
     refresh(true);
   }
-
-  function openTableDialog() {
-    $('table-dialog').hidden = false; $('table-rows').focus();
-  }
-  function closeTableDialog() { $('table-dialog').hidden = true; editor.commands.focus(); }
-  function insertTable() {
-    const rows = Number($('table-rows').value), cols = Number($('table-cols').value);
-    if (!Number.isInteger(rows) || rows < 1 || rows > 20 || !Number.isInteger(cols) || cols < 1 || cols > 8) return notify('Scegli da 1 a 20 righe e da 1 a 8 colonne.');
-    const withHeaderRow = $('table-header').checked;
-    editor.chain().focus().insertTable({ rows: rows + (withHeaderRow ? 1 : 0), cols, withHeaderRow }).run();
-    closeTableDialog(); refresh(true);
-  }
-
-  function palette(kind, title, symbol, automatic = false) {
-    return `<button class="palette-button ${automatic ? 'automatic' : ''}" data-insert="${kind}" draggable="false"><span class="symbol" aria-hidden="true">${symbol}</span><span>${title}${automatic ? '<small>Compilato dalla produzione</small>' : ''}</span></button>`;
+  function palette(kind, title, icon) {
+    return `<button class="palette-button" data-insert="${kind}"><span class="symbol">${icon}</span><span>${title}</span></button>`;
   }
   $('basic-palette').innerHTML = [
-    ['heading', 'Titolo', 'H'], ['text', 'Testo libero', 'T'], ['table', 'Tabella libera', '▦'],
-    ['image', 'Immagine dal PC', '▧'], ['columns', 'Sezione a colonne', '▥'],
-  ].map(v => palette(...v)).join('');
-  $('label-palette').innerHTML = palette('gs1','GS1 DataMatrix','▦') + Object.entries(labelFields).map(([key,title])=>palette('label:'+key,title,'［］')).join('');
-  $('symbol-palette').innerHTML = symbols.map(symbol=>`<button class="palette-button" data-insert="symbol:${symbol.key}"><img src="${symbol.src}" alt="" style="width:32px;height:32px;object-fit:contain"><span>${escape(symbol.title)}</span></button>`).join('');
-  $('laboratory-palette').innerHTML = Object.entries(blockTypes).map(([kind, title]) => palette(kind, title, '▤', true)).join('');
-  $('field-palette').innerHTML = Object.entries(fields).map(([key, value]) => palette('field:' + key, value[0], '［］')).join('');
-  for (const button of document.querySelectorAll('[data-insert]')) {
-    on(button, 'click', () => insert(button.dataset.insert));
-  }
-  cleanup.push(mountEditorDrag(editor, insert));
-
-  function run(command) {
-    if (!commandAllowed(command)) return false;
-    const c = editor.chain().focus();
-    switch (command) {
-      case 'bold': return c.toggleBold().run();
-      case 'italic': return c.toggleItalic().run();
-      case 'underline': return c.toggleUnderline().run();
-      case 'undo': return c.undo().run();
-      case 'redo': return c.redo().run();
-      case 'table': return c.insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
-      case 'addRowAfter': return c.addRowAfter().run();
-      case 'addColumnAfter': return c.addColumnAfter().run();
-      case 'deleteRow': return c.deleteRow().run();
-      case 'deleteColumn': return c.deleteColumn().run();
-      case 'deleteTable': return c.deleteTable().run();
-      case 'mergeCells': return c.mergeCells().run();
-      case 'splitCell': return c.splitCell().run();
-      case 'toggleHeaderRow': return c.toggleHeaderRow().run();
-      case 'bulletList': return c.toggleBulletList().run();
-      case 'orderedList': return c.toggleOrderedList().run();
-      case 'align-left': return c.setTextAlign('left').run();
-      case 'align-center': return c.setTextAlign('center').run();
-      case 'align-right': return c.setTextAlign('right').run();
-      default: throw new Error('Comando non riconosciuto.');
+    ['text', 'Riquadro di testo', 'T'],
+    ['heading', 'Titolo', 'H'],
+    ['image', 'Immagine dal PC', '▧'],
+    ['table', 'Tabella', '▦'],
+  ]
+    .map((v) => palette(...v))
+    .join('');
+  $('label-palette').innerHTML =
+    palette('gs1', 'GS1 DataMatrix', '▦') +
+    Object.entries(labelFields)
+      .map(([k, n]) => palette('label:' + k, n, '［］'))
+      .join('');
+  $('field-palette').innerHTML = Object.entries(fields)
+    .map(([k, n]) => palette('field:' + k, n[0], '［］'))
+    .join('');
+  $('laboratory-palette').innerHTML = Object.entries(blockTypes)
+    .map(([k, n]) => palette(k, n, '▤'))
+    .join('');
+  $('symbol-palette').innerHTML = symbols
+    .map(
+      (s) =>
+        `<button class="palette-button" data-insert="symbol:${s.key}"><img src="${s.src}" alt=""><span>${escape(s.title)}</span></button>`,
+    )
+    .join('');
+  document
+    .querySelectorAll('[data-insert]')
+    .forEach((b) => on(b, 'click', () => safe(() => insert(b.dataset.insert))));
+  function deleteObject() {
+    const o = selectedObject(editor.state);
+    if (o && editor.isEditable) {
+      editor.view.dispatch(editor.state.tr.delete(o.pos, o.pos + o.node.nodeSize));
+      refresh(true);
     }
   }
-
-  function selectedNode() { return editor.state.selection instanceof NodeSelection ? editor.state.selection.node : null; }
-  function updateProperties(force = false) {
-    const node = selectedNode();
-    const path = sectionPath(editor.state), section = path.at(-1);
-    const type = node?.type.name === 'gs1Matrix' ? 'gs1' : ['tonColumns', 'tonColumn'].includes(node?.type.name) || (section && !node && !editor.isActive('table')) ? 'columns' : node?.type.name === 'tonBlock' ? 'block' : node?.type.name === 'image' ? 'image' : editor.isActive('table') ? 'table' : 'text';
-    const attrs = type === 'table' ? editor.getAttributes('table') : node?.attrs;
-    const key = type + JSON.stringify(attrs) + editor.isEditable + path.map(s => s.pos + ':' + s.column + ':' + JSON.stringify(s.node.attrs)).join('|');
+  function duplicate() {
+    const o = selectedObject(editor.state);
+    if (!o) return;
+    const copy = o.node.toJSON();
+    copy.attrs = clampGeometry(
+      {
+        ...copy.attrs,
+        id: uniqueId(),
+        x: copy.attrs.x + 10,
+        y: copy.attrs.y + 10,
+        z: Math.max(...editor.state.doc.content.content.map((n) => n.attrs.z)) + 1,
+      },
+      pagePixels(model.page()),
+    );
+    const at = editor.state.doc.content.size;
+    editor.view.dispatch(editor.state.tr.insert(at, editor.schema.nodeFromJSON(copy)));
+    editor.commands.setNodeSelection(at);
+    refresh(true);
+  }
+  function layer(front) {
+    const o = selectedObject(editor.state);
+    if (!o) return;
+    let items = [];
+    editor.state.doc.forEach((n, p) => items.push({ node: n, pos: p }));
+    items.sort((a, b) => a.node.attrs.z - b.node.attrs.z);
+    items = items.filter((x) => x.pos !== o.pos);
+    items[front ? 'push' : 'unshift'](o);
+    let tr = editor.state.tr;
+    items.forEach((x, i) => (tr = tr.setNodeMarkup(x.pos, undefined, { ...x.node.attrs, z: i })));
+    tr.setSelection(NodeSelection.create(tr.doc, o.pos));
+    editor.view.dispatch(tr);
+    refresh(true);
+  }
+  const hasRange = () =>
+    !editor.state.selection.empty && !(editor.state.selection instanceof NodeSelection);
+  function format(patch, command) {
+    const o = selectedObject(editor.state);
+    if (!o || o.node.attrs.kind !== 'text' || !editor.isEditable) return;
+    if (hasRange() && command) {
+      command(editor.chain().focus()).run();
+      return;
+    }
+    if (command) {
+      selectObjectText(editor, o);
+      command(editor.chain().focus()).run();
+    }
+    const current = { node: editor.state.doc.nodeAt(o.pos), pos: o.pos };
+    updateObject(editor, current, patch);
+    editor.commands.setNodeSelection(o.pos);
+    refresh();
+  }
+  function run(command) {
+    if (command === 'undo' || command === 'redo') return editor.chain().focus()[command]().run();
+    if (!editor.isEditable) return false;
+    const o = selectedObject(editor.state);
+    if (['bold', 'italic', 'underline'].includes(command))
+      return format(
+        { [command]: !o?.node.attrs[command] },
+        hasRange()
+          ? (c) =>
+              c[
+                { bold: 'toggleBold', italic: 'toggleItalic', underline: 'toggleUnderline' }[
+                  command
+                ]
+              ]()
+          : (c) =>
+              c[
+                { bold: 'unsetBold', italic: 'unsetItalic', underline: 'unsetUnderline' }[command]
+              ](),
+      );
+    if (command.startsWith('align-'))
+      return format({ textAlign: command.slice(6) }, (c) => c.setTextAlign(command.slice(6)));
+    if (['bulletList', 'orderedList'].includes(command))
+      return format({}, (c) =>
+        c[command === 'bulletList' ? 'toggleBulletList' : 'toggleOrderedList'](),
+      );
+    const tableCommands = [
+      'addRowAfter',
+      'addColumnAfter',
+      'deleteRow',
+      'deleteColumn',
+      'mergeCells',
+      'splitCell',
+      'toggleHeaderRow',
+    ];
+    if (tableCommands.includes(command)) return editor.chain().focus()[command]().run();
+    return false;
+  }
+  document.querySelectorAll('[data-command]').forEach((b) => {
+    on(b, 'mousedown', (e) => e.preventDefault());
+    on(b, 'click', () => safe(() => run(b.dataset.command)));
+  });
+  const formats = {
+    'font-family': (v) => format({ fontFamily: v }, (c) => c.setFontFamily(v)),
+    'font-size': (v) => format({ fontSize: v }, (c) => c.setFontSize(v)),
+    'text-color': (v) => format({ color: v }, (c) => c.setColor(v)),
+    'text-highlight': (v) => format({}, (c) => c.setBackgroundColor(v)),
+    'line-height': (v) => format({ lineHeight: Number(v) }, (c) => c.setLineHeight(v)),
+    'text-type': (v) =>
+      format(
+        { fontSize: v === 'paragraph' ? '11pt' : v === '1' ? '24pt' : v === '2' ? '18pt' : '14pt' },
+        (c) => (v === 'paragraph' ? c.setParagraph() : c.setHeading({ level: Number(v) })),
+      ),
+  };
+  Object.entries(formats).forEach(([id, action]) =>
+    on($(id), 'change', () => safe(() => action($(id).value))),
+  );
+  function properties(force = false) {
+    const o = selectedObject(editor.state),
+      root = $('selection-properties'),
+      text = $('text-properties');
+    const key =
+      (o ? o.pos + JSON.stringify(o.node.attrs) + o.node.firstChild?.type.name : 'none') +
+      editor.isEditable +
+      editor.isActive('table');
     if (!force && (key === propertyKey || $('properties').contains(document.activeElement))) return;
     propertyKey = key;
-    const root = $('properties');
-    let html = '<span class="eyebrow">Proprietà della selezione</span>';
-    if (path.length) html += `<nav class="layout-breadcrumb" aria-label="Contenitori della selezione">${sectionBreadcrumb(editor.state)}</nav>`;
-    if (type === 'columns') {
-      html += columnProperties(section);
-    } else if (type === 'block') {
-      html += `<h2>${escape(blockTypes[node.attrs.kind])}</h2><p>Blocco automatico · Dati di esempio</p>${blockProperties(node.attrs, blockTab)}<div class="section"><span class="eyebrow">Dati operativi protetti</span><p>Grammi, conteggi, spessori e pressione provengono dalla produzione. Le proprietà modificano soltanto la presentazione.</p></div><div class="row"><button data-property="duplicate" class="line">Duplica blocco</button><button data-property="delete" class="line danger">Elimina</button></div><div class="note">Trascina la maniglia del blocco per spostarlo.</div>`;
-    } else if (type === 'table') {
-      html += '<h2>Tabella libera</h2><p>Seleziona celle e usa questi comandi per modificarne la struttura.</p><div class="section"><div class="row"><button data-command="addRowAfter" class="line">＋ Riga</button><button data-command="addColumnAfter" class="line">＋ Colonna</button></div><div class="row"><button data-command="deleteRow" class="line">Elimina riga</button><button data-command="deleteColumn" class="line">Elimina colonna</button></div><div class="row"><button data-command="mergeCells" class="line">Unisci celle</button><button data-command="splitCell" class="line">Dividi cella</button></div><div class="row"><button data-command="toggleHeaderRow" class="line">Intestazione</button></div></div><label class="check"><input id="table-striped" type="checkbox" ' + (attrs.striped ? 'checked' : '') + '>Righe alternate</label><label class="check"><input id="table-compact" type="checkbox" ' + (attrs.compact ? 'checked' : '') + '>Spaziatura compatta</label><div class="row"><button data-command="deleteTable" class="line danger">Elimina tabella</button></div><div class="note">Per ridimensionare una colonna trascina il bordo fra due celle.</div>';
-    } else if (type === 'gs1') {
-      html += '<h2>GS1 DataMatrix</h2><p>GTIN e lotto provengono dal lavoro. Le date sono facoltative. FNC1 e separatori GS1 vengono aggiunti automaticamente.</p>' +
-        [['gtin','GTIN · AI 01'],['lot','Lotto · AI 10'],['productionDate','Produzione · AI 11'],['expiryDate','Scadenza · AI 17']].map(([key,title])=>`<label for="gs1-${key}">${title}</label><input id="gs1-${key}" value="${escape(node.attrs[key])}" placeholder="${key==='productionDate'?'{{productionDateGs1}}':key==='expiryDate'?'{{expiryDateGs1}}':''}">`).join('') +
-        `<label for="gs1-size">Dimensione · mm</label><input id="gs1-size" type="number" min="8" max="80" value="${node.attrs.size}"><p>Usa {{gtin}}, {{lot}}, {{productionDateGs1}}, {{expiryDateGs1}} oppure un valore fisso. Le date fisse usano AAMMGG.</p><button data-property="delete" class="line danger">Elimina</button>`;
-    } else if (type === 'image') {
-      html += '<h2>Immagine locale</h2><p>L’immagine è conservata nella versione del modello.</p><label for="image-width">Larghezza (es. 8mm oppure 50%)</label><input id="image-width" value="' + escape(node.attrs.width) + '"><div class="row"><button data-property="delete" class="line danger">Elimina immagine</button></div>';
-    } else {
-      html += '<h2>Testo e impaginazione</h2><p>Scrivi direttamente sulla pagina. Seleziona una porzione di testo per cambiarne carattere, dimensione e colore.</p><div class="section"><span class="eyebrow">Tabelle e immagini</span><p>Fai clic in una tabella o su un’immagine per visualizzare le proprietà.</p></div><div class="section"><span class="eyebrow">Blocchi del laboratorio</span><p>Seleziona il bordo di un blocco automatico per cambiarne titolo e spaziatura.</p></div><div class="note">I blocchi usano dati di esempio. L’esportazione conserva la struttura del modello, non una produzione emessa.</div>';
+    text.hidden = !o || o.node.attrs.kind !== 'text';
+    if (!o) {
+      root.innerHTML =
+        '<span class="eyebrow">Proprietà</span><h2>Seleziona un oggetto</h2><p>Inserisci un riquadro di testo, un’immagine o un codice. Trascina la maniglia per spostarlo; usa i bordi per ridimensionarlo.</p><p>Frecce: 1 px · Maiusc + frecce: 10 px.</p><div id="object-list"></div>';
+      editor.state.doc.forEach((n, pos) => {
+        if (n.type.name !== 'canvasObject') return;
+        const b = document.createElement('button');
+        b.className = 'object-list-item';
+        b.textContent = kindNames[n.attrs.kind] + ' · Pagina ' + (n.attrs.page + 1);
+        b.onclick = () => editor.commands.setNodeSelection(pos);
+        $('object-list').append(b);
+      });
+      return;
     }
-    root.innerHTML = html;
-    root.querySelectorAll('[data-layout-select]').forEach(button => { button.onclick = () => { editor.commands.setNodeSelection(Number(button.dataset.layoutSelect)); updateProperties(true); }; });
-    if (type === 'columns') bindColumnControls(root, editor, section, notify, updateProperties);
-    root.querySelectorAll('[data-command]').forEach(bindCommand);
+    const a = o.node.attrs,
+      node =
+        editor.state.selection instanceof NodeSelection &&
+        editor.state.selection.node.type.name !== 'canvasObject'
+          ? editor.state.selection.node
+          : o.node.firstChild;
+    root.innerHTML = `<span class="eyebrow">Oggetto selezionato</span><h2>${kindNames[a.kind]}</h2><div class="geometry-grid">${[
+      ['x', 'X'],
+      ['y', 'Y'],
+      ['width', 'Larghezza'],
+      ['height', 'Altezza'],
+    ]
+      .map(
+        ([key, label]) =>
+          `<label>${label} · px<input id="object-${key}" type="number" step="1" min="${key === 'x' || key === 'y' ? 0 : 8}" value="${Math.round(a[key] * 100) / 100}"></label>`,
+      )
+      .join(
+        '',
+      )}</div><p class="physical-size">${mm(a.width).toFixed(1)} × ${mm(a.height).toFixed(1)} mm</p>${(model.page().count ?? 1) > 1 ? `<label>Pagina<select id="object-page">${Array.from({ length: model.page().count }, (_, i) => `<option value="${i}" ${i === a.page ? 'selected' : ''}>${i + 1}</option>`).join('')}</select></label>` : ''}<div class="object-actions"><button data-object="front">In primo piano</button><button data-object="back">Sullo sfondo</button><button data-object="fit">Adatta altezza</button><button data-object="duplicate">Duplica</button><button data-object="delete" class="danger">Elimina oggetto</button></div><div id="object-specific"></div><p id="object-overflow" class="matrix-error" hidden>Il contenuto supera il riquadro: aumenta le dimensioni o riduci il testo.</p>`;
     const change = (id, action) => {
-      const input = $(id); if (!input) return;
-      input.disabled = !editor.isEditable;
-      input.onchange = () => { action(input); updateProperties(true); };
+      const input = $(id);
+      if (input) {
+        input.disabled = !editor.isEditable;
+        input.onchange = () => {
+          safe(() => action(input));
+          properties(true);
+        };
+      }
     };
-    if (type === 'block') bindBlockProperties(root, editor, node.attrs, tab => { blockTab = tab; }, updateProperties, notify);
-    change('table-striped', input => editor.commands.updateAttributes('table', { striped: input.checked }));
-    change('table-compact', input => editor.commands.updateAttributes('table', { compact: input.checked }));
-    change('image-width', input => {
-      if(!(['25%','50%','75%','100%'].includes(input.value) || /^(?:[1-9]\d?|100)(?:\.\d)?mm$/.test(input.value))) return notify('Usa da 1 a 100 mm oppure 25%, 50%, 75%, 100%.');
-      editor.commands.updateAttributes('image', { width: input.value });
-    });
-    for(const key of ['gtin','lot','productionDate','expiryDate','size']) change('gs1-'+key,input=>{
-      const attrs={...node.attrs,[key]:key==='size'?Number(input.value):input.value};
-      try {validateMatrix(attrs);editor.commands.updateAttributes('gs1Matrix',attrs);}catch(error){notify(error.message);}
-    });
-    root.querySelectorAll('[data-property]').forEach(button => {
-      button.disabled = !editor.isEditable;
-      button.onclick = () => {
-        if (!editor.isEditable || !(editor.state.selection instanceof NodeSelection)) return;
-        if (button.dataset.property === 'delete') editor.chain().focus().deleteSelection().run();
-        else { const selected = editor.state.selection.node.toJSON(); selected.attrs.id = uniqueId(); editor.chain().focus().insertContentAt(editor.state.selection.to, selected).run(); }
-        updateProperties(true);
-      };
-    });
-  }
-
-  on($('editor'), 'orodent-layout-preview', event => {
-    const section = sectionPath(editor.state).at(-1);
-    if (section?.pos === event.detail.pos) event.detail.widths.forEach((width, i) => { const input = $(`layout-width-${i}`); if (input) input.value = width; });
-  });
-  on($('editor'), 'pointerdown', event => {
-    if (event.target.closest('.layout-divider,.layout-select,.layout-column-select')) $('properties').classList.add('open');
-  });
-
-  function commandAllowed(command) {
-    const node = selectedNode();
-    if (['tonBlock', 'gs1Matrix', 'image', 'tonColumns', 'tonColumn'].includes(node?.type.name) && ['bold', 'italic', 'underline', 'bulletList', 'orderedList', 'align-left', 'align-center', 'align-right'].includes(command)) return false;
-    const native = ['undo', 'redo', 'addRowAfter', 'addColumnAfter', 'deleteRow', 'deleteColumn', 'deleteTable', 'mergeCells', 'splitCell', 'toggleHeaderRow'];
-    return editor.isEditable && (!native.includes(command) || editor.can()[command]());
-  }
-  function bindCommand(button) {
-    button.disabled = !commandAllowed(button.dataset.command);
-    button.onmousedown = event => event.preventDefault();
-    button.onclick = () => { run(button.dataset.command); refresh(); };
-  }
-  document.querySelectorAll('.toolbar [data-command]').forEach(bindCommand);
-  const selects = {
-    'text-type': value => value === 'paragraph' ? editor.chain().focus().setParagraph().run() : editor.chain().focus().setHeading({ level: Number(value) }).run(),
-    'font-family': value => editor.chain().focus().setFontFamily(value).run(),
-    'font-size': value => editor.chain().focus().setFontSize(value).run(),
-    'line-height': value => editor.chain().focus().setLineHeight(value).run(),
-    'text-color': value => editor.chain().focus().setColor(value).run(),
-    'text-highlight': value => editor.chain().focus().setBackgroundColor(value).run(),
-  };
-  Object.entries(selects).forEach(([id, action]) => on($(id), 'change', event => {
-    if (!editor.isEditable) return;
-    const node = selectedNode();
-    const attribute = { 'font-family': 'fontFamily', 'font-size': 'fontSize', 'text-color': 'color' }[id];
-    if (node?.type.name === 'tonBlock') {
-      if (attribute) editor.commands.updateAttributes('tonBlock', { [attribute]: event.target.value });
-    } else action(event.target.value);
-  }));
-
-  function previewDocument() {
-    const missing = model.purpose() === 'ETICHETTA' ? [] : checkOperationalContent(editor.state.doc);
-    $('preview-content').innerHTML = editor.getHTML();
-    $('preview-dialog').hidden = false; preview = true;
-    if (missing.length) notify('Scheda operativa incompleta: mancano ' + missing.join(', ') + '.');
-    $('preview-dialog').querySelector('[data-action="close-preview"]').focus();
-  }
-  function closePreview() { $('preview-dialog').hidden = true; $('preview-content').replaceChildren(); preview = false; editor.commands.focus(); }
-  function exportModel() {
-    const payload = model.serialize();
-    if (payload.length > 8_000_000) return notify('Il modello supera 8 MB. Riduci immagini o contenuto prima di esportarlo.');
-    const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' })); urls.add(url);
-    const link = document.createElement('a'); link.href = url; link.download = (model.title().replace(/[^a-z0-9_-]/gi, '-') || 'modello') + '.json';
-    document.body.append(link); link.click(); link.remove();
-    notify('Modello esportato come file JSON locale.');
-    setTimeout(() => { URL.revokeObjectURL(url); urls.delete(url); }, 1000);
-  }
-  function readFile(input, callback) {
-    const file = input.files?.[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => { if (!disposed && editor.isEditable) callback(file, reader.result); };
-    reader.onerror = () => notify('Impossibile leggere il file selezionato.');
-    if (input.id === 'image-file') {
-      if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 2 * 1024 * 1024) { input.value = ''; return notify('Scegli un’immagine PNG, JPEG o WebP fino a 2 MB.'); }
-      reader.readAsDataURL(file);
-    } else {
-      if (file.size > 8_000_000) { input.value = ''; return notify('Il modello supera 8 MB.'); }
-      reader.readAsText(file);
+    for (const k of ['x', 'y', 'width', 'height'])
+      change('object-' + k, (input) => {
+        const value = Number(input.value);
+        if (!Number.isFinite(value)) throw Error('Inserisci un valore numerico.');
+        updateObject(editor, selectedObject(editor.state), { [k]: value });
+      });
+    change('object-page', (input) =>
+      updateObject(editor, selectedObject(editor.state), { page: Number(input.value) }),
+    );
+    const specific = $('object-specific');
+    if (a.kind === 'image')
+      specific.innerHTML =
+        '<label>Descrizione immagine<input id="image-alt" value="' +
+        escape(node.attrs.alt ?? '') +
+        '"></label><button id="replace-image">Sostituisci immagine dal PC</button>';
+    if (a.kind === 'matrix')
+      specific.innerHTML =
+        '<h3>Dati GS1</h3>' +
+        [
+          ['gtin', 'GTIN · AI 01'],
+          ['lot', 'Lotto · AI 10'],
+          ['productionDate', 'Produzione · AI 11'],
+          ['expiryDate', 'Scadenza · AI 17'],
+        ]
+          .map(
+            ([k, label]) =>
+              `<label>${label}<input id="gs1-${k}" value="${escape(node.attrs[k])}"></label>`,
+          )
+          .join('') +
+        '<p>Usa {{gtin}}, {{lot}}, {{productionDateGs1}}, {{expiryDateGs1}}. Le date sono facoltative. FNC1 e separatori sono automatici.</p>';
+    if (a.kind === 'block') {
+      specific.innerHTML = blockProperties(node.attrs, blockTab);
+      bindBlockProperties(
+        specific,
+        editor,
+        node.attrs,
+        (tab) => {
+          blockTab = tab;
+        },
+        properties,
+        notify,
+      );
     }
-    input.value = '';
+    if (a.kind === 'table')
+      specific.innerHTML =
+        '<p>Fai clic in una cella per modificare la tabella.</p><div class="object-actions">' +
+        [
+          ['addRowAfter', '＋ Riga'],
+          ['addColumnAfter', '＋ Colonna'],
+          ['deleteRow', '− Riga'],
+          ['deleteColumn', '− Colonna'],
+          ['mergeCells', 'Unisci celle'],
+          ['splitCell', 'Dividi cella'],
+        ]
+          .map(([c, l]) => `<button data-table-command="${c}">${l}</button>`)
+          .join('') +
+        '</div>';
+    change('image-alt', (input) => editor.commands.updateAttributes('image', { alt: input.value }));
+    if ($('replace-image')) {
+      $('replace-image').disabled = !editor.isEditable;
+      $('replace-image').onclick = () => {
+        replaceImage = true;
+        $('image-file').click();
+      };
+    }
+    for (const k of ['gtin', 'lot', 'productionDate', 'expiryDate'])
+      change('gs1-' + k, (input) => {
+        const attrs = { ...node.attrs, [k]: input.value };
+        validateMatrix(attrs);
+        editor.commands.updateAttributes('gs1Matrix', attrs);
+      });
+    root.querySelectorAll('[data-table-command]').forEach((b) => {
+      b.disabled = !editor.isEditable || !editor.isActive('table');
+      b.onmousedown = (e) => e.preventDefault();
+      b.onclick = () => safe(() => run(b.dataset.tableCommand));
+    });
+    root.querySelectorAll('[data-object]').forEach((b) => {
+      b.disabled = !editor.isEditable;
+      b.onmousedown = (e) => e.preventDefault();
+      b.onclick = () =>
+        safe(() => {
+          ({
+            front: () => layer(true),
+            back: () => layer(false),
+            duplicate,
+            delete: deleteObject,
+            fit: () => {
+              const box = document.querySelector(
+                `[data-object-id="${a.id}"] .canvas-object-content`,
+              );
+              const top = box.getBoundingClientRect().top,
+                zoom = model.zoomValue();
+              const h = Math.max(
+                8,
+                ...[...box.children].map((n) =>
+                  Math.ceil((n.getBoundingClientRect().bottom - top) / zoom),
+                ),
+              );
+              updateObject(editor, selectedObject(editor.state), { height: h });
+            },
+          })[b.dataset.object]();
+        });
+    });
   }
-  on($('image-file'), 'change', () => readFile($('image-file'), (file, src) => {
-    if (model.serialize().length + src.length + 1000 > 8_000_000) return notify('L’immagine porterebbe il modello oltre 8 MB. Scegli un’immagine più piccola.');
-    editor.chain().focus().setImage({ src, alt: file.name, width: '50%' }).run();
-  }));
-  on($('model-file'), 'change', () => readFile($('model-file'), (file, text) => {
-    if (model.isDirty() && !window.confirm('Scartare le modifiche locali e aprire il modello selezionato?')) return;
-    try { model.restore(text); notify('Modello aperto.'); } catch (error) { notify(error.message); }
-  }));
+  function overflow() {
+    const o = selectedObject(editor.state);
+    if (!o || !$('object-overflow')) return;
+    const content = document.querySelector(
+      `[data-object-id="${o.node.attrs.id}"] .canvas-object-content`,
+    );
+    if (content)
+      $('object-overflow').hidden =
+        content.scrollHeight <= content.clientHeight + 1 &&
+        content.scrollWidth <= content.clientWidth + 1;
+  }
+  on($('editor'), 'canvas-object-preview', (e) => {
+    for (const k of ['x', 'y', 'width', 'height'])
+      if ($('object-' + k)) $('object-' + k).value = Math.round(e.detail[k] * 100) / 100;
+  });
+  on($('editor'), 'dblclick', (event) => {
+    if (!model.canvas() || event.target.closest('.canvas-object') || !editor.isEditable) return;
+    const rect = $('paper').getBoundingClientRect(),
+      scale = Number.parseFloat(getComputedStyle($('paper')).getPropertyValue('--zoom')) || 1,
+      size = pagePixels(model.page()),
+      step = size.height + 24;
+    const y = (event.clientY - rect.top) / scale,
+      page = Math.min(size.count - 1, Math.floor(y / step));
+    const pos = add(
+      { type: 'paragraph' },
+      'text',
+      {},
+      { x: (event.clientX - rect.left) / scale, y: y - page * step, page },
+    );
+    selectText(pos);
+  });
+  on($('image-file'), 'change', () => {
+    const file = $('image-file').files?.[0];
+    $('image-file').value = '';
+    if (!file || !editor.isEditable) return;
+    if (
+      !['image/png', 'image/jpeg', 'image/webp'].includes(file.type) ||
+      file.size > 2 * 1024 * 1024
+    )
+      return notify('Scegli un’immagine PNG, JPEG o WebP fino a 2 MB.');
+    const target = replaceImage ? selectedObject(editor.state) : null;
+    const reader = new FileReader();
+    reader.onerror = () => notify('Impossibile leggere l’immagine.');
+    reader.onload = () => {
+      if (disposed || !editor.isEditable) return;
+      if (model.serialize().length + String(reader.result).length > 8_000_000)
+        return notify('Il modello supererebbe 8 MB.');
+      const image = new Image();
+      image.onload = () =>
+        safe(() => {
+          if (disposed || !editor.isEditable) return;
+          if (target) {
+            const actual = editor.state.doc.nodeAt(target.pos);
+            if (actual?.attrs.id !== target.node.attrs.id) return;
+            editor.commands.setNodeSelection(target.pos);
+            editor.commands.updateAttributes('image', {
+              src: reader.result,
+              alt: file.name,
+              width: '100%',
+            });
+          } else {
+            const width = Math.min(220, pagePixels(model.page()).width * 0.7);
+            add(
+              { type: 'image', attrs: { src: reader.result, alt: file.name, width: '100%' } },
+              'image',
+              { width, height: (width * image.naturalHeight) / image.naturalWidth },
+            );
+          }
+        });
+      image.onerror = () => notify('L’immagine non è leggibile.');
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  function closePreview() {
+    $('preview-dialog').hidden = true;
+    $('preview-content').replaceChildren();
+    editor.view.focus();
+  }
+  function preview() {
+    model.preparePrint();
+    $('preview-content').innerHTML = model.html();
+    $('preview-dialog').hidden = false;
+  }
   const actions = {
     'toggle-insert': () => $('insert-panel').classList.toggle('open'),
     'toggle-properties': () => $('properties').classList.toggle('open'),
-    'open-model': () => $('model-file').click(), 'export-model': exportModel,
-    'check-model': () => { const missing = model.purpose() === 'ETICHETTA' ? [] : checkOperationalContent(editor.state.doc); notify(missing.length ? 'Mancano: ' + missing.join(', ') + '.' : 'La struttura contiene tutti i blocchi operativi richiesti. I dati mostrati sono esempi.'); },
-    preview: previewDocument, 'close-preview': closePreview,
-    'close-table': closeTableDialog, 'insert-table': insertTable,
-    deselect: () => editor.commands.setTextSelection(editor.state.doc.content.size),
-    print: () => { model.preparePrint(); window.print(); },
+    preview,
+    'close-preview': closePreview,
+    'check-model': () => {
+      model.validate();
+      const missing =
+        model.purpose() === 'ETICHETTA' ? [] : checkOperationalContent(editor.state.doc);
+      notify(
+        missing.length
+          ? 'Per l’approvazione mancano: ' + missing.join(', ')
+          : 'Formato e contenuto validi. I dati mostrati sono esempi.',
+      );
+    },
+    deselect: () => {
+      editor.commands.blur();
+      editor.view.dispatch(
+        editor.state.tr.setSelection(new GapCursor(editor.state.doc.resolve(0))),
+      );
+    },
+    'close-table': () => {
+      $('table-dialog').hidden = true;
+    },
+    'insert-table': table,
+    print: () => {
+      model.preparePrint();
+      window.print();
+    },
   };
-  document.querySelectorAll('[data-action]').forEach(button => on(button, 'click', () => actions[button.dataset.action]?.()));
-  document.querySelectorAll('[data-tab]').forEach(button => on(button, 'click', () => {
-    $('insert-tools').hidden = button.dataset.tab !== 'insert'; $('page-tools').hidden = button.dataset.tab !== 'page';
-    document.querySelectorAll('[data-tab]').forEach(tab => tab.classList.toggle('active', tab === button));
-  }));
+  document
+    .querySelectorAll('[data-action]')
+    .forEach((b) => on(b, 'click', () => safe(() => actions[b.dataset.action]?.())));
+  document.querySelectorAll('[data-tab]').forEach((b) =>
+    on(b, 'click', () => {
+      $('insert-tools').hidden = b.dataset.tab !== 'insert';
+      $('page-tools').hidden = b.dataset.tab !== 'page';
+      document.querySelectorAll('[data-tab]').forEach((t) => t.classList.toggle('active', t === b));
+    }),
+  );
   on($('template-title'), 'change', () => model.changeTitle($('template-title').value));
-  for (const id of ['paper-format','paper-width','paper-height','orientation','margins']) on($(id),'change',()=>{
-    if(!editor.isEditable) return;
-    try {model.changePage({format:$('paper-format').value,width:Number($('paper-width').value),height:Number($('paper-height').value),orientation:$('orientation').value,margin:Number($('margins').value)});} catch(error){notify(error.message);}
-  });
+  on($('model-purpose'), 'change', () => safe(() => model.changePurpose($('model-purpose').value)));
+  for (const id of [
+    'paper-format',
+    'paper-width',
+    'paper-height',
+    'orientation',
+    'margins',
+    'page-count',
+  ])
+    on($(id), 'change', () =>
+      safe(() => {
+        const value = {
+          format: $('paper-format').value,
+          width: Number($('paper-width').value),
+          height: Number($('paper-height').value),
+          orientation: $('orientation').value,
+          margin: Number($('margins').value),
+          count: Number($('page-count').value),
+        };
+        if (id === 'paper-format' && value.format === 'custom' && value.margin === 15)
+          value.margin = 3;
+        model.changePage(value);
+      }),
+    );
   cleanup.push(mountEditorZoom(model));
   const resize = () => {
     const top = document.querySelector('.toolbar').getBoundingClientRect().bottom;
-    document.querySelector('.workspace').style.height = Math.max(280, innerHeight - top - 32) + 'px';
-    $('properties').style.top = top + 'px'; $('insert-panel').style.top = top + 'px';
+    document.querySelector('.workspace').style.height =
+      Math.max(240, innerHeight - top - 32) + 'px';
+    $('properties').style.top = top + 'px';
+    $('insert-panel').style.top = top + 'px';
   };
   on(window, 'resize', resize);
   on(window, 'beforeprint', () => {
     model.preparePrint();
-    if (!preview) { printPreview = true; previewDocument(); }
+    if ($('preview-dialog').hidden) {
+      printPreview = true;
+      preview();
+    }
   });
   on(window, 'afterprint', () => {
-    if (printPreview) { printPreview = false; closePreview(); }
-  });
-  on(document, 'keydown', event => {
-    const dialog = preview ? $('preview-dialog') : !$('table-dialog').hidden ? $('table-dialog') : null;
-    if (dialog && event.key === 'Tab') {
-      const nodes = [...dialog.querySelectorAll('button,input,select,[tabindex]')].filter(n => !n.disabled && n.getClientRects().length);
-      const first = nodes[0], last = nodes[nodes.length - 1];
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-      return;
+    if (printPreview) {
+      printPreview = false;
+      closePreview();
     }
-    if (event.key !== 'Escape') return;
-    if (preview) closePreview(); else if (!$('table-dialog').hidden) closeTableDialog();
-    else { $('properties').classList.remove('open'); $('insert-panel').classList.remove('open'); }
   });
-
+  on(document, 'keydown', (e) => {
+    if (editorKey(e) === 'Escape') {
+      if (!$('preview-dialog').hidden) closePreview();
+      else $('table-dialog').hidden = true;
+    }
+  });
   function refresh(force = false) {
     if (disposed) return;
-    const editable = editor.isEditable;
+    const editable = editor.isEditable,
+      o = selectedObject(editor.state);
     document.body.classList.toggle('editing', editable);
     document.body.classList.toggle('readonly', !editable);
     $('template-title').readOnly = !editable;
-    $('dirty-state').textContent = model.isDirty() ? 'Modifiche non salvate' : document.body.classList.contains('embedded') ? (editable ? 'Bozza' : 'Sola lettura') : 'Bozza locale';
-    const widget = selectedNode()?.type.name === 'tonBlock' ? selectedNode() : null;
-    const image = ['image', 'gs1Matrix', 'tonColumns', 'tonColumn'].includes(selectedNode()?.type.name);
-    const marks = widget?.attrs || editor.getAttributes('textStyle');
-    for (const [id, value] of [['font-family', marks.fontFamily || 'Arial'], ['font-size', marks.fontSize || '11pt'], ['line-height', marks.lineHeight || '1.5']]) {
-      if (document.activeElement !== $(id)) $(id).value = value;
-    }
-    const heading = editor.getAttributes('heading').level;
-    if (document.activeElement !== $('text-type')) $('text-type').value = editor.isActive('heading') ? String(heading) : 'paragraph';
-    document.querySelectorAll('[data-command]').forEach(button => {
-      const command = button.dataset.command;
-      button.disabled = !commandAllowed(command);
-      if (['bold', 'italic', 'underline', 'bulletList', 'orderedList'].includes(command)) button.setAttribute('aria-pressed', String(editor.isActive(command)));
-    });
-    document.querySelectorAll('.toolbar select,.toolbar input,#orientation,#margins,#paper-format,#paper-width,#paper-height,[data-action="open-model"],.palette-button').forEach(n => n.disabled = !editable);
-    for (const id of ['text-type', 'text-highlight', 'line-height']) $(id).disabled = !editable || Boolean(widget) || image;
-    if (image) for (const id of ['font-family', 'font-size', 'text-color']) $(id).disabled = true;
-    if (/^#[a-f\d]{6}$/i.test(marks.color || '')) $('text-color').value = marks.color;
-    const selected = selectedNode();
-    $('selection-status').textContent = selected?.type.name === 'tonBlock' ? blockTypes[selected.attrs.kind] : editor.isActive('table') ? 'Tabella libera' : 'Documento · '+(model.page().format==='custom' ? model.page().width+' × '+model.page().height+' mm' : 'A4');
+    $('dirty-state').textContent = model.isDirty()
+      ? 'Modifiche non salvate'
+      : editable
+        ? 'Bozza'
+        : 'Sola lettura';
+    document
+      .querySelectorAll('.palette-button,#page-tools input,#page-tools select')
+      .forEach((n) => (n.disabled = !editable));
     $('orientation').disabled = !editable || model.page().format === 'custom';
-    updateProperties(force);
+    $('model-purpose').disabled = !editable || !model.purposeEditable();
+    $('page-count').disabled = !editable || model.purpose() === 'ETICHETTA';
+    for (const c of ['undo', 'redo'])
+      document.querySelector(`[data-command="${c}"]`).disabled = !editable || !editor.can()[c]();
+    document
+      .querySelectorAll('.canvas-object[data-object-id]')
+      .forEach((n) =>
+        n.classList.toggle('context-selected', n.dataset.objectId === o?.node.attrs.id),
+      );
+    if (o) $('properties').classList.add('open');
+    const a = o?.node.attrs;
+    if (a) {
+      for (const [id, value] of [
+        ['font-family', a.fontFamily],
+        ['font-size', a.fontSize],
+        ['line-height', String(a.lineHeight)],
+        ['text-color', a.color],
+        [
+          'text-type',
+          o.node.firstChild?.type.name === 'heading'
+            ? String(o.node.firstChild.attrs.level)
+            : 'paragraph',
+        ],
+      ])
+        if (document.activeElement !== $(id)) $(id).value = value;
+    }
+    $('text-properties')
+      .querySelectorAll('button,input,select')
+      .forEach((n) => (n.disabled = !editable || a?.kind !== 'text'));
+    for (const c of ['bold', 'italic', 'underline'])
+      document
+        .querySelector(`[data-command="${c}"]`)
+        .setAttribute('aria-pressed', String(Boolean(a?.[c])));
+    const s = pagePixels(model.page());
+    $('selection-status').textContent =
+      `${model.page().format === 'a4' ? 'A4' : model.page().width + ' × ' + model.page().height + ' mm'} · ${s.count} ${s.count === 1 ? 'pagina' : 'pagine'}${o ? ' · ' + kindNames[a.kind] : ''}`;
+    properties(force);
+    requestAnimationFrame(overflow);
   }
-  refresh(true); resize();
+  refresh(true);
+  resize();
   return {
-    run, refresh, insert, notify,
+    flush() {
+      const input = document.activeElement;
+      if (
+        input?.tagName === 'INPUT' &&
+        input.type !== 'file' &&
+        input.id !== 'template-title' &&
+        (input.closest('#page-tools') || input.closest('#properties'))
+      )
+        input.dispatchEvent(new Event('change'));
+    },
+    insert,
+    run,
+    refresh,
+    notify,
+    add,
     dispose() {
-      disposed = true; clearTimeout(toastTimer); cleanup.forEach(fn => fn());
-      document.querySelectorAll('[data-command],[data-property]').forEach(button => { button.onmousedown = null; button.onclick = null; button.disabled = true; });
-      $('properties').replaceChildren(); $('preview-content').replaceChildren(); $('preview-dialog').hidden = true; $('table-dialog').hidden = true;
-      for (const url of urls) URL.revokeObjectURL(url); urls.clear();
+      disposed = true;
+      clearTimeout(timer);
+      cleanup.forEach((fn) => fn());
+      $('selection-properties').replaceChildren();
+      $('preview-content').replaceChildren();
     },
   };
 }

@@ -191,7 +191,7 @@ final class TonController {
             }
             case DOCUMENT_TEMPLATES -> {
                 var page = new DocumentTemplatesView();
-                var controller = new DocumentTemplatesController(page, documents, workers);
+                var controller = new DocumentTemplatesController(page, documents);
                 install(feature, page, controller, controller::start);
             }
             case COMPOSITIONS -> {

@@ -229,7 +229,7 @@ class DocumentTemplateServiceTest {
                         payload.replace("[60,40]", "[5,95]"),
                         payload.replace("[60,40]", "[100]"),
                         payload.replace("\"gap\":4", "\"gap\":13"),
-                        payload.replace("\"schemaVersion\":3", "\"schemaVersion\":6")))
+                        payload.replace("\"schemaVersion\":3", "\"schemaVersion\":7")))
             assertThrows(IllegalArgumentException.class, () -> new Draft("BAD", invalid));
         assertEquals(payload, service.load(saved.template().id()).join().content());
     }

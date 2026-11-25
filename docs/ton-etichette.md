@@ -1,10 +1,10 @@
 # Etichette dei dischi
 
-In **TON → Documenti → Modelli documenti**, **Nuova etichetta** crea un modello separato dal foglio operativo di pressatura. La pagina iniziale è 100 × 65 mm con margini di 3 mm. Nel pannello **Pagina** puoi scegliere A4 oppure larghezza, altezza e margini in millimetri.
+In **TON → Documenti → Modelli documenti**, **Nuovo modello** apre un foglio bianco. Nel pannello **Pagina** scegli **Etichetta dischi** come utilizzo e imposta il formato, ad esempio 100 × 65 mm. Nel pannello **Pagina** puoi scegliere A4 oppure larghezza, altezza e margini in millimetri.
 
 Il formato, il contenuto e le immagini appartengono alla versione del modello. Una versione approvata è in sola lettura: per cambiare etichetta o supporto crea una nuova versione. I modelli precedenti restano disponibili.
 
-Il pannello di inserimento offre i campi del lavoro, i simboli REF, MD, LOT, fabbricazione, non riutilizzare, istruzioni, UDI, fabbricante e CE. **Immagine dal PC** importa PNG, JPEG o WebP fino a 2 MB per immagine; la copia viene incorporata nel modello. La larghezza dell’immagine può essere espressa in millimetri, per esempio `8mm`, o in percentuale.
+Il pannello di inserimento offre i campi del lavoro, i simboli REF, MD, LOT, fabbricazione, non riutilizzare, istruzioni, UDI, fabbricante e CE. **Immagine dal PC** importa PNG, JPEG o WebP fino a 2 MB per immagine; la copia viene incorporata nel modello. Posizione e dimensioni dell’immagine si modificano nel pannello delle proprietà oppure trascinando il riquadro.
 
 ## Collegamento al prodotto e GTIN
 

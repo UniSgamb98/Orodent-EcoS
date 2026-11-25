@@ -81,10 +81,3 @@ export function validateLabelNodes(doc) {
     if(['tonBlock','tonField'].includes(n.type.name)) throw new Error('Nelle etichette usa i campi della sezione Etichette.');
   });
 }
-export function initialLabel(){return {type:'doc',content:[
-  {type:'heading',attrs:{level:2},content:[{type:'text',text:'ORODENT'}]},
-  {type:'paragraph',content:[{type:'labelField',attrs:{key:'name'}}]},
-  {type:'paragraph',content:[{type:'text',text:'REF '},{type:'labelField',attrs:{key:'article'}}]},
-  {type:'paragraph',content:[{type:'text',text:'LOT '},{type:'labelField',attrs:{key:'lot'}}]},
-  {type:'paragraph',content:[{type:'labelField',attrs:{key:'diameter'}},{type:'text',text:' × '},{type:'labelField',attrs:{key:'height'}},{type:'text',text:' mm'}]},
-]};}

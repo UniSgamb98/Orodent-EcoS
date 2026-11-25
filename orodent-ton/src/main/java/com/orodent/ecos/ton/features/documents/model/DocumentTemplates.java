@@ -92,7 +92,7 @@ public final class DocumentTemplates {
             return json.getAsJsonObject();
         } catch (Exception invalid) {
             throw new IllegalArgumentException(
-                    "Il file non contiene un modello visuale valido.", invalid);
+                    "Il modello non contiene una struttura visuale valida.", invalid);
         }
     }
 
@@ -101,7 +101,7 @@ public final class DocumentTemplates {
             JsonObject envelope = parse(content);
             if (!envelope.get("schemaVersion").isJsonPrimitive()
                     || !envelope.getAsJsonPrimitive("schemaVersion").isNumber()
-                    || !Set.of("2", "3", "4", "5")
+                    || !Set.of("2", "3", "4", "5", "6")
                             .contains(envelope.get("schemaVersion").getAsString()))
                 throw new IllegalArgumentException();
             JsonPrimitive title = envelope.getAsJsonPrimitive("title");
@@ -116,6 +116,7 @@ public final class DocumentTemplates {
                 throw new IllegalArgumentException("Tipo modello non valido.");
             JsonObject doc = envelope.getAsJsonObject("content");
             if (!doc.get("type").getAsString().equals("doc")) throw new IllegalArgumentException();
+            com.orodent.ecos.documents.DocumentLayout.validate(envelope);
             var present = new HashSet<String>();
             inspect(doc, present, 0, new int[] {0}, envelope.get("schemaVersion").getAsInt());
             if (purpose.equals("ETICHETTA")
@@ -153,6 +154,8 @@ public final class DocumentTemplates {
         if (depth > 64 || ++count[0] > 100_000)
             throw new IllegalArgumentException("Il modello contiene troppi elementi annidati.");
         String type = node.get("type").getAsString();
+        if (type.equals("canvasObject") && (schema < 6 || depth != 1))
+            throw new IllegalArgumentException("Annidamento oggetti non valido.");
         if (type.equals("tonColumns")) {
             JsonArray columns = node.getAsJsonArray("content");
             if (columns == null || columns.size() < 1 || columns.size() > 4)

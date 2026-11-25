@@ -1,5 +1,6 @@
 package com.orodent.ecos.ton.features.production.view;
 
+import com.orodent.ecos.documents.CanvasPrintLayout;
 import com.orodent.ecos.documents.DocumentEditorPane;
 import com.orodent.ecos.documents.DocumentPaper;
 import com.orodent.ecos.documents.PrinterPaper;
@@ -138,13 +139,19 @@ public final class ProductionDocumentPane extends BorderPane {
         if (job == null) throw new IllegalStateException("Nessuna stampante disponibile.");
         if (job.showPrintDialog(getScene() == null ? null : getScene().getWindow())) {
             try {
-                PrinterPaper.configure(job, paper);
+                if (CanvasPrintLayout.canvas(preview))
+                    CanvasPrintLayout.prepare(preview, job, paper);
+                else PrinterPaper.configure(job, paper);
             } catch (RuntimeException error) {
                 job.cancelJob();
                 throw error;
             }
-            preview.getEngine().print(job);
-            job.endJob();
+            try {
+                preview.getEngine().print(job);
+                job.endJob();
+            } finally {
+                CanvasPrintLayout.clear(preview);
+            }
         }
     }
 

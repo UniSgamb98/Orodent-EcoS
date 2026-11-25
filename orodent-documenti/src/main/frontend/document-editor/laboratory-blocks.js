@@ -1,5 +1,4 @@
 import { optionDefaults, blockColumns, visibleFormats, visiblePowders, powderLabel } from './block-options.js';
-import { normalizeLayoutJSON } from './layout-model.js';
 import fixture from './sample-data.json';
 let sample = fixture;
 
@@ -94,19 +93,4 @@ export function checkOperationalContent(doc) {
   doc.descendants(node => { if (node.type.name === 'tonBlock') present.add(node.attrs.kind); });
   return ['identity', 'press', 'weighing', 'mixtures', 'totals']
     .filter(kind => !present.has(kind)).map(kind => blockTypes[kind]);
-}
-
-export function initialContent() {
-  const block = kind => ({ type: 'tonBlock', attrs: { id: `initial-${kind}`, kind, title: blockTypes[kind], compact: true } });
-  return normalizeLayoutJSON({ type: 'doc', content: [
-    { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Foglio operativo di pressatura' }] },
-    block('identity'), block('press'),
-    { type: 'tonColumns', attrs: { widths: [60, 40], gap: 4 }, content: [
-      { type: 'tonColumn', content: [block('weighing'), block('totals')] },
-      { type: 'tonColumn', content: [block('mixtures')] },
-    ] },
-    { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Note di lavorazione' }] },
-    { type: 'paragraph', content: [{ type: 'text', text: 'Scrivi qui le istruzioni per il laboratorio.' }] },
-    block('signatures'), { type: 'paragraph' },
-  ] });
 }

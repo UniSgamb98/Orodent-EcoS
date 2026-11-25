@@ -16,9 +16,6 @@ import javafx.scene.control.*;
 import javafx.stage.*;
 import javafx.util.Duration;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
@@ -28,7 +25,6 @@ import java.util.function.Supplier;
 public final class DocumentTemplatesController implements FeatureController {
     private final DocumentTemplatesView view;
     private final DocumentTemplateService service;
-    private final Executor workers;
     private final SimpleBooleanProperty saving = new SimpleBooleanProperty();
     private final PauseTransition debounce = new PauseTransition(Duration.millis(250));
     private final ChangeListener<String> searchListener = (o, b, a) -> debounce.playFromStart();
@@ -42,16 +38,14 @@ public final class DocumentTemplatesController implements FeatureController {
     private CompletableFuture<?> listRead, detailRead, versionsRead;
     private Detail original;
     private String baseline, baselineCode = "";
-    private String creationType = "PRODUZIONE";
     private boolean editing, updatingVersions, loading;
     private volatile boolean disposed;
     private long generation;
 
     public DocumentTemplatesController(
-            DocumentTemplatesView view, DocumentTemplateService service, Executor workers) {
+            DocumentTemplatesView view, DocumentTemplateService service) {
         this.view = view;
         this.service = service;
-        this.workers = workers;
         view.search.textProperty().addListener(searchListener);
         debounce.setOnFinished(e -> reloadList());
         view.search.setOnAction(e -> reloadList());
@@ -60,14 +54,6 @@ public final class DocumentTemplatesController implements FeatureController {
         view.create.setOnAction(
                 e -> {
                     if (canLeave()) {
-                        creationType = "PRODUZIONE";
-                        openEditor(null);
-                    }
-                });
-        view.createLabel.setOnAction(
-                e -> {
-                    if (canLeave()) {
-                        creationType = "ETICHETTA";
                         openEditor(null);
                     }
                 });
@@ -108,8 +94,6 @@ public final class DocumentTemplatesController implements FeatureController {
                     if (canLeave()) load(next.id());
                     else selectVersion(original.template());
                 });
-        view.importFile.setOnAction(e -> importModel());
-        view.exportFile.setOnAction(e -> exportModel());
         view.sceneProperty().addListener(sceneListener);
         attachScene(null, view.getScene());
     }
@@ -246,8 +230,9 @@ public final class DocumentTemplatesController implements FeatureController {
 
     private void render(Detail detail) {
         try {
-            if (detail == null) view.editor().newModel(creationType);
+            if (detail == null) view.editor().newModel();
             else view.editor().restore(detail.content());
+            controls();
             baseline = view.editor().serialize();
             baselineCode = view.code.getText();
             controls();
@@ -380,95 +365,6 @@ public final class DocumentTemplatesController implements FeatureController {
                 });
     }
 
-    private FileChooser chooser(String title) {
-        var chooser = new FileChooser();
-        chooser.setTitle(title);
-        chooser.getExtensionFilters()
-                .add(new FileChooser.ExtensionFilter("Modello documento (*.json)", "*.json"));
-        return chooser;
-    }
-
-    private void importModel() {
-        if (saving.get() || !canLeave()) return;
-        var file = chooser("Importa un modello nell’attuale bozza").showOpenDialog(window);
-        if (file == null) return;
-        command(
-                () ->
-                        CompletableFuture.supplyAsync(
-                                () -> {
-                                    try {
-                                        if (Files.size(file.toPath()) > MAX_CONTENT)
-                                            throw new IllegalArgumentException(
-                                                    "Il file supera 8 MB.");
-                                        try (var input = Files.newInputStream(file.toPath())) {
-                                            byte[] bytes = input.readNBytes(MAX_CONTENT + 1);
-                                            if (bytes.length > MAX_CONTENT)
-                                                throw new IllegalArgumentException(
-                                                        "Il file supera 8 MB.");
-                                            return new String(bytes, StandardCharsets.UTF_8);
-                                        }
-                                    } catch (IOException failure) {
-                                        throw new IllegalArgumentException(
-                                                "Impossibile leggere il file selezionato.",
-                                                failure);
-                                    }
-                                },
-                                workers),
-                content -> {
-                    try {
-                        view.editor().restore(content);
-                        view.feedback(
-                                "Modello importato nell’editor. Salva la bozza per conservarlo nel"
-                                        + " DB.",
-                                false);
-                    } catch (RuntimeException invalid) {
-                        view.feedback(message(invalid), true);
-                    }
-                    controls();
-                });
-    }
-
-    private void exportModel() {
-        if (saving.get() || view.editor() == null || !view.editor().ready()) return;
-        String content;
-        try {
-            content = view.editor().serialize();
-        } catch (RuntimeException invalid) {
-            view.feedback(message(invalid), true);
-            return;
-        }
-        var chooser = chooser("Esporta modello");
-        chooser.setInitialFileName(
-                (view.code.getText().isBlank()
-                                ? "modello"
-                                : view.code.getText().replaceAll("[^a-zA-Z0-9._-]", "-"))
-                        + ".json");
-        var file = chooser.showSaveDialog(window);
-        if (file == null) return;
-        command(
-                () ->
-                        CompletableFuture.supplyAsync(
-                                () -> {
-                                    try {
-                                        byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
-                                        if (bytes.length > MAX_CONTENT)
-                                            throw new IllegalArgumentException(
-                                                    "Il file supera 8 MB. Riduci le immagini.");
-                                        Files.write(file.toPath(), bytes);
-                                        return file;
-                                    } catch (IOException failure) {
-                                        throw new IllegalArgumentException(
-                                                "Impossibile esportare il modello nel file scelto.",
-                                                failure);
-                                    }
-                                },
-                                workers),
-                ignored ->
-                        view.feedback(
-                                "Modello esportato. Le modifiche al DB si salvano con Salva bozza.",
-                                false));
-    }
-
     private void cancelReads() {
         debounce.stop();
         for (var read : new CompletableFuture<?>[] {listRead, detailRead, versionsRead})
@@ -502,15 +398,12 @@ public final class DocumentTemplatesController implements FeatureController {
         for (var button :
                 List.of(
                         view.create,
-                        view.createLabel,
                         view.refresh,
                         view.back,
                         view.save,
                         view.approve,
                         view.newVersion,
                         view.delete,
-                        view.importFile,
-                        view.exportFile,
                         view.reload)) button.setOnAction(null);
         view.dispose();
     }

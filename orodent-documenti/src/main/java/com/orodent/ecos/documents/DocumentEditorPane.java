@@ -170,6 +170,10 @@ public final class DocumentEditorPane extends BorderPane {
         return (String) call("renderLabel", template, payload);
     }
 
+    public void purposeEditable(boolean value) {
+        if (ready()) call("setPurposeEditable", value);
+    }
+
     public void editable(boolean value) {
         if (ready()) call("setEditable", value);
     }

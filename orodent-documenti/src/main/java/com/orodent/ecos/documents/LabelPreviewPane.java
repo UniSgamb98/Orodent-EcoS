@@ -73,13 +73,17 @@ public final class LabelPreviewPane extends BorderPane implements AutoCloseable 
                                                                 return;
                                                             }
                                                             boolean fits =
-                                                                    Boolean.TRUE.equals(
-                                                                            preview.getEngine()
-                                                                                    .executeScript(
-                                                                                            "(function(){var"
-                                                                                                + " box=document.getElementById('label-output'),body=box.firstElementChild;return"
-                                                                                                + " body.getBoundingClientRect().bottom<=box.getBoundingClientRect().bottom-parseFloat(getComputedStyle(box).paddingBottom)+1"
-                                                                                                + " && body.scrollWidth<=body.clientWidth+1;})()"));
+                                                                    CanvasPrintLayout.canvas(
+                                                                                    preview)
+                                                                            ? CanvasPrintLayout
+                                                                                    .fits(preview)
+                                                                            : Boolean.TRUE.equals(
+                                                                                    preview.getEngine()
+                                                                                            .executeScript(
+                                                                                                    "(function(){var"
+                                                                                                        + " box=document.getElementById('label-output'),body=box.firstElementChild;return"
+                                                                                                        + " body.getBoundingClientRect().bottom<=box.getBoundingClientRect().bottom-parseFloat(getComputedStyle(box).paddingBottom)+1"
+                                                                                                        + " && body.scrollWidth<=body.clientWidth+1;})()"));
                                                             if (!fits) {
                                                                 error.accept(
                                                                         "Il contenuto supera il"
@@ -150,43 +154,46 @@ public final class LabelPreviewPane extends BorderPane implements AutoCloseable 
                 job.cancelJob();
                 return false;
             }
-            var layout =
-                    PrinterPaper.configure(
-                            job, new DocumentPaper(paper.width(), paper.height(), 0), true);
-            double left = layout.getLeftMargin() * 25.4 / 72,
-                    right = layout.getRightMargin() * 25.4 / 72,
-                    top = layout.getTopMargin() * 25.4 / 72,
-                    bottom = layout.getBottomMargin() * 25.4 / 72;
-            if (Math.max(Math.max(left, right), Math.max(top, bottom)) > paper.margin() + 0.01)
-                throw new IllegalStateException(
-                        "I margini della stampante superano quelli dell’etichetta. Configura l’area"
-                                + " stampabile nel driver oppure crea una versione del modello con"
-                                + " margini compatibili.");
-            double width = paper.width() - left - right, height = paper.height() - top - bottom;
-            String css =
-                    "@media print {html,body {width:"
-                            + width
-                            + "mm!important;height:"
-                            + height
-                            + "mm!important;} #label-output {width:"
-                            + width
-                            + "mm!important;height:"
-                            + height
-                            + "mm!important;padding:"
-                            + Math.max(0, paper.margin() - top)
-                            + "mm "
-                            + Math.max(0, paper.margin() - right)
-                            + "mm "
-                            + Math.max(0, paper.margin() - bottom)
-                            + "mm "
-                            + Math.max(0, paper.margin() - left)
-                            + "mm!important;}}";
-            preview.getEngine()
-                    .executeScript(
-                            "(function(){var"
-                                + " s=document.createElement('style');s.id='ecos-print-form';s.textContent="
-                                    + new com.google.gson.JsonPrimitive(css)
-                                    + ";document.head.appendChild(s);})()");
+            if (CanvasPrintLayout.canvas(preview)) CanvasPrintLayout.prepare(preview, job, paper);
+            else {
+                var layout =
+                        PrinterPaper.configure(
+                                job, new DocumentPaper(paper.width(), paper.height(), 0), true);
+                double left = layout.getLeftMargin() * 25.4 / 72,
+                        right = layout.getRightMargin() * 25.4 / 72,
+                        top = layout.getTopMargin() * 25.4 / 72,
+                        bottom = layout.getBottomMargin() * 25.4 / 72;
+                if (Math.max(Math.max(left, right), Math.max(top, bottom)) > paper.margin() + 0.01)
+                    throw new IllegalStateException(
+                            "I margini della stampante superano quelli dell’etichetta. Configura"
+                                + " l’area stampabile nel driver oppure crea una versione del"
+                                + " modello con margini compatibili.");
+                double width = paper.width() - left - right, height = paper.height() - top - bottom;
+                String css =
+                        "@media print {html,body {width:"
+                                + width
+                                + "mm!important;height:"
+                                + height
+                                + "mm!important;} #label-output {width:"
+                                + width
+                                + "mm!important;height:"
+                                + height
+                                + "mm!important;padding:"
+                                + Math.max(0, paper.margin() - top)
+                                + "mm "
+                                + Math.max(0, paper.margin() - right)
+                                + "mm "
+                                + Math.max(0, paper.margin() - bottom)
+                                + "mm "
+                                + Math.max(0, paper.margin() - left)
+                                + "mm!important;}}";
+                preview.getEngine()
+                        .executeScript(
+                                "(function(){var"
+                                    + " s=document.createElement('style');s.id='ecos-print-form';s.textContent="
+                                        + new com.google.gson.JsonPrimitive(css)
+                                        + ";document.head.appendChild(s);})()");
+            }
             preview.getEngine().print(job);
             if (!job.endJob())
                 throw new IllegalStateException("La stampante non ha accettato il lavoro.");
@@ -195,6 +202,7 @@ public final class LabelPreviewPane extends BorderPane implements AutoCloseable 
             job.cancelJob();
             throw failure;
         } finally {
+            if (!closed) CanvasPrintLayout.clear(preview);
             if (!closed)
                 preview.getEngine()
                         .executeScript("document.getElementById('ecos-print-form')?.remove()");

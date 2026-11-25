@@ -1,112 +1,33 @@
-# Tiptap locale per l'editor di EcoS
+# Editor locale e rendering dei documenti
 
-Tiptap **3.32.1** è scaricato e distribuito come risorsa locale del modulo TON.
-La risorsa include testo formattato, cronologia, tabelle ridimensionabili,
-stili del testo, allineamenti e immagini locali. Le estensioni Tiptap sono
-fissate alla stessa versione, con dipendenze e licenze comprese nel bundle.
-Non usa CDN, font remoti, Tiptap Cloud o servizi online.
+L’editor condiviso tra TON e Misurazioni è in `orodent-documenti`. Tiptap gestisce il contenuto dei riquadri; gli oggetti della pagina hanno un modello di coordinate distinto. Le risorse sono incluse nell’applicazione e funzionano senza CDN o servizi di editing online.
 
-## Distribuzione
+## Risorse
 
-I file pronti sono in
-`orodent-documenti/src/main/resources/ton/document-editor/`:
+Il sorgente frontend è in `orodent-documenti/src/main/frontend/document-editor/`. Le risorse distribuite sono in `orodent-documenti/src/main/resources/ton/document-editor/`.
 
-- `index.html`: pagina autosufficiente con Tiptap, dipendenze e stile incorporati,
-  senza import remoti. I caratteri sono quelli di sistema.
-- `THIRD_PARTY_NOTICES.txt`: testi delle licenze dei pacchetti effettivamente inclusi.
-- `bundle-manifest.json`: versioni, dimensioni e SHA-256 delle risorse distribuite.
-
-Maven include questi file nel JAR di TON. Il JAR entra nella distribuzione e negli
-aggiornamenti dei componenti già esistenti. La normale compilazione dello ZIP
-non richiede npm: i file compilati sono versionati insieme ai sorgenti.
-Gli operatori non devono installare Node.js o scaricare dipendenze JavaScript.
-
-## Stato dell'integrazione
-
-L’editor è integrato in **TON → Documenti → Modelli documento** tramite un
-`WebView` creato soltanto quando si apre una scheda e rilasciato tornando all’elenco.
-L’elenco usa il [componente comune degli elenchi TON](ton-elenchi.md), con ricerca,
-**Aggiorna** e apertura tramite doppio clic o Invio.
-La [guida ai comandi](ton-editor-visuale.md) descrive bozze, approvazione e versioni.
-I modelli sono salvati nel DB condiviso. Durante la progettazione i blocchi usano
-dati di esempio; nella [produzione](ton-produzione.md) ricevono i dati reali dal
-servizio di calcolo, mantenendo layout, testi e proprietà del modello utente.
-Il foglio emesso viene conservato come HTML autosufficiente e stampato tramite il
-dialogo nativo. Un archivio automatico dei PDF resta da integrare.
-
-`javafx-web` e `javafx-media` sono ora dipendenze runtime. Tutti i moduli JavaFX
-sono fissati a **21.0.6**, compresi base e graphics, evitando versioni transitive
-non allineate. Il pacchetto Java incorporato include anche `jdk.jsobject`.
-Il primo ZIP completo installa anche l’**updater di protocollo 2** sulle postazioni
-con il vecchio launcher. Da quel momento le release possono aggiornare sia i JAR
-sia il Java applicativo: un futuro nuovo modulo Java non richiede di ridistribuire
-manualmente lo ZIP. Vedere [runtime e release firmate](releases.md).
-La produzione reale aggiunge lo schema V15 con la normale migrazione HOST;
-non si devono spostare i dati.
-
-Il ponte JavaScript `window.OrodentDocumentEditor` espone operazioni delimitate:
-serializzazione/ripristino JSON con versione dello schema, comandi ammessi,
-inserimento dei blocchi, stato delle modifiche, sola lettura e rilascio.
-`renderProduction(template, payload)` compila una copia del modello con quantità,
-pesate, miscele, pressione del modello e note reali; restituisce HTML con CSS e
-impostazioni di pagina incorporati. La visualizzazione del risultato è passiva,
-con JavaScript disabilitato.
-Lo schema editoriale è ora **4**; i modelli degli schemi 1, 2 e 3 sono ancora
-caricabili. Lo schema 4 conserva anche le opzioni dei blocchi automatici per
-contenuto, aspetto e stampa, oltre a larghezze, spazio fra colonne e opzioni ppm/g/mm. La riapertura dei vecchi modelli li aggiorna in memoria
-senza riscriverne le versioni approvate. Aprendo un modello la cronologia viene azzerata: annulla non deve
-recuperare contenuti di un documento precedentemente aperto.
-Il ponte non espone accesso al database o richieste HTTP.
-Lo schema del contenuto editoriale è distinto dalle versioni dei modelli TON.
-
-La pagina usa una policy che blocca le connessioni e autorizza soltanto lo script
-incorporato tramite il suo hash SHA-256. Non dipende dalla risoluzione di script
-esterni attraverso il protocollo `jar:` di JavaFX e non avvia un server HTTP.
-Font, icone o estensioni aggiunti in futuro devono
-essere inclusi nelle risorse, mantenendo questa proprietà offline.
-
-## Ricostruzione delle risorse — solo per sviluppo
-
-Sorgenti, versioni fissate e lockfile sono in
-`orodent-documenti/src/main/frontend/document-editor/`. Con Node.js 20 o successivo:
+Con Node.js 20 o successivo:
 
 ```sh
 cd orodent-documenti/src/main/frontend/document-editor
-npm ci --ignore-scripts
+npm ci
 npm test
 npm run build
 npm run check
 ```
 
-Il download avviene durante `npm ci`, sul PC di sviluppo. L'applicazione usa
-esclusivamente il risultato locale della compilazione. `npm run check` ricostruisce
-in memoria e controlla che i file versionati siano identici al risultato atteso.
-I fine riga sono fissati a LF per rendere il controllo riproducibile su Windows.
+Il build produce HTML con CSS e JavaScript incorporati, hash CSP, manifest delle risorse e licenze delle dipendenze effettivamente distribuite. I test GS1 usano un decoder indipendente. Le immagini dei simboli sono accompagnate dall’attribuzione in `symbols/` e vengono incorporate come PNG nei modelli.
 
-`node_modules` resta escluso da Git; `package-lock.json` conserva risoluzioni e
-integrità dei pacchetti. L'aggiornamento di Tiptap è una modifica esplicita:
-aggiornare dipendenze, ricompilare, controllare licenze e compatibilità WebView,
-quindi distribuire le nuove risorse con la normale release EcoS.
+## Formato interno e compatibilità
 
-## Verifiche
+Il formato interno alla versione 6 contiene titolo, utilizzo, impostazioni della pagina e contenuto. `layout: canvas` indica oggetti `canvasObject` con coordinate X/Y, larghezza, altezza, pagina, ordine di sovrapposizione e stile. Ogni oggetto contiene nodi Tiptap per testo, immagini, tabelle, campi, DataMatrix o blocchi automatici. Le coordinate sono pixel di riferimento a 96 dpi; le dimensioni fisiche della carta sono millimetri.
 
-- Browser in modalità offline, con le sole risorse locali fornite al caricamento.
-- Scrittura, grassetto, inserimento tabelle, annulla/ripeti.
-- Caratteri, dimensioni, colori, allineamenti, elenchi e interlinea.
-- Righe/colonne, unione/divisione celle, stile delle tabelle e immagini locali.
-- Trascinamento dalla palette e riordino nativo dei blocchi Tiptap.
-- Proprietà dei blocchi TON, formato/margini, esportazione del modello e anteprima.
-- Filtri che conservano i totali, larghezze delle tabelle, opzioni di stampa e
-  dimensioni 3/5/7 pt; persistenza dello schema 4 senza riscrivere le versioni approvate.
-- Sezioni annidate, proporzioni delle colonne, trascinamento dei divisori, annulla/Esc,
-  aggiunta/rimozione senza perdita dei blocchi e ripristino dello schema precedente.
-- Zoom 25–200% e Ctrl + rotellina, con dimensioni A4 e JSON invariati.
-- Puntatore reale sui divisori e Ctrl + rotellina reali dentro JavaFX WebView.
-- Ripristino JSON, rifiuto di versioni non supportate, sola lettura e rilascio.
-- Caricamento diretto dal JAR nel WebView JavaFX previsto dal progetto.
-- Presenza e hash delle risorse nel JAR TON contenuto nello ZIP di distribuzione.
+Il validatore Java controlla coordinate, pagine, identificatori, stili e limiti fisici prima di salvare. Il validatore frontend controlla anche lo schema Tiptap. Le versioni precedenti rimangono leggibili nel loro formato a flusso: il rendering passivo non converte il modello. Solo una bozza aperta in modifica viene convertita in oggetti, conservando le sezioni a colonne come gruppi.
 
-La verifica automatizzata WebView in cloud è su Linux e percorre la navigazione
-reale TON, il salvataggio DB, l’approvazione, la copia in nuova bozza, lo storico,
-il blocco delle modifiche non salvate e il rilascio del WebView.
-Resta da eseguire la prova manuale del pacchetto EXE su Windows.
+`DocumentEditorPane` espone un’API JavaScript limitata, invocata da Java; non inserisce oggetti Java nella pagina. La navigazione esterna viene bloccata. La serializzazione è riservata al salvataggio e al rendering interni; la UI non offre importazione o esportazione di file JSON.
+
+## Stampa
+
+I nuovi documenti vengono emessi come pagine fisiche con oggetti posizionati. L’HTML generato conserva coordinate, immagini, contenuto e CSS della specifica emissione. `CanvasPrintLayout` controlla i limiti e compensa i margini fisici non stampabili senza cambiare la scala del documento. Il formato deve essere esposto dal driver della stampante.
+
+I fogli precedenti continuano a usare il rendering a flusso. I documenti già emessi e le etichette storiche vengono ristampati dal contenuto conservato, senza ricostruirlo da un modello aggiornato.
