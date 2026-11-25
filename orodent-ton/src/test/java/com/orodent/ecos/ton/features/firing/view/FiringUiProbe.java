@@ -9,6 +9,8 @@ import com.orodent.ecos.module.*;
 import com.orodent.ecos.ton.TonModule;
 import com.orodent.ecos.ton.features.equipment.model.Equipment;
 import com.orodent.ecos.ton.features.equipment.service.EquipmentService;
+import com.orodent.ecos.ton.features.firingprograms.model.FiringPrograms;
+import com.orodent.ecos.ton.features.firingprograms.service.FiringProgramService;
 import com.orodent.ecos.ton.features.production.service.ProductionFixture;
 
 import javafx.application.Platform;
@@ -58,6 +60,28 @@ public final class FiringUiProbe {
                         null,
                         new Equipment.Draft("F1", "Forno di reparto", null, "", true))
                 .join();
+        new EquipmentService(db, workers)
+                .save(
+                        Equipment.Kind.FURNACES,
+                        null,
+                        new Equipment.Draft("F2", "Secondo forno", null, "", true))
+                .join();
+        var programs = new FiringProgramService(db, workers);
+        for (String code : List.of("A-CICLO", "Z-CICLO"))
+            programs.save(
+                            null,
+                            null,
+                            new FiringPrograms.Draft(
+                                    code,
+                                    "Sinterizzazione",
+                                    "",
+                                    true,
+                                    List.of(
+                                            new FiringPrograms.Step(
+                                                    new java.math.BigDecimal("500"), 90, 5),
+                                            new FiringPrograms.Step(null, 120, 60))),
+                            true)
+                    .join();
         Platform.startup(() -> {});
         Platform.setImplicitExit(false);
         try {
@@ -160,6 +184,12 @@ public final class FiringUiProbe {
                         ((ComboBox<?>) node("ton-firing-furnace"))
                                 .getSelectionModel()
                                 .selectFirst();
+                        var choice = (ComboBox<?>) node("ton-firing-program");
+                        assertNull(
+                                choice.getValue(),
+                                "Nessun primo programma selezionato automaticamente");
+                        choice.getSelectionModel().selectLast();
+                        ((TextField) node("ton-firing-final-temperature")).setText("1440");
                         ((TextField) node("ton-firing-lot")).setText("LOTTO-OPERAIO");
                         click("ton-firing-create");
                         assertTrue(((Label) node("ton-firing-feedback")).getText().contains("16"));
@@ -183,6 +213,17 @@ public final class FiringUiProbe {
                                                         .getItems()
                                                         .getFirst())
                                         .group.count());
+                        var choice = (ComboBox<?>) node("ton-firing-program");
+                        assertEquals(
+                                "Z-CICLO", ((FiringPrograms.Program) choice.getValue()).code());
+                        ((ComboBox<?>) node("ton-firing-furnace")).getSelectionModel().selectLast();
+                        assertNull(
+                                choice.getValue(), "La memoria dei programmi è distinta per forno");
+                        ((ComboBox<?>) node("ton-firing-furnace"))
+                                .getSelectionModel()
+                                .selectFirst();
+                        assertEquals(
+                                "Z-CICLO", ((FiringPrograms.Program) choice.getValue()).code());
                         ((TabPane) node("ton-firing-tabs")).getSelectionModel().select(1);
                         table("ton-firing-loads-table").getSelectionModel().selectFirst();
                         return null;
@@ -199,6 +240,14 @@ public final class FiringUiProbe {
                                 ((Label) node("ton-firing-load-details"))
                                         .getText()
                                         .contains("LOTTO-OPERAIO"));
+                        assertTrue(
+                                ((Label) node("ton-firing-load-details"))
+                                        .getText()
+                                        .contains("1440"));
+                        assertTrue(
+                                ((Label) node("ton-firing-load-details"))
+                                        .getText()
+                                        .contains("Z-CICLO"));
                         screenshot("target/firing-load-history.png");
                         ((TabPane) node("ton-firing-tabs")).getSelectionModel().selectFirst();
                         stage.setWidth(1120);
@@ -216,6 +265,59 @@ public final class FiringUiProbe {
                                                                 .getBoundsInLocal())
                                                 .getMaxY()
                                         <= stage.getScene().getHeight());
+                        return null;
+                    });
+            fx(
+                    () -> {
+                        var choice = (ComboBox<?>) node("ton-firing-program");
+                        choice.getSelectionModel().selectFirst();
+                        assertTrue(
+                                ((Label) node("ton-firing-program-notice"))
+                                        .getText()
+                                        .contains("CAMBIO PROGRAMMA"));
+                        ((TextField) node("ton-firing-lot")).setText("CAMBIO-UI");
+                        ((TextField) node("ton-firing-final-temperature")).setText("1490");
+                        ((FiringView.GroupRow)
+                                        table("ton-firing-pending-table").getItems().getFirst())
+                                .quantity.setText("1");
+                        screenshot("target/firing-program-change.png");
+                        click("ton-firing-create");
+                        return null;
+                    });
+            await(
+                    () ->
+                            table("ton-firing-loads-table").getItems().size() == 2
+                                    && !node("ton-firing-editor").isDisabled());
+            fx(
+                    () -> {
+                        assertEquals(
+                                "A-CICLO",
+                                ((FiringPrograms.Program)
+                                                ((ComboBox<?>) node("ton-firing-program"))
+                                                        .getValue())
+                                        .code());
+                        click("ton-nav-production");
+                        click("ton-nav-firing");
+                        click("ton-tech-planning-button");
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-firing-furnace") != null
+                                    && !node("ton-firing-editor").isDisabled());
+            fx(
+                    () -> {
+                        var choice = (ComboBox<?>) node("ton-firing-program");
+                        assertNull(choice.getValue());
+                        ((ComboBox<?>) node("ton-firing-furnace"))
+                                .getSelectionModel()
+                                .selectFirst();
+                        assertEquals(
+                                "A-CICLO", ((FiringPrograms.Program) choice.getValue()).code());
+                        assertTrue(
+                                ((TextField) node("ton-firing-final-temperature"))
+                                        .getText()
+                                        .isEmpty());
                         return null;
                     });
             assertTrue(errors.isEmpty(), errors::toString);

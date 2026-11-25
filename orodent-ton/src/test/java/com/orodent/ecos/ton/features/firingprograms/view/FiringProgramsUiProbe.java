@@ -107,7 +107,7 @@ public final class FiringProgramsUiProbe {
                         ((TabPane) node("ton-firing-programs-tabs")).getSelectionModel().select(1);
                         step(1, "500", "1.30", "0.05");
                         click("ton-firing-programs-add-step");
-                        step(2, "1450", "2.00", "1.30");
+                        step(2, "Tfinale", "2.00", "1.30");
                         click("ton-firing-programs-add-step");
                         step(3, "900", "0.45", "0.00");
                         assertTrue(duration().getText().contains("5.50"), duration().getText());
@@ -143,7 +143,7 @@ public final class FiringProgramsUiProbe {
                         click(stepId(3, "up"));
                         assertEquals("900", field(stepId(2, "temperature")).getText());
                         click(stepId(2, "down"));
-                        assertEquals("1450", field(stepId(2, "temperature")).getText());
+                        assertEquals("Tfinale", field(stepId(2, "temperature")).getText());
                         click("ton-firing-programs-add-step");
                         click(stepId(4, "remove"));
                         screenshot("target/firing-program-editor.png");

@@ -2,6 +2,9 @@ package com.orodent.ecos.ton.features.firing.repository;
 
 import static com.orodent.ecos.ton.features.firing.model.Firing.*;
 
+import com.orodent.ecos.ton.features.firingprograms.model.FiringPrograms.Program;
+import com.orodent.ecos.ton.features.firingprograms.repository.FiringProgramRepository;
+
 import java.sql.*;
 import java.util.*;
 
@@ -45,7 +48,8 @@ public final class FiringRepository {
                                 + " WHERE NOT EXISTS (SELECT 1 FROM TON.CARICO_DISCHI a WHERE"
                                 + " a.disco_id=d.disco_id) ORDER BY"
                                 + " e.data_produzione,d.piano_id,d.numero_riga,d.progressivo")) {
-            return new Workspace(discs(q), furnaces, loads);
+            return new Workspace(
+                    discs(q), furnaces, loads, new FiringProgramRepository(c).available());
         }
     }
 
@@ -85,6 +89,31 @@ public final class FiringRepository {
                                 r.getInt(3),
                                 r.getString(1),
                                 r.getString(2));
+            }
+        }
+        var programs = new FiringProgramRepository(c);
+        Program program =
+                programs.available().stream()
+                        .filter(p -> p.id() == request.program().id())
+                        .findFirst()
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "Il programma scelto non è più disponibile o"
+                                                    + " approvato. Aggiorna l’elenco."));
+        if (program.steps().isEmpty())
+            throw new IllegalArgumentException(
+                    "Il programma non contiene step. Scegli un programma completo.");
+        program.resolve(request.finalTemperature());
+        Long previousProgram = null;
+        try (var q =
+                c.prepareStatement(
+                        "SELECT programma_id FROM TON.CICLI_COTTURA WHERE forno_id=? AND"
+                            + " caricato_il IS NOT NULL AND programma_id IS NOT NULL ORDER BY"
+                            + " caricato_il DESC,ciclo_id DESC FETCH FIRST ROW ONLY")) {
+            q.setLong(1, actual.id());
+            try (var r = q.executeQuery()) {
+                if (r.next()) previousProgram = r.getLong(1);
             }
         }
         // Serialize allocation by production before resolving quantities into individual IDs.
@@ -168,8 +197,8 @@ public final class FiringRepository {
         try (var q =
                 c.prepareStatement(
                         "INSERT INTO"
-                            + " TON.CICLI_COTTURA(numero,forno_id,data_prevista,note,caricato_il,forno_codice,forno_nome,forno_revisione)"
-                            + " VALUES (?,?,?,?,CURRENT_TIMESTAMP,?,?,?)",
+                            + " TON.CICLI_COTTURA(numero,forno_id,data_prevista,note,caricato_il,forno_codice,forno_nome,forno_revisione,programma_id,temperatura_finale_c,programma_precedente_id)"
+                            + " VALUES (?,?,?,?,CURRENT_TIMESTAMP,?,?,?,?,?,?)",
                         Statement.RETURN_GENERATED_KEYS)) {
             q.setString(1, "CAR-" + UUID.randomUUID().toString().replace("-", ""));
             q.setLong(2, actual.id());
@@ -178,6 +207,10 @@ public final class FiringRepository {
             q.setString(5, actual.code());
             q.setString(6, actual.name());
             q.setInt(7, actual.revision());
+            q.setLong(8, program.id());
+            q.setBigDecimal(9, request.finalTemperature());
+            if (previousProgram == null) q.setNull(10, Types.BIGINT);
+            else q.setLong(10, previousProgram);
             q.executeUpdate();
             try (var keys = q.getGeneratedKeys()) {
                 keys.next();
@@ -265,6 +298,14 @@ public final class FiringRepository {
                 r.getDate("data_prevista").toLocalDate(),
                 r.getTimestamp("caricato_il").toLocalDateTime(),
                 Objects.requireNonNullElse(r.getString("note"), ""),
-                r.getInt("numero_dischi"));
+                r.getInt("numero_dischi"),
+                program(r, "programma_id"),
+                r.getBigDecimal("temperatura_finale_c"),
+                program(r, "programma_precedente_id"));
+    }
+
+    private Program program(ResultSet r, String column) throws SQLException {
+        Number id = (Number) r.getObject(column);
+        return id == null ? null : new FiringProgramRepository(c).program(id.longValue());
     }
 }

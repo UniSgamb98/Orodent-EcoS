@@ -31,7 +31,10 @@ public final class FiringCyclePane extends VBox {
                 field.setMinWidth(0);
                 field.setMaxWidth(Double.MAX_VALUE);
             }
-            temperature.setPromptText("°C");
+            temperature.setPromptText("°C o Tfinale");
+            temperature.setTooltip(
+                    new Tooltip(
+                            "Indica una temperatura oppure Tfinale per usare quella del carico."));
             ramp.setPromptText("ore.minuti");
             hold.setPromptText("ore.minuti");
             var buttons = new HBox(5, up, down, remove);
@@ -56,6 +59,8 @@ public final class FiringCyclePane extends VBox {
     private final Button add = TechnicalUi.button("+ Aggiungi step", ID + "-add-step", false);
     private final TextField initial =
             TechnicalUi.input(ID + "-initial-temperature", "Temperatura iniziale di esempio");
+    private final TextField finalExample =
+            TechnicalUi.input(ID + "-final-temperature-example", "Tfinale di esempio");
     private final Label total = TechnicalUi.label("", "ton-technical-panel-title"),
             error = TechnicalUi.label("", "ton-error-feedback");
     private final NumberAxis timeAxis = new NumberAxis(), temperatureAxis = new NumberAxis();
@@ -82,7 +87,8 @@ public final class FiringCyclePane extends VBox {
         var instructions =
                 TechnicalUi.label(
                         "Tempi in ore.minuti: 1.30 = 1 ora e 30 minuti; 0.05 = 5 minuti. I minuti"
-                            + " vanno da 00 a 59. Usa 0.00 per un tempo nullo.",
+                            + " vanno da 00 a 59. Usa 0.00 per un tempo nullo. Scrivi Tfinale nella"
+                            + " temperatura di uno step per usare il valore indicato nel carico.",
                         "muted-label");
         var edit = new VBox(12, headers, stepList, add);
         edit.setMinWidth(0);
@@ -96,6 +102,9 @@ public final class FiringCyclePane extends VBox {
         initial.setText("20");
         initial.setMaxWidth(160);
         initial.textProperty().addListener((o, a, b) -> preview());
+        finalExample.setText("1450");
+        finalExample.setMaxWidth(160);
+        finalExample.textProperty().addListener((o, a, b) -> preview());
         chart.setId(ID + "-chart");
         chart.setAnimated(false);
         chart.setLegendVisible(false);
@@ -125,9 +134,10 @@ public final class FiringCyclePane extends VBox {
         var visual =
                 TechnicalUi.panel(
                         "Anteprima del ciclo",
-                        "La temperatura iniziale è un valore di esempio, modificabile per la"
-                            + " prova.",
-                        TechnicalUi.field("Temperatura iniziale di esempio · °C", initial),
+                        "Temperature di esempio per l’anteprima, non salvate nel programma.",
+                        TechnicalUi.fields(
+                                TechnicalUi.field("Temperatura iniziale · °C", initial),
+                                TechnicalUi.field("Tfinale · °C", finalExample)),
                         total,
                         chart);
         visual.setMinWidth(0);
@@ -187,7 +197,7 @@ public final class FiringCyclePane extends VBox {
     private void addRow(Step step) {
         var row = new Row();
         if (step != null) {
-            row.temperature.setText(TechnicalUi.number(step.temperature()));
+            row.temperature.setText(step.targetLabel());
             row.ramp.setText(time(step.rampMinutes()));
             row.hold.setText(time(step.holdMinutes()));
         }
@@ -243,8 +253,7 @@ public final class FiringCyclePane extends VBox {
             String label = "Step " + (++i);
             steps.add(
                     new Step(
-                            TechnicalUi.decimal(
-                                    row.temperature.getText(), label + " · temperatura finale"),
+                            parseTarget(row.temperature.getText()),
                             parseTime(row.ramp.getText(), label + " · rampa"),
                             parseTime(row.hold.getText(), label + " · mantenimento")));
         }
@@ -269,7 +278,14 @@ public final class FiringCyclePane extends VBox {
             var series = new XYChart.Series<Number, Number>();
             long t = 0;
             series.getData().add(new XYChart.Data<>(t, start));
-            for (var step : steps) {
+            BigDecimal target =
+                    steps.stream().anyMatch(Step::usesFinalTemperature)
+                            ? requireTemperature(
+                                    TechnicalUi.decimal(
+                                            finalExample.getText(), "Tfinale di esempio"))
+                            : null;
+            for (var template : steps) {
+                var step = template.resolve(target);
                 t += step.rampMinutes();
                 series.getData().add(new XYChart.Data<>(t, step.temperature()));
                 t += step.holdMinutes();

@@ -1,5 +1,8 @@
 package com.orodent.ecos.ton.features.firing.model;
 
+import com.orodent.ecos.ton.features.firingprograms.model.FiringPrograms;
+import com.orodent.ecos.ton.features.firingprograms.model.FiringPrograms.Program;
+
 import java.math.BigDecimal;
 import java.time.*;
 import java.util.*;
@@ -78,7 +81,10 @@ public final class Firing {
             LocalDate date,
             LocalDateTime recordedAt,
             String notes,
-            int count) {
+            int count,
+            Program program,
+            BigDecimal finalTemperature,
+            Program previousProgram) {
         public String number() {
             return "CF-" + String.format(Locale.ROOT, "%06d", id);
         }
@@ -86,18 +92,50 @@ public final class Firing {
         public String furnace() {
             return furnaceCode + " · " + furnaceName;
         }
+
+        public boolean programChanged() {
+            return previousProgram != null
+                    && program != null
+                    && previousProgram.id() != program.id();
+        }
+
+        public List<FiringPrograms.Step> resolvedSteps() {
+            return program == null || finalTemperature == null
+                    ? List.of()
+                    : program.resolve(finalTemperature);
+        }
     }
 
-    public record Workspace(List<Disc> pending, List<Furnace> furnaces, List<Load> loads) {
+    public record Workspace(
+            List<Disc> pending, List<Furnace> furnaces, List<Load> loads, List<Program> programs) {
         public Workspace {
             pending = List.copyOf(pending);
             furnaces = List.copyOf(furnaces);
             loads = List.copyOf(loads);
+            programs = List.copyOf(programs);
+        }
+
+        public Map<Long, Program> lastPrograms() {
+            var result = new HashMap<Long, Program>();
+            loads.stream()
+                    .sorted(
+                            Comparator.comparing(Load::recordedAt)
+                                    .thenComparingLong(Load::id)
+                                    .reversed())
+                    .filter(l -> l.program() != null)
+                    .forEach(l -> result.putIfAbsent(l.furnaceId(), l.program()));
+            return Map.copyOf(result);
         }
     }
 
     public record Request(
-            Furnace furnace, String lot, LocalDate date, String notes, List<Quantity> quantities) {
+            Furnace furnace,
+            String lot,
+            LocalDate date,
+            String notes,
+            List<Quantity> quantities,
+            Program program,
+            BigDecimal finalTemperature) {
         public Request {
             if (furnace == null || furnace.id() <= 0)
                 throw new IllegalArgumentException("Scegli un forno attivo.");
@@ -116,6 +154,9 @@ public final class Firing {
                 throw new IllegalArgumentException(
                         "Indica da 1 a 10000 dischi da caricare, senza ripetere gli articoli della"
                             + " stessa produzione.");
+            if (program == null || program.id() <= 0)
+                throw new IllegalArgumentException("Scegli un programma di cottura approvato.");
+            finalTemperature = FiringPrograms.requireTemperature(finalTemperature);
         }
     }
 

@@ -45,6 +45,49 @@ public final class FiringProgramRepository {
         return List.copyOf(entries);
     }
 
+    public List<Program> available() throws SQLException {
+        var programs = new ArrayList<Program>();
+        var archived = new HashSet<Long>();
+        // Latest revision comes first within each family; an archived family hides older approvals.
+        try (var q =
+                        c.prepareStatement(
+                                SELECT
+                                        + " ORDER BY p.codice,p.numero_versione"
+                                        + " DESC,p.numero_revisione DESC");
+                var r = q.executeQuery()) {
+            while (r.next()) {
+                long family = r.getLong("famiglia_id");
+                if (r.getBoolean("corrente") && !r.getBoolean("attivo")) archived.add(family);
+                if (!archived.contains(family)
+                        && r.getBoolean("attivo")
+                        && r.getString("stato").equals("APPROVATA")) programs.add(program(r));
+            }
+        }
+        return List.copyOf(programs);
+    }
+
+    public Program program(long id) throws SQLException {
+        try (var q =
+                c.prepareStatement("SELECT * FROM TON.PROGRAMMI_COTTURA WHERE programma_id=?")) {
+            q.setLong(1, id);
+            try (var r = q.executeQuery()) {
+                if (!r.next())
+                    throw new IllegalArgumentException("Programma di cottura non trovato.");
+                return program(r);
+            }
+        }
+    }
+
+    private Program program(ResultSet r) throws SQLException {
+        return new Program(
+                r.getLong("programma_id"),
+                r.getString("codice"),
+                r.getString("nome"),
+                r.getInt("numero_versione"),
+                r.getInt("numero_revisione"),
+                steps(r.getLong("programma_id")));
+    }
+
     public Detail load(long familyId, Long snapshotId) throws SQLException {
         Entry entry = null;
         var versions = new ArrayList<Snapshot>();
@@ -202,6 +245,21 @@ public final class FiringProgramRepository {
 
     private Snapshot snapshot(ResultSet r) throws SQLException {
         long id = r.getLong("programma_id");
+        return new Snapshot(
+                id,
+                r.getLong("famiglia_id"),
+                r.getInt("numero_versione"),
+                r.getInt("numero_revisione"),
+                r.getString("stato"),
+                r.getString("nome"),
+                Objects.requireNonNullElse(r.getString("note"), ""),
+                r.getBoolean("attivo"),
+                steps(id),
+                r.getTimestamp("aggiornato_il").toLocalDateTime(),
+                r.getBoolean("corrente"));
+    }
+
+    private List<Step> steps(long id) throws SQLException {
         var steps = new ArrayList<Step>();
         try (var q =
                 c.prepareStatement(
@@ -215,17 +273,6 @@ public final class FiringProgramRepository {
                     steps.add(new Step(data.getBigDecimal(1), data.getInt(2), data.getInt(3)));
             }
         }
-        return new Snapshot(
-                id,
-                r.getLong("famiglia_id"),
-                r.getInt("numero_versione"),
-                r.getInt("numero_revisione"),
-                r.getString("stato"),
-                r.getString("nome"),
-                Objects.requireNonNullElse(r.getString("note"), ""),
-                r.getBoolean("attivo"),
-                steps,
-                r.getTimestamp("aggiornato_il").toLocalDateTime(),
-                r.getBoolean("corrente"));
+        return List.copyOf(steps);
     }
 }

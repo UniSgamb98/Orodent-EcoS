@@ -8,25 +8,74 @@ import java.util.*;
 public final class FiringPrograms {
     private FiringPrograms() {}
 
+    public static final String FINAL_TEMPERATURE = "Tfinale";
+
+    /** A null target is the named Tfinale placeholder, never a missing numeric measurement. */
     public record Step(BigDecimal temperature, int rampMinutes, int holdMinutes) {
         public Step {
-            try {
-                temperature =
-                        Objects.requireNonNull(temperature).setScale(2, RoundingMode.UNNECESSARY);
-            } catch (ArithmeticException | NullPointerException invalid) {
-                throw new IllegalArgumentException(
-                        "Temperatura: inserisci un valore con massimo due decimali.");
-            }
-            if (temperature.signum() <= 0 || temperature.precision() > 7)
-                throw new IllegalArgumentException(
-                        "Temperatura finale: usa un valore positivo inferiore a 100000 °C.");
+            if (temperature != null) temperature = requireTemperature(temperature);
             if (rampMinutes < 0 || holdMinutes < 0)
                 throw new IllegalArgumentException("I tempi non possono essere negativi.");
-            temperature = temperature.stripTrailingZeros();
+        }
+
+        public boolean usesFinalTemperature() {
+            return temperature == null;
+        }
+
+        public String targetLabel() {
+            return usesFinalTemperature()
+                    ? FINAL_TEMPERATURE
+                    : temperature.toPlainString().replace('.', ',');
+        }
+
+        public Step resolve(BigDecimal finalTemperature) {
+            return usesFinalTemperature()
+                    ? new Step(requireTemperature(finalTemperature), rampMinutes, holdMinutes)
+                    : this;
         }
 
         public long minutes() {
             return (long) rampMinutes + holdMinutes;
+        }
+    }
+
+    public static BigDecimal requireTemperature(BigDecimal value) {
+        try {
+            value = Objects.requireNonNull(value).setScale(2, RoundingMode.UNNECESSARY);
+        } catch (NullPointerException | ArithmeticException invalid) {
+            throw new IllegalArgumentException(
+                    "Temperatura: inserisci un valore con massimo due decimali.");
+        }
+        if (value.signum() <= 0 || value.precision() > 7)
+            throw new IllegalArgumentException(
+                    "Temperatura: usa un valore positivo inferiore a 100000 °C.");
+        return value.stripTrailingZeros();
+    }
+
+    public static BigDecimal parseTarget(String text) {
+        String value = Objects.requireNonNullElse(text, "").strip();
+        if (value.equalsIgnoreCase(FINAL_TEMPERATURE)) return null;
+        if (!value.matches("[0-9]+([.,][0-9]+)?"))
+            throw new IllegalArgumentException(
+                    "Temperatura finale: indica i °C oppure Tfinale per usare la temperatura del"
+                        + " carico.");
+        return requireTemperature(new BigDecimal(value.replace(',', '.')));
+    }
+
+    /** A selectable, exact revision, not an automatically updated family reference. */
+    public record Program(
+            long id, String code, String name, int version, int revision, List<Step> steps) {
+        public Program {
+            steps = List.copyOf(steps);
+        }
+
+        public List<Step> resolve(BigDecimal finalTemperature) {
+            return steps.stream().map(s -> s.resolve(finalTemperature)).toList();
+        }
+
+        @Override
+        public String toString() {
+            return code + " · v" + version + " r" + revision + " · " + name;
         }
     }
 

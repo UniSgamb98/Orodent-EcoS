@@ -8,11 +8,14 @@ import com.orodent.ecos.database.ProducedDiscs;
 import com.orodent.ecos.ton.features.equipment.model.Equipment;
 import com.orodent.ecos.ton.features.equipment.service.EquipmentService;
 import com.orodent.ecos.ton.features.firing.model.Firing;
+import com.orodent.ecos.ton.features.firingprograms.model.FiringPrograms;
+import com.orodent.ecos.ton.features.firingprograms.service.FiringProgramService;
 import com.orodent.ecos.ton.features.production.model.Production;
 import com.orodent.ecos.ton.features.production.service.ProductionFixture;
 
 import org.junit.jupiter.api.*;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.*;
@@ -25,6 +28,8 @@ class FiringServiceTest {
     ProductionFixture fixture;
     FiringService service;
     EquipmentService equipment;
+    FiringProgramService programs;
+    FiringPrograms.Program program;
     final LocalDate loaded = LocalDate.of(2026, 11, 21);
 
     @BeforeEach
@@ -43,6 +48,21 @@ class FiringServiceTest {
         fixture = new ProductionFixture(db, workers);
         service = new FiringService(db, workers);
         equipment = new EquipmentService(db, workers);
+        programs = new FiringProgramService(db, workers);
+        programs.save(
+                        null,
+                        null,
+                        new FiringPrograms.Draft(
+                                "STD",
+                                "Standard",
+                                "",
+                                true,
+                                List.of(
+                                        new FiringPrograms.Step(new BigDecimal("500"), 90, 5),
+                                        new FiringPrograms.Step(null, 120, 60))),
+                        true)
+                .join();
+        program = service.workspace().join().programs().getFirst();
         equipment
                 .save(
                         Equipment.Kind.FURNACES,
@@ -77,7 +97,14 @@ class FiringServiceTest {
     }
 
     Firing.Request load(Firing.Furnace furnace, String lot, Firing.Quantity... quantities) {
-        return new Firing.Request(furnace, lot, loaded, "Carico registrato", List.of(quantities));
+        return new Firing.Request(
+                furnace,
+                lot,
+                loaded,
+                "Carico registrato",
+                List.of(quantities),
+                program,
+                new BigDecimal("1450"));
     }
 
     int count(String table) {
@@ -212,12 +239,15 @@ class FiringServiceTest {
                     try (var q =
                             c.prepareStatement(
                                     "SELECT"
-                                        + " d.specifica_prodotto_id,p.modello_id,p.composizione_id,l.codice,c.forno_id"
+                                        + " d.specifica_prodotto_id,p.modello_id,p.composizione_id,l.codice,c.forno_id,c.temperatura_finale_c,c.programma_id,m.numero_versione,cp.numero_versione"
                                         + " FROM TON.DISCHI_PRODOTTI d JOIN TON.CARICO_DISCHI a ON"
                                         + " a.disco_id=d.disco_id JOIN TON.CICLI_COTTURA c ON"
                                         + " c.ciclo_id=a.ciclo_id JOIN TON.LOTTI_COTTURA l ON"
                                         + " l.lotto_id=a.lotto_id JOIN TON.CONFIGURAZIONI_PRODOTTO"
-                                        + " p ON p.configurazione_id=d.specifica_prodotto_id WHERE"
+                                        + " p ON p.configurazione_id=d.specifica_prodotto_id JOIN"
+                                        + " TON.MODELLI_DISCO m ON m.modello_id=p.modello_id JOIN"
+                                        + " TON.COMPOSIZIONI cp ON"
+                                        + " cp.composizione_id=p.composizione_id WHERE"
                                         + " d.articolo_codice=? AND l.codice=?")) {
                         q.setString(1, "ZR9814MSTA4");
                         q.setString(2, "LOTTO-A");
@@ -227,10 +257,269 @@ class FiringServiceTest {
                             assertEquals(fixture.model.revision().id(), r.getLong(2));
                             assertTrue(r.getLong(3) > 0);
                             assertEquals(first.furnaceId(), r.getLong(5));
+                            assertEquals(0, new BigDecimal("1450").compareTo(r.getBigDecimal(6)));
+                            assertEquals(program.id(), r.getLong(7));
+                            assertEquals(saved.plan().reference().compositionId(), r.getLong(3));
+                            assertEquals(saved.plan().reference().modelVersion(), r.getInt(8));
+                            assertEquals(
+                                    saved.plan().reference().compositionVersion(), r.getInt(9));
                         }
                     }
                     return null;
                 });
+    }
+
+    @Test
+    void
+            loadsResolveTheExactVersionAndRememberProgramsPerFurnaceByRegistrationRatherThanLoadDate() {
+        confirm();
+        var data = service.workspace().join();
+        var furnace = data.furnaces().getFirst();
+        var other = data.furnaces().getLast();
+        var group = Firing.group(data.pending()).getFirst();
+        assertTrue(data.lastPrograms().isEmpty());
+        var first =
+                service.create(
+                                new Firing.Request(
+                                        furnace,
+                                        "TARGET-1",
+                                        loaded,
+                                        "",
+                                        List.of(quantity(group, 1)),
+                                        program,
+                                        new BigDecimal("1440")))
+                        .join();
+        assertEquals(program.id(), first.program().id());
+        assertNull(first.previousProgram());
+        assertFalse(first.programChanged());
+        assertEquals(
+                0, new BigDecimal("1440").compareTo(first.resolvedSteps().getLast().temperature()));
+        assertTrue(first.program().steps().getLast().usesFinalTemperature());
+        var original =
+                programs.load(programs.list("STD", false).join().getFirst().id(), program.id())
+                        .join();
+        var copy = programs.copy(original.entry(), original.selected()).join();
+        programs.save(
+                        copy.entry(),
+                        copy.selected(),
+                        new FiringPrograms.Draft(
+                                "STD",
+                                "Nuova",
+                                "",
+                                true,
+                                List.of(new FiringPrograms.Step(null, 30, 60))),
+                        true)
+                .join();
+        assertEquals(
+                program.id(), service.workspace().join().lastPrograms().get(furnace.id()).id());
+        programs.save(
+                        null,
+                        null,
+                        new FiringPrograms.Draft(
+                                "ALTRO",
+                                "Alternativo",
+                                "",
+                                true,
+                                List.of(new FiringPrograms.Step(null, 45, 90))),
+                        true)
+                .join();
+        var alternative =
+                service.workspace().join().programs().stream()
+                        .filter(p -> p.code().equals("ALTRO"))
+                        .findFirst()
+                        .orElseThrow();
+        service.create(
+                        new Firing.Request(
+                                other,
+                                "ALTRO-FORNO",
+                                loaded,
+                                "",
+                                List.of(quantity(group, 1)),
+                                alternative,
+                                new BigDecimal("1490")))
+                .join();
+        assertEquals(
+                program.id(), service.workspace().join().lastPrograms().get(furnace.id()).id());
+        var changed =
+                service.create(
+                                new Firing.Request(
+                                        furnace,
+                                        "RETRODATATO",
+                                        group.reference().producedAt(),
+                                        "",
+                                        List.of(quantity(group, 1)),
+                                        alternative,
+                                        new BigDecimal("1470")))
+                        .join();
+        assertTrue(changed.programChanged());
+        assertEquals(program.id(), changed.previousProgram().id());
+        var reloaded = new FiringService(db, workers).workspace().join();
+        assertEquals(alternative.id(), reloaded.lastPrograms().get(furnace.id()).id());
+        assertEquals(alternative.id(), reloaded.lastPrograms().get(other.id()).id());
+        var historical =
+                reloaded.loads().stream()
+                        .filter(l -> l.id() == first.id())
+                        .findFirst()
+                        .orElseThrow();
+        assertEquals(120, historical.program().steps().getLast().rampMinutes());
+        assertEquals(
+                0,
+                new BigDecimal("1440")
+                        .compareTo(historical.resolvedSteps().getLast().temperature()));
+        assertThrows(
+                CompletionException.class,
+                () ->
+                        service.create(
+                                        new Firing.Request(
+                                                furnace,
+                                                "RETRODATATO",
+                                                loaded,
+                                                "",
+                                                List.of(quantity(group, 1)),
+                                                program,
+                                                new BigDecimal("1600")))
+                                .join());
+        assertEquals(
+                alternative.id(), service.workspace().join().lastPrograms().get(furnace.id()).id());
+        var draft =
+                programs.save(
+                                null,
+                                null,
+                                new FiringPrograms.Draft(
+                                        "BOZZA",
+                                        "Bozza",
+                                        "",
+                                        true,
+                                        List.of(new FiringPrograms.Step(null, 30, 30))),
+                                false)
+                        .join();
+        var fake =
+                new FiringPrograms.Program(
+                        draft.selected().id(),
+                        "FALSO",
+                        "Falso",
+                        1,
+                        1,
+                        List.of(new FiringPrograms.Step(null, 10, 10)));
+        assertThrows(
+                CompletionException.class,
+                () ->
+                        service.create(
+                                        new Firing.Request(
+                                                furnace,
+                                                "NON-APPROVATA",
+                                                loaded,
+                                                "",
+                                                List.of(quantity(group, 1)),
+                                                fake,
+                                                new BigDecimal("1500")))
+                                .join());
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        new Firing.Request(
+                                furnace,
+                                "SENZA-PROGRAMMA",
+                                loaded,
+                                "",
+                                List.of(quantity(group, 1)),
+                                null,
+                                new BigDecimal("1500")));
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        new Firing.Request(
+                                furnace,
+                                "SENZA-TEMPERATURA",
+                                loaded,
+                                "",
+                                List.of(quantity(group, 1)),
+                                program,
+                                null));
+        var altDetail =
+                programs.load(
+                                programs.list("ALTRO", false).join().getFirst().id(),
+                                alternative.id())
+                        .join();
+        var archival = programs.copy(altDetail.entry(), altDetail.selected()).join();
+        programs.save(
+                        archival.entry(),
+                        archival.selected(),
+                        new FiringPrograms.Draft(
+                                "ALTRO", "Archiviato", "", false, alternative.steps()),
+                        false)
+                .join();
+        assertTrue(
+                service.workspace().join().programs().stream()
+                        .noneMatch(p -> p.code().equals("ALTRO")));
+        assertEquals(
+                alternative.id(), service.workspace().join().lastPrograms().get(furnace.id()).id());
+        assertThrows(
+                CompletionException.class,
+                () ->
+                        service.create(
+                                        new Firing.Request(
+                                                furnace,
+                                                "ARCHIVIATO",
+                                                loaded,
+                                                "",
+                                                List.of(quantity(group, 1)),
+                                                alternative,
+                                                new BigDecimal("1450")))
+                                .join());
+    }
+
+    @Test
+    void concurrentLoadsOnOneFurnacePreserveTheActualPreviousProgram() {
+        confirm();
+        var data = service.workspace().join();
+        var furnace = data.furnaces().getFirst();
+        var group = Firing.group(data.pending()).getFirst();
+        programs.save(
+                        null,
+                        null,
+                        new FiringPrograms.Draft(
+                                "B", "B", "", true, List.of(new FiringPrograms.Step(null, 30, 60))),
+                        true)
+                .join();
+        var alternative =
+                service.workspace().join().programs().stream()
+                        .filter(p -> p.code().equals("B"))
+                        .findFirst()
+                        .orElseThrow();
+        var one =
+                service.create(
+                        new Firing.Request(
+                                furnace,
+                                "SERIE-A",
+                                loaded,
+                                "",
+                                List.of(quantity(group, 1)),
+                                program,
+                                new BigDecimal("1400")));
+        var two =
+                service.create(
+                        new Firing.Request(
+                                furnace,
+                                "SERIE-B",
+                                loaded,
+                                "",
+                                List.of(quantity(group, 1)),
+                                alternative,
+                                new BigDecimal("1450")));
+        one.join();
+        two.join();
+        var loads = service.workspace().join().loads();
+        assertEquals(1, loads.stream().filter(l -> l.previousProgram() == null).count());
+        var first =
+                loads.stream().filter(l -> l.previousProgram() == null).findFirst().orElseThrow();
+        var last =
+                loads.stream().filter(l -> l.previousProgram() != null).findFirst().orElseThrow();
+        assertEquals(first.program().id(), last.previousProgram().id());
+        assertTrue(last.programChanged());
+        assertEquals(
+                last.program().id(),
+                service.workspace().join().lastPrograms().get(furnace.id()).id());
     }
 
     @Test
@@ -255,7 +544,9 @@ class FiringServiceTest {
                                                 "PRIMA",
                                                 LocalDate.of(2026, 11, 18),
                                                 "",
-                                                List.of(quantity(group, 1))))
+                                                List.of(quantity(group, 1)),
+                                                program,
+                                                new BigDecimal("1450")))
                                 .join());
         db.withTransaction(
                 c -> {
@@ -344,8 +635,44 @@ class FiringServiceTest {
                                         + fixture.articles.get(14));
                         q.executeUpdate(
                                 "ALTER TABLE TON.PIANI_PRODUZIONE DROP COLUMN dischi_confermati_il"
-                                    + " RESTRICT");
-                        q.executeUpdate("DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version=30");
+                                        + " RESTRICT");
+                        // Recreate a genuine pre-V30 fixture, including the subsequent program
+                        // migrations.
+                        for (String sql :
+                                List.of(
+                                        "ALTER TABLE TON.CICLI_COTTURA DROP CONSTRAINT"
+                                            + " fk_ton_cic_prog_precedente",
+                                        "ALTER TABLE TON.CICLI_COTTURA DROP CONSTRAINT"
+                                            + " ck_ton_cic_target",
+                                        "ALTER TABLE TON.CICLI_COTTURA DROP CONSTRAINT"
+                                            + " ck_ton_cic_prog_precedente",
+                                        "ALTER TABLE TON.CICLI_COTTURA DROP COLUMN"
+                                            + " programma_precedente_id RESTRICT",
+                                        "ALTER TABLE TON.CICLI_COTTURA DROP COLUMN"
+                                            + " temperatura_finale_c RESTRICT",
+                                        "UPDATE TON.PROGRAMMA_PASSI SET"
+                                            + " temperatura_obiettivo_c=1450 WHERE"
+                                            + " temperatura_obiettivo_c IS NULL",
+                                        "ALTER TABLE TON.PROGRAMMA_PASSI ALTER COLUMN"
+                                            + " temperatura_obiettivo_c NOT NULL",
+                                        "ALTER TABLE TON.PROGRAMMI_COTTURA DROP CONSTRAINT"
+                                            + " fk_ton_programma_famiglia",
+                                        "ALTER TABLE TON.PROGRAMMI_COTTURA DROP CONSTRAINT"
+                                            + " uq_ton_prog_revisione",
+                                        "ALTER TABLE TON.PROGRAMMI_COTTURA DROP CONSTRAINT"
+                                            + " ck_ton_prog_num_rev",
+                                        "ALTER TABLE TON.PROGRAMMI_COTTURA DROP COLUMN famiglia_id"
+                                            + " RESTRICT",
+                                        "ALTER TABLE TON.PROGRAMMI_COTTURA DROP COLUMN"
+                                            + " numero_revisione RESTRICT",
+                                        "ALTER TABLE TON.PROGRAMMI_COTTURA DROP COLUMN attivo"
+                                            + " RESTRICT",
+                                        "ALTER TABLE TON.PROGRAMMI_COTTURA ADD CONSTRAINT"
+                                            + " uq_ton_prog_versione"
+                                            + " UNIQUE(codice,numero_versione)",
+                                        "DROP TABLE TON.PROGRAMMI_FAMIGLIE",
+                                        "DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version>=30"))
+                            q.executeUpdate(sql);
                     }
                     return null;
                 });

@@ -2,6 +2,7 @@ package com.orodent.ecos.ton.features.firing.view;
 
 import static com.orodent.ecos.ton.features.firing.model.Firing.*;
 
+import com.orodent.ecos.ton.features.firingprograms.model.FiringPrograms.Program;
 import com.orodent.ecos.ton.features.technical.view.*;
 
 import javafx.beans.property.*;
@@ -46,6 +47,12 @@ public final class FiringView extends TechnicalDetailView {
     public final TableView<Load> loads = new TableView<>();
     public final TableView<Group> loaded = new TableView<>();
     public final ComboBox<Furnace> furnace = new ComboBox<>();
+    public final ComboBox<Program> program = new ComboBox<>();
+    public final TextField finalTemperature =
+            TechnicalUi.input(ID + "-final-temperature", "Temperatura finale in °C");
+    private final Label programNotice = TechnicalUi.label("", "muted-label");
+    private Workspace workspace = new Workspace(List.of(), List.of(), List.of(), List.of());
+    private boolean updating, manualProgram;
     public final TextField lot = TechnicalUi.input(ID + "-lot", "Codice lotto manuale");
     public final DatePicker date = new DatePicker(LocalDate.now());
     public final TextArea notes = new TextArea();
@@ -147,6 +154,26 @@ public final class FiringView extends TechnicalDetailView {
         furnace.setMinWidth(0);
         furnace.setMaxWidth(Double.MAX_VALUE);
         furnace.setPromptText("Scegli forno attivo");
+        program.setId(ID + "-program");
+        program.setPromptText("Scegli programma approvato");
+        program.setMinWidth(0);
+        program.setMaxWidth(Double.MAX_VALUE);
+        programNotice.setId(ID + "-program-notice");
+        programNotice.visibleProperty().bind(programNotice.textProperty().isNotEmpty());
+        programNotice.managedProperty().bind(programNotice.visibleProperty());
+        program.valueProperty()
+                .addListener(
+                        (o, a, b) -> {
+                            if (updating) return;
+                            manualProgram =
+                                    b != null
+                                            && (lastProgram() == null
+                                                    || b.id() != lastProgram().id());
+                            program.setTooltip(b == null ? null : new Tooltip(b.toString()));
+                            programNotice();
+                            selectionChanged();
+                        });
+        finalTemperature.textProperty().addListener((o, a, b) -> selectionChanged());
         date.setId(ID + "-date");
         date.setConverter(new javafx.util.converter.LocalDateStringConverter(DATE, DATE));
         date.setPromptText("gg/mm/aaaa");
@@ -160,6 +187,9 @@ public final class FiringView extends TechnicalDetailView {
                         TechnicalUi.field("Forno *", furnace),
                         emptyFurnaces,
                         TechnicalUi.field("Lotto *", lot),
+                        TechnicalUi.field("Programma di cottura *", program),
+                        programNotice,
+                        TechnicalUi.field("Temperatura finale · °C *", finalTemperature),
                         TechnicalUi.field("Data del carico *", date),
                         TechnicalUi.field("Note del carico", notes));
         fields.setMinWidth(0);
@@ -182,7 +212,15 @@ public final class FiringView extends TechnicalDetailView {
         var queue = new HBox(18, listing, assignment);
         queue.setMinSize(0, 0);
         addSheet("Da caricare", queue, true);
-        furnace.valueProperty().addListener((o, a, b) -> selectionChanged());
+        furnace.valueProperty()
+                .addListener(
+                        (o, a, b) -> {
+                            if (updating) return;
+                            finalTemperature.clear();
+                            manualProgram = false;
+                            selectRememberedProgram();
+                            selectionChanged();
+                        });
         lot.textProperty().addListener((o, a, b) -> selectionChanged());
         date.valueProperty().addListener((o, a, b) -> selectionChanged());
         loads.setId(ID + "-loads-table");
@@ -193,6 +231,15 @@ public final class FiringView extends TechnicalDetailView {
         TechnicalUi.column(loads, "Data", 130, l -> DATE.format(l.date()));
         TechnicalUi.column(loads, "Forno", 200, Load::furnace);
         TechnicalUi.column(loads, "Lotto", 180, Load::lot);
+        TechnicalUi.column(
+                loads, "Programma", 240, l -> l.program() == null ? "—" : l.program().toString());
+        TechnicalUi.column(
+                loads,
+                "T finale · °C",
+                110,
+                l -> l.finalTemperature() == null ? "—" : number(l.finalTemperature()));
+        TechnicalUi.column(
+                loads, "Cambio programma", 130, l -> l.programChanged() ? "Da cambiare" : "");
         TechnicalUi.column(loads, "Dischi", 80, l -> "" + l.count());
         loaded.setId(ID + "-loaded-table");
         loaded.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
@@ -212,7 +259,7 @@ public final class FiringView extends TechnicalDetailView {
         history.setOrientation(Orientation.VERTICAL);
         history.setDividerPositions(.36);
         addSheet("Carichi registrati", history, true);
-        show(new Workspace(List.of(), List.of(), List.of()));
+        show(workspace);
     }
 
     public void show(Workspace data) {
@@ -236,6 +283,9 @@ public final class FiringView extends TechnicalDetailView {
                             });
         }
         Furnace previous = furnace.getValue();
+        Program previousProgram = program.getValue();
+        workspace = data;
+        updating = true;
         furnace.getItems().setAll(data.furnaces());
         furnace.setValue(
                 previous == null
@@ -244,6 +294,16 @@ public final class FiringView extends TechnicalDetailView {
                                 .filter(f -> f.id() == previous.id())
                                 .findFirst()
                                 .orElse(null));
+        program.getItems().setAll(data.programs());
+        program.setValue(
+                manualProgram && previousProgram != null
+                        ? data.programs().stream()
+                                .filter(p -> p.id() == previousProgram.id())
+                                .findFirst()
+                                .orElse(null)
+                        : rememberedProgram());
+        updating = false;
+        programNotice();
         TechnicalUi.visible(emptyFurnaces, data.furnaces().isEmpty());
         Long previousLoad =
                 loads.getSelectionModel().getSelectedItem() == null
@@ -268,6 +328,65 @@ public final class FiringView extends TechnicalDetailView {
                                 : data.loads().size() + " carichi registrati"));
         filter();
         selectionChanged();
+    }
+
+    private Program lastProgram() {
+        return furnace.getValue() == null
+                ? null
+                : workspace.lastPrograms().get(furnace.getValue().id());
+    }
+
+    private Program rememberedProgram() {
+        Program last = lastProgram();
+        return last == null
+                ? null
+                : workspace.programs().stream()
+                        .filter(p -> p.id() == last.id())
+                        .findFirst()
+                        .orElse(null);
+    }
+
+    private void selectRememberedProgram() {
+        updating = true;
+        try {
+            program.setValue(rememberedProgram());
+        } finally {
+            updating = false;
+        }
+        programNotice();
+    }
+
+    private void programNotice() {
+        Program last = lastProgram(), chosen = program.getValue();
+        program.setTooltip(chosen == null ? null : new Tooltip(chosen.toString()));
+        String text = "";
+        if (workspace.programs().isEmpty())
+            text =
+                    "Nessun programma approvato disponibile. Configuralo in Cotture → Programmi di"
+                        + " cottura.";
+        else if (furnace.getValue() != null) {
+            if (last == null)
+                text =
+                        "Nessun programma precedente per questo forno: scegli quello impostato"
+                            + " sulla macchina.";
+            else if (chosen == null)
+                text =
+                        "Ultimo usato: "
+                                + last
+                                + ". Non più disponibile: scegli un programma approvato.";
+            else if (last.id() != chosen.id())
+                text =
+                        "CAMBIO PROGRAMMA: ultimo usato "
+                                + last
+                                + ". Impostare il programma selezionato sul forno.";
+            else text = "Ultimo programma usato su questo forno.";
+        }
+        if (chosen != null && chosen.steps().stream().noneMatch(s -> s.usesFinalTemperature()))
+            text +=
+                    (text.isEmpty() ? "" : "\n")
+                            + "Questo programma usa temperature fisse: Tfinale non è presente negli"
+                            + " step.";
+        programNotice.setText(text);
     }
 
     private void filter() {
@@ -298,6 +417,8 @@ public final class FiringView extends TechnicalDetailView {
         create.setDisable(
                 count == 0
                         || furnace.getValue() == null
+                        || program.getValue() == null
+                        || finalTemperature.getText().isBlank()
                         || lot.getText().isBlank()
                         || date.getValue() == null);
     }
@@ -324,7 +445,14 @@ public final class FiringView extends TechnicalDetailView {
         } catch (RuntimeException invalid) {
             throw new IllegalArgumentException("Data del carico: usa gg/mm/aaaa.");
         }
-        return new Request(furnace.getValue(), lot.getText(), value, notes.getText(), quantities());
+        return new Request(
+                furnace.getValue(),
+                lot.getText(),
+                value,
+                notes.getText(),
+                quantities(),
+                program.getValue(),
+                TechnicalUi.decimal(finalTemperature.getText(), "Temperatura finale"));
     }
 
     public void deselect() {
@@ -340,13 +468,17 @@ public final class FiringView extends TechnicalDetailView {
     public boolean dirty() {
         return rows.stream().anyMatch(r -> r.count() > 0)
                 || !lot.getText().isBlank()
-                || !notes.getText().isBlank();
+                || !notes.getText().isBlank()
+                || !finalTemperature.getText().isBlank()
+                || manualProgram && program.getValue() != null;
     }
 
     public void resetAssignment() {
         deselect();
         lot.clear();
         notes.clear();
+        finalTemperature.clear();
+        manualProgram = false;
     }
 
     public void details(Load load, List<Disc> discs) {
@@ -361,6 +493,19 @@ public final class FiringView extends TechnicalDetailView {
                                 + load.furnace()
                                 + " · anagrafica r"
                                 + load.furnaceRevision()
+                                + "\nProgramma: "
+                                + (load.program() == null ? "non registrato" : load.program())
+                                + " · Temperatura finale: "
+                                + (load.finalTemperature() == null
+                                        ? "non registrata"
+                                        : number(load.finalTemperature()) + " °C")
+                                + (load.programChanged()
+                                        ? "\nCAMBIO PROGRAMMA: da "
+                                                + load.previousProgram()
+                                                + " a "
+                                                + load.program()
+                                                + ". Impostare il programma sul forno."
+                                        : "")
                                 + "\n"
                                 + load.notes());
     }

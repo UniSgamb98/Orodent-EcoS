@@ -365,12 +365,18 @@ final class TonSchema {
                     column("ATTIVO", Types.BOOLEAN, 0, 0, false, false, "TRUE")),
                     List.of("FK_TON_PROGRAMMA_FAMIGLIA", "UQ_TON_PROG_REVISIONE", "CK_TON_PROG_NUM_REV")));
         }
+        if (schemaVersion >= 32) tables.add(new Table("CICLI_COTTURA", List.of(
+                column("TEMPERATURA_FINALE_C", Types.DECIMAL, 7, 2, true, false, null),
+                column("PROGRAMMA_PRECEDENTE_ID", Types.BIGINT, 0, 0, true, false, null)),
+                List.of("FK_TON_CIC_PROG_PRECEDENTE", "CK_TON_CIC_TARGET", "CK_TON_CIC_PROG_PRECEDENTE")));
         for (Table table : tables) {
             Map<String, Column> columns = actual.getOrDefault(table.name(), Map.of());
             for (Column declared : table.columns()) {
                 Column expected = schemaVersion >= 19 && table.name().equals("MODELLI_DISCO")
                         && declared.name().equals("DIAMETRO_PRESSATURA_MM")
                         ? column(declared.name(), Types.DECIMAL, 10, 3, false, false, null) : declared;
+                if (schemaVersion >= 32 && table.name().equals("PROGRAMMA_PASSI") && declared.name().equals("TEMPERATURA_OBIETTIVO_C"))
+                    expected = column(declared.name(), Types.DECIMAL, 7, 2, true, false, null);
                 Column found = columns.get(expected.name());
                 if (found == null || found.type() != expected.type() || found.nullable() != expected.nullable()
                         || found.identity() != expected.identity()

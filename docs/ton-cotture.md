@@ -31,7 +31,8 @@ visibili** riempie le quantità con tutti i pezzi disponibili delle righe mostra
 **Deseleziona** le azzera. La ricerca considera articolo, prodotto, linea e numero
 della produzione; cambiarla azzera le quantità selezionate.
 
-Scegliere un forno attivo, inserire il **lotto manuale**, data e note, poi premere
+Scegliere un forno attivo, inserire il **lotto manuale**, scegliere un **programma
+approvato** e indicare la **temperatura finale in °C**, data e note, poi premere
 **Registra carico**. Le quantità indicate ricevono lo stesso forno e lotto.
 Si possono assegnare, per esempio, 20 pezzi su 30 a un forno e caricare i 10
 rimanenti in un altro carico. EcoS assegna i singoli record internamente, in
@@ -44,6 +45,8 @@ La data del carico non può precedere quella della produzione dei pezzi assegnat
 
 Dopo il salvataggio le disponibilità diminuiscono e le righe esaurite scompaiono.
 La scheda **Carichi registrati** conserva forno, lotto, data e numero di pezzi.
+Mostra anche il programma con versione e revisione, la temperatura finale e
+l'eventuale cambio di programma rispetto al carico precedente di quel forno.
 Anche il dettaglio del carico mostra produzione, articolo, formato e quantità
 raggruppati. Le assegnazioni rimangono conservate per la successiva tracciabilità.
 
@@ -54,6 +57,7 @@ Il percorso conservato è:
 ```text
 codice articolo + lotto
   → singolo disco → carico → forno e sua revisione al caricamento
+  → temperatura finale del carico + versione esatta del programma termico
   → registrazione di produzione → piano confermato
   → specifiche precise → composizione, polveri e modello utilizzati
 ```
@@ -73,7 +77,8 @@ La migrazione **V29** introduce `TON.ESECUZIONI_PIANO`, `TON.DISCHI_PRODOTTI` e
 `TON.FORNI` per i carichi. In questa fase un ciclo con `caricato_il` valorizzato
 rappresenta un carico registrato, ancora distinto dall'avvio del programma termico.
 I [programmi di cottura](ton-programmi-cottura.md) si configurano nella sezione
-dedicata, con step e versioni conservate. La loro assegnazione ai carichi, le sonde,
-l'avvio e la conclusione della cottura, gli esiti e il numero batch alla misurazione
+dedicata, con step e versioni conservate. L'ultimo programma usato è ricordato
+per ciascun forno; la temperatura finale del carico risolve `Tfinale` negli step.
+Le sonde, l'avvio e la conclusione della cottura, gli esiti e il numero batch alla misurazione
 saranno collegati nei prossimi passaggi. L'ID interno del disco fornisce già il
 riferimento stabile a cui aggiungere quei dati.

@@ -11,6 +11,13 @@ mantenimento**. La rampa porta dalla temperatura precedente alla nuova temperatu
 nel tempo indicato; il mantenimento resta alla temperatura finale. Sono possibili
 anche step di raffreddamento. Gli step possono essere aggiunti, spostati e rimossi.
 
+Nella temperatura si può scrivere **`Tfinale`** per usare la temperatura finale
+indicata al momento del carico. Per esempio, `500 → Tfinale → 900` conserva due
+temperature fisse e una temperatura dipendente dal carico. Lo stesso riferimento
+può essere usato in più step. Il programma conserva il simbolo; ogni carico conserva
+il proprio valore numerico. L'anteprima permette di impostare una **Tfinale di
+esempio**, che non modifica il programma salvato.
+
 I tempi usano **ore.minuti**, con due cifre per i minuti:
 
 - `1.30` indica 1 ora e 30 minuti, cioè 90 minuti.
@@ -50,6 +57,27 @@ revisione ha un proprio `programma_id`: i programmi precedenti conservano ID,
 step e riferimenti già presenti nei cicli di cottura. I nuovi salvataggi aggiungono
 record e non modificano il contenuto dei programmi già registrati.
 
-Questa sezione configura e conserva i programmi. La scelta del programma per
-un carico, l'avvio del forno, le sonde e gli esiti saranno collegati nel passaggio
-dedicato all'esecuzione della cottura.
+## Programma nel carico
+
+In **Pianificazione e carichi** si scelgono una versione approvata del programma
+e la temperatura finale del carico. I programmi approvati precedenti restano
+selezionabili: creare una nuova versione non sostituisce quella usata su un forno.
+Le famiglie archiviate e le bozze non sono proposte per nuovi carichi.
+
+Scegliendo il forno, viene proposto il programma esatto dell'ultimo carico
+registrato su quel forno. La memoria è persistente e distinta per forno; segue
+l'ordine di registrazione, anche per carichi con date retrodatate. Senza precedenti
+il campo è vuoto. Se l'ultimo programma non è più disponibile, il campo resta
+vuoto e un messaggio ne indica il motivo: non viene scelto un sostituto automatico.
+
+Scegliendo un altro programma, un avviso ricorda di impostarlo anche sulla
+macchina. Il carico salva anche il programma precedente, ricontrollato durante
+la transazione di registrazione, per conservare il cambio e poterlo richiamare
+nel futuro foglio operativo. Non vengono inviati comandi al forno.
+
+La migrazione **V32** permette il riferimento `Tfinale` negli step e aggiunge
+temperatura finale e programma precedente ai cicli di cottura. Gli ID dei programmi,
+i riferimenti esistenti e le temperature fisse dei vecchi step sono conservati.
+I carichi precedenti privi di temperatura non ricevono valori inventati.
+L'avvio del forno, le sonde, gli esiti e la stampa del foglio saranno collegati
+nei passaggi successivi.

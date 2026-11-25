@@ -165,6 +165,11 @@ public final class DatabaseSchema {
                     31,
                     "Immutable revisions of firing programs",
                     "/database/migrations/V31__versioned_firing_programs.sql");
+    private static final SchemaMigration FIRING_LOAD_PROGRAM =
+            new SchemaMigration(
+                    32,
+                    "Load-specific firing temperature and exact program version",
+                    "/database/migrations/V32__firing_load_program_temperature.sql");
     private static final List<SchemaMigration> MIGRATIONS =
             List.of(
                     BASELINE,
@@ -197,7 +202,8 @@ public final class DatabaseSchema {
                     DISK_MARKING,
                     PRODUCED_DISCS,
                     CONFIRMED_OUTPUT,
-                    FIRING_PROGRAMS);
+                    FIRING_PROGRAMS,
+                    FIRING_LOAD_PROGRAM);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS =
             List.of(

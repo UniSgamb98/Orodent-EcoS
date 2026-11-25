@@ -106,7 +106,13 @@ public final class FiringController implements FeatureController {
                                                             + " registrato · "
                                                             + load.count()
                                                             + " dischi · lotto "
-                                                            + load.lot(),
+                                                            + load.lot()
+                                                            + (load.programChanged()
+                                                                    ? " · CAMBIO PROGRAMMA:"
+                                                                          + " impostare "
+                                                                            + load.program()
+                                                                            + " sul forno."
+                                                                    : ""),
                                                     false);
                                             refresh();
                                         }));

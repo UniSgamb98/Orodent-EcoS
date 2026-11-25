@@ -41,6 +41,24 @@ class FiringProgramsTest {
     }
 
     @Test
+    void finalTemperatureIsAnExplicitTokenResolvedOnlyWhenTheLoadProvidesItsValue() {
+        var template = new Step(parseTarget("Tfinale"), 90, 30);
+        assertNull(template.temperature());
+        assertTrue(template.usesFinalTemperature());
+        assertEquals("Tfinale", template.targetLabel());
+        assertNull(parseTarget(" tFINALE "));
+        assertEquals(0, new BigDecimal("1450.25").compareTo(parseTarget("1450,25")));
+        assertEquals(
+                0,
+                new BigDecimal("1440")
+                        .compareTo(template.resolve(new BigDecimal("1440")).temperature()));
+        assertNull(template.temperature());
+        assertThrows(IllegalArgumentException.class, () -> template.resolve(null));
+        for (String invalid : List.of("", "T", "Tfinale + 10", "0", "-100", "1000.001"))
+            assertThrows(IllegalArgumentException.class, () -> parseTarget(invalid));
+    }
+
+    @Test
     void coolingStepsAndZeroTimesAreSupportedAndEmptyProgramsCannotBeApproved() {
         var draft =
                 new Draft(
