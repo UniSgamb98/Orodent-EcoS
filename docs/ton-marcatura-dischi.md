@@ -13,11 +13,20 @@ Doppio clic o Invio apre il modello. L'editor ha tre schede:
 La scritta combina testo fisso e campi tra parentesi graffe, ad esempio:
 
 ```text
-{codice_articolo} LOT {lotto} R {fattoreRitiro}
+{codice_articolo} {descrizione_articolo} Ø{diametro_nominale}x{altezza_nominale}
+LOT {lotto} Disco {numero_batch} R {fattoreRitiro}
 ```
 
-I campi iniziali sono `codice_articolo`, `codice_prodotto`, `lotto`, `D`
-(diametro in mm), `Hmedia` (altezza media in mm) e `P` (peso in g).
+I campi disponibili sono:
+
+- `codice_articolo`, `descrizione_articolo`, `codice_prodotto` e `lotto`.
+- `numero_batch`: numero batch assegnato al singolo disco in misurazione;
+  è testo, conserva eventuali zeri iniziali e non è l'ID interno del disco.
+- `diametro_nominale` e `altezza_nominale`: dimensioni nominali in mm
+  specificate nell'articolo, distinte dalle letture degli strumenti.
+- `D` (diametro misurato in mm), `Hmedia` (altezza media misurata in mm)
+  e `P` (peso misurato in g).
+
 La regola di cubatura è facoltativa: scegliendo una **versione approvata**,
 diventano disponibili anche tutti i suoi risultati con i nomi delle formule.
 **Inserisci campo** inserisce il campo selezionato alla posizione del cursore.
@@ -30,7 +39,9 @@ regola aritmetica HALF_UP e riguarda solo la scritta; non modifica i risultati
 dei calcoli. Gli zeri finali sono mantenuti secondo il formato scelto.
 
 L'anteprima calcola i risultati della regola usando D, Hmedia e P di esempio.
-Puoi modificare anche codice articolo, codice prodotto e lotto di esempio.
+Puoi modificare anche descrizione, numero batch, dimensioni nominali, codice
+articolo, codice prodotto e lotto di esempio. Le formule continuano a usare
+le sole letture D, Hmedia e P; le dimensioni nominali non le sostituiscono.
 Cambiare testo, regola, decimali o valori aggiorna l'anteprima. In presenza di
 errori la scritta precedente viene cancellata. I dati di esempio non vengono
 salvati e non sono misurazioni reali.
@@ -53,5 +64,6 @@ Le modifiche concorrenti sono respinte senza sovrascrivere i dati.
 La migrazione **V28** aggiunge `TON.MODELLI_MARCATURA` e
 `TON.MARCATURA_VERSIONI`; non cambia i modelli documento o le produzioni esistenti.
 Questo passaggio prepara i modelli: l'assegnazione nelle Specifiche di produzione,
-la generazione della scritta per il singolo disco e l'invio a Clarinet verranno
+l'assegnazione del numero batch, la generazione della scritta per il singolo disco
+e l'invio a Clarinet verranno
 collegati successivamente, conservando versioni e contenuti effettivamente generati.

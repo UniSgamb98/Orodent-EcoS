@@ -28,10 +28,14 @@ public final class MarkingContentPane extends VBox {
     private final TableView<Field> formats = new TableView<>();
     private final Map<String, Integer> decimals = new TreeMap<>();
     private final TextField article = TechnicalUi.input(ID + "-sample-article", "Codice articolo"),
+            description = TechnicalUi.input(ID + "-sample-description", "Descrizione articolo"),
             product = TechnicalUi.input(ID + "-sample-product", "Codice prodotto"),
             lot = TechnicalUi.input(ID + "-sample-lot", "Lotto"),
-            diameter = TechnicalUi.input(ID + "-sample-d", "D · mm"),
-            height = TechnicalUi.input(ID + "-sample-h", "Hmedia · mm"),
+            batch = TechnicalUi.input(ID + "-sample-batch", "Numero batch del disco"),
+            nominalDiameter = TechnicalUi.input(ID + "-sample-nominal-d", "Diametro nominale · mm"),
+            nominalHeight = TechnicalUi.input(ID + "-sample-nominal-h", "Altezza nominale · mm"),
+            diameter = TechnicalUi.input(ID + "-sample-d", "D misurato · mm"),
+            height = TechnicalUi.input(ID + "-sample-h", "Hmedia misurata · mm"),
             weight = TechnicalUi.input(ID + "-sample-p", "P · g");
     private final TextArea preview = new TextArea();
     private final Label error = TechnicalUi.label("", "ton-error-feedback");
@@ -127,8 +131,12 @@ public final class MarkingContentPane extends VBox {
         HBox.setHgrow(rule, Priority.ALWAYS);
         ruleRow.setAlignment(Pos.CENTER_LEFT);
         article.setText("ZR9816MSTA2");
+        description.setText("ORODENT THOR 98x16 COLOR: A2");
         product.setText("ZRMSTA2");
         lot.setText("LOTTO-ESEMPIO");
+        batch.setText("001");
+        nominalDiameter.setText("98");
+        nominalHeight.setText("16");
         diameter.setText("98");
         height.setText("16");
         weight.setText("400");
@@ -136,10 +144,14 @@ public final class MarkingContentPane extends VBox {
         for (var pair :
                 List.of(
                         Map.entry("Codice articolo", article),
+                        Map.entry("Descrizione articolo", description),
                         Map.entry("Codice prodotto", product),
                         Map.entry("Lotto", lot),
-                        Map.entry("D · mm", diameter),
-                        Map.entry("Hmedia · mm", height),
+                        Map.entry("Numero batch del disco", batch),
+                        Map.entry("Diametro nominale · mm", nominalDiameter),
+                        Map.entry("Altezza nominale · mm", nominalHeight),
+                        Map.entry("D misurato · mm", diameter),
+                        Map.entry("Hmedia misurata · mm", height),
                         Map.entry("P · g", weight))) {
             pair.getValue().setPrefWidth(170);
             pair.getValue().setMaxWidth(170);
@@ -212,15 +224,30 @@ public final class MarkingContentPane extends VBox {
             if (!fieldsError.isEmpty()) throw new IllegalArgumentException(fieldsError);
             var sample = new LinkedHashMap<String, Object>();
             sample.put("codice_articolo", article.getText());
+            sample.put("descrizione_articolo", description.getText());
             sample.put("codice_prodotto", product.getText());
             sample.put("lotto", lot.getText());
+            sample.put("numero_batch", batch.getText());
+            BigDecimal
+                    nominalD = TechnicalUi.decimal(nominalDiameter.getText(), "Diametro nominale"),
+                    nominalH = TechnicalUi.decimal(nominalHeight.getText(), "Altezza nominale");
             BigDecimal d = TechnicalUi.decimal(diameter.getText(), "Diametro"),
                     h = TechnicalUi.decimal(height.getText(), "Altezza media"),
                     p = TechnicalUi.decimal(weight.getText(), "Peso");
-            if (d.signum() <= 0 || h.signum() <= 0 || p.signum() <= 0)
+            if (d.signum() <= 0
+                    || h.signum() <= 0
+                    || p.signum() <= 0
+                    || nominalD.signum() <= 0
+                    || nominalH.signum() <= 0)
                 throw new IllegalArgumentException("Usa valori di prova positivi.");
-            if (d.precision() > 100 || h.precision() > 100 || p.precision() > 100)
+            if (d.precision() > 100
+                    || h.precision() > 100
+                    || p.precision() > 100
+                    || nominalD.precision() > 100
+                    || nominalH.precision() > 100)
                 throw new IllegalArgumentException("Valori di prova fuori intervallo.");
+            sample.put("diametro_nominale", nominalD);
+            sample.put("altezza_nominale", nominalH);
             sample.put("D", d);
             sample.put("Hmedia", h);
             sample.put("P", p);

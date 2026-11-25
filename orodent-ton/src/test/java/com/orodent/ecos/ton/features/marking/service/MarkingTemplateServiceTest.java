@@ -122,6 +122,33 @@ class MarkingTemplateServiceTest {
     }
 
     @Test
+    void newArticleFieldsAndTheirFormatsRemainVersioned() {
+        var old = service.save(null, null, draft("{codice_articolo} LOT {lotto}", 2), true).join();
+        var copy = service.copy(old.entry(), old.selected()).join();
+        String text =
+                "{descrizione_articolo} {numero_batch}"
+                        + " Ø{diametro_nominale}x{altezza_nominale}";
+        var changed =
+                new Draft(
+                        "DORSO",
+                        "Dorso standard",
+                        "Descrizione",
+                        true,
+                        text,
+                        null,
+                        Map.of("diametro_nominale", 0, "altezza_nominale", 1),
+                        ",");
+        var saved = service.save(copy.entry(), copy.selected(), changed, true).join();
+        assertEquals(text, service.load(saved.entry().id(), null).join().selected().text());
+        assertEquals(changed.decimals(), saved.selected().decimals());
+        assertEquals(2, saved.selected().number());
+        var previous = service.load(saved.entry().id(), old.selected().id()).join().selected();
+        assertEquals("{codice_articolo} LOT {lotto}", previous.text());
+        assertEquals(Map.of("fattore", 2), previous.decimals());
+        assertFalse(previous.editable());
+    }
+
+    @Test
     void failedApprovalAndStaleWritesNeverAddSnapshotsOrOverwriteContent() {
         var saved = service.save(null, null, draft("{campo_inesistente}", 2), false).join();
         assertThrows(

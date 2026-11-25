@@ -81,7 +81,7 @@ public final class MarkingTemplates {
             description = limited(description, "Descrizione", 1000);
             text = limited(text, "Scritta", 2000).replace("\r\n", "\n").replace('\r', '\n');
             decimals = Map.copyOf(decimals);
-            if (decimals.size() > 203)
+            if (decimals.size() > 205)
                 throw new IllegalArgumentException("Troppi formati numerici.");
             decimals.forEach(
                     (field, places) -> {
@@ -116,10 +116,18 @@ public final class MarkingTemplates {
                 new ArrayList<>(
                         List.of(
                                 new Field("codice_articolo", "Codice articolo", false),
+                                new Field("descrizione_articolo", "Descrizione articolo", false),
                                 new Field("codice_prodotto", "Codice prodotto", false),
                                 new Field("lotto", "Lotto", false),
-                                new Field("D", "Diametro · mm", true),
-                                new Field("Hmedia", "Altezza media · mm", true),
+                                new Field("numero_batch", "Numero batch del disco", false),
+                                new Field(
+                                        "diametro_nominale",
+                                        "Diametro nominale articolo · mm",
+                                        true),
+                                new Field(
+                                        "altezza_nominale", "Altezza nominale articolo · mm", true),
+                                new Field("D", "Diametro misurato · mm", true),
+                                new Field("Hmedia", "Altezza media misurata · mm", true),
                                 new Field("P", "Peso · g", true)));
         if (rule != null) {
             if (!rule.state().equals("APPROVATA"))

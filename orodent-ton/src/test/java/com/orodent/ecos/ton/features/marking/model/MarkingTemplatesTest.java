@@ -83,6 +83,65 @@ class MarkingTemplatesTest {
     }
 
     @Test
+    void rendersBatchAndArticleDataSeparatelyFromMeasurementsAndFormulaResults() {
+        var rule = rule("D / Hmedia = fattore");
+        var draft =
+                new Draft(
+                        "M",
+                        "Dorso",
+                        "",
+                        true,
+                        "{descrizione_articolo} LOT {lotto} Disco {numero_batch}"
+                                + " Ø{diametro_nominale}x{altezza_nominale}"
+                                + " misurato {D}x{Hmedia} R {fattore}",
+                        7L,
+                        Map.of(
+                                "diametro_nominale",
+                                0,
+                                "altezza_nominale",
+                                1,
+                                "D",
+                                2,
+                                "Hmedia",
+                                2,
+                                "fattore",
+                                2),
+                        ",");
+        var values = new HashMap<String, Object>();
+        values.put("descrizione_articolo", "ORODENT THOR 98x16 COLOR: A2");
+        values.put("lotto", "LOT-1");
+        values.put("numero_batch", "0007");
+        values.put("diametro_nominale", new BigDecimal("98"));
+        values.put("altezza_nominale", new BigDecimal("16"));
+        var measuredD = new BigDecimal("97.45");
+        var measuredH = new BigDecimal("15.63");
+        values.put("D", measuredD);
+        values.put("Hmedia", measuredH);
+        values.putAll(
+                com.orodent.ecos.core.math.FormulaProgram.compile(rule.formulas())
+                        .evaluate(measuredD, measuredH, new BigDecimal("400")));
+        assertEquals(
+                "ORODENT THOR 98x16 COLOR: A2 LOT LOT-1 Disco 0007"
+                        + " Ø98x16,0 misurato 97,45x15,63 R 6,23",
+                render(draft, rule, values));
+        values.remove("numero_batch");
+        assertThrows(IllegalArgumentException.class, () -> render(draft, rule, values));
+        assertFalse(
+                fields(null).stream()
+                        .filter(f -> f.name().equals("numero_batch"))
+                        .findFirst()
+                        .orElseThrow()
+                        .numeric());
+        for (String reserved :
+                List.of(
+                        "numero_batch",
+                        "descrizione_articolo",
+                        "diametro_nominale",
+                        "altezza_nominale"))
+            assertThrows(IllegalArgumentException.class, () -> fields(rule("D = " + reserved)));
+    }
+
+    @Test
     void missingValuesFailInsteadOfPublishingUnresolvedTokens() {
         var d = new Draft("M", "M", "", true, "{codice_articolo} {D}", null, Map.of(), ".");
         assertThrows(

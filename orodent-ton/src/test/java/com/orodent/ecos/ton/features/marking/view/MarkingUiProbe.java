@@ -108,9 +108,36 @@ public final class MarkingUiProbe {
                         field("ton-marking-name").setText("Marcatura standard");
                         ((TabPane) node("ton-marking-tabs")).getSelectionModel().select(1);
                         ((ComboBox<?>) node("ton-marking-rule")).getSelectionModel().selectFirst();
+                        var fields = (ComboBox<Field>) node("ton-marking-field");
+                        for (String name :
+                                List.of(
+                                        "numero_batch",
+                                        "descrizione_articolo",
+                                        "diametro_nominale",
+                                        "altezza_nominale")) {
+                            var available =
+                                    fields.getItems().stream()
+                                            .filter(f -> f.name().equals(name))
+                                            .findFirst()
+                                            .orElseThrow();
+                            text().clear();
+                            fields.setValue(available);
+                            click("ton-marking-insert");
+                            assertEquals("{" + name + "}", text().getText());
+                            assertFalse(preview().isBlank());
+                        }
+                        field("ton-marking-sample-batch").setText("0007");
+                        field("ton-marking-sample-nominal-d").setText("100");
+                        field("ton-marking-sample-nominal-h").setText("18");
+                        text().setText(
+                                        "{numero_batch} {diametro_nominale}x{altezza_nominale}"
+                                                + " / {D}x{Hmedia}");
+                        assertEquals("0007 100.000x18.000 / 98.000x16.000", preview());
                         text().setText("{codice_articolo} LOT {lotto} R {fattoreRitiro}");
                         layout();
                         var table = (TableView<?>) node("ton-marking-formats");
+                        table.scrollTo(table.getItems().size() - 1);
+                        layout();
                         screenshot("target/marking-editor-before.png");
                         var cell =
                                 table.lookupAll(".table-cell").stream()
