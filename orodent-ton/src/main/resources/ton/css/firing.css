@@ -1,0 +1,8 @@
+.ton-firing-schedule-warning {
+    -fx-padding: 10px;
+    -fx-background-color: #fff5d9;
+    -fx-border-color: #e4d3a7;
+    -fx-background-radius: 7px;
+    -fx-border-radius: 7px;
+    -fx-text-fill: #765b1b;
+}

@@ -50,6 +50,30 @@ l'eventuale cambio di programma rispetto al carico precedente di quel forno.
 Anche il dettaglio del carico mostra produzione, articolo, formato e quantità
 raggruppati. Le assegnazioni rimangono conservate per la successiva tracciabilità.
 
+## Durata e avvisi sulle date
+
+Il carico mostra la durata prevista del programma, sommando tutti i tempi di
+rampa e mantenimento, e la data di fine stimata. Per i carichi già registrati
+viene usata la versione del programma effettivamente assegnata al carico.
+
+Scegliendo forno, programma e data, EcoS confronta il periodo previsto con i
+carichi già registrati sullo stesso forno. In caso di sovrapposizione compare un
+avviso giallo vicino a **Registra carico**, con carico, lotto e fine prevista.
+Il pulsante rimane utilizzabile: non sono richieste conferme aggiuntive e la
+sovrapposizione non impedisce il salvataggio. L'avviso si aggiorna anche digitando
+la data, cambiando forno o programma e aggiornando l'elenco dei carichi.
+
+Poiché viene indicata soltanto la data, la stima è per giorni: un ciclo di 10
+giorni caricato il 25 novembre rende il forno disponibile dal 5 dicembre.
+Le frazioni di giornata sono arrotondate al giorno successivo: un ciclo di
+24 ore e 1 minuto occupa due giornate. Il giorno di nuova disponibilità non è
+incluso nel periodo occupato. Viene rilevato anche un nuovo ciclo che inizi
+prima di un altro carico ma si prolunghi nel suo periodo previsto.
+
+È una stima di pianificazione basata sui carichi registrati, distinta dalle future
+rilevazioni di avvio e fine effettivi del forno. I vecchi carichi senza programma
+o senza step non hanno una durata ricostruibile e non generano una previsione.
+
 ## Dati per la tracciabilità
 
 Il percorso conservato è:

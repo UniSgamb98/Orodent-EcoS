@@ -79,7 +79,10 @@ public final class FiringUiProbe {
                                     List.of(
                                             new FiringPrograms.Step(
                                                     new java.math.BigDecimal("500"), 90, 5),
-                                            new FiringPrograms.Step(null, 120, 60))),
+                                            new FiringPrograms.Step(
+                                                    null,
+                                                    120,
+                                                    code.equals("Z-CICLO") ? 14185 : 60))),
                             true)
                     .join();
         Platform.startup(() -> {});
@@ -216,7 +219,30 @@ public final class FiringUiProbe {
                         var choice = (ComboBox<?>) node("ton-firing-program");
                         assertEquals(
                                 "Z-CICLO", ((FiringPrograms.Program) choice.getValue()).code());
+                        var date = (DatePicker) node("ton-firing-date");
+                        var originalDate = date.getValue();
+                        var warning = (Label) node("ton-firing-schedule-warning");
+                        assertTrue(warning.isVisible(), "Carico precedente ancora in corso");
+                        assertTrue(warning.getText().contains("LOTTO-OPERAIO"));
+                        assertTrue(
+                                ((Label) node("ton-firing-schedule-estimate"))
+                                        .getText()
+                                        .contains("240.00"));
+                        date.setValue(originalDate.plusDays(9));
+                        assertTrue(warning.isVisible());
+                        date.setValue(originalDate.plusDays(10));
+                        assertFalse(warning.isVisible());
+                        date.getEditor()
+                                .setText(
+                                        originalDate.format(
+                                                java.time.format.DateTimeFormatter.ofPattern(
+                                                        "dd/MM/uuuu")));
+                        assertTrue(
+                                warning.isVisible(),
+                                "Controlla anche una data digitata prima della conferma del campo");
+                        date.setValue(originalDate);
                         ((ComboBox<?>) node("ton-firing-furnace")).getSelectionModel().selectLast();
+                        assertFalse(warning.isVisible(), "Il secondo forno non è occupato");
                         assertNull(
                                 choice.getValue(), "La memoria dei programmi è distinta per forno");
                         ((ComboBox<?>) node("ton-firing-furnace"))
@@ -280,6 +306,10 @@ public final class FiringUiProbe {
                         ((FiringView.GroupRow)
                                         table("ton-firing-pending-table").getItems().getFirst())
                                 .quantity.setText("1");
+                        assertTrue(((Label) node("ton-firing-schedule-warning")).isVisible());
+                        assertFalse(
+                                node("ton-firing-create").isDisabled(),
+                                "La sovrapposizione deve essere solo un avviso");
                         screenshot("target/firing-program-change.png");
                         click("ton-firing-create");
                         return null;

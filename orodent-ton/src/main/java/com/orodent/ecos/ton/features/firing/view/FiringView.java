@@ -2,6 +2,7 @@ package com.orodent.ecos.ton.features.firing.view;
 
 import static com.orodent.ecos.ton.features.firing.model.Firing.*;
 
+import com.orodent.ecos.ton.features.firingprograms.model.FiringPrograms;
 import com.orodent.ecos.ton.features.firingprograms.model.FiringPrograms.Program;
 import com.orodent.ecos.ton.features.technical.view.*;
 
@@ -51,6 +52,8 @@ public final class FiringView extends TechnicalDetailView {
     public final TextField finalTemperature =
             TechnicalUi.input(ID + "-final-temperature", "Temperatura finale in °C");
     private final Label programNotice = TechnicalUi.label("", "muted-label");
+    private final Label scheduleEstimate = TechnicalUi.label("", "muted-label"),
+            scheduleWarning = TechnicalUi.label("", "ton-firing-schedule-warning");
     private Workspace workspace = new Workspace(List.of(), List.of(), List.of(), List.of());
     private boolean updating, manualProgram;
     public final TextField lot = TechnicalUi.input(ID + "-lot", "Codice lotto manuale");
@@ -77,6 +80,7 @@ public final class FiringView extends TechnicalDetailView {
 
     public FiringView() {
         super(ID, "← Torna a Cotture");
+        getStylesheets().add(getClass().getResource("/ton/css/firing.css").toExternalForm());
         headerTitle.set("");
         status(true, totals);
         actions.setVisible(false);
@@ -178,6 +182,13 @@ public final class FiringView extends TechnicalDetailView {
         date.setConverter(new javafx.util.converter.LocalDateStringConverter(DATE, DATE));
         date.setPromptText("gg/mm/aaaa");
         date.setMaxWidth(Double.MAX_VALUE);
+        scheduleEstimate.setId(ID + "-schedule-estimate");
+        scheduleWarning.setId(ID + "-schedule-warning");
+        for (var label : List.of(scheduleEstimate, scheduleWarning)) {
+            label.visibleProperty().bind(label.textProperty().isNotEmpty());
+            label.managedProperty().bind(label.visibleProperty());
+        }
+        date.getEditor().textProperty().addListener((o, a, b) -> scheduleNotice());
         notes.setId(ID + "-notes");
         notes.setPrefRowCount(3);
         notes.setWrapText(true);
@@ -191,6 +202,7 @@ public final class FiringView extends TechnicalDetailView {
                         programNotice,
                         TechnicalUi.field("Temperatura finale · °C *", finalTemperature),
                         TechnicalUi.field("Data del carico *", date),
+                        scheduleEstimate,
                         TechnicalUi.field("Note del carico", notes));
         fields.setMinWidth(0);
         var inputScroll = TechnicalUi.scroll(fields);
@@ -202,6 +214,7 @@ public final class FiringView extends TechnicalDetailView {
                         "Nuovo carico",
                         "Le quantità indicate riceveranno lo stesso forno e lotto.",
                         inputScroll,
+                        scheduleWarning,
                         selected,
                         create);
         assignment.setMinHeight(0);
@@ -412,6 +425,7 @@ public final class FiringView extends TechnicalDetailView {
 
     private void selectionChanged() {
         if (bulkSelection) return;
+        scheduleNotice();
         long count = rows.stream().mapToLong(GroupRow::count).sum();
         selected.setText(count == 1 ? "1 disco selezionato" : count + " dischi selezionati");
         create.setDisable(
@@ -421,6 +435,45 @@ public final class FiringView extends TechnicalDetailView {
                         || finalTemperature.getText().isBlank()
                         || lot.getText().isBlank()
                         || date.getValue() == null);
+    }
+
+    private void scheduleNotice() {
+        scheduleEstimate.setText("");
+        scheduleWarning.setText("");
+        LocalDate start;
+        try {
+            start = date.getConverter().fromString(date.getEditor().getText());
+        } catch (RuntimeException invalid) {
+            return;
+        }
+        if (start == null || furnace.getValue() == null) return;
+        var chosen = program.getValue();
+        LocalDate end = availableDate(start, chosen);
+        if (end != null) {
+            long minutes = chosen.steps().stream().mapToLong(FiringPrograms.Step::minutes).sum();
+            scheduleEstimate.setText(
+                    "Durata prevista: "
+                            + FiringPrograms.time(minutes)
+                            + " ore.minuti\nFine prevista del carico (per giorni): "
+                            + DATE.format(end));
+        }
+        var overlaps = workspace.overlappingLoads(furnace.getValue(), start, chosen);
+        if (overlaps.isEmpty()) return;
+        var first = overlaps.getFirst();
+        LocalDate latestEnd =
+                overlaps.stream().map(Load::availableDate).max(LocalDate::compareTo).orElseThrow();
+        scheduleWarning.setText(
+                "Data di carico da verificare: sovrapposizione con "
+                        + first.number()
+                        + " (lotto "
+                        + first.lot()
+                        + ")"
+                        + (overlaps.size() > 1
+                                ? " e altri " + (overlaps.size() - 1) + " carichi"
+                                : "")
+                        + ". Fine prevista: "
+                        + DATE.format(latestEnd)
+                        + ". Puoi comunque registrare il carico.");
     }
 
     public List<Quantity> quantities() {
@@ -499,6 +552,10 @@ public final class FiringView extends TechnicalDetailView {
                                 + (load.finalTemperature() == null
                                         ? "non registrata"
                                         : number(load.finalTemperature()) + " °C")
+                                + (load.availableDate() == null
+                                        ? ""
+                                        : " · Fine prevista (per giorni): "
+                                                + DATE.format(load.availableDate()))
                                 + (load.programChanged()
                                         ? "\nCAMBIO PROGRAMMA: da "
                                                 + load.previousProgram()

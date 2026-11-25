@@ -104,6 +104,10 @@ public final class Firing {
                     ? List.of()
                     : program.resolve(finalTemperature);
         }
+
+        public LocalDate availableDate() {
+            return Firing.availableDate(date, program);
+        }
     }
 
     public record Workspace(
@@ -125,6 +129,26 @@ public final class Firing {
                     .filter(l -> l.program() != null)
                     .forEach(l -> result.putIfAbsent(l.furnaceId(), l.program()));
             return Map.copyOf(result);
+        }
+
+        /** Date-only planning: partial days occupy the whole day; warnings never reject loads. */
+        public List<Load> overlappingLoads(Furnace furnace, LocalDate start, Program program) {
+            if (furnace == null || start == null) return List.of();
+            LocalDate end = availableDate(start, program);
+            return loads.stream()
+                    .filter(l -> l.furnaceId() == furnace.id())
+                    .filter(
+                            l ->
+                                    l.availableDate() != null
+                                            && l.availableDate().isAfter(l.date())
+                                            && l.availableDate().isAfter(start))
+                    .filter(
+                            l ->
+                                    end == null || end.equals(start)
+                                            ? !l.date().isAfter(start)
+                                            : l.date().isBefore(end))
+                    .sorted(Comparator.comparing(Load::date).thenComparingLong(Load::id))
+                    .toList();
         }
     }
 
@@ -162,5 +186,11 @@ public final class Firing {
 
     public static String number(BigDecimal value) {
         return value.stripTrailingZeros().toPlainString().replace('.', ',');
+    }
+
+    public static LocalDate availableDate(LocalDate start, Program program) {
+        if (start == null || program == null || program.steps().isEmpty()) return null;
+        long minutes = program.steps().stream().mapToLong(FiringPrograms.Step::minutes).sum();
+        return start.plusDays((minutes + 1439) / 1440);
     }
 }
