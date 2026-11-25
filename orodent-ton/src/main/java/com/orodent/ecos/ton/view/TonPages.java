@@ -107,10 +107,10 @@ final class TonPages {
                                                               + " esecuzione fisica saranno"
                                                               + " collegati successivamente."
                                                         : section == TonSection.FIRING
-                                                                ? "I dischi prodotti e i carichi"
-                                                                      + " sono disponibili."
-                                                                      + " Programmi ed esiti di"
-                                                                      + " cottura saranno collegati"
+                                                                ? "I dischi prodotti, i carichi e i"
+                                                                      + " programmi di cottura sono"
+                                                                      + " disponibili. Gli esiti"
+                                                                      + " saranno collegati"
                                                                       + " successivamente."
                                                                 : section == TonSection.DOCUMENTS
                                                                         ? "L’editor dei modelli è"
@@ -199,6 +199,7 @@ final class TonPages {
                         case AVAILABILITY -> "Apri disponibilità";
                         case PRODUCTIONS -> "Apri produzioni";
                         case PLANNING -> "Apri dischi da caricare";
+                        case PROGRAMS -> "Apri programmi di cottura";
                         case CUBATURE_RULES -> "Apri regole di cubatura";
                         case PRESSES -> "Apri presse";
                         case MOULDS -> "Apri stampi";

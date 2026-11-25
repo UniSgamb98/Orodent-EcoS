@@ -353,6 +353,18 @@ final class TonSchema {
         if (schemaVersion >= 12) tables.add(new Table("POLVERI",
                 List.of(column("FORNITORE", Types.VARCHAR, 150, 0, true, false, null)), List.of()));
         if (schemaVersion >= 6) tables.addAll(CATALOGUES);
+        if (schemaVersion >= 31) {
+            tables.add(new Table("PROGRAMMI_FAMIGLIE", List.of(
+                    column("FAMIGLIA_ID", Types.BIGINT, 0, 0, false, true, null),
+                    column("CODICE", Types.VARCHAR, 80, 0, false, false, null),
+                    column("VERSIONE_MODIFICA", Types.INTEGER, 0, 0, false, false, "1")),
+                    List.of("PK_TON_PROG_FAM", "UQ_TON_PROG_FAM_CODICE", "CK_TON_PROG_FAM_TOKEN")));
+            tables.add(new Table("PROGRAMMI_COTTURA", List.of(
+                    column("FAMIGLIA_ID", Types.BIGINT, 0, 0, true, false, null),
+                    column("NUMERO_REVISIONE", Types.INTEGER, 0, 0, false, false, "1"),
+                    column("ATTIVO", Types.BOOLEAN, 0, 0, false, false, "TRUE")),
+                    List.of("FK_TON_PROGRAMMA_FAMIGLIA", "UQ_TON_PROG_REVISIONE", "CK_TON_PROG_NUM_REV")));
+        }
         for (Table table : tables) {
             Map<String, Column> columns = actual.getOrDefault(table.name(), Map.of());
             for (Column declared : table.columns()) {
@@ -370,6 +382,7 @@ final class TonSchema {
                 }
             }
             for (String constraint : table.constraints()) {
+                if (schemaVersion >= 31 && constraint.equals("UQ_TON_PROG_VERSIONE")) continue;
                 if (!constraints.contains(table.name() + "." + constraint)) {
                     throw incompatible(table.name() + "." + constraint);
                 }

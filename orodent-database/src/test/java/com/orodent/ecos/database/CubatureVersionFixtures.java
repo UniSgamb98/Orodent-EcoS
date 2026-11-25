@@ -4,6 +4,7 @@ import java.sql.*;
 
 final class CubatureVersionFixtures {
     static void beforeV27(Connection c) throws SQLException {
+        FiringProgramFixtures.beforeV31(c);
         try (var q = c.createStatement()) {
             q.executeUpdate(
                     "ALTER TABLE TON.PIANI_PRODUZIONE DROP COLUMN dischi_confermati_il RESTRICT");

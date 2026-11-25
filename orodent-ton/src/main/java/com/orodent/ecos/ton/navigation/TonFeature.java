@@ -143,7 +143,8 @@ public enum TonFeature {
                 || this == COMPOSITIONS
                 || this == DOCUMENT_TEMPLATES
                 || this == DISK_MARKING
-                || this == PLANNING;
+                || this == PLANNING
+                || this == PROGRAMS;
     }
 
     public static List<TonFeature> in(TonSection section) {

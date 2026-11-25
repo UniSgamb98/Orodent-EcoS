@@ -33,6 +33,9 @@ import com.orodent.ecos.ton.features.equipment.view.EquipmentView;
 import com.orodent.ecos.ton.features.firing.controller.FiringController;
 import com.orodent.ecos.ton.features.firing.service.FiringService;
 import com.orodent.ecos.ton.features.firing.view.FiringView;
+import com.orodent.ecos.ton.features.firingprograms.controller.FiringProgramsController;
+import com.orodent.ecos.ton.features.firingprograms.service.FiringProgramService;
+import com.orodent.ecos.ton.features.firingprograms.view.FiringProgramsView;
 import com.orodent.ecos.ton.features.marking.controller.MarkingTemplatesController;
 import com.orodent.ecos.ton.features.marking.service.MarkingTemplateService;
 import com.orodent.ecos.ton.features.marking.view.MarkingTemplatesView;
@@ -63,6 +66,7 @@ final class TonController {
     private final DocumentTemplateService documents;
     private final ProductionService productions;
     private final FiringService firing;
+    private final FiringProgramService firingPrograms;
     private final EquipmentService equipment;
     private final SupplierService suppliers;
     private final CubatureRuleService cubatureRules;
@@ -85,6 +89,7 @@ final class TonController {
         documents = new DocumentTemplateService(context.connections(), workers);
         productions = new ProductionService(context.connections(), workers);
         firing = new FiringService(context.connections(), workers);
+        firingPrograms = new FiringProgramService(context.connections(), workers);
         catalogues = new CatalogService(context.connections(), context.workers());
         bulkCatalogues = new BulkCatalogService(context.connections(), context.workers());
         specifications = new SpecificationService(context.connections(), context.workers());
@@ -147,6 +152,12 @@ final class TonController {
             }
             case AVAILABILITY -> installAvailability();
             case PRODUCTIONS -> installProductions(null);
+            case PROGRAMS -> {
+                var page = new FiringProgramsView();
+                page.subpageProperty().addListener((o, a, b) -> view.showFeature(page, feature, b));
+                var controller = new FiringProgramsController(page, firingPrograms);
+                install(feature, page, controller, controller::start);
+            }
             case PLANNING -> {
                 var page = new FiringView();
                 var controller =

@@ -72,6 +72,8 @@ La migrazione **V29** introduce `TON.ESECUZIONI_PIANO`, `TON.DISCHI_PRODOTTI` e
 `TON.CARICO_DISCHI`, utilizzando `TON.CICLI_COTTURA`, `TON.LOTTI_COTTURA` e
 `TON.FORNI` per i carichi. In questa fase un ciclo con `caricato_il` valorizzato
 rappresenta un carico registrato, ancora distinto dall'avvio del programma termico.
-Programmi, temperature, sonde, avvio e conclusione della cottura, esiti e numero
-batch alla misurazione saranno collegati nei prossimi passaggi. L'ID interno del
-disco fornisce già il riferimento stabile a cui aggiungere quei dati.
+I [programmi di cottura](ton-programmi-cottura.md) si configurano nella sezione
+dedicata, con step e versioni conservate. La loro assegnazione ai carichi, le sonde,
+l'avvio e la conclusione della cottura, gli esiti e il numero batch alla misurazione
+saranno collegati nei prossimi passaggi. L'ID interno del disco fornisce già il
+riferimento stabile a cui aggiungere quei dati.

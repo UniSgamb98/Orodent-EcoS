@@ -160,6 +160,11 @@ public final class DatabaseSchema {
                     30,
                     "Confirm all production output atomically",
                     "/database/migrations/V30__confirm_production_output.sql");
+    private static final SchemaMigration FIRING_PROGRAMS =
+            new SchemaMigration(
+                    31,
+                    "Immutable revisions of firing programs",
+                    "/database/migrations/V31__versioned_firing_programs.sql");
     private static final List<SchemaMigration> MIGRATIONS =
             List.of(
                     BASELINE,
@@ -191,7 +196,8 @@ public final class DatabaseSchema {
                     CUBATURE_FORMULAS,
                     DISK_MARKING,
                     PRODUCED_DISCS,
-                    CONFIRMED_OUTPUT);
+                    CONFIRMED_OUTPUT,
+                    FIRING_PROGRAMS);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS =
             List.of(

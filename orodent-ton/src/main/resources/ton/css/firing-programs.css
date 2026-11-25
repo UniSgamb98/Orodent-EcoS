@@ -1,0 +1,11 @@
+.ton-technical-detail .ton-program-step {
+    -fx-padding: 9px 10px;
+    -fx-background-color: #f8fbfd;
+    -fx-border-color: #d7e4ec;
+    -fx-background-radius: 7px;
+    -fx-border-radius: 7px;
+}
+.ton-technical-detail .ton-program-step-header { -fx-padding: 0 10px; }
+.ton-technical-detail .ton-program-step .text-field { -fx-padding: 7px 8px; }
+.ton-technical-detail .chart { -fx-padding: 8px 0 0 0; }
+.ton-technical-detail .chart-series-line { -fx-stroke: #18778c; -fx-stroke-width: 2px; }
