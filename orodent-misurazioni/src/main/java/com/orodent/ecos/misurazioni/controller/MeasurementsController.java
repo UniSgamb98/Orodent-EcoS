@@ -63,6 +63,10 @@ public final class MeasurementsController implements ModuleSession {
         return reading;
     }
 
+    public void focusAcquisition() {
+        if (!closed && view.getScene() != null) view.requestFocus();
+    }
+
     public List<MeasurementBatch.Measurement> readings() {
         return batch.rows();
     }

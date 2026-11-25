@@ -40,6 +40,7 @@ public final class MeasurementJobsView extends BorderPane {
             title = new Label("Lavori da misurare"),
             jobContext = new Label();
     private final HBox summary = new HBox(22);
+    private final Button menu = button("Chiudi menu", "jobs-menu");
     private final VBox products = new VBox(7),
             navigation = new VBox(12),
             workPanel = new VBox(12),
@@ -57,10 +58,9 @@ public final class MeasurementJobsView extends BorderPane {
         setMinSize(0, 0);
         getStylesheets().add(getClass().getResource("/misurazioni/jobs.css").toExternalForm());
         home.getStyleClass().add("jobs-primary");
-        var hide = button("Chiudi menu", "jobs-menu");
         var spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        var header = new HBox(24, home, breadcrumb, spacer, hide);
+        var header = new HBox(24, home, breadcrumb, spacer, menu);
         header.setAlignment(Pos.CENTER_LEFT);
         header.getStyleClass().add("jobs-header");
         setTop(header);
@@ -84,12 +84,12 @@ public final class MeasurementJobsView extends BorderPane {
             navigation.getChildren().add(state);
         }
         setLeft(navigation);
-        hide.setOnAction(
+        menu.setOnAction(
                 e -> {
                     boolean visible = !navigation.isVisible();
                     navigation.setVisible(visible);
                     navigation.setManaged(visible);
-                    hide.setText(visible ? "Chiudi menu" : "Apri menu");
+                    menu.setText(visible ? "Chiudi menu" : "Apri menu");
                 });
         title.getStyleClass().add("jobs-title");
         summary.setId("jobs-summary");
@@ -300,6 +300,7 @@ public final class MeasurementJobsView extends BorderPane {
     }
 
     public void show(List<Job> data, boolean completed) {
+        jobMode(false);
         jobs = List.copyOf(data);
         showCompleted = completed;
         title.setText(completed ? "Lavori completati" : "Lavori da misurare");
@@ -313,6 +314,7 @@ public final class MeasurementJobsView extends BorderPane {
     }
 
     public void showJob(Job job, String rule, Node measurements) {
+        jobMode(true);
         breadcrumb.setText("Misurazioni › " + job.article() + " › " + job.lot());
         jobContext.setText(
                 job.name()
@@ -338,6 +340,7 @@ public final class MeasurementJobsView extends BorderPane {
     }
 
     public void tools(String endpoints, Consumer<Instrument> toggle) {
+        jobMode(false);
         toolsPanel
                 .getChildren()
                 .setAll(label("Strumenti di misurazione", "jobs-title"), new Label(endpoints));
@@ -354,6 +357,12 @@ public final class MeasurementJobsView extends BorderPane {
         toolsPanel.getStyleClass().add("jobs-main");
         breadcrumb.setText("Misurazioni › Strumenti");
         setCenter(toolsPanel);
+    }
+
+    private void jobMode(boolean active) {
+        setLeft(active ? null : navigation);
+        menu.setVisible(!active);
+        menu.setManaged(!active);
     }
 
     public void connection(Instrument instrument, DeviceConnections.State state) {

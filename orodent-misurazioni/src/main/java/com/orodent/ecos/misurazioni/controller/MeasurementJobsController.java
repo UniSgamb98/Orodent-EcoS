@@ -168,6 +168,11 @@ public final class MeasurementJobsController implements ModuleSession {
                                                     detail.ruleLabel(),
                                                     acquisition.root());
                                             view.saveStatus(status(), false);
+                                            Platform.runLater(
+                                                    () -> {
+                                                        if (!closed && token == request)
+                                                            acquisition.focusAcquisition();
+                                                    });
                                         }));
     }
 

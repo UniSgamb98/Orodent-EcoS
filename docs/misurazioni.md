@@ -30,6 +30,11 @@ articolo, formato, lotto, forno, produzione e regola di cubaggio versionata dell
 specifica originale. Ogni riga corrisponde a uno specifico disco e mantiene lo
 stesso abbinamento durante tutta la lavorazione.
 
+Nel singolo lavoro la barra laterale e il pulsante del menu sono nascosti; **← Lavori**
+riporta all'elenco con la sua navigazione. All'apertura il focus è assegnato all'area
+di acquisizione: Invio breve acquisisce una misura e Invio tenuto premuto cambia
+strumento, senza attivare i pulsanti di navigazione.
+
 **Ogni acquisizione è salvata automaticamente nel database**, anche se è arrivata
 soltanto la lettura di uno strumento. **Misure salvate** conferma il salvataggio.
 Tornando all'elenco o chiudendo e riaprendo il modulo, le letture precedenti sono

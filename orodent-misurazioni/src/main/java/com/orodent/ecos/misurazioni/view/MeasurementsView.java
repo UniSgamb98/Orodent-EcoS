@@ -33,6 +33,7 @@ public final class MeasurementsView extends BorderPane {
 
     public MeasurementsView() {
         setId("misurazioni-module");
+        setFocusTraversable(true);
         getStylesheets()
                 .add(getClass().getResource("/misurazioni/measurements.css").toExternalForm());
         Label title = new Label("Misurazioni");

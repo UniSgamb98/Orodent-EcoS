@@ -85,15 +85,30 @@ public final class MeasurementJobsUiProbe {
                     () ->
                             session.acquisition.view.list.getScene() != null
                                     && !session.acquisition.view.acquire.isDisabled());
+            fx(
+                    () -> {
+                        assertSame(
+                                session.acquisition.root(),
+                                stage.getScene().getFocusOwner(),
+                                "Il focus iniziale deve appartenere alla schermata di"
+                                    + " acquisizione");
+                        assertNull(
+                                session.view.getLeft(),
+                                "Nessuna barra laterale nel singolo lavoro");
+                        var menu = stage.getScene().getRoot().lookup("#jobs-menu");
+                        assertFalse(menu.isVisible());
+                        assertFalse(menu.isManaged());
+                        return null;
+                    });
             sql(
                     "ALTER TABLE TON.DISCO_MISURE_REVISIONI ADD CONSTRAINT reject_ui_save"
                         + " CHECK(numero_revisione<0)");
             fx(
                     () -> {
                         assertEquals(3, session.acquisition.view.list.getItems().size());
-                        session.acquisition.view.acquire.fire();
                         return null;
                     });
+            shortEnter();
             await(() -> session.view.retry.isVisible() && !session.view.retry.isDisabled());
             fx(
                     () -> {
@@ -122,6 +137,8 @@ public final class MeasurementJobsUiProbe {
             await(() -> session.view.table.getScene() != null && !session.view.table.isDisabled());
             fx(
                     () -> {
+                        assertNotNull(session.view.getLeft());
+                        assertTrue(stage.getScene().getRoot().lookup("#jobs-menu").isVisible());
                         assertTrue(session.view.table.getItems().get(1).job().touched());
                         assertEquals(0, session.view.table.getItems().get(1).job().done());
                         session.close();
@@ -181,13 +198,29 @@ public final class MeasurementJobsUiProbe {
                                 session.acquisition.view.list.getItems().getFirst().micrometer());
                         assertEquals(
                                 "", session.acquisition.view.list.getItems().getFirst().scale());
-                        session.acquisition.view.swap.fire();
-                        session.acquisition.view.acquire.fire();
+                        assertSame(session.acquisition.root(), stage.getScene().getFocusOwner());
+                        new javafx.scene.robot.Robot().keyPress(KeyCode.ENTER);
                         return null;
                     });
+            await(() -> session.acquisition.view.acquire.getText().contains("bilancia"));
+            fx(
+                    () -> {
+                        new javafx.scene.robot.Robot().keyRelease(KeyCode.ENTER);
+                        return null;
+                    });
+            fx(
+                    () -> {
+                        assertEquals(
+                                "",
+                                session.acquisition.view.list.getItems().getFirst().scale(),
+                                "Invio prolungato cambia strumento senza acquisire");
+                        return null;
+                    });
+            shortEnter();
             await(this::saved);
             fx(
                     () -> {
+                        assertSame(session.acquisition.root(), stage.getScene().getFocusOwner());
                         assertTrue(session.view.saveState.getText().contains("1 / 3"));
                         screenshot("target/measurement-job-resumed.png");
                         session.acquisition.view.acquire.fire();
@@ -249,6 +282,8 @@ public final class MeasurementJobsUiProbe {
                                     && !session.acquisition.view.acquire.isDisabled());
             fx(
                     () -> {
+                        assertSame(session.acquisition.root(), stage.getScene().getFocusOwner());
+                        assertNull(session.view.getLeft());
                         assertEquals(3, session.acquisition.view.list.getItems().size());
                         stage.setWidth(1050);
                         stage.setHeight(780);
@@ -294,6 +329,16 @@ public final class MeasurementJobsUiProbe {
         }
     }
 
+    void shortEnter() throws Exception {
+        fx(
+                () -> {
+                    var robot = new javafx.scene.robot.Robot();
+                    robot.keyPress(KeyCode.ENTER);
+                    robot.keyRelease(KeyCode.ENTER);
+                    return null;
+                });
+    }
+
     boolean saved() {
         return !session.acquisition.view.acquire.isDisabled()
                 && session.view.saveState.getText().startsWith("Misure salvate");
@@ -330,6 +375,8 @@ public final class MeasurementJobsUiProbe {
                                 .toUri()
                                 .toString());
         stage.show();
+        stage.toFront();
+        stage.requestFocus();
     }
 
     void sql(String text) {
