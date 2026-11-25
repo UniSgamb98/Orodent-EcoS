@@ -65,7 +65,27 @@ class MeasurementJobsServiceTest {
         assertEquals(7, jobs.stream().mapToLong(j -> j.readings().size()).sum());
         assertEquals("Da iniziare", jobs.getFirst().status());
         assertTrue(first().ruleLabel().contains("v1"));
+        assertEquals(1450, first().job().finalTemperature().intValueExact());
         assertThrows(CompletionException.class, () -> service.load(new Key(2, 2, 1)).join());
+        var nextDay =
+                new MeasurementJobsService(
+                        db,
+                        workers,
+                        java.time.Clock.offset(
+                                MeasurementJobsFixture.CLOCK, java.time.Duration.ofDays(1)));
+        assertEquals(
+                1460,
+                nextDay.load(new Key(2, 2, 1)).join().job().finalTemperature().intValueExact());
+        db.withTransaction(
+                c -> {
+                    try (var q = c.createStatement()) {
+                        q.executeUpdate(
+                                "UPDATE TON.CICLI_COTTURA SET temperatura_finale_c=NULL WHERE"
+                                    + " ciclo_id=1");
+                    }
+                    return null;
+                });
+        assertNull(first().job().finalTemperature());
     }
 
     @Test

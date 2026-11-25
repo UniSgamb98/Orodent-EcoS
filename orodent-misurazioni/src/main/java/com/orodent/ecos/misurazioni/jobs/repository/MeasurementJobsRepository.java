@@ -14,7 +14,7 @@ public final class MeasurementJobsRepository {
     private final Connection c;
     private static final String SELECT =
             """
-SELECT d.*,c.ciclo_id,c.data_prevista,c.terminato_il,c.programma_id,c.forno_codice,c.forno_nome,
+SELECT d.*,c.ciclo_id,c.data_prevista,c.terminato_il,c.programma_id,c.forno_codice,c.forno_nome,c.temperatura_finale_c,
        l.codice AS lotto,COALESCE(p.descrizione,d.prodotto_codice) AS prodotto_nome,
        COALESCE(li.nome,d.linea_codice) AS linea_nome,
        COALESCE(m.calcolo_versione_id,cp.calcolo_versione_id) AS regola_versione,
@@ -199,6 +199,7 @@ WHERE c.caricato_il IS NOT NULL AND c.stato<>'ANNULLATA'
                                                 + " · "
                                                 + r.getString("forno_nome"),
                                         end,
+                                        r.getBigDecimal("temperatura_finale_c"),
                                         List.of()));
                     }
                 }
@@ -219,6 +220,7 @@ WHERE c.caricato_il IS NOT NULL AND c.stato<>'ANNULLATA'
                                     h.lot(),
                                     h.furnace(),
                                     h.finished(),
+                                    h.finalTemperature(),
                                     groups.get(e.getKey()));
                         })
                 .toList();

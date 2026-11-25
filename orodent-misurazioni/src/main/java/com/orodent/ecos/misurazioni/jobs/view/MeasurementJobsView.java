@@ -12,7 +12,6 @@ import javafx.scene.control.*;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
 
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.*;
 
@@ -51,7 +50,6 @@ public final class MeasurementJobsView extends BorderPane {
     private List<Job> jobs = List.of();
     private boolean showCompleted;
     private Runnable onOpen = () -> {};
-    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/uuuu");
 
     public MeasurementJobsView() {
         setId("measurement-jobs-module");
@@ -137,14 +135,14 @@ public final class MeasurementJobsView extends BorderPane {
                                 ? r.works() + (r.works() == 1 ? " lavoro" : " lavori")
                                 : r.job().lot() + "\n" + r.job().furnace());
         column(
-                "Fine cottura prevista",
+                "Temperatura · °C",
                 160,
                 r ->
                         r.group()
                                 ? ""
-                                : r.job().finished() == null
+                                : r.job().finalTemperature() == null
                                         ? "—"
-                                        : DATE.format(r.job().finished()));
+                                        : number(r.job().finalTemperature()));
         var progress = new TableColumn<Row, Row>("Misurazioni");
         progress.setCellValueFactory(v -> new SimpleObjectProperty<>(v.getValue()));
         progress.setSortable(false);

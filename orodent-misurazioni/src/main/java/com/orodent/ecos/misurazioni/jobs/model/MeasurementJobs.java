@@ -35,6 +35,7 @@ public final class MeasurementJobs {
             String lot,
             String furnace,
             LocalDate finished,
+            BigDecimal finalTemperature,
             List<Reading> readings) {
         public Job {
             readings = List.copyOf(readings);

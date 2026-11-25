@@ -51,6 +51,7 @@ public final class MeasurementJobsUiProbe {
                 };
         new DatabaseSchema(db).initialize();
         MeasurementJobsFixture.seed(db);
+        sql("UPDATE TON.CICLI_COTTURA SET temperatura_finale_c=986 WHERE ciclo_id=1");
         workers = Executors.newFixedThreadPool(2);
         Platform.startup(() -> {});
         Platform.setImplicitExit(false);
@@ -73,6 +74,14 @@ public final class MeasurementJobsUiProbe {
                                     && !session.view.table.isDisabled());
             fx(
                     () -> {
+                        assertEquals(
+                                "Temperatura · °C",
+                                session.view.table.getColumns().get(2).getText());
+                        assertEquals("986", session.view.table.getColumns().get(2).getCellData(1));
+                        assertTrue(
+                                session.view.table.getColumns().stream()
+                                        .noneMatch(
+                                                c -> c.getText().equals("Fine cottura prevista")));
                         screenshot("target/measurement-jobs.png");
                         session.view.search.setText("ZR9818");
                         assertEquals(2, session.view.table.getItems().size());

@@ -17,6 +17,10 @@ All'apertura si vede **Lavori da completare**, con lavori raggruppati per prodot
 navigazione ai prodotti sulla sinistra, ricerca per articolo/lotto/forno e
 avanzamento delle letture. **Completati** permette di rivedere i lavori per cui
 tutti i dischi hanno entrambe le letture salvate. **Strumenti** mostra i collegamenti.
+La colonna **Temperatura · °C** mostra la temperatura finale salvata nel carico,
+usata per risolvere `Tfinale` negli step del programma. Un valore storico assente
+è indicato con `—`. La fine prevista della cottura continua a determinare quando
+il lavoro diventa disponibile.
 
 Un lavoro distingue **carico + produzione + formato**: produzioni con specifiche
 diverse rimangono separate anche quando condividono articolo e lotto. Sono proposti
