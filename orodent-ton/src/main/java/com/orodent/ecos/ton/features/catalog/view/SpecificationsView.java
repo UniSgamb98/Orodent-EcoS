@@ -13,6 +13,7 @@ public final class SpecificationsView extends VBox {
     private final ComboBox<TechnicalChoice> composition = new ComboBox<>(),
             model = new ComboBox<>();
     private final ComboBox<Version> calculation = new ComboBox<>();
+    private final ComboBox<TechnicalChoice> labelTemplate = new ComboBox<>();
     private final TextField
             compositionQuery =
                     CatalogUi.field("ton-product-spec-composition-search", "Numero versione"),
@@ -49,6 +50,10 @@ public final class SpecificationsView extends VBox {
         calculation.setId("ton-product-spec-calculation");
         calculation.setPromptText("Seleziona una regola di cubatura");
         calculation.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(labelTemplate, Priority.ALWAYS);
+        labelTemplate.setId("ton-product-spec-label-template");
+        labelTemplate.setMaxWidth(Double.MAX_VALUE);
+        labelTemplate.setPromptText("Nessuna etichetta · scegli una versione approvata");
         var fields =
                 new VBox(
                         12,
@@ -59,6 +64,8 @@ public final class SpecificationsView extends VBox {
                                 CatalogUi.field(
                                         "Modello approvato", new VBox(5, modelQuery, model))),
                         CatalogUi.field("Riferimento metodo di calcolo *", calculation),
+                        CatalogUi.field(
+                                "Modello etichetta", new HBox(8, labelTemplate, clearLabel())),
                         CatalogUi.field("Note della versione", notes));
         previous.setAccessibleText("Versioni più recenti");
         next.setAccessibleText("Versioni precedenti");
@@ -77,6 +84,13 @@ public final class SpecificationsView extends VBox {
                         feedback);
     }
 
+    private Button clearLabel() {
+        var b = new Button("Rimuovi");
+        b.disableProperty().bind(labelTemplate.disabledProperty());
+        b.setOnAction(e -> labelTemplate.setValue(null));
+        return b;
+    }
+
     public void reset(boolean saved, boolean available) {
         this.available = available;
         updating = true;
@@ -89,6 +103,8 @@ public final class SpecificationsView extends VBox {
             model.setValue(null);
             compositionQuery.clear();
             modelQuery.clear();
+            labelTemplate.getItems().clear();
+            labelTemplate.setValue(null);
             calculation.getItems().clear();
             calculation.setValue(null);
             notes.clear();
@@ -152,6 +168,7 @@ public final class SpecificationsView extends VBox {
         try {
             replace(composition, page.compositions());
             replace(model, page.models());
+            replace(labelTemplate, page.labelTemplates());
             Version selectedRule = calculation.getValue();
             calculation.getItems().setAll(page.calculationRules());
             calculation.setValue(
@@ -183,6 +200,7 @@ public final class SpecificationsView extends VBox {
                 composition.setValue(null);
                 model.setValue(null);
                 calculation.setValue(null);
+                labelTemplate.setValue(null);
                 notes.clear();
             } else {
                 select(composition, selected.compositionId(), selected.compositionLabel());
@@ -196,6 +214,12 @@ public final class SpecificationsView extends VBox {
                                                         : r.code().equals(selected.calculation()))
                                 .findFirst()
                                 .orElse(null));
+                if (selected.labelTemplateId() != null)
+                    select(
+                            labelTemplate,
+                            selected.labelTemplateId(),
+                            selected.labelTemplateLabel());
+                else labelTemplate.setValue(null);
                 notes.setText(selected.notes() == null ? "" : selected.notes());
             }
             boolean locked = selected != null && selected.frozen();
@@ -247,7 +271,8 @@ public final class SpecificationsView extends VBox {
                 model.getValue() == null ? 0 : model.getValue().id(),
                 calculation.getValue().code(),
                 notes.getText(),
-                calculation.getValue().id());
+                calculation.getValue().id(),
+                labelTemplate.getValue() == null ? null : labelTemplate.getValue().id());
     }
 
     public List<String> fingerprint() {
@@ -255,7 +280,8 @@ public final class SpecificationsView extends VBox {
                 composition.getValue() == null ? "" : "" + composition.getValue().id(),
                 model.getValue() == null ? "" : "" + model.getValue().id(),
                 calculation.getValue() == null ? "" : "" + calculation.getValue().id(),
-                notes.getText());
+                notes.getText(),
+                labelTemplate.getValue() == null ? "" : "" + labelTemplate.getValue().id());
     }
 
     public void selectVersion(Specification value) {
@@ -280,8 +306,15 @@ public final class SpecificationsView extends VBox {
     }
 
     private void disableFields(boolean disabled) {
-        for (var input : List.of(compositionQuery, composition, modelQuery, model, calculation, notes))
-            input.setDisable(disabled);
+        for (var input :
+                List.of(
+                        compositionQuery,
+                        composition,
+                        modelQuery,
+                        model,
+                        calculation,
+                        labelTemplate,
+                        notes)) input.setDisable(disabled);
     }
 
     public boolean updating() {

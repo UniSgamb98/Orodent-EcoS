@@ -22,7 +22,7 @@ public final class CatalogHistoryView extends TechnicalRecordsView<Audit> {
                             case ARTICLES -> "dell'articolo";
                         },
                 "Ogni revisione conserva i dati dell’anagrafica al momento del salvataggio, in sola"
-                    + " lettura.");
+                        + " lettura.");
         this.base = base;
         TechnicalUi.column(table(), "Revisione", 120, a -> "Rev. " + a.number());
         TechnicalUi.column(table(), "Data", 180, a -> a.recordedAt().format(CatalogUi.DATE));
@@ -92,7 +92,9 @@ public final class CatalogHistoryView extends TechnicalRecordsView<Audit> {
                             .append(" mm\nAltezza: ")
                             .append(CatalogUi.number(a.height()))
                             .append(" mm\nConfigurazione predefinita: ")
-                            .append(a.specificationLabel());
+                            .append(a.specificationLabel())
+                            .append("\nGTIN: ")
+                            .append(a.gtin() == null ? "—" : a.gtin());
         }
         text.append("\nNote: ").append(e.meta().notes());
         return text.toString();

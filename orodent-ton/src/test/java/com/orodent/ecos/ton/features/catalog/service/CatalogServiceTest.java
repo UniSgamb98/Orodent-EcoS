@@ -75,6 +75,113 @@ class CatalogServiceTest {
     }
 
     @Test
+    void pinsTheChosenLabelVersionAndCarriesItIntoNewSpecificationDrafts() {
+        var product = product(line(), "A1");
+        technical(product.id());
+        var documents =
+                new com.orodent.ecos.ton.features.documents.service.DocumentTemplateService(
+                        db, workers);
+        String model =
+                """
+{"schemaVersion":5,"purpose":"ETICHETTA","title":"Scatola","page":{"format":"custom","width":100,"height":65,"orientation":"portrait","margin":3},"content":{"type":"doc","content":[{"type":"paragraph","content":[{"type":"labelField","attrs":{"key":"article"}}]}]}}
+""";
+        var label =
+                documents
+                        .create(
+                                new com.orodent.ecos.ton.features.documents.model.DocumentTemplates
+                                        .Draft("BOX", model),
+                                true)
+                        .join();
+        product =
+                (Product)
+                        specs.save(
+                                        product,
+                                        null,
+                                        new SpecificationDraft(
+                                                1, 1, "v1", "", null, label.template().id()),
+                                        true)
+                                .join()
+                                .entry();
+        var first = specs.page(product, 0, "", "").join().rows().getFirst();
+        assertEquals(label.template().id(), first.labelTemplateId());
+        var label2 = documents.newVersion(label.template()).join();
+        label2 =
+                documents
+                        .save(
+                                label2.template(),
+                                new com.orodent.ecos.ton.features.documents.model.DocumentTemplates
+                                        .Draft("BOX", model.replace("65", "70")),
+                                true)
+                        .join();
+        product = (Product) specs.copy(product, first).join().entry();
+        var page = specs.page(product, 0, "", "").join();
+        var copied = page.rows().getFirst();
+        assertEquals(label.template().id(), copied.labelTemplateId());
+        assertEquals(2, page.labelTemplates().size());
+        product =
+                (Product)
+                        specs.save(
+                                        product,
+                                        copied,
+                                        new SpecificationDraft(
+                                                1,
+                                                1,
+                                                "v1",
+                                                "",
+                                                copied.calculationVersionId(),
+                                                label2.template().id()),
+                                        true)
+                                .join()
+                                .entry();
+        var finalPage = specs.page(product, 0, "", "").join();
+        assertEquals(label2.template().id(), finalPage.rows().getFirst().labelTemplateId());
+        assertEquals(label.template().id(), finalPage.rows().getLast().labelTemplateId());
+    }
+
+    @Test
+    void gtinIsValidatedAndVersionedWithTheArticle() {
+        var product = product(line(), "A1");
+        var article = article(product, "GTIN-TEST");
+        var changed =
+                (Article)
+                        service.save(
+                                        article,
+                                        new ArticleDraft(
+                                                article.code(),
+                                                article.name(),
+                                                product.id(),
+                                                article.diameter(),
+                                                article.height(),
+                                                "",
+                                                true,
+                                                "4006381333931"))
+                                .join()
+                                .entry();
+        assertEquals("04006381333931", changed.gtin());
+        var history = service.allHistory(CatalogKind.ARTICLES, article.id()).join();
+        assertEquals("04006381333931", ((Article) history.rows().getFirst().snapshot()).gtin());
+        assertNull(((Article) history.rows().getLast().snapshot()).gtin());
+        assertEquals(
+                changed.gtin(),
+                ((ArticleDraft)
+                                com.orodent.ecos.ton.features.catalog.model.CatalogModels.draft(
+                                        changed))
+                        .gtin());
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        new ArticleDraft(
+                                "BAD",
+                                "",
+                                product.id(),
+                                article.diameter(),
+                                article.height(),
+                                "",
+                                true,
+                                "4006381333932"));
+    }
+
+    @Test
     void completeRevisionSheetIncludesSnapshotsBeyondTheFirstPage() {
         Line current = line();
         long id = current.id();

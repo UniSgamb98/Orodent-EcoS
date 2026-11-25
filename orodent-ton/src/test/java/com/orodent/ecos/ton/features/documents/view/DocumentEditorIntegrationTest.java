@@ -265,6 +265,7 @@ class DocumentEditorIntegrationTest {
                         }
                         return null;
                     });
+            verifiesLabelEditor();
             assertTrue(asyncErrors.isEmpty(), () -> asyncErrors.toString());
         } finally {
             fx(
@@ -354,6 +355,72 @@ class DocumentEditorIntegrationTest {
                 });
     }
 
+    private void verifiesLabelEditor() throws Exception {
+        fx(
+                () -> {
+                    click("ton-document-back");
+                    return null;
+                });
+        await(() -> !button("ton-document-new-label").isDisabled());
+        fx(
+                () -> {
+                    stage.setWidth(1500);
+                    stage.setHeight(950);
+                    click("ton-document-new-label");
+                    return null;
+                });
+        await(() -> web() != null && !button("ton-document-save").isDisabled());
+        fx(
+                () -> {
+                    var json =
+                            com.google.gson.JsonParser.parseString(
+                                            api().call("serialize").toString())
+                                    .getAsJsonObject();
+                    assertEquals("ETICHETTA", json.get("purpose").getAsString());
+                    assertEquals(100, json.getAsJsonObject("page").get("width").getAsInt());
+                    assertEquals(65, json.getAsJsonObject("page").get("height").getAsInt());
+                    api().call("insert", "gs1");
+                    api().call("insert", "symbol:cataloguenumber");
+                    String template = api().call("serialize").toString();
+                    assertTrue(template.contains("data:image/png;base64,"));
+                    assertTrue(template.contains("gs1Matrix"));
+                    String html =
+                            api().call(
+                                            "renderLabel",
+                                            template,
+                                            "{\"article\":\"ZR9816TEST\",\"name\":\"Thor"
+                                                + " test\",\"lot\":\"LOT-2026\",\"diameter\":\"98\",\"height\":\"16\",\"gtin\":\"09506000134352\"}")
+                                    .toString();
+                    assertTrue(html.contains("ZR9816TEST"));
+                    assertTrue(html.contains("LOT-2026"));
+                    assertTrue(html.contains("gs1-matrix"));
+                    assertTrue(html.contains("width:100mm"));
+                    assertTrue(html.contains("height:65mm"));
+                    Files.writeString(Path.of("target/label-rendered.html"), html);
+                    api().call("restore", template);
+                    api().call("setEditable", true);
+                    web().getEngine()
+                            .executeScript(
+                                    "for(const [id,value] of"
+                                        + " [['paper-width','110'],['paper-height','70']]){const"
+                                        + " n=document.getElementById(id);n.value=value;n.dispatchEvent(new"
+                                        + " Event('change'));}");
+                    assertEquals(
+                            70,
+                            com.google.gson.JsonParser.parseString(
+                                            api().call("serialize").toString())
+                                    .getAsJsonObject()
+                                    .getAsJsonObject("page")
+                                    .get("height")
+                                    .getAsInt());
+                    ((TextField) stage.getScene().lookup("#ton-document-code"))
+                            .setText("ETICHETTA-TEST");
+                    click("ton-document-save");
+                    return null;
+                });
+        await(() -> feedback().contains("Bozza salvata"));
+    }
+
     private void verifiesAutomaticBlockProperties() throws Exception {
         String original = fx(() -> api().call("serialize").toString());
         fx(
@@ -428,7 +495,7 @@ const page = document.getElementById('block-page-break'); page.checked=true; pag
                                 .equals(true));
         fx(
                 () -> {
-                    assertEquals(4, ((Number) api().getMember("schemaVersion")).intValue());
+                    assertEquals(5, ((Number) api().getMember("schemaVersion")).intValue());
                     web().getEngine()
                             .executeScript(
                                     "document.getElementById('layout-preset').value='60,40';document.getElementById('layout-preset').dispatchEvent(new"

@@ -1,5 +1,6 @@
 module com.orodent.ecos.ton {
     requires com.orodent.ecos.module.api;
+    requires com.orodent.ecos.documents;
     requires transitive javafx.controls;
     requires javafx.web;
     requires jdk.jsobject;

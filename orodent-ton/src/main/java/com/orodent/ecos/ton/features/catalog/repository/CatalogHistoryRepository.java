@@ -22,7 +22,7 @@ public final class CatalogHistoryRepository {
                     case PRODUCTS ->
                             "b.prodotto_id,b.versione_modifica,b.codice,b.descrizione,b.linea_id,l.codice,b.colore_commerciale,b.note,b.attivo,b.configurazione_predefinita_id,b.specifiche_da_verificare";
                     case ARTICLES ->
-                            "b.articolo_id,b.versione_modifica,b.codice,b.descrizione,b.prodotto_id,p.codice,p.linea_id,l.codice,p.colore_commerciale,b.diametro_mm,b.altezza_mm,b.configurazione_predefinita_id,b.note,b.attivo";
+                            "b.articolo_id,b.versione_modifica,b.codice,b.descrizione,b.prodotto_id,p.codice,p.linea_id,l.codice,p.colore_commerciale,b.diametro_mm,b.altezza_mm,b.configurazione_predefinita_id,b.note,b.attivo,b.gtin";
                 };
         String from =
                 switch (entry.kind()) {
@@ -31,8 +31,8 @@ public final class CatalogHistoryRepository {
                             " FROM TON.PRODOTTI b LEFT JOIN TON.LINEE l ON l.linea_id=b.linea_id";
                     case ARTICLES ->
                             " FROM TON.ARTICOLI b JOIN TON.PRODOTTI p ON"
-                                + " p.prodotto_id=b.prodotto_id LEFT JOIN TON.LINEE l ON"
-                                + " l.linea_id=p.linea_id";
+                                    + " p.prodotto_id=b.prodotto_id LEFT JOIN TON.LINEE l ON"
+                                    + " l.linea_id=p.linea_id";
                 };
         try (var query =
                 connection.prepareStatement(
@@ -99,7 +99,7 @@ public final class CatalogHistoryRepository {
         if (count != 1)
             throw new SQLException(
                     "Lo storico dell'anagrafica non corrisponde alla revisione corrente. Verificare"
-                        + " le scritture esterne all'applicazione.");
+                            + " le scritture esterne all'applicazione.");
     }
 
     private static String columns(CatalogKind kind) {
@@ -109,7 +109,7 @@ public final class CatalogHistoryRepository {
             case PRODUCTS ->
                     "prodotto_id,numero_revisione,codice,descrizione,linea_id,linea_codice,colore_commerciale,note,attivo,configurazione_predefinita_id,specifiche_da_verificare";
             case ARTICLES ->
-                    "articolo_id,numero_revisione,codice,descrizione,prodotto_id,prodotto_codice,linea_id,linea_codice,colore_commerciale,diametro_mm,altezza_mm,configurazione_predefinita_id,note,attivo";
+                    "articolo_id,numero_revisione,codice,descrizione,prodotto_id,prodotto_codice,linea_id,linea_codice,colore_commerciale,diametro_mm,altezza_mm,configurazione_predefinita_id,note,attivo,gtin";
         };
     }
 
@@ -175,7 +175,8 @@ public final class CatalogHistoryRepository {
                                 r.getObject("preferred_number") == null
                                         ? "Nessuna"
                                         : "v" + r.getInt("preferred_number"),
-                                false);
+                                false,
+                                r.getString("gtin"));
                     }
                 };
         return new Audit(entry, number, date, r.getString("origine"));

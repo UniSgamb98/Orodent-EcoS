@@ -42,6 +42,7 @@ public final class DocumentTemplatesController implements FeatureController {
     private CompletableFuture<?> listRead, detailRead, versionsRead;
     private Detail original;
     private String baseline, baselineCode = "";
+    private String creationType = "PRODUZIONE";
     private boolean editing, updatingVersions, loading;
     private volatile boolean disposed;
     private long generation;
@@ -58,7 +59,17 @@ public final class DocumentTemplatesController implements FeatureController {
         view.onOpen(this::openSelected);
         view.create.setOnAction(
                 e -> {
-                    if (canLeave()) openEditor(null);
+                    if (canLeave()) {
+                        creationType = "PRODUZIONE";
+                        openEditor(null);
+                    }
+                });
+        view.createLabel.setOnAction(
+                e -> {
+                    if (canLeave()) {
+                        creationType = "ETICHETTA";
+                        openEditor(null);
+                    }
                 });
         view.back.setOnAction(
                 e -> {
@@ -235,15 +246,13 @@ public final class DocumentTemplatesController implements FeatureController {
 
     private void render(Detail detail) {
         try {
-            if (detail == null) view.editor().newModel();
+            if (detail == null) view.editor().newModel(creationType);
             else view.editor().restore(detail.content());
             baseline = view.editor().serialize();
             baselineCode = view.code.getText();
             controls();
             loadVersions();
-            view.feedback(
-                    "Anteprima con dati di esempio · Nessun documento di produzione emesso.",
-                    false);
+            view.feedback("Anteprima con dati di esempio · Nessun documento emesso.", false);
         } catch (RuntimeException invalid) {
             // Do not let a failed restore expose the preceding document under another identity.
             baseline = null;
@@ -309,9 +318,9 @@ public final class DocumentTemplatesController implements FeatureController {
                 draft.requireApprovable();
                 if (!confirm(
                         "Approva modello",
-                        "La versione approvata diventa di sola lettura. L’anteprima usa ancora dati"
-                                + " di esempio: l’emissione dalle produzioni sarà collegata"
-                                + " successivamente.")) return;
+                        "La versione approvata diventa di sola lettura. Per modificare contenuto,"
+                                + " immagini o formato carta dovrai creare una nuova versione."))
+                    return;
             }
             write(
                     () ->
@@ -493,6 +502,7 @@ public final class DocumentTemplatesController implements FeatureController {
         for (var button :
                 List.of(
                         view.create,
+                        view.createLabel,
                         view.refresh,
                         view.back,
                         view.save,

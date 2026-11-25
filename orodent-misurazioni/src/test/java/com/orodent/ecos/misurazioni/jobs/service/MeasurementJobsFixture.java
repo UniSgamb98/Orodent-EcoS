@@ -11,6 +11,27 @@ public final class MeasurementJobsFixture {
     public static final Clock CLOCK =
             Clock.fixed(Instant.parse("2026-11-25T10:00:00Z"), ZoneId.of("Europe/Rome"));
 
+    public static void beforeV34(Connection c) throws SQLException {
+        try (var q = c.createStatement()) {
+            q.executeUpdate("DROP TABLE TON.ETICHETTA_DISCHI");
+            q.executeUpdate("DROP TABLE TON.ETICHETTE_EMESSE");
+            q.executeUpdate(
+                    "ALTER TABLE TON.CONFIGURAZIONI_PRODOTTO DROP CONSTRAINT fk_ton_cfg_etichetta");
+            q.executeUpdate(
+                    "ALTER TABLE TON.CONFIGURAZIONI_PRODOTTO DROP COLUMN etichetta_modello_id"
+                            + " RESTRICT");
+            q.executeUpdate("ALTER TABLE TON.ARTICOLI DROP CONSTRAINT uq_ton_art_gtin");
+            q.executeUpdate("ALTER TABLE TON.ARTICOLI DROP CONSTRAINT ck_ton_art_gtin");
+            q.executeUpdate("ALTER TABLE TON.ARTICOLI DROP COLUMN gtin RESTRICT");
+            q.executeUpdate("ALTER TABLE TON.ARTICOLI_REVISIONI DROP COLUMN gtin RESTRICT");
+            q.executeUpdate("ALTER TABLE TON.MODELLI_DOCUMENTO DROP CONSTRAINT ck_ton_docm_tipo");
+            q.executeUpdate(
+                    "ALTER TABLE TON.MODELLI_DOCUMENTO ADD CONSTRAINT ck_ton_docm_tipo CHECK (tipo"
+                            + " IN ('PRODUZIONE','COTTURA'))");
+            q.executeUpdate("DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version=34");
+        }
+    }
+
     public static void seed(ConnectionProvider db) {
         db.withTransaction(
                 c -> {
@@ -25,7 +46,7 @@ public final class MeasurementJobsFixture {
                         for (String sql :
                                 List.of(
                                         "INSERT INTO TON.LINEE(codice,nome) VALUES"
-                                            + " ('ZRMST','Thor')",
+                                                + " ('ZRMST','Thor')",
                                         "INSERT INTO"
                                             + " TON.PRODOTTI(codice,descrizione,linea_id,colore_commerciale)"
                                             + " VALUES ('ZRMSTA1','Thor"
@@ -58,14 +79,14 @@ public final class MeasurementJobsFixture {
                                             + " VALUES"
                                             + " (1,DATE('2026-11-21'),''),(2,DATE('2026-11-21'),''),(3,DATE('2026-11-21'),'')",
                                         "INSERT INTO TON.FORNI(codice,nome) VALUES ('F1','Forno"
-                                            + " reparto')",
+                                                + " reparto')",
                                         "INSERT INTO TON.PROGRAMMI_FAMIGLIE(codice) VALUES ('STD')",
                                         "INSERT INTO"
                                             + " TON.PROGRAMMI_COTTURA(famiglia_id,codice,numero_versione,nome,stato,approvato_il)"
                                             + " VALUES (1,'STD',1,'Ciclo"
                                             + " standard','APPROVATA',CURRENT_TIMESTAMP)",
                                         "INSERT INTO TON.PROGRAMMA_PASSI VALUES"
-                                            + " (1,1,500,10,0),(1,2,NULL,10,0)",
+                                                + " (1,1,500,10,0),(1,2,NULL,10,0)",
                                         "INSERT INTO"
                                             + " TON.CICLI_COTTURA(numero,forno_id,programma_id,data_prevista,caricato_il,forno_codice,forno_nome,forno_revisione,temperatura_finale_c)"
                                             + " VALUES"
@@ -73,7 +94,7 @@ public final class MeasurementJobsFixture {
                                             + " reparto',1,1450),('C2',1,1,DATE('2026-11-25'),CURRENT_TIMESTAMP,'F1','Forno"
                                             + " reparto',1,1460)",
                                         "INSERT INTO TON.LOTTI_COTTURA(codice,ciclo_id) VALUES"
-                                            + " ('L-01',1),('L-FUTURO',2)"))
+                                                + " ('L-01',1),('L-FUTURO',2)"))
                             q.executeUpdate(sql);
                     }
                     try (var q =

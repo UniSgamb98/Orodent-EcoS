@@ -130,7 +130,7 @@ class FiringServiceTest {
                     try (var q = c.createStatement()) {
                         q.executeUpdate(
                                 "ALTER TABLE TON.DISCHI_PRODOTTI ADD CONSTRAINT reject_test_output"
-                                    + " CHECK (articolo_codice<>'ZR9814MSTA4')");
+                                        + " CHECK (articolo_codice<>'ZR9814MSTA4')");
                     }
                     return null;
                 });
@@ -148,7 +148,7 @@ class FiringServiceTest {
                     try (var q = c.createStatement()) {
                         q.executeUpdate(
                                 "ALTER TABLE TON.DISCHI_PRODOTTI DROP CONSTRAINT"
-                                    + " reject_test_output");
+                                        + " reject_test_output");
                     }
                     return null;
                 });
@@ -214,12 +214,12 @@ class FiringServiceTest {
                     try (var q = c.createStatement()) {
                         q.executeUpdate(
                                 "UPDATE TON.FORNI SET codice='F1-NUOVO',nome='Nome"
-                                    + " nuovo',versione_modifica=versione_modifica+1 WHERE"
-                                    + " forno_id="
+                                        + " nuovo',versione_modifica=versione_modifica+1 WHERE"
+                                        + " forno_id="
                                         + first.furnaceId());
                         q.executeUpdate(
                                 "UPDATE TON.ARTICOLI SET codice='CODICE-CORRETTO' WHERE"
-                                    + " articolo_id="
+                                        + " articolo_id="
                                         + fixture.articles.get(14));
                     }
                     return null;
@@ -640,6 +640,23 @@ class FiringServiceTest {
                         // migrations.
                         for (String sql :
                                 List.of(
+                                        "DROP TABLE TON.ETICHETTA_DISCHI",
+                                        "DROP TABLE TON.ETICHETTE_EMESSE",
+                                        "ALTER TABLE TON.CONFIGURAZIONI_PRODOTTO DROP CONSTRAINT"
+                                                + " fk_ton_cfg_etichetta",
+                                        "ALTER TABLE TON.CONFIGURAZIONI_PRODOTTO DROP COLUMN"
+                                                + " etichetta_modello_id RESTRICT",
+                                        "ALTER TABLE TON.ARTICOLI DROP CONSTRAINT uq_ton_art_gtin",
+                                        "ALTER TABLE TON.ARTICOLI DROP CONSTRAINT ck_ton_art_gtin",
+                                        "ALTER TABLE TON.ARTICOLI DROP COLUMN gtin RESTRICT",
+                                        "ALTER TABLE TON.ARTICOLI_REVISIONI DROP COLUMN gtin"
+                                                + " RESTRICT",
+                                        "ALTER TABLE TON.MODELLI_DOCUMENTO DROP CONSTRAINT"
+                                                + " ck_ton_docm_tipo",
+                                        "ALTER TABLE TON.MODELLI_DOCUMENTO ADD CONSTRAINT"
+                                                + " ck_ton_docm_tipo CHECK (tipo IN"
+                                                + " ('PRODUZIONE','COTTURA'))",
+                                        "DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version=34",
                                         "DROP TABLE TON.DISCO_MISURE_REVISIONI",
                                         "ALTER TABLE TON.CICLI_COTTURA DROP CONSTRAINT"
                                                 + " fk_ton_cic_prog_precedente",

@@ -1,0 +1,28 @@
+{
+  "name": "orodent-document-editor-assets",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Locally bundled document editor resources for Orodent-EcoS",
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "node build.mjs --check",
+    "test": "node --test *.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@tiptap/core": "3.32.1",
+    "@tiptap/extension-image": "3.32.1",
+    "@tiptap/extension-table": "3.32.1",
+    "@tiptap/extension-text-align": "3.32.1",
+    "@tiptap/extension-text-style": "3.32.1",
+    "@tiptap/starter-kit": "3.32.1",
+    "bwip-js": "4.8.0"
+  },
+  "devDependencies": {
+    "@zxing/library": "0.21.3",
+    "esbuild": "0.28.2"
+  },
+  "type": "module"
+}

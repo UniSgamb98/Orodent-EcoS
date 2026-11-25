@@ -175,6 +175,11 @@ public final class DatabaseSchema {
                     33,
                     "Resumable versioned readings per produced disc",
                     "/database/migrations/V33__resumable_disc_measurements.sql");
+    private static final SchemaMigration LABELS =
+            new SchemaMigration(
+                    34,
+                    "Versioned labels and article GTIN",
+                    "/database/migrations/V34__versioned_labels_and_gtin.sql");
     private static final List<SchemaMigration> MIGRATIONS =
             List.of(
                     BASELINE,
@@ -209,7 +214,8 @@ public final class DatabaseSchema {
                     CONFIRMED_OUTPUT,
                     FIRING_PROGRAMS,
                     FIRING_LOAD_PROGRAM,
-                    DISC_MEASUREMENTS);
+                    DISC_MEASUREMENTS,
+                    LABELS);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS =
             List.of(
@@ -329,7 +335,7 @@ public final class DatabaseSchema {
                 || tableExists(connection, "VENDITE", "VENDITE_DETTAGLIO")) {
             throw incompatible(
                     "Schemi di destinazione già presenti senza uno storico valido: migrazione"
-                        + " annullata.");
+                            + " annullata.");
         }
         if (tableExists(connection, "APP", HISTORY)) {
             verifyHistory(connection, "APP", 1);
@@ -444,7 +450,7 @@ public final class DatabaseSchema {
                             .equals(rows.getString("checksum"))) {
                         throw incompatible(
                                 "La migrazione registrata non corrisponde alla versione"
-                                    + " dell'applicazione.");
+                                        + " dell'applicazione.");
                     }
                     expected++;
                 }

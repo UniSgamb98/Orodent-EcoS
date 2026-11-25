@@ -3,6 +3,7 @@ package com.orodent.ecos.ton.features.documents.view;
 import static com.orodent.ecos.ton.features.documents.model.DocumentTemplates.*;
 import static com.orodent.ecos.ton.features.technical.view.TechnicalUi.*;
 
+import com.orodent.ecos.documents.DocumentEditorPane;
 import com.orodent.ecos.ton.features.technical.view.TonListView;
 
 import javafx.geometry.Insets;
@@ -18,13 +19,14 @@ public final class DocumentTemplatesView extends BorderPane {
     private final TonListView<Template> listing =
             new TonListView<>(
                     "ton-document",
-                    "Progetta il foglio operativo, salva le bozze e conserva le versioni approvate."
-                            + " L’anteprima usa dati di esempio.",
+                    "Progetta documenti ed etichette, salva le bozze e conserva le versioni"
+                            + " approvate. L’anteprima usa dati di esempio.",
                     "Cerca per codice o nome",
                     "Nuovo modello");
     public final TextField search = listing.search();
     public final TableView<Template> table = listing.table();
     public final Button create = listing.create();
+    public final Button createLabel = button("Nuova etichetta", "ton-document-new-label", true);
     public final Button refresh = listing.refresh();
     public final Button back = button("← Elenco modelli", "ton-document-back", false);
     public final Button save = button("Salva bozza", "ton-document-save", true);
@@ -45,10 +47,16 @@ public final class DocumentTemplatesView extends BorderPane {
     public DocumentTemplatesView() {
         setId("ton-document-templates-view");
         setMinSize(0, 0);
+        listing.addAction(createLabel);
         table.setId("ton-document-table");
         table.setPlaceholder(new Label("Nessun modello. Crea il primo foglio operativo."));
         column(table, "Codice", 180, Template::code);
         column(table, "Nome", 280, Template::name);
+        column(
+                table,
+                "Tipo",
+                140,
+                t -> t.type().equals("ETICHETTA") ? "Etichetta dischi" : "Foglio operativo");
         column(table, "Versione", 80, t -> "v" + t.number());
         column(table, "Stato", 110, t -> stateLabel(t.state()));
         column(

@@ -9,7 +9,7 @@ import java.util.*;
 /** SQL only, always using the transaction supplied by the service. No automatic write replay. */
 public final class DocumentTemplateRepository {
     private static final String COLUMNS =
-            "modello_documento_id,codice,numero_versione,nome,stato,versione_modifica,aggiornato_il";
+            "modello_documento_id,codice,numero_versione,nome,stato,versione_modifica,aggiornato_il,tipo";
     private final Connection c;
 
     public DocumentTemplateRepository(Connection c) {
@@ -27,8 +27,8 @@ public final class DocumentTemplateRepository {
         String sql =
                 "SELECT "
                         + COLUMNS
-                        + " FROM TON.MODELLI_DOCUMENTO m WHERE tipo='PRODUZIONE' AND"
-                        + " numero_versione=(SELECT MAX(x.numero_versione) FROM"
+                        + " FROM TON.MODELLI_DOCUMENTO m WHERE tipo IN ('PRODUZIONE','ETICHETTA')"
+                        + " AND numero_versione=(SELECT MAX(x.numero_versione) FROM"
                         + " TON.MODELLI_DOCUMENTO x WHERE x.codice=m.codice) AND (UPPER(codice)"
                         + " LIKE ? ESCAPE '\\' OR UPPER(nome) LIKE ? ESCAPE '\\') ORDER BY codice"
                         + " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
@@ -52,7 +52,7 @@ public final class DocumentTemplateRepository {
                 c.prepareStatement(
                         "SELECT "
                                 + COLUMNS
-                                + " FROM TON.MODELLI_DOCUMENTO WHERE codice=? AND tipo='PRODUZIONE'"
+                                + " FROM TON.MODELLI_DOCUMENTO WHERE codice=?"
                                 + " ORDER BY numero_versione DESC")) {
             q.setString(1, code);
             try (var r = q.executeQuery()) {
@@ -68,12 +68,13 @@ public final class DocumentTemplateRepository {
                         "SELECT "
                                 + COLUMNS
                                 + ",contenuto_modello FROM TON.MODELLI_DOCUMENTO WHERE"
-                                + " modello_documento_id=? AND tipo='PRODUZIONE'")) {
+                                + " modello_documento_id=? AND tipo IN"
+                                + " ('PRODUZIONE','ETICHETTA')")) {
             q.setLong(1, id);
             try (var r = q.executeQuery()) {
                 if (!r.next())
                     throw new IllegalArgumentException("Modello non trovato. Ricarica l’elenco.");
-                Clob content = r.getClob(8);
+                Clob content = r.getClob(9);
                 try {
                     if (content.length() > MAX_CONTENT)
                         throw new IllegalArgumentException("Il modello supera il limite di 8 MB.");
@@ -90,12 +91,13 @@ public final class DocumentTemplateRepository {
                 c.prepareStatement(
                         "INSERT INTO"
                             + " TON.MODELLI_DOCUMENTO(codice,numero_versione,nome,tipo,contenuto_modello)"
-                            + " VALUES (?,?,?,'PRODUZIONE',?)",
+                            + " VALUES (?,?,?,?,?)",
                         Statement.RETURN_GENERATED_KEYS)) {
             q.setString(1, draft.code());
             q.setInt(2, number);
             q.setString(3, draft.name());
-            q.setCharacterStream(4, new StringReader(draft.content()), draft.content().length());
+            q.setString(4, draft.type());
+            q.setCharacterStream(5, new StringReader(draft.content()), draft.content().length());
             q.executeUpdate();
             try (var keys = q.getGeneratedKeys()) {
                 keys.next();
@@ -110,7 +112,7 @@ public final class DocumentTemplateRepository {
                         + (approve ? "CURRENT_TIMESTAMP" : "NULL")
                         + ",versione_modifica=versione_modifica+1,aggiornato_il=CURRENT_TIMESTAMP"
                         + " WHERE modello_documento_id=? AND versione_modifica=? AND stato='BOZZA'"
-                        + " AND codice=? AND tipo='PRODUZIONE'";
+                        + " AND codice=? AND tipo=?";
         try (var q = c.prepareStatement(sql)) {
             q.setString(1, draft.name());
             q.setCharacterStream(2, new StringReader(draft.content()), draft.content().length());
@@ -118,6 +120,7 @@ public final class DocumentTemplateRepository {
             q.setLong(4, expected.id());
             q.setInt(5, expected.token());
             q.setString(6, draft.code());
+            q.setString(7, draft.type());
             changed(q.executeUpdate());
         }
         return load(expected.id());
@@ -128,7 +131,7 @@ public final class DocumentTemplateRepository {
         try (var q =
                 c.prepareStatement(
                         "UPDATE TON.MODELLI_DOCUMENTO SET versione_modifica=versione_modifica WHERE"
-                                + " codice=? AND numero_versione=1 AND tipo='PRODUZIONE'")) {
+                                + " codice=? AND numero_versione=1")) {
             q.setString(1, code);
             changed(q.executeUpdate());
         }
@@ -138,8 +141,7 @@ public final class DocumentTemplateRepository {
         try (var q =
                 c.prepareStatement(
                         "DELETE FROM TON.MODELLI_DOCUMENTO WHERE modello_documento_id=? AND"
-                                + " versione_modifica=? AND codice=? AND stato='BOZZA' AND"
-                                + " tipo='PRODUZIONE'")) {
+                                + " versione_modifica=? AND codice=? AND stato='BOZZA'")) {
             q.setLong(1, expected.id());
             q.setInt(2, expected.token());
             q.setString(3, expected.code());
@@ -162,6 +164,7 @@ public final class DocumentTemplateRepository {
                 r.getString(4),
                 State.valueOf(r.getString(5)),
                 r.getInt(6),
-                r.getTimestamp(7).toLocalDateTime());
+                r.getTimestamp(7).toLocalDateTime(),
+                r.getString(8));
     }
 }

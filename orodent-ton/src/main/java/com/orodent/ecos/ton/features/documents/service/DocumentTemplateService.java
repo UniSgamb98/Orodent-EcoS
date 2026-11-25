@@ -70,6 +70,9 @@ public final class DocumentTemplateService {
         if (expected.state() != State.BOZZA)
             throw new IllegalArgumentException(
                     "Una versione approvata è di sola lettura. Crea una nuova versione.");
+        if (!expected.type().equals(draft.type()))
+            throw new IllegalArgumentException(
+                    "Il tipo del modello non può cambiare. Crea un nuovo modello.");
         if (!expected.code().equals(draft.code()))
             throw new IllegalArgumentException("Il codice di un modello salvato non può cambiare.");
         if (approve) draft.requireApprovable();

@@ -27,7 +27,19 @@ public final class DocumentTemplates {
             String name,
             State state,
             int token,
-            LocalDateTime updated) {
+            LocalDateTime updated,
+            String type) {
+        public Template(
+                long id,
+                String code,
+                int number,
+                String name,
+                State state,
+                int token,
+                LocalDateTime updated) {
+            this(id, code, number, name, state, token, updated, "PRODUZIONE");
+        }
+
         @Override
         public String toString() {
             return "v" + number + " · " + stateLabel(state);
@@ -49,6 +61,11 @@ public final class DocumentTemplates {
                 throw new IllegalArgumentException(
                         "Codice modello: usa da 1 a 100 lettere, numeri, punti o trattini.");
             validate(content, false);
+        }
+
+        public String type() {
+            var envelope = parse(content);
+            return envelope.has("purpose") ? envelope.get("purpose").getAsString() : "PRODUZIONE";
         }
 
         public String name() {
@@ -84,21 +101,38 @@ public final class DocumentTemplates {
             JsonObject envelope = parse(content);
             if (!envelope.get("schemaVersion").isJsonPrimitive()
                     || !envelope.getAsJsonPrimitive("schemaVersion").isNumber()
-                    || !Set.of("2", "3", "4").contains(envelope.get("schemaVersion").getAsString()))
+                    || !Set.of("2", "3", "4", "5")
+                            .contains(envelope.get("schemaVersion").getAsString()))
                 throw new IllegalArgumentException();
             JsonPrimitive title = envelope.getAsJsonPrimitive("title");
             if (!title.isString()
                     || title.getAsString().isBlank()
                     || title.getAsString().length() > 150) throw new IllegalArgumentException();
             JsonObject page = envelope.getAsJsonObject("page");
-            if (!Set.of("portrait", "landscape").contains(page.get("orientation").getAsString())
-                    || !Set.of("10", "15", "20").contains(page.get("margin").getAsString()))
-                throw new IllegalArgumentException();
+            com.orodent.ecos.documents.DocumentPaper.from(page);
+            String purpose =
+                    envelope.has("purpose") ? envelope.get("purpose").getAsString() : "PRODUZIONE";
+            if (!Set.of("PRODUZIONE", "ETICHETTA").contains(purpose))
+                throw new IllegalArgumentException("Tipo modello non valido.");
             JsonObject doc = envelope.getAsJsonObject("content");
             if (!doc.get("type").getAsString().equals("doc")) throw new IllegalArgumentException();
             var present = new HashSet<String>();
             inspect(doc, present, 0, new int[] {0}, envelope.get("schemaVersion").getAsInt());
+            if (purpose.equals("ETICHETTA")
+                    && present.stream().anyMatch(k -> !Set.of("label", "content").contains(k)))
+                throw new IllegalArgumentException(
+                        "Nelle etichette usa i campi della sezione Etichette.");
+            if (purpose.equals("PRODUZIONE") && present.contains("label"))
+                throw new IllegalArgumentException(
+                        "I campi etichetta e GS1 richiedono un modello di tipo Etichetta dischi.");
             if (approve
+                    && purpose.equals("ETICHETTA")
+                    && !present.contains("label")
+                    && !present.contains("content"))
+                throw new IllegalArgumentException(
+                        "Inserisci del contenuto nell’etichetta prima di approvarla.");
+            if (approve
+                    && purpose.equals("PRODUZIONE")
                     && !present.containsAll(
                             Set.of("identity", "press", "weighing", "mixtures", "totals")))
                 throw new IllegalArgumentException(
@@ -152,6 +186,50 @@ public final class DocumentTemplates {
                             "Le larghezze devono totalizzare il 100% e lo spazio deve essere da 0 a"
                                     + " 12 mm.");
             }
+        }
+        if (type.equals("image")
+                || type.equals("text") && !node.get("text").getAsString().isBlank())
+            present.add("content");
+        if (type.equals("labelField") || type.equals("gs1Matrix")) {
+            present.add("label");
+            var attrs = node.getAsJsonObject("attrs");
+            if (type.equals("labelField")) {
+                if (!Set.of(
+                                "article",
+                                "product",
+                                "name",
+                                "line",
+                                "lot",
+                                "gtin",
+                                "diameter",
+                                "height",
+                                "temperature",
+                                "production",
+                                "quantity",
+                                "furnace",
+                                "productionDate",
+                                "expiryDate")
+                        .contains(attrs.get("key").getAsString()))
+                    throw new IllegalArgumentException("Campo etichetta non supportato.");
+            } else {
+                double size = attrs.get("size").getAsDouble();
+                if (!Double.isFinite(size) || size < 8 || size > 80)
+                    throw new IllegalArgumentException("Dimensione GS1 da 8 a 80 mm.");
+                for (String key : List.of("gtin", "lot", "productionDate", "expiryDate"))
+                    if (!attrs.getAsJsonPrimitive(key).isString()
+                            || attrs.get(key).getAsString().length() > 500)
+                        throw new IllegalArgumentException("Campo GS1 non valido.");
+            }
+        }
+        if (type.equals("tonField")) present.add("productionField");
+        if (type.equals("image")) {
+            var attrs = node.getAsJsonObject("attrs");
+            String src = attrs.get("src").getAsString(), width = attrs.get("width").getAsString();
+            if (src.length() > 3_000_000
+                    || !src.matches("(?is)data:image/(png|jpeg|webp);base64,[a-z0-9+/=\\r\\n]+")
+                    || !(Set.of("25%", "50%", "75%", "100%").contains(width)
+                            || width.matches("(?:[1-9]\\d?|100)(?:\\.\\d)?mm")))
+                throw new IllegalArgumentException("Immagine locale non valida.");
         }
         if (type.equals("tonBlock")) {
             JsonObject attrs = node.getAsJsonObject("attrs");

@@ -13,6 +13,8 @@ import java.util.*;
 public final class CatalogForm extends VBox {
     private final CatalogKind kind;
     private final TextField code, name, diameter, height, derived;
+    private final TextField gtin =
+            CatalogUi.field("ton-article-gtin", "GTIN / EAN (8, 12, 13 o 14 cifre)");
     private final TextArea notes = new TextArea();
     private final ComboBox<String> color = new ComboBox<>();
     private Line originalLine;
@@ -103,6 +105,7 @@ public final class CatalogForm extends VBox {
                 fields.add(CatalogUi.field("Linea e colore ereditati", derived));
                 fields.add(CatalogUi.field("Diametro · mm *", diameter));
                 fields.add(CatalogUi.field("Altezza · mm *", height));
+                fields.add(CatalogUi.field("GTIN · GS1", gtin));
             }
         }
         notes.setId(base + "-notes");
@@ -158,6 +161,7 @@ public final class CatalogForm extends VBox {
         color.setDisable(used && selected != null);
         diameter.setText(entry instanceof Article a ? CatalogUi.number(a.diameter()) : "");
         height.setText(entry instanceof Article a ? CatalogUi.number(a.height()) : "");
+        gtin.setText(entry instanceof Article a && a.gtin() != null ? a.gtin() : "");
         diameter.setDisable(used);
         height.setDisable(used);
         structural.setText(
@@ -247,7 +251,8 @@ public final class CatalogForm extends VBox {
                             CatalogUi.decimal(diameter.getText(), "Diametro"),
                             CatalogUi.decimal(height.getText(), "Altezza"),
                             notes.getText(),
-                            active.isSelected());
+                            active.isSelected(),
+                            gtin.getText());
         };
     }
 
@@ -266,7 +271,8 @@ public final class CatalogForm extends VBox {
                 color.getEditor().getText(),
                 parent == null || parent.id() == null ? "" : parent.id().toString(),
                 diameter.getText(),
-                height.getText());
+                height.getText(),
+                gtin.getText());
     }
 
     public CatalogLookup parent() {

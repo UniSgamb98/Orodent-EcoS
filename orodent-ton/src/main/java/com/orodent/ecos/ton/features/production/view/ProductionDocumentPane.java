@@ -1,6 +1,8 @@
 package com.orodent.ecos.ton.features.production.view;
 
-import com.orodent.ecos.ton.features.documents.view.DocumentEditorPane;
+import com.orodent.ecos.documents.DocumentEditorPane;
+import com.orodent.ecos.documents.DocumentPaper;
+import com.orodent.ecos.documents.PrinterPaper;
 import com.orodent.ecos.ton.features.production.model.Production.Plan;
 import com.orodent.ecos.ton.features.production.service.ProductionDocumentData;
 
@@ -20,6 +22,7 @@ public final class ProductionDocumentPane extends BorderPane {
     private long generation;
     private boolean disposed;
     private String html;
+    private DocumentPaper paper;
     private boolean ready, printPending;
     private Consumer<String> printFailure = ignored -> {};
 
@@ -47,6 +50,7 @@ public final class ProductionDocumentPane extends BorderPane {
                                     : "Inserisci le quantità per comporre il documento."));
             return;
         }
+        paper = DocumentPaper.from(plan.template().content());
         if (stored != null) {
             display(stored);
             generated.accept(stored);
@@ -133,6 +137,12 @@ public final class ProductionDocumentPane extends BorderPane {
         var job = PrinterJob.createPrinterJob();
         if (job == null) throw new IllegalStateException("Nessuna stampante disponibile.");
         if (job.showPrintDialog(getScene() == null ? null : getScene().getWindow())) {
+            try {
+                PrinterPaper.configure(job, paper);
+            } catch (RuntimeException error) {
+                job.cancelJob();
+                throw error;
+            }
             preview.getEngine().print(job);
             job.endJob();
         }

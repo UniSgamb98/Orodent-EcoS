@@ -23,6 +23,7 @@ public final class MeasurementJobsController implements ModuleSession {
     private final ModuleContext context;
     private final MeasurementJobsService service;
     private Detail baseline;
+    private com.orodent.ecos.misurazioni.labels.controller.LabelPrintingController labelPrinting;
     private boolean closed, saving, unsaved, completed;
     private long request;
 
@@ -67,12 +68,29 @@ public final class MeasurementJobsController implements ModuleSession {
                     if (baseline != null
                             && confirm(
                                     "Azzera le misure di questo lavoro? Le revisioni precedenti"
-                                        + " rimangono conservate."))
+                                            + " rimangono conservate."))
                         acquisition.clearReadings();
                 });
         view.home.setOnAction(
                 e -> {
                     if (canLeave()) context.showHome().run();
+                });
+        view.printLabel.setOnAction(
+                e -> {
+                    if (baseline == null || saving || acquisition.reading()) return;
+                    if (labelPrinting != null) labelPrinting.close();
+                    labelPrinting =
+                            new com.orodent.ecos.misurazioni.labels.controller
+                                    .LabelPrintingController(
+                                    context,
+                                    new com.orodent.ecos.misurazioni.labels.service.LabelService(
+                                            context.connections(), context.workers()),
+                                    view.getScene().getWindow(),
+                                    baseline.job().key(),
+                                    () -> {
+                                        if (!closed)
+                                            Platform.runLater(acquisition::focusAcquisition);
+                                    });
                 });
         view.pending.setOnAction(e -> queue(false));
         view.completed.setOnAction(e -> queue(true));
@@ -257,6 +275,7 @@ public final class MeasurementJobsController implements ModuleSession {
     public void close() {
         if (closed) return;
         closed = true;
+        if (labelPrinting != null) labelPrinting.close();
         request++;
         acquisition.close(); /* In-flight database writes are intentionally allowed to finish. */
     }

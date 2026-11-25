@@ -6,7 +6,7 @@ Inserisci/Proprietà permettono di progettare il foglio operativo con un esempio
 completo di laboratorio. I modelli si salvano nel database condiviso di EcoS.
 
 La stessa pagina può ancora essere provata nel browser aprendo
-`orodent-ton/src/main/resources/ton/document-editor/index.html`: in questa modalità
+`orodent-documenti/src/main/resources/ton/document-editor/index.html`: in questa modalità
 separata i modelli si conservano solo tramite esportazione JSON.
 
 ## Bozze e versioni nel progetto
@@ -162,7 +162,7 @@ nel modello le istruzioni inserite durante la preparazione.
 
 ## Struttura del codice
 
-In `orodent-ton/src/main/frontend/document-editor/`:
+In `orodent-documenti/src/main/frontend/document-editor/`:
 
 | File | Responsabilità |
 | --- | --- |

@@ -81,7 +81,7 @@ class MeasurementJobsServiceTest {
                     try (var q = c.createStatement()) {
                         q.executeUpdate(
                                 "UPDATE TON.CICLI_COTTURA SET temperatura_finale_c=NULL WHERE"
-                                    + " ciclo_id=1");
+                                        + " ciclo_id=1");
                     }
                     return null;
                 });
@@ -177,7 +177,7 @@ class MeasurementJobsServiceTest {
                     try (var q = c.createStatement()) {
                         q.executeUpdate(
                                 "ALTER TABLE TON.DISCO_MISURE_REVISIONI ADD CONSTRAINT"
-                                    + " reject_second_measure CHECK(disco_id<>2)");
+                                        + " reject_second_measure CHECK(disco_id<>2)");
                     }
                     return null;
                 });
@@ -197,7 +197,7 @@ class MeasurementJobsServiceTest {
                     try (var q = c.createStatement()) {
                         q.executeUpdate(
                                 "ALTER TABLE TON.DISCO_MISURE_REVISIONI DROP CONSTRAINT"
-                                    + " reject_second_measure");
+                                        + " reject_second_measure");
                     }
                     return null;
                 });
@@ -228,10 +228,38 @@ class MeasurementJobsServiceTest {
     }
 
     @Test
+    void upgradingLabelsKeepsPreviouslyMeasuredDiscsAndLeavesLegacySpecsUnassigned() {
+        service.save(first(), changed(first(), 0, "98\t14", "330"), null).join();
+        db.withTransaction(
+                c -> {
+                    MeasurementJobsFixture.beforeV34(c);
+                    return null;
+                });
+        new DatabaseSchema(db).initialize();
+        new DatabaseSchema(db).initialize();
+        assertEquals(1, first().job().done());
+        assertEquals("98\t14", first().job().readings().getFirst().value().micrometer());
+        db.withConnection(
+                c -> {
+                    try (var q = c.createStatement();
+                            var rs =
+                                    q.executeQuery(
+                                            "SELECT etichetta_modello_id FROM"
+                                                    + " TON.CONFIGURAZIONI_PRODOTTO WHERE"
+                                                    + " configurazione_id=1")) {
+                        rs.next();
+                        assertNull(rs.getObject(1));
+                    }
+                    return null;
+                });
+    }
+
+    @Test
     void upgradingFromThePreviousSchemaKeepsAllLoadAndDiscIdentities() {
         db.withTransaction(
                 c -> {
                     try (var q = c.createStatement()) {
+                        MeasurementJobsFixture.beforeV34(c);
                         q.executeUpdate("DROP TABLE TON.DISCO_MISURE_REVISIONI");
                         q.executeUpdate("DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version=33");
                     }

@@ -142,8 +142,28 @@ public final class CatalogModels {
             BigDecimal height,
             Long defaultSpecification,
             String specificationLabel,
-            boolean used)
+            boolean used,
+            String gtin)
             implements Entry {
+        public Article(
+                Metadata meta,
+                Choice product,
+                BigDecimal diameter,
+                BigDecimal height,
+                Long defaultSpecification,
+                String specificationLabel,
+                boolean used) {
+            this(
+                    meta,
+                    product,
+                    diameter,
+                    height,
+                    defaultSpecification,
+                    specificationLabel,
+                    used,
+                    null);
+        }
+
         @Override
         public CatalogKind kind() {
             return CatalogKind.ARTICLES;
@@ -248,9 +268,22 @@ public final class CatalogModels {
             BigDecimal diameter,
             BigDecimal height,
             String notes,
-            boolean active)
+            boolean active,
+            String gtin)
             implements Draft {
+        public ArticleDraft(
+                String code,
+                String name,
+                long productId,
+                BigDecimal diameter,
+                BigDecimal height,
+                String notes,
+                boolean active) {
+            this(code, name, productId, diameter, height, notes, active, null);
+        }
+
         public ArticleDraft {
+            gtin = com.orodent.ecos.core.gs1.Gtin.normalize(gtin);
             code = CatalogModels.code(code, 80);
             name = limited(name, 200, "Descrizione");
             notes = limited(notes, 1000, "Note");
@@ -356,7 +389,47 @@ public final class CatalogModels {
             Integer lineRevision,
             Integer productRevision,
             boolean preferred,
-            Long calculationVersionId) {
+            Long calculationVersionId,
+            Long labelTemplateId,
+            String labelTemplateLabel) {
+        public Specification(
+                long id,
+                long productId,
+                int number,
+                int revision,
+                String state,
+                long compositionId,
+                String compositionLabel,
+                long modelId,
+                String modelLabel,
+                String calculation,
+                String notes,
+                LocalDateTime approvedAt,
+                Integer lineRevision,
+                Integer productRevision,
+                boolean preferred,
+                Long calculationVersionId) {
+            this(
+                    id,
+                    productId,
+                    number,
+                    revision,
+                    state,
+                    compositionId,
+                    compositionLabel,
+                    modelId,
+                    modelLabel,
+                    calculation,
+                    notes,
+                    approvedAt,
+                    lineRevision,
+                    productRevision,
+                    preferred,
+                    calculationVersionId,
+                    null,
+                    null);
+        }
+
         public Specification(
                 long id,
                 long productId,
@@ -419,7 +492,17 @@ public final class CatalogModels {
             long modelId,
             String calculation,
             String notes,
-            Long calculationVersionId) {
+            Long calculationVersionId,
+            Long labelTemplateId) {
+        public SpecificationDraft(
+                long compositionId,
+                long modelId,
+                String calculation,
+                String notes,
+                Long calculationVersionId) {
+            this(compositionId, modelId, calculation, notes, calculationVersionId, null);
+        }
+
         public SpecificationDraft(
                 long compositionId, long modelId, String calculation, String notes) {
             this(compositionId, modelId, calculation, notes, null);
@@ -447,12 +530,25 @@ public final class CatalogModels {
             int limit,
             List<TechnicalChoice> compositions,
             List<TechnicalChoice> models,
-            List<com.orodent.ecos.database.CubatureRuleVersions.Version> calculationRules) {
+            List<com.orodent.ecos.database.CubatureRuleVersions.Version> calculationRules,
+            List<TechnicalChoice> labelTemplates) {
+        public SpecificationPage(
+                List<Specification> rows,
+                long total,
+                int offset,
+                int limit,
+                List<TechnicalChoice> compositions,
+                List<TechnicalChoice> models,
+                List<com.orodent.ecos.database.CubatureRuleVersions.Version> calculationRules) {
+            this(rows, total, offset, limit, compositions, models, calculationRules, List.of());
+        }
+
         public SpecificationPage {
             rows = List.copyOf(rows);
             compositions = List.copyOf(compositions);
             models = List.copyOf(models);
             calculationRules = List.copyOf(calculationRules);
+            labelTemplates = List.copyOf(labelTemplates);
         }
 
         public boolean hasNext() {
@@ -486,7 +582,8 @@ public final class CatalogModels {
                             a.diameter(),
                             a.height(),
                             a.meta().notes(),
-                            a.active());
+                            a.active(),
+                            a.gtin());
         };
     }
 

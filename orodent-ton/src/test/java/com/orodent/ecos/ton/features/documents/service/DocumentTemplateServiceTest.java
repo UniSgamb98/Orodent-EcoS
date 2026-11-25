@@ -83,6 +83,34 @@ class DocumentTemplateServiceTest {
     }
 
     @Test
+    void labelPaperRemainsFrozenAcrossVersions() {
+        String label =
+                """
+{"schemaVersion":5,"purpose":"ETICHETTA","title":"Scatola","page":{"format":"custom","width":100,"height":65,"orientation":"portrait","margin":3},"content":{"type":"doc","content":[{"type":"paragraph","content":[{"type":"labelField","attrs":{"key":"article"}}]}]}}
+""";
+        var v1 = service.create(new Draft("SCATOLA", label), true).join();
+        assertEquals("ETICHETTA", v1.template().type());
+        var v2 = service.newVersion(v1.template()).join();
+        service.save(
+                        v2.template(),
+                        new Draft("SCATOLA", label.replace("\"height\":65", "\"height\":70")),
+                        true)
+                .join();
+        assertEquals(label, service.load(v1.template().id()).join().content());
+        assertEquals(100, com.orodent.ecos.documents.DocumentPaper.from(label).width());
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new Draft("BAD", label.replace("\"margin\":3", "\"margin\":40")));
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        new Draft(
+                                "BAD",
+                                label.replace("labelField", "tonField")
+                                        .replace("article", "production")));
+    }
+
+    @Test
     void persistsLayoutApprovesAndCopiesWithoutChangingHistory() {
         var draft = new Draft("pressatura", model("Scheda laboratorio", true));
         var saved = service.create(draft, false).join();
@@ -201,7 +229,7 @@ class DocumentTemplateServiceTest {
                         payload.replace("[60,40]", "[5,95]"),
                         payload.replace("[60,40]", "[100]"),
                         payload.replace("\"gap\":4", "\"gap\":13"),
-                        payload.replace("\"schemaVersion\":3", "\"schemaVersion\":5")))
+                        payload.replace("\"schemaVersion\":3", "\"schemaVersion\":6")))
             assertThrows(IllegalArgumentException.class, () -> new Draft("BAD", invalid));
         assertEquals(payload, service.load(saved.template().id()).join().content());
     }

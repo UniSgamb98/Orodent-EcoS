@@ -18,9 +18,10 @@ public final class SpecificationRepository {
     private static final String SELECT =
             """
 SELECT c.*,p.numero_versione AS composition_version,m.codice AS model_code,m.numero_versione AS model_version,
-       a.configurazione_predefinita_id AS preferred_id
+       a.configurazione_predefinita_id AS preferred_id, et.codice AS et_code,et.numero_versione AS et_version,et.nome AS et_name
 FROM TON.CONFIGURAZIONI_PRODOTTO c JOIN TON.COMPOSIZIONI p ON p.composizione_id=c.composizione_id
 JOIN TON.MODELLI_DISCO m ON m.modello_id=c.modello_id JOIN TON.PRODOTTI a ON a.prodotto_id=c.prodotto_id
+LEFT JOIN TON.MODELLI_DOCUMENTO et ON et.modello_documento_id=c.etichetta_modello_id
 """;
 
     public Specification load(long id) throws SQLException {
@@ -57,9 +58,9 @@ JOIN TON.MODELLI_DISCO m ON m.modello_id=c.modello_id JOIN TON.PRODOTTI a ON a.p
         try (var q =
                 connection.prepareStatement(
                         "SELECT c.composizione_id,c.numero_versione FROM TON.COMPOSIZIONI c WHERE"
-                            + " c.prodotto_id=? AND c.stato='APPROVATA' AND"
-                            + " TRIM(CHAR(c.numero_versione)) LIKE ? ORDER BY c.numero_versione"
-                            + " DESC FETCH NEXT 50 ROWS ONLY")) {
+                                + " c.prodotto_id=? AND c.stato='APPROVATA' AND"
+                                + " TRIM(CHAR(c.numero_versione)) LIKE ? ORDER BY c.numero_versione"
+                                + " DESC FETCH NEXT 50 ROWS ONLY")) {
             q.setLong(1, product.id());
             q.setString(2, "%" + text(compositionSearch) + "%");
             try (var r = q.executeQuery()) {
@@ -73,8 +74,8 @@ JOIN TON.MODELLI_DISCO m ON m.modello_id=c.modello_id JOIN TON.PRODOTTI a ON a.p
         try (var q =
                 connection.prepareStatement(
                         "SELECT modello_id,codice,numero_versione FROM TON.MODELLI_DISCO WHERE"
-                            + " stato='APPROVATA' AND UPPER(codice) LIKE ? ESCAPE '\\' ORDER BY"
-                            + " codice,numero_versione DESC FETCH NEXT 50 ROWS ONLY")) {
+                                + " stato='APPROVATA' AND UPPER(codice) LIKE ? ESCAPE '\\' ORDER BY"
+                                + " codice,numero_versione DESC FETCH NEXT 50 ROWS ONLY")) {
             q.setString(
                     1,
                     "%"
@@ -98,7 +99,8 @@ JOIN TON.MODELLI_DISCO m ON m.modello_id=c.modello_id JOIN TON.PRODOTTI a ON a.p
                 limit,
                 compositions,
                 models,
-                com.orodent.ecos.database.CubatureRuleVersions.choices(connection));
+                com.orodent.ecos.database.CubatureRuleVersions.choices(connection),
+                labelChoices());
     }
 
     public SpecificationDraft resolveCalculation(SpecificationDraft draft) throws SQLException {
@@ -110,7 +112,8 @@ JOIN TON.MODELLI_DISCO m ON m.modello_id=c.modello_id JOIN TON.PRODOTTI a ON a.p
                 draft.modelId(),
                 draft.calculation(),
                 draft.notes(),
-                version.id());
+                version.id(),
+                draft.labelTemplateId());
     }
 
     public long insert(Product product, SpecificationDraft draft) throws SQLException {
@@ -131,8 +134,8 @@ JOIN TON.MODELLI_DISCO m ON m.modello_id=c.modello_id JOIN TON.PRODOTTI a ON a.p
         try (var q =
                 connection.prepareStatement(
                         "INSERT INTO"
-                            + " TON.CONFIGURAZIONI_PRODOTTO(prodotto_id,numero_versione,composizione_id,modello_id,versione_calcolo,note,calcolo_versione_id)"
-                            + " VALUES (?,?,?,?,?,?,?)",
+                            + " TON.CONFIGURAZIONI_PRODOTTO(prodotto_id,numero_versione,composizione_id,modello_id,versione_calcolo,note,calcolo_versione_id,etichetta_modello_id)"
+                            + " VALUES (?,?,?,?,?,?,?,?)",
                         Statement.RETURN_GENERATED_KEYS)) {
             q.setLong(1, product.id());
             q.setInt(2, number);
@@ -145,6 +148,7 @@ JOIN TON.MODELLI_DISCO m ON m.modello_id=c.modello_id JOIN TON.PRODOTTI a ON a.p
                     draft.calculationVersionId() == null
                             ? resolveCalculation(draft).calculationVersionId()
                             : draft.calculationVersionId());
+            q.setObject(8, draft.labelTemplateId(), Types.BIGINT);
             q.executeUpdate();
             try (var keys = q.getGeneratedKeys()) {
                 if (!keys.next()) throw new SQLException("ID configurazione non disponibile.");
@@ -165,7 +169,7 @@ JOIN TON.MODELLI_DISCO m ON m.modello_id=c.modello_id JOIN TON.PRODOTTI a ON a.p
                         """
 UPDATE TON.CONFIGURAZIONI_PRODOTTO SET composizione_id=?,modello_id=?,versione_calcolo=?,note=?,
 stato=?,approvato_il=%s,linea_id=?,linea_revisione=?,prodotto_revisione=?,
-versione_modifica=versione_modifica+1,aggiornato_il=CURRENT_TIMESTAMP,calcolo_versione_id=?
+versione_modifica=versione_modifica+1,aggiornato_il=CURRENT_TIMESTAMP,calcolo_versione_id=?,etichetta_modello_id=?
 WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='BOZZA'
 """
                                 .formatted(approve ? "CURRENT_TIMESTAMP" : "NULL"))) {
@@ -178,9 +182,10 @@ WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='B
             q.setObject(7, approve ? line.revision() : null, Types.INTEGER);
             q.setObject(8, approve ? product.revision() : null, Types.INTEGER);
             q.setLong(9, draft.calculationVersionId());
-            q.setLong(10, expected.id());
-            q.setLong(11, product.id());
-            q.setInt(12, expected.revision());
+            q.setObject(10, draft.labelTemplateId(), Types.BIGINT);
+            q.setLong(11, expected.id());
+            q.setLong(12, product.id());
+            q.setInt(13, expected.revision());
             if (q.executeUpdate() != 1) throw new Conflict();
         }
     }
@@ -213,6 +218,21 @@ WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='B
 
     public void validateTechnical(Product product, SpecificationDraft draft, boolean approving)
             throws SQLException {
+        if (draft.labelTemplateId() != null) {
+            lock("MODELLI_DOCUMENTO", "modello_documento_id", draft.labelTemplateId());
+            try (var q =
+                    connection.prepareStatement(
+                            "SELECT stato,tipo FROM TON.MODELLI_DOCUMENTO WHERE"
+                                    + " modello_documento_id=?")) {
+                q.setLong(1, draft.labelTemplateId());
+                try (var rs = q.executeQuery()) {
+                    if (!rs.next()
+                            || !"ETICHETTA".equals(rs.getString(2))
+                            || !"APPROVATA".equals(rs.getString(1)))
+                        throw invalid("Scegli un modello di etichetta approvato.");
+                }
+            }
+        }
         com.orodent.ecos.database.CubatureRuleCatalogue.requireActive(
                 connection, draft.calculation());
         lock("COMPOSIZIONI", "composizione_id", draft.compositionId());
@@ -248,9 +268,9 @@ WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='B
         try (var q =
                 connection.prepareStatement(
                         "SELECT DISTINCT r.polvere_id FROM TON.COMPOSIZIONE_INGREDIENTI i JOIN"
-                            + " TON.POLVERI_REVISIONI r ON"
-                            + " r.polvere_revisione_id=i.polvere_revisione_id WHERE"
-                            + " i.composizione_id=? ORDER BY r.polvere_id")) {
+                                + " TON.POLVERI_REVISIONI r ON"
+                                + " r.polvere_revisione_id=i.polvere_revisione_id WHERE"
+                                + " i.composizione_id=? ORDER BY r.polvere_id")) {
             q.setLong(1, draft.compositionId());
             try (var r = q.executeQuery()) {
                 while (r.next()) powders.add(r.getLong(1));
@@ -260,7 +280,7 @@ WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='B
             try (var q =
                     connection.prepareStatement(
                             "UPDATE TON.POLVERI SET versione_modifica=versione_modifica WHERE"
-                                + " polvere_id=?")) {
+                                    + " polvere_id=?")) {
                 q.setLong(1, id);
                 q.executeUpdate();
             }
@@ -278,8 +298,8 @@ WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='B
         try (var q =
                 connection.prepareStatement(
                         "SELECT COUNT(*) FROM TON.COMPOSIZIONE_STRATI s WHERE s.composizione_id=?"
-                            + " AND NOT EXISTS (SELECT 1 FROM TON.MODELLO_STRATI m WHERE"
-                            + " m.modello_id=? AND m.numero_strato=s.numero_strato)")) {
+                                + " AND NOT EXISTS (SELECT 1 FROM TON.MODELLO_STRATI m WHERE"
+                                + " m.modello_id=? AND m.numero_strato=s.numero_strato)")) {
             q.setLong(1, draft.compositionId());
             q.setLong(2, draft.modelId());
             try (var r = q.executeQuery()) {
@@ -287,15 +307,15 @@ WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='B
                 if (r.getLong(1) > 0)
                     throw invalid(
                             "I numeri degli strati di composizione e modello devono"
-                                + " corrispondere.");
+                                    + " corrispondere.");
             }
         }
         if (count(
                         "SELECT COUNT(*) FROM TON.COMPOSIZIONE_STRATI s WHERE s.composizione_id=?"
-                            + " AND COALESCE((SELECT SUM(i.percentuale_massa) FROM"
-                            + " TON.COMPOSIZIONE_INGREDIENTI i WHERE"
-                            + " i.composizione_id=s.composizione_id AND"
-                            + " i.numero_strato=s.numero_strato),0)<>100",
+                                + " AND COALESCE((SELECT SUM(i.percentuale_massa) FROM"
+                                + " TON.COMPOSIZIONE_INGREDIENTI i WHERE"
+                                + " i.composizione_id=s.composizione_id AND"
+                                + " i.numero_strato=s.numero_strato),0)<>100",
                         draft.compositionId())
                 > 0) throw invalid("Gli ingredienti di ogni strato devono totalizzare 100%.");
         if (count(
@@ -308,11 +328,11 @@ WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='B
                 > 0)
             throw invalid(
                     "La composizione contiene una polvere archiviata o una versione non"
-                        + " approvata.");
+                            + " approvata.");
         try (var q =
                 connection.prepareStatement(
                         "SELECT SUM(percentuale_altezza) FROM TON.MODELLO_STRATI WHERE"
-                            + " modello_id=?")) {
+                                + " modello_id=?")) {
             q.setLong(1, draft.modelId());
             try (var r = q.executeQuery()) {
                 r.next();
@@ -321,6 +341,23 @@ WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='B
                     throw invalid("Gli strati del modello devono totalizzare 100%.");
             }
         }
+    }
+
+    private List<TechnicalChoice> labelChoices() throws SQLException {
+        var result = new ArrayList<TechnicalChoice>();
+        try (var q = connection.createStatement();
+                var rs =
+                        q.executeQuery(
+                                "SELECT modello_documento_id,codice,numero_versione,nome FROM"
+                                    + " TON.MODELLI_DOCUMENTO WHERE tipo='ETICHETTA' AND"
+                                    + " stato='APPROVATA' ORDER BY codice,numero_versione DESC")) {
+            while (rs.next())
+                result.add(
+                        new TechnicalChoice(
+                                rs.getLong(1),
+                                rs.getString(2) + " · v" + rs.getInt(3) + " · " + rs.getString(4)));
+        }
+        return result;
     }
 
     private void lock(String table, String key, long id) throws SQLException {
@@ -363,6 +400,14 @@ WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='B
                 (Integer) r.getObject("linea_revisione"),
                 (Integer) r.getObject("prodotto_revisione"),
                 Objects.equals((Long) r.getObject("preferred_id"), id),
-                (Long) r.getObject("calcolo_versione_id"));
+                (Long) r.getObject("calcolo_versione_id"),
+                (Long) r.getObject("etichetta_modello_id"),
+                r.getString("et_code") == null
+                        ? null
+                        : r.getString("et_code")
+                                + " · v"
+                                + r.getInt("et_version")
+                                + " · "
+                                + r.getString("et_name"));
     }
 }

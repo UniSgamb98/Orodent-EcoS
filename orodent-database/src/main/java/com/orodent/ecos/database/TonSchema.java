@@ -379,6 +379,30 @@ final class TonSchema {
                 column("OPERATORE_NOME", Types.VARCHAR, 150, 0, true, false, null),
                 column("REGISTRATO_IL", Types.TIMESTAMP, 0, 0, false, false, "CURRENT_TIMESTAMP")),
                 List.of("PK_TON_DISCO_MISURE", "FK_TON_MISURE_DISCO", "FK_TON_MISURE_CALCOLO", "CK_TON_MISURE_REV", "CK_TON_MISURE_OPERATORE")));
+        if (schemaVersion >= 34) {
+            tables.add(new Table("CONFIGURAZIONI_PRODOTTO", List.of(column("ETICHETTA_MODELLO_ID", Types.BIGINT, 0, 0, true, false, null)), List.of("FK_TON_CFG_ETICHETTA")));
+            tables.add(new Table("ARTICOLI", List.of(column("GTIN", Types.VARCHAR, 14, 0, true, false, null)), List.of("UQ_TON_ART_GTIN", "CK_TON_ART_GTIN")));
+            tables.add(new Table("ARTICOLI_REVISIONI", List.of(column("GTIN", Types.VARCHAR, 14, 0, true, false, null)), List.of()));
+            tables.add(new Table("ETICHETTE_EMESSE", List.of(
+                column("ETICHETTA_ID", Types.BIGINT, 0, 0, false, true, null),
+                column("MODELLO_DOCUMENTO_ID", Types.BIGINT, 0, 0, false, false, null),
+                column("CICLO_ID", Types.BIGINT, 0, 0, false, false, null),
+                column("PIANO_ID", Types.BIGINT, 0, 0, false, false, null),
+                column("NUMERO_RIGA", Types.INTEGER, 0, 0, false, false, null),
+                column("DATI", Types.CLOB, 0, 0, false, false, null),
+                column("CONTENUTO_HTML", Types.CLOB, 0, 0, false, false, null),
+                column("LARGHEZZA_MM", Types.DECIMAL, 7, 2, false, false, null),
+                column("ALTEZZA_MM", Types.DECIMAL, 7, 2, false, false, null),
+                column("MARGINE_MM", Types.DECIMAL, 7, 2, false, false, null),
+                column("OPERATORE_ID", Types.VARCHAR, 36, 0, true, false, null),
+                column("OPERATORE_NOME", Types.VARCHAR, 150, 0, true, false, null),
+                column("GENERATO_IL", Types.TIMESTAMP, 0, 0, false, false, "CURRENT_TIMESTAMP")),
+                List.of("PK_TON_ETICHETTA", "FK_TON_ETI_MODELLO", "FK_TON_ETI_CICLO", "FK_TON_ETI_PIANO", "CK_TON_ETI_FORMATO", "CK_TON_ETI_OPERATORE")));
+            tables.add(new Table("ETICHETTA_DISCHI", List.of(
+                column("ETICHETTA_ID", Types.BIGINT, 0, 0, false, false, null),
+                column("DISCO_ID", Types.BIGINT, 0, 0, false, false, null)),
+                List.of("PK_TON_ETI_DISCHI", "FK_TON_ETI_DISCHI_ETICHETTA", "FK_TON_ETI_DISCHI_DISCO")));
+        }
         for (Table table : tables) {
             Map<String, Column> columns = actual.getOrDefault(table.name(), Map.of());
             for (Column declared : table.columns()) {

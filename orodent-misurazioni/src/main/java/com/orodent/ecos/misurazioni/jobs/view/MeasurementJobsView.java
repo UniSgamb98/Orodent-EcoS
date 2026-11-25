@@ -30,6 +30,7 @@ public final class MeasurementJobsView extends BorderPane {
             refresh = button("Aggiorna", "jobs-refresh"),
             open = button("Apri misurazioni", "jobs-open"),
             back = button("← Lavori", "jobs-back"),
+            printLabel = button("Stampa etichetta", "jobs-print-label"),
             retry = button("Riprova salvataggio", "jobs-retry"),
             reload = button("Ricarica lavoro", "jobs-reload");
     public final TextField search = new TextField(), productSearch = new TextField();
@@ -263,7 +264,7 @@ public final class MeasurementJobsView extends BorderPane {
                         lists,
                         new Label(
                                 "Disponibilità dei lavori basata sulla fine prevista della"
-                                    + " cottura."),
+                                        + " cottura."),
                         feedback);
         workPanel.getStyleClass().add("jobs-main");
         workPanel.setMinSize(0, 0);
@@ -328,7 +329,7 @@ public final class MeasurementJobsView extends BorderPane {
                         + job.production()
                         + "\n"
                         + rule);
-        var top = new HBox(12, back, jobContext);
+        var top = new HBox(12, back, jobContext, printLabel);
         HBox.setHgrow(jobContext, Priority.ALWAYS);
         var status = new HBox(12, saveState, spacer(), retry, reload);
         status.setAlignment(Pos.CENTER_LEFT);
@@ -392,6 +393,7 @@ public final class MeasurementJobsView extends BorderPane {
 
     public void saving(boolean value) {
         back.setDisable(value);
+        printLabel.setDisable(value);
         home.setDisable(value);
         pending.setDisable(value);
         completed.setDisable(value);

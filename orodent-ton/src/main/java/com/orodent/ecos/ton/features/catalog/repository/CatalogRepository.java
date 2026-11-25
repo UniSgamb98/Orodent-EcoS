@@ -149,7 +149,7 @@ public final class CatalogRepository {
                     case ProductDraft ignored ->
                             "codice,descrizione,linea_id,colore_commerciale,note,attivo";
                     case ArticleDraft ignored ->
-                            "codice,descrizione,prodotto_id,diametro_mm,altezza_mm,note,attivo";
+                            "codice,descrizione,prodotto_id,diametro_mm,altezza_mm,note,attivo,gtin";
                 };
         List<Object> values = values(draft);
         try (var query =
@@ -179,7 +179,7 @@ public final class CatalogRepository {
                     case ProductDraft ignored ->
                             "codice=?,descrizione=?,linea_id=?,colore_commerciale=?,note=?,attivo=?";
                     case ArticleDraft ignored ->
-                            "codice=?,descrizione=?,prodotto_id=?,diametro_mm=?,altezza_mm=?,note=?,attivo=?";
+                            "codice=?,descrizione=?,prodotto_id=?,diametro_mm=?,altezza_mm=?,note=?,attivo=?,gtin=?";
                 };
         List<Object> values = values(draft);
         try (var query =
@@ -257,7 +257,8 @@ public final class CatalogRepository {
                             d.diameter(),
                             d.height(),
                             d.notes(),
-                            d.active());
+                            d.active(),
+                            d.gtin());
         };
     }
 
@@ -424,7 +425,8 @@ public final class CatalogRepository {
                         rows.getBigDecimal("altezza_mm").stripTrailingZeros(),
                         (Long) rows.getObject("inherited_spec"),
                         label,
-                        used);
+                        used,
+                        rows.getString("gtin"));
             }
         };
     }

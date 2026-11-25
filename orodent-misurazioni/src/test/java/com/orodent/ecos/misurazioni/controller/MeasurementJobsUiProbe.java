@@ -52,6 +52,31 @@ public final class MeasurementJobsUiProbe {
         new DatabaseSchema(db).initialize();
         MeasurementJobsFixture.seed(db);
         sql("UPDATE TON.CICLI_COTTURA SET temperatura_finale_c=986 WHERE ciclo_id=1");
+        db.withTransaction(
+                c -> {
+                    String model =
+                            """
+{"schemaVersion":5,"purpose":"ETICHETTA","title":"Scatola UI","page":{"format":"custom","width":100,"height":65,"orientation":"portrait","margin":3},"content":{"type":"doc","content":[{"type":"paragraph","content":[{"type":"labelField","attrs":{"key":"article"}}]},{"type":"paragraph","content":[{"type":"labelField","attrs":{"key":"lot"}}]},{"type":"gs1Matrix","attrs":{"gtin":"{{gtin}}","lot":"{{lot}}","productionDate":"","expiryDate":"","size":20}}]}}
+""";
+                    try (var q =
+                            c.prepareStatement(
+                                    "INSERT INTO"
+                                        + " TON.MODELLI_DOCUMENTO(codice,numero_versione,nome,tipo,contenuto_modello,stato,approvato_il)"
+                                        + " VALUES ('UI-BOX',1,'Scatola"
+                                        + " UI','ETICHETTA',?,'APPROVATA',CURRENT_TIMESTAMP)")) {
+                        q.setString(1, model);
+                        q.executeUpdate();
+                    }
+                    try (var q = c.createStatement()) {
+                        q.executeUpdate(
+                                "UPDATE TON.ARTICOLI SET gtin='09506000134352' WHERE"
+                                        + " articolo_id=1");
+                        q.executeUpdate(
+                                "UPDATE TON.CONFIGURAZIONI_PRODOTTO SET etichetta_modello_id=1"
+                                        + " WHERE configurazione_id=1");
+                    }
+                    return null;
+                });
         workers = Executors.newFixedThreadPool(2);
         Platform.startup(() -> {});
         Platform.setImplicitExit(false);
@@ -100,7 +125,7 @@ public final class MeasurementJobsUiProbe {
                                 session.acquisition.root(),
                                 stage.getScene().getFocusOwner(),
                                 "Il focus iniziale deve appartenere alla schermata di"
-                                    + " acquisizione");
+                                        + " acquisizione");
                         assertNull(
                                 session.view.getLeft(),
                                 "Nessuna barra laterale nel singolo lavoro");
@@ -109,9 +134,49 @@ public final class MeasurementJobsUiProbe {
                         assertFalse(menu.isManaged());
                         return null;
                     });
+            fx(
+                    () -> {
+                        assertTrue(session.view.printLabel.isVisible());
+                        session.view.printLabel.fire();
+                        return null;
+                    });
+            await(
+                    () ->
+                            javafx.stage.Window.getWindows().stream()
+                                    .anyMatch(
+                                            w ->
+                                                    w != stage
+                                                            && w.getScene() != null
+                                                            && w.getScene().lookup("#label-print")
+                                                                    instanceof Button b
+                                                            && !b.isDisabled()));
+            fx(
+                    () -> {
+                        var window =
+                                javafx.stage.Window.getWindows().stream()
+                                        .filter(
+                                                w ->
+                                                        w != stage
+                                                                && w.getScene() != null
+                                                                && w.getScene()
+                                                                                .lookup(
+                                                                                        "#label-print")
+                                                                        != null)
+                                        .findFirst()
+                                        .orElseThrow();
+                        assertTrue(
+                                ((Label) window.getScene().lookup("#label-feedback"))
+                                        .getText()
+                                        .contains("100.0 × 65.0"));
+                        screenshot(window, "target/measurement-label-preview.png");
+                        var pane = (DialogPane) window.getScene().getRoot();
+                        ((Button) pane.lookupButton(ButtonType.CLOSE)).fire();
+                        return null;
+                    });
+            await(() -> stage.getScene().getFocusOwner() == session.acquisition.root());
             sql(
                     "ALTER TABLE TON.DISCO_MISURE_REVISIONI ADD CONSTRAINT reject_ui_save"
-                        + " CHECK(numero_revisione<0)");
+                            + " CHECK(numero_revisione<0)");
             fx(
                     () -> {
                         assertEquals(3, session.acquisition.view.list.getItems().size());
@@ -404,8 +469,12 @@ public final class MeasurementJobsUiProbe {
     }
 
     void screenshot(String file) throws Exception {
+        screenshot(stage, file);
+    }
+
+    void screenshot(javafx.stage.Window window, String file) throws Exception {
         layout();
-        var snap = stage.getScene().snapshot(null);
+        var snap = window.getScene().snapshot(null);
         var out =
                 new java.awt.image.BufferedImage(
                         (int) snap.getWidth(),

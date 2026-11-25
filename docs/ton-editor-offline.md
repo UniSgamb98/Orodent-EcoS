@@ -9,7 +9,7 @@ Non usa CDN, font remoti, Tiptap Cloud o servizi online.
 ## Distribuzione
 
 I file pronti sono in
-`orodent-ton/src/main/resources/ton/document-editor/`:
+`orodent-documenti/src/main/resources/ton/document-editor/`:
 
 - `index.html`: pagina autosufficiente con Tiptap, dipendenze e stile incorporati,
   senza import remoti. I caratteri sono quelli di sistema.
@@ -68,10 +68,10 @@ essere inclusi nelle risorse, mantenendo questa proprietà offline.
 ## Ricostruzione delle risorse — solo per sviluppo
 
 Sorgenti, versioni fissate e lockfile sono in
-`orodent-ton/src/main/frontend/document-editor/`. Con Node.js 20 o successivo:
+`orodent-documenti/src/main/frontend/document-editor/`. Con Node.js 20 o successivo:
 
 ```sh
-cd orodent-ton/src/main/frontend/document-editor
+cd orodent-documenti/src/main/frontend/document-editor
 npm ci --ignore-scripts
 npm test
 npm run build
