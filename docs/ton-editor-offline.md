@@ -20,7 +20,7 @@ Il build produce HTML con CSS e JavaScript incorporati, hash CSP, manifest delle
 
 ## Formato interno e compatibilità
 
-Il formato interno alla versione 6 contiene titolo, utilizzo, impostazioni della pagina e contenuto. `layout: canvas` indica oggetti `canvasObject` con coordinate X/Y, larghezza, altezza, pagina, ordine di sovrapposizione e stile. Ogni oggetto contiene nodi Tiptap per testo, immagini, tabelle, campi, DataMatrix o blocchi automatici. Le coordinate sono pixel di riferimento a 96 dpi; le dimensioni fisiche della carta sono millimetri.
+Il formato interno alla versione 6 contiene titolo, utilizzo, impostazioni della pagina e contenuto. `layout: canvas` indica oggetti `canvasObject` con coordinate X/Y, larghezza, altezza, pagina, ordine di sovrapposizione e stile. Ogni oggetto contiene nodi Tiptap per testo, immagini, tabelle, campi, DataMatrix o blocchi automatici. I dati automatici dell’etichetta usano `kind: field` con un unico nodo atomico `labelValue`: non sono contenitori di testo editabile. I campi inline `labelField` rimangono leggibili per i modelli precedenti; nelle bozze i riquadri con un solo campo vengono convertiti senza modificare i testi misti. Le coordinate sono pixel di riferimento a 96 dpi; le dimensioni fisiche della carta sono millimetri.
 
 Il validatore Java controlla coordinate, pagine, identificatori, stili e limiti fisici prima di salvare. Il validatore frontend controlla anche lo schema Tiptap. Le versioni precedenti rimangono leggibili nel loro formato a flusso: il rendering passivo non converte il modello. Solo una bozza aperta in modifica viene convertita in oggetti, conservando le sezioni a colonne come gruppi.
 

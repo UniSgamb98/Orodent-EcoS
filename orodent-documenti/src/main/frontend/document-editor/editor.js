@@ -24,6 +24,8 @@ import {
 } from './document-model.js';
 import {
   LabelField,
+  LabelValue,
+  upgradeLabelObjects,
   Gs1Matrix,
   setLabelData,
   validateLabelNodes,
@@ -112,8 +114,15 @@ function restore(payload) {
     restoring = false;
   }
 }
+function upgradeFields() {
+  const upgraded = upgradeLabelObjects(editor.getJSON());
+  if (upgraded) {
+    editor.commands.setContent(upgraded);
+    dirty = true;
+  }
+}
 function ensureCanvas() {
-  if (canvas) return;
+  if (canvas) { upgradeFields(); return; }
   const size = pagePixels(page),
     paper = document.getElementById('paper'),
     origin = paper.getBoundingClientRect(),
@@ -164,6 +173,7 @@ function ensureCanvas() {
   page = { ...page, count: Math.max(page.count ?? 1, maxPage + 1) };
   canvas = true;
   editor.commands.setContent({ type: 'doc', content: objects });
+  upgradeFields();
   dirty = true;
   applyLayout();
 }
@@ -213,6 +223,7 @@ try {
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       LocalImage,
       LabelField,
+      LabelValue,
       Gs1Matrix,
       TonBlock,
       TonField,
@@ -234,7 +245,10 @@ try {
         return object.node.attrs.kind !== 'text' && object.node.attrs.kind !== 'table';
       },
       handlePaste(view, event) {
-        if (!canvas || selectedObject(view.state)) return false;
+        if (!canvas) return false;
+        const object = selectedObject(view.state);
+        if (object?.node.attrs.kind === 'field') return true;
+        if (object) return false;
         const text = event.clipboardData?.getData('text/plain');
         if (text) {
           ui.add({ type: 'paragraph', content: [{ type: 'text', text }] }, 'text');

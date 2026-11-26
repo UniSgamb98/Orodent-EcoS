@@ -51,6 +51,24 @@ class DocumentLayoutTest {
     }
 
     @Test
+    void automaticFieldsCannotContainEditableTextOrMultipleValues() {
+        var model = model();
+        var object =
+                model.getAsJsonObject("content").getAsJsonArray("content").get(0).getAsJsonObject();
+        object.getAsJsonObject("attrs").addProperty("kind", "field");
+        var field = JsonParser.parseString("{\"type\":\"labelValue\",\"attrs\":{\"key\":\"lot\"}}");
+        var content = new JsonArray();
+        content.add(field);
+        object.add("content", content);
+        assertDoesNotThrow(() -> DocumentLayout.validate(model));
+        content.add(field.deepCopy());
+        assertThrows(IllegalArgumentException.class, () -> DocumentLayout.validate(model));
+        content.remove(1);
+        object.getAsJsonObject("attrs").addProperty("kind", "text");
+        assertThrows(IllegalArgumentException.class, () -> DocumentLayout.validate(model));
+    }
+
+    @Test
     void permitsEmptyDraftsAndLegacyFlowButKeepsLabelsToOnePage() {
         var blank = model();
         blank.getAsJsonObject("content").add("content", new JsonArray());

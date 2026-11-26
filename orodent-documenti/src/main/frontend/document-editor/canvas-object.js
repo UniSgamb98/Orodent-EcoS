@@ -128,9 +128,11 @@ export const CanvasObject = Node.create({
         dom.style.cssText = objectStyle(attrs);
         dom.dataset.objectId = attrs.id;
         dom.dataset.kind = attrs.kind;
+        contentDOM.contentEditable = attrs.kind === 'field' ? 'false' : 'inherit';
         dom.dataset.canvasPage = attrs.page;
         grip.textContent = {
           text: 'Testo',
+          field: 'Dato automatico',
           image: 'Immagine',
           matrix: 'GS1',
           table: 'Tabella',
@@ -203,7 +205,7 @@ export const CanvasObject = Node.create({
       const down = (e) => {
         if (!editor.isEditable || e.button !== 0) return;
         const control = e.target.closest('.canvas-resize,.canvas-object-grip');
-        const moveBody = ['image', 'matrix', 'block'].includes(node.attrs.kind);
+        const moveBody = ['image', 'matrix', 'block', 'field'].includes(node.attrs.kind);
         if (!control && e.target !== dom && !moveBody) return;
         e.preventDefault();
         e.stopPropagation();
@@ -250,6 +252,7 @@ export const CanvasObject = Node.create({
           return Boolean(e.target.closest('.canvas-object-grip,.canvas-resize'));
         },
         ignoreMutation(m) {
+          if (node.attrs.kind === 'field') return m.type !== 'selection';
           return m.type !== 'selection' && !contentDOM.contains(m.target);
         },
         destroy() {

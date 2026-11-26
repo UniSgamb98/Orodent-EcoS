@@ -38,9 +38,26 @@ public final class DocumentLayout {
             if (!id.matches("obj-[a-zA-Z0-9_-]{1,64}") || !ids.add(id))
                 throw new IllegalArgumentException(
                         "Identificatore oggetto duplicato o non valido.");
-            if (!Set.of("text", "image", "matrix", "table", "block", "group")
+            if (!Set.of("text", "field", "image", "matrix", "table", "block", "group")
                     .contains(a.get("kind").getAsString()))
                 throw new IllegalArgumentException("Tipo oggetto non valido.");
+            var content = node.getAsJsonArray("content");
+            if (a.get("kind").getAsString().equals("field")
+                    && (content == null
+                            || content.size() != 1
+                            || !"labelValue"
+                                    .equals(
+                                            content.get(0)
+                                                    .getAsJsonObject()
+                                                    .get("type")
+                                                    .getAsString())))
+                throw new IllegalArgumentException(
+                        "Un dato automatico deve contenere un solo campo.");
+            if (content != null && !a.get("kind").getAsString().equals("field"))
+                for (var item : content)
+                    if ("labelValue".equals(item.getAsJsonObject().get("type").getAsString()))
+                        throw new IllegalArgumentException(
+                                "Il dato automatico deve essere autonomo.");
             double x = number(a, "x"),
                     y = number(a, "y"),
                     w = number(a, "width"),

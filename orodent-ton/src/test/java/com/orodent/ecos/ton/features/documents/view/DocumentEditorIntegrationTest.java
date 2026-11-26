@@ -31,6 +31,7 @@ import java.util.concurrent.*;
 class DocumentEditorIntegrationTest {
     private Stage stage;
     private ModuleSession session;
+    private String beforeFieldTyping;
     private final List<Throwable> errors = new CopyOnWriteArrayList<>();
 
     @Test
@@ -86,6 +87,20 @@ class DocumentEditorIntegrationTest {
             fx(
                     () -> {
                         assertEquals("canvas", model().get("layout").getAsString());
+                        assertTrue(
+                                button("ton-document-back")
+                                        .getStyleClass()
+                                        .contains("ton-editor-back-link"));
+                        assertEquals(
+                                "Dati automatici",
+                                js("document.getElementById('label-heading').textContent"));
+                        assertEquals(
+                                0,
+                                ((Number)
+                                                js(
+                                                        "document.querySelectorAll('#page-tools"
+                                                                + " .note').length"))
+                                        .intValue());
                         assertFalse(model().getAsJsonObject("content").has("content"));
                         assertEquals(
                                 0,
@@ -109,6 +124,38 @@ class DocumentEditorIntegrationTest {
                                                         "document.getElementById('paper').getBoundingClientRect().width/document.getElementById('paper').getBoundingClientRect().height"))
                                         .doubleValue();
                         assertEquals(102.0 / 38, ratio, .015);
+                        String blank = api().call("serialize").toString();
+                        for (String name :
+                                List.of(
+                                        "article",
+                                        "product",
+                                        "name",
+                                        "line",
+                                        "lot",
+                                        "gtin",
+                                        "diameter",
+                                        "height",
+                                        "temperature",
+                                        "production",
+                                        "quantity",
+                                        "furnace",
+                                        "productionDate",
+                                        "expiryDate")) api().call("insert", "label:" + name);
+                        assertEquals(
+                                14,
+                                model().getAsJsonObject("content")
+                                        .getAsJsonArray("content")
+                                        .size());
+                        assertTrue(
+                                (Boolean)
+                                        js(
+                                                "Array.from(document.querySelectorAll('[data-kind=field]')).every(function(o){var"
+                                                    + " v=o.querySelector('.label-value'),c=v.parentElement;return"
+                                                    + " !o.querySelector('p') &&"
+                                                    + " c.contentEditable==='false' &&"
+                                                    + " v.scrollHeight<=c.clientHeight+1 &&"
+                                                    + " v.scrollWidth<=c.clientWidth+1;})"));
+                        api().call("restore", blank);
                         api().call("insert", "text");
                         return null;
                     });
@@ -131,7 +178,7 @@ class DocumentEditorIntegrationTest {
             await(
                     () ->
                             js("document.querySelector('#editor"
-                                   + " .tiptap').editor.state.selection.toJSON().type")
+                                            + " .tiptap').editor.state.selection.toJSON().type")
                                     .equals("node"));
             fx(
                     () -> {
@@ -143,7 +190,7 @@ class DocumentEditorIntegrationTest {
             await(
                     () ->
                             js("document.querySelector('#editor"
-                                   + " .tiptap').editor.state.selection.toJSON().type")
+                                            + " .tiptap').editor.state.selection.toJSON().type")
                                     .equals("text"));
             fx(
                     () -> {
@@ -193,6 +240,45 @@ class DocumentEditorIntegrationTest {
                         assertEquals(180, attrs().get("width").getAsDouble(), 1);
                         api().call("run", "redo");
                         assertEquals(200, attrs().get("width").getAsDouble(), 1);
+                        api().call("insert", "label:article");
+                        assertEquals(
+                                "field",
+                                js(
+                                        "document.querySelector('#editor"
+                                            + " .tiptap').editor.state.selection.node.attrs.kind"));
+                        controls(new String[][] {{"object-x", "20"}, {"object-y", "110"}});
+                        assertTrue(
+                                (Boolean)
+                                        js(
+                                                "(function(){var"
+                                                    + " v=document.querySelector('[data-kind=field]"
+                                                    + " .label-value'),p=v.parentElement;return"
+                                                    + " Math.abs(v.getBoundingClientRect().top-p.getBoundingClientRect().top)<1"
+                                                    + " && Math.abs(v.getBoundingClientRect().left-p.getBoundingClientRect().left)<1"
+                                                    + " && p.contentEditable==='false';})()"));
+                        beforeFieldTyping = api().call("serialize").toString();
+                        js("document.querySelector('#editor .tiptap').editor.view.focus()");
+                        new Robot().keyPress(KeyCode.X);
+                        new Robot().keyRelease(KeyCode.X);
+                        return null;
+                    });
+            Thread.sleep(
+                    250); // Allow the native WebView to paint the updated inspector before capture.
+            fx(
+                    () -> {
+                        assertTrue(
+                                (Boolean)
+                                        js(
+                                                "getComputedStyle(document.getElementById('text-type').closest('.text-only')).display==='none'"));
+                        assertTrue(
+                                (Boolean)
+                                        js(
+                                                "document.getElementById('font-size').clientHeight>=32"));
+                        assertEquals(beforeFieldTyping, api().call("serialize").toString());
+                        screenshot("target/automatic-field-editor.png");
+                        js(
+                                "document.querySelector('#editor"
+                                        + " .tiptap').editor.commands.setNodeSelection(0)");
                         ((TextField) stage.getScene().lookup("#ton-document-code"))
                                 .setText("CANVAS-LABEL");
                         click("ton-document-save");
@@ -218,7 +304,7 @@ class DocumentEditorIntegrationTest {
                         labelWindow[0].show();
                         label.render(
                                 approved,
-                                "{}",
+                                "{\"article\":\"ZR9812MSA0\"}",
                                 rendered::complete,
                                 error ->
                                         rendered.completeExceptionally(
@@ -227,6 +313,7 @@ class DocumentEditorIntegrationTest {
                     });
             String html = rendered.get(25, TimeUnit.SECONDS);
             assertTrue(html.contains("data-layout=\"canvas\""));
+            assertTrue(html.contains("ZR9812MSA0"));
             Files.writeString(Path.of("target/canvas-label-rendered.html"), html);
             fx(
                     () -> {
@@ -242,7 +329,7 @@ class DocumentEditorIntegrationTest {
                                 (Boolean) js("document.getElementById('model-purpose').disabled"));
                         api().call("insert", "text");
                         assertEquals(
-                                1,
+                                2,
                                 model().getAsJsonObject("content")
                                         .getAsJsonArray("content")
                                         .size());
@@ -314,7 +401,7 @@ class DocumentEditorIntegrationTest {
                     try (var q =
                             c.prepareStatement(
                                     "SELECT contenuto_modello FROM TON.MODELLI_DOCUMENTO WHERE"
-                                        + " modello_documento_id=?")) {
+                                            + " modello_documento_id=?")) {
                         q.setLong(1, id);
                         try (var r = q.executeQuery()) {
                             r.next();

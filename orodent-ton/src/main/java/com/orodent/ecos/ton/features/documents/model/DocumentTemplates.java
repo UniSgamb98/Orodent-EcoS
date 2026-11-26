@@ -122,7 +122,7 @@ public final class DocumentTemplates {
             if (purpose.equals("ETICHETTA")
                     && present.stream().anyMatch(k -> !Set.of("label", "content").contains(k)))
                 throw new IllegalArgumentException(
-                        "Nelle etichette usa i campi della sezione Etichette.");
+                        "Nelle etichette usa i campi della sezione Dati automatici.");
             if (purpose.equals("PRODUZIONE") && present.contains("label"))
                 throw new IllegalArgumentException(
                         "I campi etichetta e GS1 richiedono un modello di tipo Etichetta dischi.");
@@ -193,10 +193,12 @@ public final class DocumentTemplates {
         if (type.equals("image")
                 || type.equals("text") && !node.get("text").getAsString().isBlank())
             present.add("content");
-        if (type.equals("labelField") || type.equals("gs1Matrix")) {
+        if (type.equals("labelField") || type.equals("labelValue") || type.equals("gs1Matrix")) {
             present.add("label");
             var attrs = node.getAsJsonObject("attrs");
-            if (type.equals("labelField")) {
+            if (type.equals("labelField") || type.equals("labelValue")) {
+                if (type.equals("labelValue") && (schema < 6 || depth != 2 || node.has("content")))
+                    throw new IllegalArgumentException("Struttura del dato automatico non valida.");
                 if (!Set.of(
                                 "article",
                                 "product",

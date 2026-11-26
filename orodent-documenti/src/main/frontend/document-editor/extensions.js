@@ -132,7 +132,7 @@ export function validateDocument(node) {
         || !/^#[a-f\d]{6}$/i.test(child.attrs.color))) throw new Error('Stile del blocco non supportato.');
     if (child.type.name === 'tonField' && !Object.prototype.hasOwnProperty.call(fields, child.attrs.key)) throw new Error('Campo non supportato.');
     if (child.type.name === 'gs1Matrix') validateMatrix(child.attrs);
-    if (child.type.name === 'labelField' && !(child.attrs.key in labelFields)) throw new Error('Campo etichetta non valido.');
+    if (['labelField', 'labelValue'].includes(child.type.name) && !(child.attrs.key in labelFields)) throw new Error('Campo etichetta non valido.');
     if (child.type.name === 'image' && !(['25%', '50%', '75%', '100%'].includes(child.attrs.width) || /^(?:[1-9]\d?|100)(?:\.\d)?mm$/.test(child.attrs.width))) throw new Error('Larghezza immagine non supportata.');
     if (child.type.name === 'image' && (!/^data:image\/(png|jpeg|webp);base64,[a-z\d+/=\r\n]+$/i.test(child.attrs.src || '') || child.attrs.src.length > 3_000_000)) {
       throw new Error('Sono ammesse immagini locali PNG, JPEG o WebP fino a 2 MB.');

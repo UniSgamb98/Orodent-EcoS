@@ -1,7 +1,7 @@
 import { editorKey } from './keyboard.js';
 import { GapCursor } from '@tiptap/pm/gapcursor';
 import { NodeSelection } from '@tiptap/pm/state';
-import { labelFields, validateMatrix } from './label-elements.js';
+import { labelFields, validateMatrix, measureLabel } from './label-elements.js';
 import symbols from './symbols.json';
 import { blockTypes, fields, escape, checkOperationalContent } from './laboratory-blocks.js';
 import { blockProperties, bindBlockProperties } from './block-properties.js';
@@ -12,6 +12,7 @@ import { pagePixels, px, mm, clampGeometry } from './canvas-model.js';
 const $ = (id) => document.getElementById(id);
 const kindNames = {
   text: 'Riquadro di testo',
+  field: 'Dato automatico',
   image: 'Immagine',
   matrix: 'GS1 DataMatrix',
   table: 'Tabella',
@@ -63,6 +64,7 @@ export function mountEditorUI(editor, model) {
       offset = (count % 7) * 8;
     const defaults = {
       text: [220, 42],
+      field: [120, 18],
       image: [160, 120],
       matrix: [px(20), px(20)],
       table: [340, 140],
@@ -146,6 +148,7 @@ export function mountEditorUI(editor, model) {
       const label = kind.startsWith('label:'),
         key = kind.slice(6);
       if (!(key in (label ? labelFields : fields))) throw Error('Campo non disponibile.');
+      if (label) return add({type: 'labelValue', attrs: {key}}, 'field', measureLabel(key));
       const content = { type: label ? 'labelField' : 'tonField', attrs: { key } },
         object = selectedObject(editor.state);
       if (object?.node.attrs.kind === 'text' && !(editor.state.selection instanceof NodeSelection))
@@ -270,7 +273,12 @@ export function mountEditorUI(editor, model) {
     !editor.state.selection.empty && !(editor.state.selection instanceof NodeSelection);
   function format(patch, command) {
     const o = selectedObject(editor.state);
-    if (!o || o.node.attrs.kind !== 'text' || !editor.isEditable) return;
+    if (!o || !['text', 'field'].includes(o.node.attrs.kind) || !editor.isEditable) return;
+    if (o.node.attrs.kind === 'field') {
+      updateObject(editor, o, patch);
+      refresh();
+      return;
+    }
     if (hasRange() && command) {
       command(editor.chain().focus()).run();
       return;
@@ -350,7 +358,8 @@ export function mountEditorUI(editor, model) {
       editor.isActive('table');
     if (!force && (key === propertyKey || $('properties').contains(document.activeElement))) return;
     propertyKey = key;
-    text.hidden = !o || o.node.attrs.kind !== 'text';
+    text.hidden = !o || !['text', 'field'].includes(o.node.attrs.kind);
+    text.classList.toggle('automatic-field', o?.node.attrs.kind === 'field');
     if (!o) {
       root.innerHTML =
         '<span class="eyebrow">Proprietà</span><h2>Seleziona un oggetto</h2><p>Inserisci un riquadro di testo, un’immagine o un codice. Trascina la maniglia per spostarlo; usa i bordi per ridimensionarlo.</p><p>Frecce: 1 px · Maiusc + frecce: 10 px.</p><div id="object-list"></div>';
@@ -382,7 +391,7 @@ export function mountEditorUI(editor, model) {
       )
       .join(
         '',
-      )}</div><p class="physical-size">${mm(a.width).toFixed(1)} × ${mm(a.height).toFixed(1)} mm</p>${(model.page().count ?? 1) > 1 ? `<label>Pagina<select id="object-page">${Array.from({ length: model.page().count }, (_, i) => `<option value="${i}" ${i === a.page ? 'selected' : ''}>${i + 1}</option>`).join('')}</select></label>` : ''}<div class="object-actions"><button data-object="front">In primo piano</button><button data-object="back">Sullo sfondo</button><button data-object="fit">Adatta altezza</button><button data-object="duplicate">Duplica</button><button data-object="delete" class="danger">Elimina oggetto</button></div><div id="object-specific"></div><p id="object-overflow" class="matrix-error" hidden>Il contenuto supera il riquadro: aumenta le dimensioni o riduci il testo.</p>`;
+      )}</div><p class="physical-size">${mm(a.width).toFixed(1)} × ${mm(a.height).toFixed(1)} mm</p>${(model.page().count ?? 1) > 1 ? `<label>Pagina<select id="object-page">${Array.from({ length: model.page().count }, (_, i) => `<option value="${i}" ${i === a.page ? 'selected' : ''}>${i + 1}</option>`).join('')}</select></label>` : ''}<div class="object-actions"><button data-object="front">In primo piano</button><button data-object="back">Sullo sfondo</button><button data-object="fit">${a.kind === 'field' ? 'Adatta al dato' : 'Adatta altezza'}</button><button data-object="duplicate">Duplica</button><button data-object="delete" class="danger">Elimina oggetto</button></div><div id="object-specific"></div><p id="object-overflow" class="matrix-error" hidden>Il contenuto supera il riquadro: aumenta le dimensioni o riduci il testo.</p>`;
     const change = (id, action) => {
       const input = $(id);
       if (input) {
@@ -403,6 +412,8 @@ export function mountEditorUI(editor, model) {
       updateObject(editor, selectedObject(editor.state), { page: Number(input.value) }),
     );
     const specific = $('object-specific');
+    if (a.kind === 'field')
+      specific.innerHTML = '<p class="field-name">' + escape(labelFields[node.attrs.key]) + '</p><p>Valore dal lavoro. Non modificabile come testo.</p>';
     if (a.kind === 'image')
       specific.innerHTML =
         '<label>Descrizione immagine<input id="image-alt" value="' +
@@ -480,6 +491,10 @@ export function mountEditorUI(editor, model) {
             duplicate,
             delete: deleteObject,
             fit: () => {
+              if (a.kind === 'field') {
+                updateObject(editor, selectedObject(editor.state), measureLabel(node.attrs.key, a));
+                return;
+              }
               const box = document.querySelector(
                 `[data-object-id="${a.id}"] .canvas-object-content`,
               );
@@ -718,7 +733,7 @@ export function mountEditorUI(editor, model) {
     }
     $('text-properties')
       .querySelectorAll('button,input,select')
-      .forEach((n) => (n.disabled = !editable || a?.kind !== 'text'));
+      .forEach((n) => (n.disabled = !editable || !['text', 'field'].includes(a?.kind)));
     for (const c of ['bold', 'italic', 'underline'])
       document
         .querySelector(`[data-command="${c}"]`)

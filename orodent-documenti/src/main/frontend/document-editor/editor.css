@@ -1272,3 +1272,23 @@ body:not(.label-layout) #label-palette,body:not(.label-layout) #label-heading {d
 .object-list-item {display:block;width:100%;text-align:left;margin:5px 0;font-size:11px;}
 
 .canvas-object-content > ul,.canvas-object-content > ol,.canvas-object-content > blockquote {margin:0;}
+
+/* Side controls must leave room for native WebKit select text and narrow windows. */
+.properties,.insert-panel,.panel-content {min-width:0;}
+.properties input,.properties select,#page-tools input,#page-tools select {min-width:0;}
+#text-properties {display:block;}
+#text-properties .type-control {display:block;margin:10px 0 0;min-width:0;}
+#text-properties select {display:block;width:100%;max-width:100%;height:36px;min-height:36px;margin-top:5px;padding:4px 8px;font:13px/normal Arial,sans-serif;box-sizing:border-box;}
+#text-properties .type-grid {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;}
+#text-properties .format-buttons {display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:14px;}
+#text-properties .format-buttons button {padding:4px 7px;min-height:32px;}
+#text-properties .color-control {display:inline-flex;align-items:center;justify-content:center;margin:0;height:32px;padding:0;}
+#text-properties.automatic-field .text-only {display:none!important;}
+#text-properties.automatic-field .type-grid {grid-template-columns:minmax(0,1fr);}
+.geometry-grid {grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+.geometry-grid > label {min-width:0;}
+.label-value {display:block;box-sizing:border-box;margin:0!important;padding:0!important;border:0;min-height:0;font:inherit;color:inherit;text-align:inherit;white-space:pre-wrap;overflow-wrap:break-word;}
+.canvas-object[data-kind="field"] .canvas-object-content {cursor:move;user-select:none;-webkit-user-select:none;}
+/* Higher specificity avoids paragraph defaults and collapsed margins inside positioned objects. */
+.canvas-object .canvas-object-content {display:flow-root;margin:0;padding:0;}
+.canvas-object .canvas-object-content > p,.canvas-object .canvas-object-content > h1,.canvas-object .canvas-object-content > h2,.canvas-object .canvas-object-content > h3 {margin:0;padding:0;}

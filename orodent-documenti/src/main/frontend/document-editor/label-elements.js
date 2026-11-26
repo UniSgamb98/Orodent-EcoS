@@ -74,10 +74,56 @@ export const LabelField=Node.create({
     return ['span',{class:'label-field','data-label-field':key,title:labelFields[key]},String(data[key] ?? '')];
   },
 });
+// Standalone automatic values are atomic blocks, never editable text containers.
+export const LabelValue = Node.create({
+  name: 'labelValue', group: 'block', atom: true, selectable: false,
+  addAttributes() { return {key: {default: 'article'}}; },
+  parseHTML() { return [{tag: 'div[data-label-value]', getAttrs: e => ({key: e.dataset.labelValue})}]; },
+  renderHTML({node}) {
+    const key = node.attrs.key;
+    if (!(key in labelFields)) throw new Error('Dato automatico non supportato.');
+    return ['div', {class: 'label-value', 'data-label-value': key}, String(data[key] ?? '')];
+  },
+});
+
+export function measureLabel(key, attrs = {}) {
+  const probe = document.createElement('span');
+  probe.style.cssText = `position:fixed;left:-50000px;top:0;display:inline-block;white-space:pre;max-width:none;padding:0;margin:0;border:0;font-family:${attrs.fontFamily ?? 'Arial'};font-size:${attrs.fontSize ?? '11pt'};line-height:${attrs.lineHeight ?? 1.2};font-weight:${attrs.bold ? 700 : 400};font-style:${attrs.italic ? 'italic' : 'normal'};`;
+  probe.textContent = resolveLabel('{{' + key + '}}');
+  document.body.append(probe);
+  const rect = probe.getBoundingClientRect();
+  probe.remove();
+  return {width: Math.max(8, Math.ceil(rect.width) + 1), height: Math.max(8, Math.ceil(rect.height))};
+}
+
+// Upgrade only editable objects containing exactly one field, preserving mixed text and history.
+export function upgradeLabelObjects(doc) {
+  let changed = false;
+  const content = (doc.content ?? []).map(object => {
+    const paragraph = object.content?.[0], field = paragraph?.content?.[0];
+    if (object.type !== 'canvasObject' || object.attrs?.kind !== 'text'
+        || object.content.length !== 1 || paragraph.type !== 'paragraph'
+        || paragraph.content?.length !== 1 || field.type !== 'labelField') return object;
+    changed = true;
+    const attrs = {...object.attrs, kind: 'field'};
+    for (const key of ['textAlign', 'lineHeight'])
+      if (paragraph.attrs?.[key] != null) attrs[key] = paragraph.attrs[key];
+    for (const mark of field.marks ?? []) {
+      if (['bold', 'italic', 'underline'].includes(mark.type)) attrs[mark.type] = true;
+      if (mark.type === 'textStyle')
+        for (const key of ['fontFamily', 'fontSize', 'color', 'lineHeight'])
+          if (mark.attrs?.[key] != null) attrs[key] = mark.attrs[key];
+    }
+    attrs.lineHeight = Number(attrs.lineHeight);
+    return {...object, attrs, content: [{type: 'labelValue', attrs: {key: field.attrs.key}}]};
+  });
+  return changed ? {...doc, content} : null;
+}
+
 export function validateLabelNodes(doc) {
   doc.descendants(n=>{
     if(n.type.name==='gs1Matrix') {validateMatrix(n.attrs);bwipjs.toSVG(matrixOptions(n.attrs));}
-    if(n.type.name==='labelField') resolveLabel('{{'+n.attrs.key+'}}');
-    if(['tonBlock','tonField'].includes(n.type.name)) throw new Error('Nelle etichette usa i campi della sezione Etichette.');
+    if(['labelField', 'labelValue'].includes(n.type.name)) resolveLabel('{{'+n.attrs.key+'}}');
+    if(['tonBlock','tonField'].includes(n.type.name)) throw new Error('Nelle etichette usa i campi della sezione Dati automatici.');
   });
 }

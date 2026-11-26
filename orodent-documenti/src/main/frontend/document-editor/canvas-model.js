@@ -1,7 +1,7 @@
 // Logical pixels use the CSS reference resolution (96 dpi), independent of zoom and printer dpi.
 export const PX_PER_MM = 96 / 25.4;
 export const MAX_PAGES = 50;
-export const objectKinds = ['text', 'image', 'matrix', 'table', 'block', 'group'];
+export const objectKinds = ['text', 'field', 'image', 'matrix', 'table', 'block', 'group'];
 export const px = (mm) => mm * PX_PER_MM;
 export const mm = (pixels) => pixels / PX_PER_MM;
 export function pagePixels(page) {

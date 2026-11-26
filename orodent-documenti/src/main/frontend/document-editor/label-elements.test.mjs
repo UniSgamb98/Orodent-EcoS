@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import bwipjs from 'bwip-js';
 import zxing from '@zxing/library';
 import Decoder from '@zxing/library/cjs/core/datamatrix/decoder/Decoder.js';
-import { gs1Text, setLabelData, matrixOptions } from './label-elements.js';
+import { gs1Text, setLabelData, matrixOptions, upgradeLabelObjects, LabelValue, resolveLabel } from './label-elements.js';
 import { validatePage, paperSize } from './page-settings.js';
 
 const fields={gtin:'{{gtin}}',lot:'{{lot}}',productionDate:'{{productionDateGs1}}',expiryDate:'{{expiryDateGs1}}',size:20};
@@ -26,4 +26,26 @@ test('custom paper preserves physical dimensions and rejects impossible margins'
   assert.deepEqual(paperSize(validatePage({format:'custom',width:100,height:65,margin:3,orientation:'portrait'})),{width:100,height:65});
   assert.deepEqual(paperSize(validatePage({format:'a4',width:100,height:65,margin:15,orientation:'landscape'})),{width:297,height:210});
   assert.throws(()=>validatePage({format:'custom',width:100,height:65,margin:33,orientation:'portrait'}));
+});
+
+test('standalone automatic values are leaves and old field-only boxes preserve formatting', () => {
+  assert.equal(LabelValue.config.atom, true);
+  assert.equal(LabelValue.config.content, undefined);
+  const old = {type:'canvasObject', attrs:{kind:'text', lineHeight:1.2, x:12, width:140}, content:[
+    {type:'paragraph', attrs:{textAlign:'right'}, content:[{type:'labelField', attrs:{key:'lot'},
+      marks:[{type:'bold'},{type:'textStyle',attrs:{fontSize:'14pt',color:'#ff0000'}}]}]}]};
+  const mixed = {type:'canvasObject', attrs:{kind:'text'}, content:[{type:'paragraph',content:[
+    {type:'text',text:'LOT '},{type:'labelField',attrs:{key:'lot'}}]}]};
+  const upgraded = upgradeLabelObjects({type:'doc',content:[old,mixed]});
+  assert.equal(upgraded.content[0].attrs.kind,'field');
+  assert.equal(upgraded.content[0].attrs.x,12);
+  assert.equal(upgraded.content[0].attrs.fontSize,'14pt');
+  assert.equal(upgraded.content[0].attrs.bold,true);
+  assert.deepEqual(upgraded.content[0].content,[{type:'labelValue',attrs:{key:'lot'}}]);
+  assert.equal(upgraded.content[1],mixed);
+  assert.equal(old.attrs.kind,'text');
+  assert.equal(upgradeLabelObjects(upgraded),null);
+  setLabelData({lot:'LOTTO-REALE'});
+  assert.equal(resolveLabel('{{lot}}'),'LOTTO-REALE');
+  assert.equal(LabelValue.config.renderHTML({node:{attrs:{key:'lot'}}})[2],'LOTTO-REALE');
 });

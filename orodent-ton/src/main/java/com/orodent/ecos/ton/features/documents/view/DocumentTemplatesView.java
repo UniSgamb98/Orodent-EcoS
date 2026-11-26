@@ -27,7 +27,7 @@ public final class DocumentTemplatesView extends BorderPane {
     public final TableView<Template> table = listing.table();
     public final Button create = listing.create();
     public final Button refresh = listing.refresh();
-    public final Button back = button("← Elenco modelli", "ton-document-back", false);
+    public final Button back = button("← Torna ai modelli documento", "ton-document-back", false);
     public final Button save = button("Salva bozza", "ton-document-save", true);
     public final Button approve = button("Salva e approva", "ton-document-approve", true);
     public final Button newVersion = button("Nuova versione", "ton-document-new-version", false);
@@ -64,20 +64,27 @@ public final class DocumentTemplatesView extends BorderPane {
         code.setMaxWidth(220);
         versions.setId("ton-document-versions");
         versions.setPrefWidth(190);
-        var meta =
-                new FlowPane(
-                        10,
-                        6,
-                        back,
-                        new Label("Codice *"),
-                        code,
-                        new Label("Versione"),
-                        versions,
-                        state);
-        meta.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-        actions.getChildren().addAll(save, approve, newVersion, reload, delete);
-        var controls = new VBox(8, meta, actions);
-        controls.setPadding(new Insets(8, 12, 8, 12));
+        editing.getStylesheets()
+                .add(
+                        java.util.Objects.requireNonNull(
+                                        DocumentTemplatesView.class.getResource(
+                                                "/ton/css/technical-editor.css"))
+                                .toExternalForm());
+        back.getStyleClass().add("ton-editor-back-link");
+        back.setMinWidth(Region.USE_PREF_SIZE);
+        var codeGroup = new HBox(6, new Label("Codice *"), code);
+        var versionGroup = new HBox(6, new Label("Versione"), versions);
+        codeGroup.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        versionGroup.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        actions.getChildren()
+                .addAll(save, approve, newVersion, reload, delete, codeGroup, versionGroup, state);
+        actions.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        actions.setId("ton-document-editor-actions");
+        var navigation = new HBox(back);
+        navigation.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        var controls = new VBox(12, navigation, actions);
+        controls.getStyleClass().add("ton-technical-detail");
+        controls.setStyle("-fx-padding:12px 24px;");
         editing.setTop(controls);
         feedback.setId("ton-document-feedback");
         feedback.setPadding(new Insets(7, 12, 7, 12));

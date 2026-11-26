@@ -83,6 +83,12 @@ export function validateCanvas(doc, page) {
     if (node.type.name !== 'canvasObject')
       throw new Error('Tutti gli elementi devono appartenere a un oggetto.');
     validateObject(node.attrs, page);
+    if (node.attrs.kind === 'field' && (node.childCount !== 1 || node.firstChild.type.name !== 'labelValue'))
+      throw new Error('Un dato automatico deve contenere un solo campo.');
+    node.descendants(child => {
+      if (child.type.name === 'labelValue' && node.attrs.kind !== 'field')
+        throw new Error('Il dato automatico deve essere un oggetto autonomo.');
+    });
     if (ids.has(node.attrs.id)) throw new Error('Identificatore oggetto duplicato.');
     ids.add(node.attrs.id);
   });

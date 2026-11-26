@@ -4,7 +4,7 @@ In **TON → Documenti → Modelli documenti**, **Nuovo modello** apre un foglio
 
 Il formato, il contenuto e le immagini appartengono alla versione del modello. Una versione approvata è in sola lettura: per cambiare etichetta o supporto crea una nuova versione. I modelli precedenti restano disponibili.
 
-Il pannello di inserimento offre i campi del lavoro, i simboli REF, MD, LOT, fabbricazione, non riutilizzare, istruzioni, UDI, fabbricante e CE. **Immagine dal PC** importa PNG, JPEG o WebP fino a 2 MB per immagine; la copia viene incorporata nel modello. Posizione e dimensioni dell’immagine si modificano nel pannello delle proprietà oppure trascinando il riquadro.
+La sezione **Dati automatici** del pannello di inserimento offre i campi del lavoro come oggetti autonomi, senza testo aggiuntivo nel riquadro. Il pannello offre inoltre i simboli REF, MD, LOT, fabbricazione, non riutilizzare, istruzioni, UDI, fabbricante, CE, numero modello (# nel rettangolo), tenere all’asciutto e data di scadenza. **Immagine dal PC** importa PNG, JPEG o WebP fino a 2 MB per immagine; la copia viene incorporata nel modello. Posizione e dimensioni dell’immagine si modificano nel pannello delle proprietà oppure trascinando il riquadro.
 
 ## Collegamento al prodotto e GTIN
 
