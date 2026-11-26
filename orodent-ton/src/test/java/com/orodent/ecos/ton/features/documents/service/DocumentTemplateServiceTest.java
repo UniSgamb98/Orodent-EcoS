@@ -83,6 +83,50 @@ class DocumentTemplateServiceTest {
     }
 
     @Test
+    void dateMasksAreValidatedAndPreservedAcrossApprovedVersions() {
+        String label =
+                """
+{"schemaVersion":8,"purpose":"ETICHETTA","title":"Date etichetta","page":{"format":"custom","width":100,"height":65,"orientation":"portrait","margin":3},"content":{"type":"doc","content":[{"type":"paragraph","content":[{"type":"labelField","attrs":{"key":"productionDate","dateFormat":"yymm00"}},{"type":"labelField","attrs":{"key":"expiryDate","dateFormat":"mm/yy"}}]}]}}
+""";
+        var first = service.create(new Draft("DATE", label), true).join();
+        assertEquals(label, service.load(first.template().id()).join().content());
+        var next = service.newVersion(first.template()).join();
+        assertEquals(label, next.content());
+        service.save(next.template(), new Draft("DATE", label.replace("yymm00", "ddmmyyyy")), true)
+                .join();
+        assertEquals(label, service.load(first.template().id()).join().content());
+        for (String invalid :
+                List.of("d/m/yyyy", "yyyyy", "mm/yy HH:mm", "x".repeat(65), "<script>"))
+            assertThrows(
+                    IllegalArgumentException.class,
+                    () -> new Draft("BAD", label.replace("yymm00", invalid)));
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        new Draft(
+                                "BAD",
+                                label.replace("\"dateFormat\":\"yymm00\"", "\"dateFormat\":123")));
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        new Draft(
+                                "BAD",
+                                label.replace("\"dateFormat\":\"yymm00\"", "\"dateFormat\":null")));
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        new Draft(
+                                "BAD",
+                                label.replace("\"key\":\"productionDate\"", "\"key\":\"lot\"")));
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        new Draft(
+                                "BAD",
+                                label.replace("\"schemaVersion\":8", "\"schemaVersion\":7")));
+    }
+
+    @Test
     void labelPaperRemainsFrozenAcrossVersions() {
         String label =
                 """
@@ -229,7 +273,7 @@ class DocumentTemplateServiceTest {
                         payload.replace("[60,40]", "[5,95]"),
                         payload.replace("[60,40]", "[100]"),
                         payload.replace("\"gap\":4", "\"gap\":13"),
-                        payload.replace("\"schemaVersion\":3", "\"schemaVersion\":8")))
+                        payload.replace("\"schemaVersion\":3", "\"schemaVersion\":9")))
             assertThrows(IllegalArgumentException.class, () -> new Draft("BAD", invalid));
         assertEquals(payload, service.load(saved.template().id()).join().content());
     }

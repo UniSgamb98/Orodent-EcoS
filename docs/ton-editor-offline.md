@@ -69,9 +69,20 @@ esterna, proporzionale alla larghezza del codice, senza influire sui limiti
 geometrici o causare overflow nella verifica di stampa. I dati GS1 codificati
 non cambiano. Il rendering passivo non applica queste conversioni.
 
+`date-field-properties.js` fornisce il pannello condiviso di produzione e
+scadenza, registrato in `automatic-field-properties.js`. Il formato è un
+attributo del singolo `labelValue` (e dei campi inline `labelField` compatibili).
+`date-format.js` contiene parser e formatter deterministici: token `dd`, `mm`,
+`yyyy`, `yy`, cifre fisse e separatori, senza conversioni di fuso orario.
+`labelValueText` è usato sia dal rendering che da **Adatta al dato**; la
+conversione dei vecchi campi inline preserva il formato. Il formato vuoto usa
+il precedente `dd/mm/yyyy`. Il validatore Java controlla tipo, lunghezza e
+grammatica prima del salvataggio. Date originali, payload GS1 ed etichette già
+emesse non vengono riscritti.
+
 ## Formato interno e compatibilità
 
-Il formato interno alla versione 7 contiene titolo, utilizzo, impostazioni della pagina e contenuto. `layout: canvas` indica oggetti `canvasObject` con coordinate X/Y, larghezza, altezza, pagina, ordine di sovrapposizione e stile. Ogni oggetto contiene nodi Tiptap per testo, immagini, tabelle, campi, DataMatrix o blocchi automatici. I dati automatici dell’etichetta usano `kind: field` con un unico nodo atomico `labelValue`: non sono contenitori di testo editabile. I campi inline `labelField` rimangono leggibili per i modelli precedenti; nelle bozze i riquadri con un solo campo vengono convertiti senza modificare i testi misti. Le coordinate sono pixel di riferimento a 96 dpi; le dimensioni fisiche della carta sono millimetri. La versione 7 aggiunge appartenenza ai gruppi e geometria aderente dei DataMatrix. Le versioni da 1 a 6 rimangono leggibili; i gruppi devono contenere almeno due membri della stessa pagina. Non è necessaria una migrazione dello schema del database.
+Il formato interno alla versione 8 contiene titolo, utilizzo, impostazioni della pagina e contenuto. `layout: canvas` indica oggetti `canvasObject` con coordinate X/Y, larghezza, altezza, pagina, ordine di sovrapposizione e stile. Ogni oggetto contiene nodi Tiptap per testo, immagini, tabelle, campi, DataMatrix o blocchi automatici. I dati automatici dell’etichetta usano `kind: field` con un unico nodo atomico `labelValue`: non sono contenitori di testo editabile. I campi inline `labelField` rimangono leggibili per i modelli precedenti; nelle bozze i riquadri con un solo campo vengono convertiti senza modificare i testi misti. Le coordinate sono pixel di riferimento a 96 dpi; le dimensioni fisiche della carta sono millimetri. La versione 7 aggiunge appartenenza ai gruppi e geometria aderente dei DataMatrix. La versione 8 aggiunge `dateFormat` ai campi data. Le versioni da 1 a 7 rimangono leggibili; i gruppi devono contenere almeno due membri della stessa pagina. Non è necessaria una migrazione dello schema del database.
 
 La selezione multipla (`canvas-selection.js`) è una selezione ProseMirror con intervalli separati per gli oggetti e bookmark basati sugli ID. La selezione non entra nel modello salvato. Spostamenti e cancellazioni di gruppo producono una sola transazione di modifica; gli oggetti non selezionati fra due intervalli restano intatti. La geometria del rettangolo e lo spostamento del gruppo usano pixel di riferimento, indipendenti dallo zoom.
 

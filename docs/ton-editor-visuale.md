@@ -80,6 +80,26 @@ consentono di cambiare carattere, dimensione, colore, grassetto, corsivo e
 sottolineatura; **Adatta al dato** calcola larghezza e altezza usando il valore
 visualizzato. I valori si aggiornano dal lavoro alla generazione dell’etichetta.
 
+Selezionando **Data produzione** o **Data scadenza**, nelle proprietà compare
+**Formato data**, con anteprima immediata anche sul foglio. Ogni elemento
+conserva il proprio formato nel modello e nelle sue versioni. Con la data
+22/09/2026:
+
+| Formato | Risultato |
+| --- | --- |
+| `dd/mm/yyyy` | 22/09/2026 |
+| `mm/yyyy` | 09/2026 |
+| `mm/yy` | 09/26 |
+| `ddmmyyyy` | 22092026 |
+| `yymmdd` | 260922 |
+| `yymm00` | 260900 |
+
+I token sono `dd`, `mm`, `yyyy` e `yy`; numeri e separatori rimangono fissi.
+Il formato vuoto ripristina `dd/mm/yyyy`. I formati non validi sono segnalati
+e non sostituiscono l'ultimo formato valido. **Adatta al dato** misura il testo
+formattato. Cambia soltanto la rappresentazione: la data originale e le date
+GS1 del DataMatrix rimangono invariate.
+
 I normali riquadri di testo restano disponibili per le scritte libere. I campi
 operativi dei documenti di produzione possono ancora essere inseriti nel testo;
 i dati dei blocchi continuano a provenire dal piano, senza alterare pesi o calcoli.

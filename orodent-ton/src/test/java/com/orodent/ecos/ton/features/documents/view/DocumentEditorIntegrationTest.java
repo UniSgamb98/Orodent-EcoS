@@ -380,6 +380,7 @@ class DocumentEditorIntegrationTest {
             verifyAlignmentAndProperties();
             verifySymbolBounds();
             verifyGroupsAndMatrix(db);
+            verifyDateFormats(db);
             assertEquals(approved, read(db, 1));
             assertTrue(errors.isEmpty(), errors::toString);
         } finally {
@@ -1212,6 +1213,189 @@ JSON.stringify((()=>{
                     assertFalse(
                             com.orodent.ecos.documents.CanvasPrintLayout.fits(output),
                             "Quiet zone must remain inside the printed page");
+                    label.close();
+                    window[0].close();
+                    stage.toFront();
+                    return null;
+                });
+    }
+
+    private void verifyDateFormats(ConnectionProvider db) throws Exception {
+        fx(
+                () -> {
+                    api().call("newModel", "ETICHETTA");
+                    api().call("setEditable", true);
+                    api().call("insert", "label:article");
+                    assertNull(js("document.getElementById('date-format')"));
+                    api().call("newModel", "ETICHETTA");
+                    controls(new String[][] {{"zoom", "1"}});
+                    api().call("insert", "label:productionDate");
+                    controls(
+                            new String[][] {
+                                {"object-x", "30"},
+                                {"object-y", "30"},
+                                {"object-width", "150"},
+                                {"object-height", "30"}
+                            });
+                    assertEquals("dd/mm/yyyy", js("document.getElementById('date-format').value"));
+                    for (String[] example :
+                            new String[][] {
+                                {"dd/mm/yyyy", "22/09/2026"},
+                                {"mm/yyyy", "09/2026"},
+                                {"mm/yy", "09/26"},
+                                {"ddmmyyyy", "22092026"},
+                                {"yymmdd", "260922"},
+                                {"yymm00", "260900"}
+                            }) {
+                        js(
+                                "(()=>{const"
+                                    + " input=document.getElementById('date-format');input.focus();input.value="
+                                        + new JsonPrimitive(example[0])
+                                        + ";input.dispatchEvent(new Event('input'));})()");
+                        assertEquals(
+                                example[1],
+                                js(
+                                        "document.querySelector('[data-label-value=productionDate]').textContent"));
+                        assertEquals(
+                                example[1],
+                                js("document.getElementById('date-format-preview').textContent"));
+                    }
+                    js(
+                            "(()=>{const"
+                                + " i=document.getElementById('date-format');i.value='d/m/yyyy';i.dispatchEvent(new"
+                                + " Event('input'));})()");
+                    assertEquals(
+                            "true",
+                            js(
+                                    "document.getElementById('date-format').getAttribute('aria-invalid')"));
+                    assertFalse(
+                            (Boolean) js("document.getElementById('date-format-error').hidden"));
+                    assertEquals(
+                            "260900",
+                            js(
+                                    "document.querySelector('[data-label-value=productionDate]').textContent"));
+                    controls(new String[][] {{"date-format", "dd/mm/yyyy"}});
+                    js("document.querySelector('[data-object=fit]').click()");
+                    double full = attrs().get("width").getAsDouble();
+                    controls(new String[][] {{"date-format", "mm/yy"}});
+                    js("document.querySelector('[data-object=fit]').click()");
+                    assertTrue(
+                            attrs().get("width").getAsDouble() < full,
+                            "Fit must measure the formatted value");
+                    controls(new String[][] {{"date-format", "yymm00"}});
+                    js("document.querySelector('[data-object=fit]').click()");
+                    js("document.querySelector('[data-object=duplicate]').click()");
+                    var duplicate =
+                            model().getAsJsonObject("content")
+                                    .getAsJsonArray("content")
+                                    .get(1)
+                                    .getAsJsonObject();
+                    assertEquals(
+                            "yymm00",
+                            duplicate
+                                    .getAsJsonArray("content")
+                                    .get(0)
+                                    .getAsJsonObject()
+                                    .getAsJsonObject("attrs")
+                                    .get("dateFormat")
+                                    .getAsString());
+                    js("document.querySelector('[data-object=delete]').click()");
+                    api().call("insert", "label:expiryDate");
+                    controls(
+                            new String[][] {
+                                {"object-x", "30"}, {"object-y", "80"}, {"date-format", "mm/yy"}
+                            });
+                    assertEquals(
+                            "09/31",
+                            js(
+                                    "document.querySelector('[data-label-value=expiryDate]').textContent"));
+                    assertEquals(
+                            "260900",
+                            js(
+                                    "document.querySelector('[data-label-value=productionDate]').textContent"));
+                    api().call("setEditable", false);
+                    assertTrue((Boolean) js("document.getElementById('date-format').disabled"));
+                    api().call("setEditable", true);
+                    click("ton-document-save");
+                    return null;
+                });
+        await(() -> read(db, 2).contains("yymm00"));
+        String saved = read(db, 2);
+        fx(
+                () -> {
+                    api().call("restore", saved);
+                    assertEquals(
+                            "260900",
+                            js(
+                                    "document.querySelector('[data-label-value=productionDate]').textContent"));
+                    assertEquals(
+                            "09/31",
+                            js(
+                                    "document.querySelector('[data-label-value=expiryDate]').textContent"));
+                    var legacy = JsonParser.parseString(saved).getAsJsonObject();
+                    legacy.addProperty("schemaVersion", 7);
+                    for (var entry : legacy.getAsJsonObject("content").getAsJsonArray("content"))
+                        entry.getAsJsonObject()
+                                .getAsJsonArray("content")
+                                .get(0)
+                                .getAsJsonObject()
+                                .getAsJsonObject("attrs")
+                                .remove("dateFormat");
+                    api().call("restore", legacy.toString());
+                    assertEquals(
+                            "22/09/2026",
+                            js(
+                                    "document.querySelector('[data-label-value=productionDate]').textContent"));
+                    assertEquals(
+                            "30/09/2031",
+                            js(
+                                    "document.querySelector('[data-label-value=expiryDate]').textContent"));
+                    api().call("restore", saved);
+                    js(
+                            "document.querySelector('#editor"
+                                + " .tiptap').editor.commands.setNodeSelection(document.querySelector('#editor"
+                                + " .tiptap').editor.state.doc.firstChild.nodeSize)");
+                    return null;
+                });
+        Thread.sleep(200);
+        fx(
+                () -> {
+                    screenshot("target/document-date-formats.png");
+                    return null;
+                });
+        var label = fx(() -> new com.orodent.ecos.documents.LabelPreviewPane());
+        final Stage[] window = {null};
+        var rendered = new CompletableFuture<String>();
+        fx(
+                () -> {
+                    window[0] = new Stage();
+                    window[0].initOwner(stage);
+                    window[0].setScene(new Scene(label, 500, 300));
+                    window[0].show();
+                    label.render(
+                            saved,
+                            "{\"productionDate\":\"07/02/2027\",\"expiryDate\":\"30/11/2032\"}",
+                            rendered::complete,
+                            error ->
+                                    rendered.completeExceptionally(
+                                            new IllegalStateException(error)));
+                    return null;
+                });
+        rendered.get(25, TimeUnit.SECONDS);
+        fx(
+                () -> {
+                    assertTrue(label.printable());
+                    var output = (WebView) label.getCenter();
+                    assertEquals(
+                            "270200",
+                            output.getEngine()
+                                    .executeScript(
+                                            "document.querySelector('[data-label-value=productionDate]').textContent"));
+                    assertEquals(
+                            "11/32",
+                            output.getEngine()
+                                    .executeScript(
+                                            "document.querySelector('[data-label-value=expiryDate]').textContent"));
                     label.close();
                     window[0].close();
                     stage.toFront();

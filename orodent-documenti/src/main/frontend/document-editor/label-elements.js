@@ -1,3 +1,4 @@
+import { formatDate, isDateField, validateFieldDateFormat } from './date-format.js';
 import { Node } from '@tiptap/core';
 import bwipjs from 'bwip-js';
 
@@ -48,6 +49,13 @@ export function resolveLabel(value) {
       throw new Error('Dato mancante per l’etichetta: ' + (labelFields[key] ?? key));
     return String(data[key]);
   });
+}
+export function labelValueText(attrs) {
+  const key = attrs.key;
+  if (!(key in labelFields)) throw new Error('Dato automatico non supportato.');
+  validateFieldDateFormat(key, attrs.dateFormat);
+  const value = String(data[key] ?? '');
+  return isDateField(key) ? formatDate(value, attrs.dateFormat) : value;
 }
 export function gs1Text(attrs, resolve = resolveLabel) {
   const gtin = resolve(attrs.gtin),
@@ -175,18 +183,28 @@ export const LabelField = Node.create({
   inline: true,
   atom: true,
   addAttributes() {
-    return { key: { default: 'article' } };
+    return { key: { default: 'article' }, dateFormat: { default: '' } };
   },
   parseHTML() {
-    return [{ tag: 'span[data-label-field]', getAttrs: (e) => ({ key: e.dataset.labelField }) }];
+    return [
+      {
+        tag: 'span[data-label-field]',
+        getAttrs: (e) => ({ key: e.dataset.labelField, dateFormat: e.dataset.dateFormat ?? '' }),
+      },
+    ];
   },
   renderHTML({ node }) {
     const key = node.attrs.key;
     if (!(key in labelFields)) throw new Error('Campo etichetta non supportato.');
     return [
       'span',
-      { class: 'label-field', 'data-label-field': key, title: labelFields[key] },
-      String(data[key] ?? ''),
+      {
+        class: 'label-field',
+        'data-label-field': key,
+        'data-date-format': node.attrs.dateFormat ?? '',
+        title: labelFields[key],
+      },
+      labelValueText(node.attrs),
     ];
   },
 });
@@ -197,22 +215,35 @@ export const LabelValue = Node.create({
   atom: true,
   selectable: false,
   addAttributes() {
-    return { key: { default: 'article' } };
+    return { key: { default: 'article' }, dateFormat: { default: '' } };
   },
   parseHTML() {
-    return [{ tag: 'div[data-label-value]', getAttrs: (e) => ({ key: e.dataset.labelValue }) }];
+    return [
+      {
+        tag: 'div[data-label-value]',
+        getAttrs: (e) => ({ key: e.dataset.labelValue, dateFormat: e.dataset.dateFormat ?? '' }),
+      },
+    ];
   },
   renderHTML({ node }) {
     const key = node.attrs.key;
     if (!(key in labelFields)) throw new Error('Dato automatico non supportato.');
-    return ['div', { class: 'label-value', 'data-label-value': key }, String(data[key] ?? '')];
+    return [
+      'div',
+      {
+        class: 'label-value',
+        'data-label-value': key,
+        'data-date-format': node.attrs.dateFormat ?? '',
+      },
+      labelValueText(node.attrs),
+    ];
   },
 });
 
-export function measureLabel(key, attrs = {}) {
+export function measureLabel(key, attrs = {}, fieldAttrs = {}) {
   const probe = document.createElement('span');
   probe.style.cssText = `position:fixed;left:-50000px;top:0;display:inline-block;white-space:pre;max-width:none;padding:0;margin:0;border:0;font-family:${attrs.fontFamily ?? 'Arial'};font-size:${attrs.fontSize ?? '11pt'};line-height:${attrs.lineHeight ?? 1.2};font-weight:${attrs.bold ? 700 : 400};font-style:${attrs.italic ? 'italic' : 'normal'};`;
-  probe.textContent = resolveLabel('{{' + key + '}}');
+  probe.textContent = labelValueText({ ...fieldAttrs, key });
   document.body.append(probe);
   const rect = probe.getBoundingClientRect();
   probe.remove();
@@ -248,7 +279,7 @@ export function upgradeLabelObjects(doc) {
           if (mark.attrs?.[key] != null) attrs[key] = mark.attrs[key];
     }
     attrs.lineHeight = Number(attrs.lineHeight);
-    return { ...object, attrs, content: [{ type: 'labelValue', attrs: { key: field.attrs.key } }] };
+    return { ...object, attrs, content: [{ type: 'labelValue', attrs: { ...field.attrs } }] };
   });
   return changed ? { ...doc, content } : null;
 }
@@ -259,7 +290,10 @@ export function validateLabelNodes(doc) {
       validateMatrix(n.attrs);
       bwipjs.toSVG(matrixOptions(n.attrs));
     }
-    if (['labelField', 'labelValue'].includes(n.type.name)) resolveLabel('{{' + n.attrs.key + '}}');
+    if (['labelField', 'labelValue'].includes(n.type.name)) {
+      resolveLabel('{{' + n.attrs.key + '}}');
+      labelValueText(n.attrs);
+    }
     if (['tonBlock', 'tonField'].includes(n.type.name))
       throw new Error('Nelle etichette usa i campi della sezione Dati automatici.');
   });

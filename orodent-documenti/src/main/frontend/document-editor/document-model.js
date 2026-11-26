@@ -4,7 +4,7 @@ import { sizePaper } from './paper-layout.js';
 import { validateDocument } from './extensions.js';
 import { normalizeLayoutJSON } from './layout-model.js';
 
-export const documentSchemaVersion = 7;
+export const documentSchemaVersion = 8;
 import { defaultPage, validatePage, paperSize } from './page-settings.js';
 export { defaultPage, validatePage, paperSize } from './page-settings.js';
 
@@ -20,7 +20,7 @@ export function readModel(payload, schema) {
   if (!envelope || typeof envelope !== 'object' || Array.isArray(envelope))
     throw new Error('Il file non contiene un modello valido.');
   if (
-    ![1, 2, 3, 4, 5, 6, documentSchemaVersion].includes(envelope.schemaVersion) ||
+    ![1, 2, 3, 4, 5, 6, 7, documentSchemaVersion].includes(envelope.schemaVersion) ||
     envelope.content?.type !== 'doc'
   ) {
     throw new Error('Formato del documento non supportato.');

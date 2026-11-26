@@ -96,7 +96,11 @@ export function mountGeometryProperties(editor, model, { uniqueId, refresh }) {
             delete: deleteObject,
             fit: () => {
               if (a.kind === 'field') {
-                updateObject(editor, selectedObject(editor.state), measureLabel(node.attrs.key, a));
+                updateObject(
+                  editor,
+                  selectedObject(editor.state),
+                  measureLabel(node.attrs.key, a, node.attrs),
+                );
                 return;
               }
               const box = document.querySelector(

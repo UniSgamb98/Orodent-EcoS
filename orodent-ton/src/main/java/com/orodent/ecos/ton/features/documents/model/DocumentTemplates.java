@@ -101,7 +101,7 @@ public final class DocumentTemplates {
             JsonObject envelope = parse(content);
             if (!envelope.get("schemaVersion").isJsonPrimitive()
                     || !envelope.getAsJsonPrimitive("schemaVersion").isNumber()
-                    || !Set.of("2", "3", "4", "5", "6", "7")
+                    || !Set.of("2", "3", "4", "5", "6", "7", "8")
                             .contains(envelope.get("schemaVersion").getAsString()))
                 throw new IllegalArgumentException();
             JsonPrimitive title = envelope.getAsJsonPrimitive("title");
@@ -216,6 +216,20 @@ public final class DocumentTemplates {
                                 "expiryDate")
                         .contains(attrs.get("key").getAsString()))
                     throw new IllegalArgumentException("Campo etichetta non supportato.");
+                if (attrs.has("dateFormat")) {
+                    var format = attrs.getAsJsonPrimitive("dateFormat");
+                    if (!format.isString()
+                            || format.getAsString().length() > 64
+                            || (!format.getAsString().isEmpty()
+                                    && (schema < 8
+                                            || !Set.of("productionDate", "expiryDate")
+                                                    .contains(attrs.get("key").getAsString())
+                                            || !format.getAsString()
+                                                    .matches(
+                                                            "(?i)(?:yyyy|yy|mm|dd|[0-9"
+                                                                + " /._:\\-])+"))))
+                        throw new IllegalArgumentException("Formato del campo data non valido.");
+                }
             } else {
                 if (attrs.has("tight") && !attrs.getAsJsonPrimitive("tight").isBoolean())
                     throw new IllegalArgumentException("Formato del DataMatrix non valido.");
