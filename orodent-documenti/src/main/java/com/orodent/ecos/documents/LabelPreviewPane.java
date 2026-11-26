@@ -86,11 +86,20 @@ public final class LabelPreviewPane extends BorderPane implements AutoCloseable 
                                                                                                         + " && body.scrollWidth<=body.clientWidth+1;})()"));
                                                             if (!fits) {
                                                                 error.accept(
-                                                                        "Il contenuto supera il"
-                                                                            + " formato etichetta."
-                                                                            + " Riduci testo,"
-                                                                            + " immagini o margini"
-                                                                            + " nel modello.");
+                                                                        CanvasPrintLayout.canvas(
+                                                                                        preview)
+                                                                                ? CanvasPrintLayout
+                                                                                        .overflow(
+                                                                                                preview)
+                                                                                : "Il contenuto"
+                                                                                      + " supera il"
+                                                                                      + " formato"
+                                                                                      + " etichetta."
+                                                                                      + " Riduci"
+                                                                                      + " testo,"
+                                                                                      + " immagini"
+                                                                                      + " o margini"
+                                                                                      + " nel modello.");
                                                                 return;
                                                             }
                                                             html = value;
@@ -166,8 +175,8 @@ public final class LabelPreviewPane extends BorderPane implements AutoCloseable 
                 if (Math.max(Math.max(left, right), Math.max(top, bottom)) > paper.margin() + 0.01)
                     throw new IllegalStateException(
                             "I margini della stampante superano quelli dell’etichetta. Configura"
-                                + " l’area stampabile nel driver oppure crea una versione del"
-                                + " modello con margini compatibili.");
+                                    + " l’area stampabile nel driver oppure crea una versione del"
+                                    + " modello con margini compatibili.");
                 double width = paper.width() - left - right, height = paper.height() - top - bottom;
                 String css =
                         "@media print {html,body {width:"

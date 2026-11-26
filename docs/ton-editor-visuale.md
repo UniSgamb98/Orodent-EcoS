@@ -132,6 +132,13 @@ agli elenchi e agli altri strumenti di paragrafo.
 
 Un contenuto troppo grande viene segnalato nelle proprietà. Puoi aumentare il riquadro, adattarne l’altezza o ridurre il testo. La stampa dei nuovi modelli controlla che gli oggetti e il loro contenuto rientrino nel formato, per evitare tagli silenziosi. I dati reali possono occupare più spazio rispetto agli esempi: verifica anche l’anteprima del documento generato.
 
+L'interlinea dei riquadri viene rispettata allo stesso modo nell'editor e nella
+stampa, anche nelle etichette. Il valore **2** indica interlinea doppia: per un
+testo più compatto puoi usare **1,2** e poi **Adatta altezza**. Il controllo di
+stampa distingue il superamento del bordo del foglio dal contenuto che supera
+la larghezza o l'altezza del proprio riquadro; indica il testo coinvolto e le
+dimensioni richieste e disponibili in pixel.
+
 ## Versioni precedenti
 
 I modelli approvati e i documenti già emessi conservano il contenuto originale. Quando apri una bozza precedente per modificarla, l’editor racchiude i blocchi esistenti in oggetti posizionabili; le sezioni a colonne vengono mantenute come gruppi. I riquadri contenenti unicamente un campo etichetta vengono convertiti in dati automatici autonomi nelle bozze modificabili, conservandone posizione e stile; i testi misti restano conservati. Controlla la disposizione prima di approvare la nuova versione.

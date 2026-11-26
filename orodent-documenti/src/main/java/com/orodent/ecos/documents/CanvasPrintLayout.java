@@ -15,27 +15,41 @@ public final class CanvasPrintLayout {
     }
 
     public static boolean fits(WebView view) {
-        return Boolean.TRUE.equals(
+        return overflow(view).isEmpty();
+    }
+
+    /** Describes the first real clipping problem without changing the saved geometry. */
+    public static String overflow(WebView view) {
+        return (String)
                 view.getEngine()
                         .executeScript(
                                 """
 (function(){
- const sheets=[...document.querySelectorAll('.canvas-sheet')];
- return sheets.every(sheet=>[...sheet.querySelectorAll('.canvas-object')].every(object=>{
-   const box=object.getBoundingClientRect(),page=sheet.getBoundingClientRect(),content=object.querySelector('.canvas-object-content');
-   const code=object.querySelector('.gs1-tight img'),shadow=code && getComputedStyle(code).boxShadow.match(/[-\\d.]+px/g);
-   const quiet=shadow ? Math.max(0,parseFloat(shadow[shadow.length-1])) : 0;
-   return box.left-quiet>=page.left-.5 && box.top-quiet>=page.top-.5 && box.right+quiet<=page.right+.5 && box.bottom+quiet<=page.bottom+.5 && content && content.scrollWidth<=content.clientWidth+1 && content.scrollHeight<=content.clientHeight+1;
- }));
+ for (const sheet of document.querySelectorAll('.canvas-sheet')) {
+   const page=sheet.getBoundingClientRect();
+   for (const object of sheet.querySelectorAll('.canvas-object')) {
+     const box=object.getBoundingClientRect(),content=object.querySelector('.canvas-object-content');
+     const code=object.querySelector('.gs1-tight img'),shadow=code && getComputedStyle(code).boxShadow.match(/[-\\d.]+px/g);
+     const quiet=shadow ? Math.max(0,parseFloat(shadow[shadow.length-1])) : 0;
+     const text=(content?.textContent || '').replace(/\\s+/g,' ').trim();
+     const name=object.dataset.kind==='matrix' ? 'Il GS1 DataMatrix' : text ? 'Il testo «'+text.slice(0,50)+'»' : 'Un oggetto';
+     if(box.left-quiet<page.left-.5 || box.top-quiet<page.top-.5 || box.right+quiet>page.right+.5 || box.bottom+quiet>page.bottom+.5)
+       return name+' supera il bordo della pagina. Spostalo o ridimensionalo nel modello.';
+     if(!content) return name+' non ha un contenuto valido.';
+     if(content.scrollWidth>content.clientWidth+1)
+       return name+' supera la larghezza del riquadro ('+content.scrollWidth+' px richiesti, '+content.clientWidth+' px disponibili). Aumenta la larghezza o riduci il carattere nel modello.';
+     if(content.scrollHeight>content.clientHeight+1)
+       return name+' supera l’altezza del riquadro ('+content.scrollHeight+' px richiesti, '+content.clientHeight+' px disponibili). Aumenta l’altezza o riduci carattere e interlinea nel modello.';
+   }
+ }
+ return '';
 })()
-"""));
+""");
     }
 
     public static void prepare(WebView view, PrinterJob job, DocumentPaper paper) {
-        if (!fits(view))
-            throw new IllegalStateException(
-                    "Un oggetto o il suo contenuto supera il riquadro o la pagina. Correggi le"
-                            + " dimensioni nel modello prima di stampare.");
+        String problem = overflow(view);
+        if (!problem.isEmpty()) throw new IllegalStateException(problem);
         var layout =
                 PrinterPaper.configure(
                         job, new DocumentPaper(paper.width(), paper.height(), 0), true);

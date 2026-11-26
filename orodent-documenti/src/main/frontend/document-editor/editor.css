@@ -1284,7 +1284,7 @@ body:not(.label-layout) #label-palette,body:not(.label-layout) #label-heading {d
 .canvas-object[data-kind="field"] .canvas-object-content {cursor:move;user-select:none;-webkit-user-select:none;}
 /* Higher specificity avoids paragraph defaults and collapsed margins inside positioned objects. */
 .canvas-object .canvas-object-content {display:flow-root;margin:0;padding:0;}
-.canvas-object .canvas-object-content > p,.canvas-object .canvas-object-content > h1,.canvas-object .canvas-object-content > h2,.canvas-object .canvas-object-content > h3 {margin:0;padding:0;}
+.canvas-object .canvas-object-content > p,.canvas-object .canvas-object-content > h1,.canvas-object .canvas-object-content > h2,.canvas-object .canvas-object-content > h3 {margin:0;padding:0;line-height:inherit;}
 
 /* One compact title/tool row. It wraps only when the window cannot contain the controls. */
 .titlebar {height:auto;min-height:72px;flex-wrap:wrap;gap:10px;}
