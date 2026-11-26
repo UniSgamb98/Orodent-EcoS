@@ -16,7 +16,8 @@ Dopo una modifica del file, tornare alla Home o riavviare EcoS.
 All'apertura si vede **Lavori da completare**, con lavori raggruppati per prodotto,
 navigazione ai prodotti sulla sinistra, ricerca per articolo/lotto/forno e
 avanzamento delle letture. **Completati** permette di rivedere i lavori per cui
-tutti i dischi hanno entrambe le letture salvate. **Strumenti** mostra i collegamenti.
+tutti i dischi hanno entrambe le letture salvate. I collegamenti agli strumenti
+si controllano dai pulsanti di stato, senza una pagina Strumenti separata.
 La colonna **Temperatura · °C** mostra la temperatura finale salvata nel carico,
 usata per risolvere `Tfinale` negli step del programma. Un valore storico assente
 è indicato con `—`. La fine prevista della cottura continua a determinare quando
@@ -40,7 +41,9 @@ di acquisizione: Invio breve acquisisce una misura e Invio tenuto premuto cambia
 strumento, senza attivare i pulsanti di navigazione.
 
 **Ogni acquisizione è salvata automaticamente nel database**, anche se è arrivata
-soltanto la lettura di uno strumento. **Misure salvate** conferma il salvataggio.
+soltanto la lettura di uno strumento. Il comportamento di salvataggio rimane
+invariato: dopo la conferma del database le letture vengono ripristinate nella lista.
+Il contatore sotto la colonna degli strumenti mostra soltanto **N da completare**.
 Tornando all'elenco o chiudendo e riaprendo il modulo, le letture precedenti sono
 ripristinate nella stessa schermata e si continua dalle righe incomplete.
 Un lavoro può quindi restare **In corso** con qualsiasi numero di dischi rimanenti.
@@ -57,6 +60,19 @@ Sono conservati ID del disco, versione della regola, istante e operatore quando
 selezionato in EcoS. Dal disco si risale al carico e alle versioni di specifica,
 modello e composizione originali. I dati acquisiti prima di V33, che erano solo
 in memoria, non possono essere ricostruiti automaticamente.
+
+## Disposizione della schermata
+
+Lo sfondo di acquisizione usa lo stesso azzurro del modulo. Nella fascia superiore,
+**← Lavori** e le informazioni del lavoro sono a sinistra; **Reset**, micrometro e
+bilancia sono centrati; **Stampa etichetta** è allineato a destra. Le righe delle
+letture hanno due pixel di padding in meno sopra e sotto. Il contatore dei dischi
+da completare è in basso nella colonna con **Cambia strumento**.
+
+Nella fascia inferiore **Copia su appunti** è a sinistra e **Salva e stampa etichetta**
+a destra. Quest'ultimo è predisposto graficamente e disattivato: il passaggio al
+salvataggio unico è rinviato. Il salvataggio automatico rimane attivo e il pulsante
+superiore **Stampa etichetta** continua ad aprire la stampa delle misure già salvate.
 
 ## Acquisizione
 
@@ -95,7 +111,7 @@ disconnessioni sono mostrati senza aggiungere zeri o `NaN` all'elenco.
 
 Questa fase conserva le letture originali dei due strumenti e il riferimento alla
 regola di cubaggio. L'interpretazione delle colonne del micrometro in D/Hmedia,
-l'esecuzione delle formule sulle letture, il numero batch, le etichette e l'invio a
+l'esecuzione delle formule sulle letture, il numero batch e l'invio a
 Clarinet rimangono passaggi successivi. **Completati** indica entrambe le letture
 salvate per ogni disco, senza attestare questi passaggi successivi.
 Le verifiche automatiche usano strumenti TCP simulati; la prova

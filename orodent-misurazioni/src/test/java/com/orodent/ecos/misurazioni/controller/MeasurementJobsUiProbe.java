@@ -107,6 +107,7 @@ public final class MeasurementJobsUiProbe {
                                 session.view.table.getColumns().stream()
                                         .noneMatch(
                                                 c -> c.getText().equals("Fine cottura prevista")));
+                        assertNull(stage.getScene().lookup("#jobs-tools"));
                         screenshot("target/measurement-jobs.png");
                         session.view.search.setText("ZR9818");
                         assertEquals(2, session.view.table.getItems().size());
@@ -132,6 +133,9 @@ public final class MeasurementJobsUiProbe {
                         var menu = stage.getScene().getRoot().lookup("#jobs-menu");
                         assertFalse(menu.isVisible());
                         assertFalse(menu.isManaged());
+                        checkWorkspaceLayout();
+                        assertEquals("3 da completare", session.view.remaining.getText());
+                        assertTrue(session.view.saveAndPrint.isDisabled());
                         return null;
                     });
             fx(
@@ -296,6 +300,7 @@ public final class MeasurementJobsUiProbe {
                     () -> {
                         assertSame(session.acquisition.root(), stage.getScene().getFocusOwner());
                         assertTrue(session.view.saveState.getText().contains("1 / 3"));
+                        assertEquals("2 da completare", session.view.remaining.getText());
                         screenshot("target/measurement-job-resumed.png");
                         session.acquisition.view.acquire.fire();
                         return null;
@@ -363,9 +368,14 @@ public final class MeasurementJobsUiProbe {
                         stage.setHeight(780);
                         return null;
                     });
-            await(() -> stage.getWidth() <= 1050);
+            await(
+                    () ->
+                            stage.getScene().getWidth() <= 1050
+                                    && session.root().getLayoutBounds().getWidth() <= 1050);
             fx(
                     () -> {
+                        checkWorkspaceLayout();
+                        assertEquals("0 da completare", session.view.remaining.getText());
                         screenshot("target/measurement-job-small.png");
                         session.view.back.fire();
                         return null;
@@ -439,8 +449,7 @@ public final class MeasurementJobsUiProbe {
                                     }
 
                                     public void close() {}
-                                },
-                        "Strumenti simulati");
+                                });
         stage.setScene(new Scene(session.root(), 1600, 1000));
         stage.getScene()
                 .getStylesheets()
@@ -461,6 +470,46 @@ public final class MeasurementJobsUiProbe {
                     }
                     return null;
                 });
+    }
+
+    javafx.geometry.Bounds bounds(Node node) {
+        return node.localToScene(node.getBoundsInLocal());
+    }
+
+    void checkWorkspaceLayout() {
+        layout();
+        var root = stage.getScene().getRoot();
+        var toolbar = bounds(root.lookup("#measurements-toolbar"));
+        var first = bounds(session.acquisition.view.reset);
+        var last = bounds(session.acquisition.view.connectionButton(Instrument.SCALE));
+        var back = bounds(session.view.back);
+        assertTrue(back.getWidth() >= session.view.back.prefWidth(-1) - .1);
+        assertTrue(
+                session.acquisition.view.acquire.getHeight()
+                        >= session.acquisition.view.acquire.prefHeight(
+                                        session.acquisition.view.acquire.getWidth())
+                                - .1);
+        var context = bounds(root.lookup("#jobs-context"));
+        var print = bounds(session.view.printLabel);
+        assertEquals(
+                (toolbar.getMinX() + toolbar.getMaxX()) / 2,
+                (first.getMinX() + last.getMaxX()) / 2,
+                1);
+        assertTrue(
+                context.getMaxX() <= first.getMinX(),
+                "Work info must not overlap instrument controls");
+        assertTrue(
+                last.getMaxX() <= print.getMinX(), "Print must remain to the right of instruments");
+        assertEquals(back.getMinX(), bounds(session.acquisition.view.copy).getMinX(), 1);
+        assertEquals(print.getMaxX(), bounds(session.view.saveAndPrint).getMaxX(), 1);
+        var remaining = bounds(session.view.remaining);
+        var instrument = bounds(root.lookup("#measurements-instrument-column"));
+        assertTrue(remaining.getMinX() >= instrument.getMinX());
+        assertTrue(remaining.getMaxX() <= instrument.getMaxX());
+        assertEquals(bounds(session.acquisition.view.list).getMaxY(), remaining.getMaxY(), 1);
+        assertFalse(root.lookup("#jobs-save-messages").isVisible());
+        var surface = session.acquisition.view.getBackground().getFills().getFirst().getFill();
+        assertEquals(javafx.scene.paint.Color.web("#e4eff4"), surface);
     }
 
     void layout() {

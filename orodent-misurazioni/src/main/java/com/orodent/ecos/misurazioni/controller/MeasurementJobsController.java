@@ -31,22 +31,13 @@ public final class MeasurementJobsController implements ModuleSession {
         this(
                 context,
                 new MeasurementJobsService(context.connections(), context.workers()),
-                DeviceConnections.fromSettings(settings),
-                "Micrometro: "
-                        + settings.micrometer().host()
-                        + ":"
-                        + settings.micrometer().port()
-                        + "\nBilancia: "
-                        + settings.scale().host()
-                        + ":"
-                        + settings.scale().port());
+                DeviceConnections.fromSettings(settings));
     }
 
     MeasurementJobsController(
             ModuleContext context,
             MeasurementJobsService service,
-            DeviceConnections.Factory factory,
-            String endpoints) {
+            DeviceConnections.Factory factory) {
         this.context = context;
         this.service = service;
         acquisition = new MeasurementsController(context.showHome(), factory);
@@ -94,16 +85,6 @@ public final class MeasurementJobsController implements ModuleSession {
                 });
         view.pending.setOnAction(e -> queue(false));
         view.completed.setOnAction(e -> queue(true));
-        view.tools.setOnAction(
-                e -> {
-                    if (canLeave()) {
-                        request++;
-                        baseline = null;
-                        unsaved = false;
-                        acquisition.persistenceState(false, false);
-                        view.tools(endpoints, acquisition::toggleConnection);
-                    }
-                });
         for (var instrument : Instrument.values())
             view.stateButton(instrument).setOnAction(e -> acquisition.toggleConnection(instrument));
         view.refresh.setOnAction(e -> refresh());
@@ -184,7 +165,7 @@ public final class MeasurementJobsController implements ModuleSession {
                                             view.showJob(
                                                     detail.job(),
                                                     detail.ruleLabel(),
-                                                    acquisition.root());
+                                                    acquisition.view);
                                             view.saveStatus(status(), false);
                                             Platform.runLater(
                                                     () -> {
@@ -225,6 +206,7 @@ public final class MeasurementJobsController implements ModuleSession {
                                             }
                                             baseline = detail;
                                             unsaved = false;
+                                            view.remaining(detail.job().remaining());
                                             acquisition.restore(
                                                     detail.job().readings().stream()
                                                             .map(Reading::value)

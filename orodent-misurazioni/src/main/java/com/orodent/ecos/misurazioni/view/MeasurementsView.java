@@ -6,6 +6,7 @@ import com.orodent.ecos.misurazioni.model.Instrument;
 import com.orodent.ecos.misurazioni.model.MeasurementBatch;
 
 import javafx.geometry.*;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.*;
 import javafx.scene.layout.*;
@@ -29,6 +30,11 @@ public final class MeasurementsView extends BorderPane {
     private final Image micrometer = image("eyeIcon.png"), scale = image("scaleIcon.png");
     private final ImageView instrumentImage = new ImageView(micrometer);
     private HBox embeddedHeader;
+    private final HBox workInfo = new HBox(12),
+            printAction = new HBox(),
+            footerActions = new HBox(12);
+    private final BorderPane instrumentColumn = new BorderPane();
+    private final Region footerSpace = new Region();
     private BiConsumer<Integer, Instrument> remove = (index, instrument) -> {};
 
     public MeasurementsView() {
@@ -41,23 +47,49 @@ public final class MeasurementsView extends BorderPane {
         HBox header = new HBox(22, home, title);
         header.setAlignment(Pos.CENTER_LEFT);
         header.getStyleClass().add("measurements-header");
-        HBox tools = new HBox(14, reset, connection(MICROMETER), connection(SCALE));
-        tools.setAlignment(Pos.CENTER_LEFT);
-        tools.setPadding(new Insets(14, 18, 8, 18));
-        setTop(new VBox(header, tools));
+        HBox tools = new HBox(10, reset, connection(MICROMETER), connection(SCALE));
+        tools.setId("measurements-instruments");
+        tools.getStyleClass().add("measurements-tools");
+        tools.setAlignment(Pos.CENTER);
+        tools.setMinWidth(0);
+        workInfo.setAlignment(Pos.CENTER_LEFT);
+        workInfo.setMinWidth(0);
+        printAction.setAlignment(Pos.CENTER_RIGHT);
+        printAction.setMinWidth(0);
+        GridPane toolbar = new GridPane();
+        toolbar.setId("measurements-toolbar");
+        toolbar.setPadding(new Insets(14, 18, 8, 18));
+        for (int i = 0; i < 3; i++) {
+            var column = new ColumnConstraints();
+            column.setPercentWidth(100.0 / 3);
+            column.setHgrow(Priority.ALWAYS);
+            column.setFillWidth(true);
+            toolbar.getColumnConstraints().add(column);
+        }
+        toolbar.add(workInfo, 0, 0);
+        toolbar.add(tools, 1, 0);
+        toolbar.add(printAction, 2, 0);
+        setTop(new VBox(header, toolbar));
         embeddedHeader = header;
 
         instrumentImage.setFitWidth(120);
         instrumentImage.setPreserveRatio(true);
         acquire.setMaxWidth(Double.MAX_VALUE);
+        acquire.setMinHeight(Region.USE_PREF_SIZE);
         swap.setMaxWidth(Double.MAX_VALUE);
+        swap.setMinHeight(Region.USE_PREF_SIZE);
         Label pedal = new Label("Pedale / Invio\nBreve: acquisisci\nLungo: cambia strumento");
         pedal.getStyleClass().add("measurements-hint");
-        VBox instrument = new VBox(18, acquire, instrumentImage, swap, pedal);
+        pedal.setWrapText(true);
+        pedal.setMinHeight(Region.USE_PREF_SIZE);
+        VBox instrument = new VBox(12, acquire, instrumentImage, swap, pedal);
         instrument.setAlignment(Pos.CENTER);
-        instrument.setPadding(new Insets(18));
-        instrument.setMinWidth(190);
-        instrument.setPrefWidth(205);
+        instrument.setPadding(new Insets(12, 18, 12, 18));
+        instrumentColumn.setCenter(instrument);
+        instrumentColumn.setId("measurements-instrument-column");
+        instrumentColumn.setMinWidth(190);
+        instrumentColumn.setPrefWidth(205);
+        instrumentColumn.setMaxWidth(205);
 
         list.setId("measurements-list");
         list.setMinWidth(300);
@@ -78,7 +110,7 @@ public final class MeasurementsView extends BorderPane {
         VBox readings = new VBox(8, caption, list);
         readings.setPadding(new Insets(8, 18, 8, 0));
         VBox.setVgrow(list, Priority.ALWAYS);
-        HBox body = new HBox(instrument, readings);
+        HBox body = new HBox(instrumentColumn, readings);
         HBox.setHgrow(readings, Priority.ALWAYS);
         setCenter(body);
 
@@ -86,8 +118,11 @@ public final class MeasurementsView extends BorderPane {
         feedback.setWrapText(true);
         feedback.setMinHeight(24);
         copy.getStyleClass().add("measurements-copy");
-        copy.setMaxWidth(Double.MAX_VALUE);
-        VBox bottom = new VBox(8, feedback, copy);
+        HBox.setHgrow(footerSpace, Priority.ALWAYS);
+        footerActions.setAlignment(Pos.CENTER_LEFT);
+        footerActions.getChildren().setAll(copy, footerSpace);
+        footerActions.setId("measurements-actions");
+        VBox bottom = new VBox(8, feedback, footerActions);
         bottom.setPadding(new Insets(4, 18, 18, 18));
         setBottom(bottom);
     }
@@ -95,6 +130,16 @@ public final class MeasurementsView extends BorderPane {
     public void embedded() {
         embeddedHeader.setVisible(false);
         embeddedHeader.setManaged(false);
+    }
+
+    public void workspace(Node back, Node context, Node print, Node savePrint, Node remaining) {
+        workInfo.getChildren().setAll(back, context);
+        HBox.setHgrow(context, Priority.ALWAYS);
+        printAction.getChildren().setAll(print);
+        footerActions.getChildren().setAll(copy, footerSpace, savePrint);
+        instrumentColumn.setBottom(remaining);
+        BorderPane.setAlignment(remaining, Pos.BOTTOM_LEFT);
+        BorderPane.setMargin(remaining, new Insets(0, 18, 8, 18));
     }
 
     private Button connection(Instrument instrument) {

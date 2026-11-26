@@ -4,10 +4,10 @@ import static com.orodent.ecos.misurazioni.jobs.model.MeasurementJobs.*;
 
 import com.orodent.ecos.misurazioni.devices.DeviceConnections;
 import com.orodent.ecos.misurazioni.model.Instrument;
+import com.orodent.ecos.misurazioni.view.MeasurementsView;
 
 import javafx.beans.property.*;
 import javafx.geometry.*;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
@@ -26,16 +26,16 @@ public final class MeasurementJobsView extends BorderPane {
     public final Button home = button("⌂ Home Orodent-EcoS", "jobs-home"),
             pending = button("Lavori da completare", "jobs-pending"),
             completed = button("Completati", "jobs-completed"),
-            tools = button("Strumenti", "jobs-tools"),
             refresh = button("Aggiorna", "jobs-refresh"),
             open = button("Apri misurazioni", "jobs-open"),
             back = button("← Lavori", "jobs-back"),
             printLabel = button("Stampa etichetta", "jobs-print-label"),
+            saveAndPrint = button("Salva e stampa etichetta", "jobs-save-print"),
             retry = button("Riprova salvataggio", "jobs-retry"),
             reload = button("Ricarica lavoro", "jobs-reload");
     public final TextField search = new TextField(), productSearch = new TextField();
     public final TableView<Row> table = new TableView<>();
-    public final Label feedback = new Label(), saveState = new Label();
+    public final Label feedback = new Label(), saveState = new Label(), remaining = new Label();
     private final Label breadcrumb = new Label("Misurazioni › Lavori da completare"),
             title = new Label("Lavori da misurare"),
             jobContext = new Label();
@@ -44,10 +44,9 @@ public final class MeasurementJobsView extends BorderPane {
     private final VBox products = new VBox(7),
             navigation = new VBox(12),
             workPanel = new VBox(12),
-            readingsPanel = new VBox(10),
-            toolsPanel = new VBox(16);
-    private final Map<Instrument, Button> states = new EnumMap<>(Instrument.class),
-            deviceActions = new EnumMap<>(Instrument.class);
+            readingsPanel = new VBox(10);
+    private final HBox saveMessages = new HBox(12);
+    private final Map<Instrument, Button> states = new EnumMap<>(Instrument.class);
     private List<Job> jobs = List.of();
     private boolean showCompleted;
     private Runnable onOpen = () -> {};
@@ -67,9 +66,7 @@ public final class MeasurementJobsView extends BorderPane {
         navigation.setPrefWidth(215);
         navigation.setMinWidth(0);
         navigation.setMaxWidth(215);
-        navigation
-                .getChildren()
-                .addAll(label("MISURAZIONI", "jobs-section"), pending, completed, tools);
+        navigation.getChildren().addAll(label("MISURAZIONI", "jobs-section"), pending, completed);
         Region grow = new Region();
         VBox.setVgrow(grow, Priority.ALWAYS);
         navigation.getChildren().add(grow);
@@ -268,7 +265,10 @@ public final class MeasurementJobsView extends BorderPane {
                         feedback);
         workPanel.getStyleClass().add("jobs-main");
         workPanel.setMinSize(0, 0);
+        back.setMinWidth(Region.USE_PREF_SIZE);
         jobContext.setWrapText(true);
+        jobContext.setMinWidth(0);
+        jobContext.setMaxWidth(Double.MAX_VALUE);
         jobContext.setId("jobs-context");
         jobContext.setMinHeight(Region.USE_PREF_SIZE);
         saveState.setId("jobs-save-state");
@@ -278,6 +278,20 @@ public final class MeasurementJobsView extends BorderPane {
         retry.setManaged(false);
         reload.setVisible(false);
         reload.setManaged(false);
+        remaining.setId("jobs-remaining");
+        remaining.setMinHeight(Region.USE_PREF_SIZE);
+        remaining.setMaxWidth(Double.MAX_VALUE);
+        saveMessages.setId("jobs-save-messages");
+        saveMessages.setAlignment(Pos.CENTER_LEFT);
+        saveMessages.getChildren().setAll(saveState, spacer(), retry, reload);
+        saveMessages.setVisible(false);
+        saveMessages.setManaged(false);
+        saveAndPrint.getStyleClass().add("measurements-save-print");
+        saveAndPrint.setDisable(true);
+        saveAndPrint.setTooltip(
+                new Tooltip(
+                        "Le misure vengono salvate automaticamente. Per stampare usa «Stampa"
+                                + " etichetta»."));
         readingsPanel.setMinSize(0, 0);
         readingsPanel.getStyleClass().add("jobs-main");
         search.textProperty().addListener((o, a, b) -> render());
@@ -312,7 +326,7 @@ public final class MeasurementJobsView extends BorderPane {
         render();
     }
 
-    public void showJob(Job job, String rule, Node measurements) {
+    public void showJob(Job job, String rule, MeasurementsView measurements) {
         jobMode(true);
         breadcrumb.setText("Misurazioni › " + job.article() + " › " + job.lot());
         jobContext.setText(
@@ -329,33 +343,15 @@ public final class MeasurementJobsView extends BorderPane {
                         + job.production()
                         + "\n"
                         + rule);
-        var top = new HBox(12, back, jobContext, printLabel);
-        HBox.setHgrow(jobContext, Priority.ALWAYS);
-        var status = new HBox(12, saveState, spacer(), retry, reload);
-        status.setAlignment(Pos.CENTER_LEFT);
-        readingsPanel.getChildren().setAll(top, measurements, status);
+        remaining(job.remaining());
+        measurements.workspace(back, jobContext, printLabel, saveAndPrint, remaining);
+        readingsPanel.getChildren().setAll(measurements, saveMessages);
         VBox.setVgrow(measurements, Priority.ALWAYS);
         setCenter(readingsPanel);
     }
 
-    public void tools(String endpoints, Consumer<Instrument> toggle) {
-        jobMode(false);
-        toolsPanel
-                .getChildren()
-                .setAll(label("Strumenti di misurazione", "jobs-title"), new Label(endpoints));
-        deviceActions.clear();
-        for (var instrument : Instrument.values()) {
-            var action =
-                    button(
-                            "Collega / scollega " + instrument.label(),
-                            "jobs-device-" + instrument.name().toLowerCase(Locale.ROOT));
-            action.setOnAction(e -> toggle.accept(instrument));
-            deviceActions.put(instrument, action);
-            toolsPanel.getChildren().add(action);
-        }
-        toolsPanel.getStyleClass().add("jobs-main");
-        breadcrumb.setText("Misurazioni › Strumenti");
-        setCenter(toolsPanel);
+    public void remaining(long count) {
+        remaining.setText(count + " da completare");
     }
 
     private void jobMode(boolean active) {
@@ -377,8 +373,6 @@ public final class MeasurementJobsView extends BorderPane {
                         + (state.busy() ? "#926b17" : state.connected() ? "#227548" : "#a73d34")
                         + ";");
         control.setTooltip(new Tooltip("Clic per collegare o scollegare"));
-        var action = deviceActions.get(instrument);
-        if (action != null) action.setDisable(state.busy());
     }
 
     public Button stateButton(Instrument instrument) {
@@ -397,13 +391,14 @@ public final class MeasurementJobsView extends BorderPane {
         home.setDisable(value);
         pending.setDisable(value);
         completed.setDisable(value);
-        tools.setDisable(value);
         retry.setDisable(value);
         reload.setDisable(value);
     }
 
     public void saveStatus(String text, boolean error) {
         saveState.setText(text);
+        saveMessages.setVisible(error);
+        saveMessages.setManaged(error);
         retry.setVisible(error);
         retry.setManaged(error);
         reload.setVisible(error);
