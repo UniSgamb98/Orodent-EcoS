@@ -2,16 +2,30 @@
 function marks(start, length) {
   return [start, start + length / 2, start + length];
 }
-export function alignmentTargets(objects, page, margin = 0) {
-  const x = [{ value: 0 }, { value: page.width / 2 }, { value: page.width }],
-    y = [{ value: 0 }, { value: page.height / 2 }, { value: page.height }];
+export function alignmentTargets(objects, page, margin = 0, edgesOnly = false) {
+  const x = (edgesOnly ? [0, page.width] : [0, page.width / 2, page.width]).map((value) => ({
+      value,
+    })),
+    y = (edgesOnly ? [0, page.height] : [0, page.height / 2, page.height]).map((value) => ({
+      value,
+    }));
   if (margin > 0) {
     x.push({ value: margin }, { value: page.width - margin });
     y.push({ value: margin }, { value: page.height - margin });
   }
   for (const a of objects) {
-    x.push(...marks(a.x, a.width).map((value) => ({ value, id: a.id })));
-    y.push(...marks(a.y, a.height).map((value) => ({ value, id: a.id })));
+    x.push(
+      ...(a.edgesOnly || edgesOnly ? [a.x, a.x + a.width] : marks(a.x, a.width)).map((value) => ({
+        value,
+        id: a.id,
+      })),
+    );
+    y.push(
+      ...(a.edgesOnly || edgesOnly ? [a.y, a.y + a.height] : marks(a.y, a.height)).map((value) => ({
+        value,
+        id: a.id,
+      })),
+    );
   }
   return { x, y };
 }
@@ -29,15 +43,15 @@ function nearest(anchors, targets, tolerance, valid) {
     }
   return best;
 }
-export function snapMove(a, targets, size, tolerance) {
+export function snapMove(a, targets, size, tolerance, edgesOnly = false) {
   const x = nearest(
-      marks(a.x, a.width),
+      edgesOnly ? [a.x, a.x + a.width] : marks(a.x, a.width),
       targets.x,
       tolerance,
       (d) => a.x + d >= 0 && a.x + a.width + d <= size.width + 0.001,
     ),
     y = nearest(
-      marks(a.y, a.height),
+      edgesOnly ? [a.y, a.y + a.height] : marks(a.y, a.height),
       targets.y,
       tolerance,
       (d) => a.y + d >= 0 && a.y + a.height + d <= size.height + 0.001,

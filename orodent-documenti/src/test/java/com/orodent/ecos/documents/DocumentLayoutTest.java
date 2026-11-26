@@ -69,6 +69,29 @@ class DocumentLayoutTest {
     }
 
     @Test
+    void persistentGroupsRequireAtLeastTwoMembersOnTheSamePage() {
+        var model = model();
+        model.addProperty("schemaVersion", 7);
+        var children = model.getAsJsonObject("content").getAsJsonArray("content");
+        var first = children.get(0).getAsJsonObject();
+        first.getAsJsonObject("attrs").addProperty("groupId", "grp-test");
+        assertThrows(IllegalArgumentException.class, () -> DocumentLayout.validate(model));
+        var second = first.deepCopy();
+        second.getAsJsonObject("attrs").addProperty("id", "obj-2");
+        children.add(second);
+        assertDoesNotThrow(() -> DocumentLayout.validate(model));
+        model.addProperty("schemaVersion", 6);
+        assertThrows(IllegalArgumentException.class, () -> DocumentLayout.validate(model));
+        model.addProperty("schemaVersion", 7);
+        model.getAsJsonObject("page").addProperty("count", 2);
+        second.getAsJsonObject("attrs").addProperty("page", 1);
+        assertThrows(IllegalArgumentException.class, () -> DocumentLayout.validate(model));
+        second.getAsJsonObject("attrs").addProperty("page", 0);
+        first.getAsJsonObject("attrs").addProperty("groupId", "invalid group!");
+        assertThrows(IllegalArgumentException.class, () -> DocumentLayout.validate(model));
+    }
+
+    @Test
     void permitsEmptyDraftsAndLegacyFlowButKeepsLabelsToOnePage() {
         var blank = model();
         blank.getAsJsonObject("content").add("content", new JsonArray());

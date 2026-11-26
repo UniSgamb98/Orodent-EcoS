@@ -379,6 +379,8 @@ class DocumentEditorIntegrationTest {
             verifyCanvasSelection();
             verifyAlignmentAndProperties();
             verifySymbolBounds();
+            verifyGroupsAndMatrix(db);
+            assertEquals(approved, read(db, 1));
             assertTrue(errors.isEmpty(), errors::toString);
         } finally {
             fx(
@@ -711,10 +713,8 @@ class DocumentEditorIntegrationTest {
         drag("[data-label-value=article]", 50, 0);
         fx(
                 () -> {
-                    double centre =
-                            (attrs(0).get("x").getAsDouble() + attrs(1).get("x").getAsDouble() + 70)
-                                    / 2;
-                    assertEquals(102 * 96 / 25.4 / 2, centre, .01);
+                    assertEquals(65, attrs(0).get("x").getAsDouble(), .01);
+                    assertEquals(245, attrs(1).get("x").getAsDouble(), .01);
                     api().call("run", "undo");
                     assertEquals(40, attrs(0).get("x").getAsDouble(), .01);
                     js(
@@ -878,6 +878,303 @@ JSON.stringify((()=>{
         fx(
                 () -> {
                     screenshot("target/document-symbol-bounds.png");
+                    return null;
+                });
+    }
+
+    private int selectedCount() {
+        return ((Number)
+                        js(
+                                "document.querySelector('#editor"
+                                        + " .tiptap').editor.state.selection.ranges.length"))
+                .intValue();
+    }
+
+    private void clickWeb(String selector, boolean ctrl) throws Exception {
+        fx(
+                () -> {
+                    var box =
+                            (JSObject)
+                                    js(
+                                            "document.querySelector("
+                                                    + new JsonPrimitive(selector)
+                                                    + ").getBoundingClientRect()");
+                    var point =
+                            web().localToScreen(
+                                            ((Number) box.getMember("left")).doubleValue()
+                                                    + ((Number) box.getMember("width"))
+                                                                    .doubleValue()
+                                                            / 2,
+                                            ((Number) box.getMember("top")).doubleValue()
+                                                    + ((Number) box.getMember("height"))
+                                                                    .doubleValue()
+                                                            / 2);
+                    var robot = new Robot();
+                    if (ctrl) robot.keyPress(KeyCode.CONTROL);
+                    robot.mouseMove(point);
+                    robot.mousePress(MouseButton.PRIMARY);
+                    robot.mouseRelease(MouseButton.PRIMARY);
+                    if (ctrl) robot.keyRelease(KeyCode.CONTROL);
+                    return null;
+                });
+        Thread.sleep(100);
+    }
+
+    private void verifyGroupsAndMatrix(ConnectionProvider db) throws Exception {
+        fx(
+                () -> {
+                    api().call("newModel", "ETICHETTA");
+                    api().call("setEditable", true);
+                    controls(
+                            new String[][] {
+                                {"paper-width", "102"}, {"paper-height", "65"}, {"zoom", "1.2"}
+                            });
+                    api().call("insert", "label:article");
+                    controls(
+                            new String[][] {
+                                {"object-x", "40"},
+                                {"object-y", "25"},
+                                {"object-width", "100"},
+                                {"object-height", "20"}
+                            });
+                    api().call("insert", "label:lot");
+                    controls(
+                            new String[][] {
+                                {"object-x", "180"},
+                                {"object-y", "60"},
+                                {"object-width", "60"},
+                                {"object-height", "20"}
+                            });
+                    api().call("insert", "gs1");
+                    controls(new String[][] {{"object-x", "280"}, {"object-y", "120"}});
+                    js("document.querySelector('[data-action=deselect]').click()");
+                    return null;
+                });
+        clickWeb("[data-label-value=article]", true);
+        clickWeb("[data-label-value=lot]", true);
+        await(() -> selectedCount() == 2);
+        clickWeb("[data-label-value=article]", true);
+        await(() -> selectedCount() == 1);
+        clickWeb("[data-label-value=article]", true);
+        await(() -> selectedCount() == 2);
+        fx(
+                () -> {
+                    js("document.querySelector('[data-action=deselect]').click()");
+                    return null;
+                });
+        drag("#paper", 300, 120);
+        await(() -> selectedCount() == 2);
+        fx(
+                () -> {
+                    js("document.getElementById('group-selection').click()");
+                    assertTrue(attrs(0).get("groupId").getAsString().startsWith("grp-"));
+                    assertEquals(attrs(0).get("groupId"), attrs(1).get("groupId"));
+                    assertEquals("", attrs(2).get("groupId").getAsString());
+                    assertFalse(
+                            (Boolean) js("document.querySelector('.canvas-group-outline').hidden"));
+                    assertEquals(
+                            200,
+                            ((Number)
+                                            js(
+                                                    "parseFloat(document.querySelector('.canvas-group-outline').style.width)"))
+                                    .doubleValue(),
+                            .01);
+                    click("ton-document-save");
+                    return null;
+                });
+        await(() -> read(db, 2).contains("grp-"));
+        String saved = read(db, 2);
+        fx(
+                () -> {
+                    api().call("setEditable", false);
+                    api().call("restore", saved);
+                    api().call("setEditable", true);
+                    js("document.querySelector('[data-action=deselect]').click()");
+                    return null;
+                });
+        clickWeb("[data-label-value=lot]", false);
+        await(() -> selectedCount() == 2);
+        clickWeb("[data-kind=matrix] img", true);
+        await(() -> selectedCount() == 3);
+        fx(
+                () -> {
+                    assertEquals(
+                            1,
+                            ((Number)
+                                            js(
+                                                    "document.querySelectorAll('.canvas-group-outline').length"))
+                                    .intValue());
+                    return null;
+                });
+        clickWeb("[data-kind=matrix] img", true);
+        await(() -> selectedCount() == 2);
+        drag("[data-label-value=article]", 24, 0);
+        fx(
+                () -> {
+                    assertEquals(60, attrs(0).get("x").getAsDouble(), .01);
+                    assertEquals(200, attrs(1).get("x").getAsDouble(), .01);
+                    assertEquals(280, attrs(2).get("x").getAsDouble(), .01);
+                    api().call("run", "undo");
+                    assertEquals(40, attrs(0).get("x").getAsDouble(), .01);
+                    return null;
+                });
+        Thread.sleep(200);
+        fx(
+                () -> {
+                    screenshot("target/document-persistent-group.png");
+                    return null;
+                });
+        clickWeb("[data-kind=matrix] img", false);
+        await(() -> selectedCount() == 1);
+        fx(
+                () -> {
+                    if (!"true"
+                            .equals(
+                                    js(
+                                            "document.getElementById('snap-toggle').getAttribute('aria-pressed')")))
+                        js("document.getElementById('snap-toggle').click()");
+                    return null;
+                });
+        drag(
+                ".context-selected .canvas-object-grip",
+                -168,
+                0,
+                () -> {
+                    // x=140 is both an internal member edge and the group centre: neither is a
+                    // target.
+                    assertFalse(
+                            (Boolean)
+                                    js(
+                                            "Array.from(document.querySelectorAll('.alignment-guide-x')).some(g=>Math.abs(Number(g.dataset.value)-140)<.01)"));
+                    return null;
+                });
+        fx(
+                () -> {
+                    assertEquals(140, attrs(2).get("x").getAsDouble(), 1);
+                    return null;
+                });
+        clickWeb("[data-label-value=lot]", false);
+        await(() -> selectedCount() == 2);
+        double target =
+                fx(() -> attrs(2).get("x").getAsDouble() + attrs(2).get("width").getAsDouble());
+        drag(
+                "[data-label-value=article]",
+                (target - 240 - 1) * 1.2,
+                0,
+                () -> {
+                    assertEquals(
+                            target,
+                            ((Number)
+                                            js(
+                                                    "Number(document.querySelector('.alignment-guide-x').dataset.value)"))
+                                    .doubleValue(),
+                            .01);
+                    return null;
+                });
+        fx(
+                () -> {
+                    assertEquals(target - 200, attrs(0).get("x").getAsDouble(), .01);
+                    js("document.getElementById('ungroup-selection').click()");
+                    assertEquals("", attrs(0).get("groupId").getAsString());
+                    assertEquals("", attrs(1).get("groupId").getAsString());
+                    api().call("run", "undo");
+                    assertEquals(attrs(0).get("groupId"), attrs(1).get("groupId"));
+                    js("document.getElementById('delete-selection').click()");
+                    assertEquals(
+                            1, model().getAsJsonObject("content").getAsJsonArray("content").size());
+                    api().call("run", "undo");
+                    assertEquals(
+                            3, model().getAsJsonObject("content").getAsJsonArray("content").size());
+                    // Upgrade a previously padded matrix without changing the visible code
+                    // placement.
+                    api().call("newModel", "ETICHETTA");
+                    api().call("insert", "gs1");
+                    var old = model();
+                    var object =
+                            old.getAsJsonObject("content")
+                                    .getAsJsonArray("content")
+                                    .get(0)
+                                    .getAsJsonObject();
+                    var a = object.getAsJsonObject("attrs");
+                    a.addProperty("x", 10);
+                    a.addProperty("y", 20);
+                    a.addProperty("width", 88);
+                    a.addProperty("height", 90);
+                    object.getAsJsonArray("content")
+                            .get(0)
+                            .getAsJsonObject()
+                            .getAsJsonObject("attrs")
+                            .addProperty("tight", false);
+                    api().call("setEditable", false);
+                    api().call("restore", old.toString());
+                    assertEquals(old, model());
+                    api().call("setEditable", true);
+                    assertEquals(10 + 25.0 * 88 / 230, attrs().get("x").getAsDouble(), 1e-6);
+                    assertEquals(21 + 25.0 * 88 / 230, attrs().get("y").getAsDouble(), 1e-6);
+                    assertEquals(180.0 * 88 / 230, attrs().get("width").getAsDouble(), 1e-6);
+                    assertEquals(
+                            attrs().get("width").getAsDouble(),
+                            attrs().get("height").getAsDouble(),
+                            1e-6);
+                    return null;
+                });
+        await(() -> (Boolean) js("document.querySelector('.gs1-tight img').complete"));
+        fx(
+                () -> {
+                    assertTrue(
+                            (Boolean)
+                                    js(
+                                            "(()=>{const"
+                                                + " o=document.querySelector('[data-kind=matrix]'),i=o.querySelector('img'),a=o.getBoundingClientRect(),b=i.getBoundingClientRect();return"
+                                                + " Math.abs(a.width-b.width)<.1&&Math.abs(a.height-b.height)<.1&&parseFloat(getComputedStyle(i).boxShadow.split('px')[3])>0})()"));
+                    var image =
+                            (JSObject)
+                                    js(
+                                            "(()=>{const i=document.querySelector('.gs1-tight"
+                                                + " img'),c=document.createElement('canvas');c.width=i.naturalWidth;c.height=i.naturalHeight;c.getContext('2d').drawImage(i,0,0);const"
+                                                + " p=c.getContext('2d').getImageData(0,0,c.width,c.height).data;return"
+                                                + " {width:c.width,height:c.height,first:p[3],last:p[(c.height-1)*c.width*4+3]}})()");
+                    assertEquals(180, ((Number) image.getMember("width")).intValue());
+                    assertEquals(180, ((Number) image.getMember("height")).intValue());
+                    assertEquals(255, ((Number) image.getMember("first")).intValue());
+                    assertEquals(255, ((Number) image.getMember("last")).intValue());
+                    return null;
+                });
+        String template = fx(() -> api().call("serialize").toString());
+        var label = fx(() -> new com.orodent.ecos.documents.LabelPreviewPane());
+        final Stage[] window = {null};
+        var rendered = new CompletableFuture<String>();
+        fx(
+                () -> {
+                    window[0] = new Stage();
+                    window[0].initOwner(stage);
+                    window[0].setScene(new Scene(label, 500, 300));
+                    window[0].show();
+                    label.render(
+                            template,
+                            "{\"gtin\":\"09506000134352\",\"lot\":\"260922\"}",
+                            rendered::complete,
+                            error ->
+                                    rendered.completeExceptionally(
+                                            new IllegalStateException(error)));
+                    return null;
+                });
+        String html = rendered.get(25, TimeUnit.SECONDS);
+        assertTrue(html.contains("gs1-tight"));
+        fx(
+                () -> {
+                    assertTrue(label.printable());
+                    var output = (WebView) label.getCenter();
+                    assertTrue(com.orodent.ecos.documents.CanvasPrintLayout.fits(output));
+                    output.getEngine()
+                            .executeScript(
+                                    "document.querySelector('[data-kind=matrix]').style.left='0px'");
+                    assertFalse(
+                            com.orodent.ecos.documents.CanvasPrintLayout.fits(output),
+                            "Quiet zone must remain inside the printed page");
+                    label.close();
+                    window[0].close();
+                    stage.toFront();
                     return null;
                 });
     }

@@ -7,6 +7,7 @@ import {
   deleteCanvasSelection,
 } from './canvas-selection.js';
 import { GapCursor } from '@tiptap/pm/gapcursor';
+import { normalizeMatrixObjects } from './matrix-layout.js';
 import { normalizeSymbolObjects } from './symbol-layout.js';
 import { createAlignmentGuides } from './alignment-guides.js';
 import { editorKey } from './keyboard.js';
@@ -132,7 +133,8 @@ function upgradeEditableObjects() {
   const current = editor.getJSON(),
     fields = upgradeLabelObjects(current);
   const symbols = normalizeSymbolObjects(fields ?? current);
-  const upgraded = symbols ?? fields;
+  const matrices = normalizeMatrixObjects(symbols ?? fields ?? current);
+  const upgraded = matrices ?? symbols ?? fields;
   if (upgraded) {
     editor.commands.setContent(upgraded);
     dirty = true;

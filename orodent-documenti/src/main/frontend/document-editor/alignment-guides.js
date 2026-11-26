@@ -1,3 +1,4 @@
+import { alignmentObjects } from './canvas-groups.js';
 import { alignmentTargets, snapMove, snapResize, groupBounds } from './alignment.js';
 import { pagePixels, px } from './canvas-model.js';
 
@@ -27,8 +28,14 @@ export function createAlignmentGuides(editor, getPage, getZoom) {
       if (node.type.name === 'canvasObject' && a.page === bounds.page && !exclude.has(a.id))
         others.push(a);
     });
-    const page = pagePixels(getPage());
-    return { bounds, page, targets: alignmentTargets(others, page, px(getPage().margin)) };
+    const page = pagePixels(getPage()),
+      edgesOnly = attrs.length > 1 || attrs.some((a) => a.kind === 'group');
+    return {
+      bounds,
+      page,
+      edgesOnly,
+      targets: alignmentTargets(alignmentObjects(others), page, px(getPage().margin), edgesOnly),
+    };
   }
   function show(guides, page, size) {
     root.replaceChildren();
@@ -59,7 +66,7 @@ export function createAlignmentGuides(editor, getPage, getZoom) {
     }
     const result = edge
       ? snapResize(attrs, edge, session.targets, session.page, 6 / getZoom())
-      : snapMove(attrs, session.targets, session.page, 6 / getZoom());
+      : snapMove(attrs, session.targets, session.page, 6 / getZoom(), session.edgesOnly);
     show(result.guides, attrs.page, session.page);
     return result.attrs;
   }

@@ -1340,3 +1340,18 @@ body:not(.label-layout) #label-palette,body:not(.label-layout) #label-heading {d
 .canvas .paper {top:24px;}
 .paper-space {padding-top:24px;}
 .canvas-page-guide > span {top:auto;bottom:100%;right:0;font:10px/14px Arial,sans-serif;transform:scale(var(--chrome-scale));transform-origin:bottom right;}
+
+/* Persistent groups have one selection outline, with no handles on their members. */
+.editing .canvas-object.canvas-multi-selected[data-group-id]:not([data-group-id=""])::before,
+.editing .canvas-object.canvas-multi-selected[data-group-id]:not([data-group-id=""]) > .canvas-object-grip {display:none!important;}
+.canvas-group-outline {position:absolute;pointer-events:none;z-index:1000002;}
+.canvas-group-outline::before {content:'';position:absolute;left:calc(-.5px * var(--chrome-scale));top:calc(-.5px * var(--chrome-scale));width:calc(100% * var(--zoom) + 1px);height:calc(100% * var(--zoom) + 1px);box-sizing:border-box;border:1px solid #087e93;transform:scale(var(--chrome-scale));transform-origin:top left;}
+.canvas-group-outline > span {position:absolute;bottom:100%;left:0;padding:2px 8px;height:22px;white-space:nowrap;font:11px/18px Arial,sans-serif;border-radius:4px 4px 0 0;background:#087e93;color:#fff;transform:scale(var(--chrome-scale));transform-origin:bottom left;}
+.readonly .canvas-group-outline {display:none;}
+@media print {.canvas-group-outline {display:none!important;}}
+
+/* GS1 quiet space is outside the code geometry, retained on the printed mark. */
+.gs1-tight {line-height:0;}
+.canvas-object[data-kind="matrix"] .canvas-object-content {overflow:visible;}
+.canvas-group-outlines {position:absolute;inset:0;pointer-events:none;z-index:1000002;}
+@media print {.canvas-group-outlines {display:none!important;}}

@@ -53,9 +53,24 @@ posizione e scala visibili. Immagini importate dal PC e DataMatrix non vengono
 ritagliati. Il comando di sviluppo `npm run prepare:symbols` riproduce il
 catalogo usando ImageMagick; non è richiesto per eseguire l'applicazione o i test.
 
+`selection-properties.js` contiene azioni e coordinate delle selezioni
+multiple e dei gruppi persistenti. `canvas-groups.js` gestisce appartenenza,
+validazione e riferimenti di allineamento. I gruppi usano un `groupId` condiviso
+fra oggetti nella stessa pagina: non introducono contenitori annidati e non
+cambiano coordinate o ordine dei livelli. Le selezioni si espandono a tutti i
+membri, anche con Ctrl + clic, undo e ripristino. Lo snap prepara un solo
+rettangolo esterno per gruppo, senza centri o bordi interni.
+
+`matrix-layout.js` aggiorna soltanto le bozze di vecchi oggetti DataMatrix.
+L'attributo `gs1Matrix.tight` distingue il codice senza padding dal rendering
+precedente. La quiet zone di un modulo viene disegnata come ombra bianca
+esterna, proporzionale alla larghezza del codice, senza influire sui limiti
+geometrici o causare overflow nella verifica di stampa. I dati GS1 codificati
+non cambiano. Il rendering passivo non applica queste conversioni.
+
 ## Formato interno e compatibilità
 
-Il formato interno alla versione 6 contiene titolo, utilizzo, impostazioni della pagina e contenuto. `layout: canvas` indica oggetti `canvasObject` con coordinate X/Y, larghezza, altezza, pagina, ordine di sovrapposizione e stile. Ogni oggetto contiene nodi Tiptap per testo, immagini, tabelle, campi, DataMatrix o blocchi automatici. I dati automatici dell’etichetta usano `kind: field` con un unico nodo atomico `labelValue`: non sono contenitori di testo editabile. I campi inline `labelField` rimangono leggibili per i modelli precedenti; nelle bozze i riquadri con un solo campo vengono convertiti senza modificare i testi misti. Le coordinate sono pixel di riferimento a 96 dpi; le dimensioni fisiche della carta sono millimetri.
+Il formato interno alla versione 7 contiene titolo, utilizzo, impostazioni della pagina e contenuto. `layout: canvas` indica oggetti `canvasObject` con coordinate X/Y, larghezza, altezza, pagina, ordine di sovrapposizione e stile. Ogni oggetto contiene nodi Tiptap per testo, immagini, tabelle, campi, DataMatrix o blocchi automatici. I dati automatici dell’etichetta usano `kind: field` con un unico nodo atomico `labelValue`: non sono contenitori di testo editabile. I campi inline `labelField` rimangono leggibili per i modelli precedenti; nelle bozze i riquadri con un solo campo vengono convertiti senza modificare i testi misti. Le coordinate sono pixel di riferimento a 96 dpi; le dimensioni fisiche della carta sono millimetri. La versione 7 aggiunge appartenenza ai gruppi e geometria aderente dei DataMatrix. Le versioni da 1 a 6 rimangono leggibili; i gruppi devono contenere almeno due membri della stessa pagina. Non è necessaria una migrazione dello schema del database.
 
 La selezione multipla (`canvas-selection.js`) è una selezione ProseMirror con intervalli separati per gli oggetti e bookmark basati sugli ID. La selezione non entra nel modello salvato. Spostamenti e cancellazioni di gruppo producono una sola transazione di modifica; gli oggetti non selezionati fra due intervalli restano intatti. La geometria del rettangolo e lo spostamento del gruppo usano pixel di riferimento, indipendenti dallo zoom.
 

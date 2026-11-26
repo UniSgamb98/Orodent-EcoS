@@ -23,7 +23,9 @@ public final class CanvasPrintLayout {
  const sheets=[...document.querySelectorAll('.canvas-sheet')];
  return sheets.every(sheet=>[...sheet.querySelectorAll('.canvas-object')].every(object=>{
    const box=object.getBoundingClientRect(),page=sheet.getBoundingClientRect(),content=object.querySelector('.canvas-object-content');
-   return box.left>=page.left-.5 && box.top>=page.top-.5 && box.right<=page.right+.5 && box.bottom<=page.bottom+.5 && content && content.scrollWidth<=content.clientWidth+1 && content.scrollHeight<=content.clientHeight+1;
+   const code=object.querySelector('.gs1-tight img'),shadow=code && getComputedStyle(code).boxShadow.match(/[-\\d.]+px/g);
+   const quiet=shadow ? Math.max(0,parseFloat(shadow[shadow.length-1])) : 0;
+   return box.left-quiet>=page.left-.5 && box.top-quiet>=page.top-.5 && box.right+quiet<=page.right+.5 && box.bottom+quiet<=page.bottom+.5 && content && content.scrollWidth<=content.clientWidth+1 && content.scrollHeight<=content.clientHeight+1;
  }));
 })()
 """));
@@ -33,7 +35,7 @@ public final class CanvasPrintLayout {
         if (!fits(view))
             throw new IllegalStateException(
                     "Un oggetto o il suo contenuto supera il riquadro o la pagina. Correggi le"
-                        + " dimensioni nel modello prima di stampare.");
+                            + " dimensioni nel modello prima di stampare.");
         var layout =
                 PrinterPaper.configure(
                         job, new DocumentPaper(paper.width(), paper.height(), 0), true);
@@ -50,14 +52,16 @@ public final class CanvasPrintLayout {
 (function(m){return [...document.querySelectorAll('.canvas-sheet')].every(sheet=>{
  const page=sheet.getBoundingClientRect(),scale=25.4/96;
  return [...sheet.querySelectorAll('.canvas-object')].every(object=>{const r=object.getBoundingClientRect();
- return (r.left-page.left)*scale>=m[0]-.1 && (r.top-page.top)*scale>=m[1]-.1 && (page.right-r.right)*scale>=m[2]-.1 && (page.bottom-r.bottom)*scale>=m[3]-.1;});
+ const code=object.querySelector('.gs1-tight img'),shadow=code && getComputedStyle(code).boxShadow.match(/[-\\d.]+px/g);
+ const quiet=shadow ? Math.max(0,parseFloat(shadow[shadow.length-1])) : 0;
+ return (r.left-quiet-page.left)*scale>=m[0]-.1 && (r.top-quiet-page.top)*scale>=m[1]-.1 && (page.right-r.right-quiet)*scale>=m[2]-.1 && (page.bottom-r.bottom-quiet)*scale>=m[3]-.1;});
 });})(%s)
 """
                                                 .formatted(margins)));
         if (!printable)
             throw new IllegalStateException(
                     "Un oggetto ricade nei margini non stampabili della stampante. Spostalo verso"
-                        + " l’interno o scegli una stampante compatibile.");
+                            + " l’interno o scegli una stampante compatibile.");
         double width = paper.width() - left - right, height = paper.height() - top - bottom;
         String css =
                 "@media print {html,body {width:"

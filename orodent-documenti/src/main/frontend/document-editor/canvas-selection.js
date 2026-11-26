@@ -1,3 +1,5 @@
+import { expandGroupIds } from './canvas-groups.js';
+import { groupBounds } from './alignment.js';
 import { Extension } from '@tiptap/core';
 import { Selection, SelectionRange, NodeSelection, Plugin } from '@tiptap/pm/state';
 import { GapCursor } from '@tiptap/pm/gapcursor';
@@ -20,10 +22,56 @@ function matching(doc, ids) {
   return canvasObjects(doc).filter((o) => set.has(o.node.attrs.id));
 }
 export function selectCanvasObjects(doc, ids) {
-  const objects = matching(doc, ids);
+  const objects = matching(
+    doc,
+    expandGroupIds(
+      canvasObjects(doc).map((o) => o.node.attrs),
+      ids,
+    ),
+  );
   if (!objects.length) return new GapCursor(doc.resolve(0));
   if (objects.length === 1) return NodeSelection.create(doc, objects[0].pos);
   return new CanvasMultiSelection(doc, objects);
+}
+export function selectedCanvasObjects(state) {
+  const s = state.selection;
+  if (s instanceof CanvasMultiSelection) return matching(state.doc, s.ids);
+  if (s instanceof NodeSelection && s.node.type.name === 'canvasObject')
+    return [{ node: s.node, pos: s.from }];
+  for (let depth = s.$from.depth; depth > 0; depth--)
+    if (s.$from.node(depth).type.name === 'canvasObject')
+      return [{ node: s.$from.node(depth), pos: s.$from.before(depth) }];
+  return [];
+}
+let nextGroup = 0;
+export function groupCanvasSelection(editor) {
+  const objects = selectedCanvasObjects(editor.state);
+  if (!editor.isEditable || objects.length < 2) return false;
+  if (new Set(objects.map((o) => o.node.attrs.page)).size !== 1)
+    throw Error('Puoi raggruppare solo elementi della stessa pagina.');
+  let groupId;
+  do {
+    groupId = 'grp-' + Date.now().toString(36) + '-' + ++nextGroup;
+  } while (canvasObjects(editor.state.doc).some((o) => o.node.attrs.groupId === groupId));
+  return setGroups(editor, objects, groupId);
+}
+export function ungroupCanvasSelection(editor) {
+  const objects = selectedCanvasObjects(editor.state);
+  if (!editor.isEditable || !objects.some((o) => o.node.attrs.groupId)) return false;
+  return setGroups(editor, objects, '');
+}
+function setGroups(editor, objects, groupId) {
+  let tr = closeHistory(editor.state.tr);
+  for (const o of objects) tr = tr.setNodeMarkup(o.pos, undefined, { ...o.node.attrs, groupId });
+  tr.setSelection(
+    selectCanvasObjects(
+      tr.doc,
+      objects.map((o) => o.node.attrs.id),
+    ),
+  );
+  editor.view.dispatch(tr);
+  editor.view.dispatch(closeHistory(editor.state.tr));
+  return true;
 }
 class CanvasBookmark {
   constructor(ids) {
@@ -111,6 +159,16 @@ export const CanvasSelectionExtension = Extension.create({
   addProseMirrorPlugins() {
     return [
       new Plugin({
+        appendTransaction(transactions, oldState, state) {
+          const objects = selectedCanvasObjects(state);
+          const expanded = expandGroupIds(
+            canvasObjects(state.doc).map((o) => o.node.attrs),
+            objects.map((o) => o.node.attrs.id),
+          );
+          if (expanded.length > objects.length)
+            return state.tr.setSelection(selectCanvasObjects(state.doc, expanded));
+          return null;
+        },
         props: {
           decorations(state) {
             if (!(state.selection instanceof CanvasMultiSelection)) return null;
@@ -153,6 +211,37 @@ export function mountCanvasSelection(editor, model) {
   marquee.className = 'canvas-marquee';
   marquee.hidden = true;
   document.body.append(marquee);
+  const groupOutline = document.createElement('div');
+  groupOutline.className = 'canvas-group-outlines';
+  groupOutline.hidden = true;
+  paper.append(groupOutline);
+  function paintGroupOutline(delta = { x: 0, y: 0 }) {
+    const groups = new Map();
+    for (const { node } of selectedCanvasObjects(editor.state)) {
+      if (!node.attrs.groupId) continue;
+      const members = groups.get(node.attrs.groupId) ?? [];
+      members.push(node.attrs);
+      groups.set(node.attrs.groupId, members);
+    }
+    groupOutline.replaceChildren();
+    groupOutline.hidden = !groups.size;
+    for (const [id, members] of groups) {
+      const b = groupBounds(members),
+        step = pagePixels(model.page()).height + 24;
+      if (!b) continue;
+      const outline = document.createElement('div');
+      outline.className = 'canvas-group-outline';
+      outline.dataset.groupId = id;
+      outline.innerHTML = '<span>Gruppo</span>';
+      Object.assign(outline.style, {
+        left: b.x + delta.x + 'px',
+        top: b.y + delta.y + b.page * step + 'px',
+        width: b.width + 'px',
+        height: b.height + 'px',
+      });
+      groupOutline.append(outline);
+    }
+  }
   let drag = null,
     closed = false;
   const point = (e) => {
@@ -161,12 +250,7 @@ export function mountCanvasSelection(editor, model) {
     return { x: (e.clientX - r.left) / z, y: (e.clientY - r.top) / z };
   };
   function selectedIds() {
-    const s = editor.state.selection;
-    return s instanceof CanvasMultiSelection
-      ? [...s.ids]
-      : s instanceof NodeSelection && s.node.type.name === 'canvasObject'
-        ? [s.node.attrs.id]
-        : [];
+    return selectedCanvasObjects(editor.state).map((o) => o.node.attrs.id);
   }
   function restorePreview() {
     for (const o of drag
@@ -188,6 +272,7 @@ export function mountCanvasSelection(editor, model) {
     model.alignment.clear();
     restorePreview();
     drag = null;
+    paintGroupOutline();
     document.removeEventListener('pointermove', move);
     document.removeEventListener('pointerup', up);
     document.removeEventListener('pointercancel', cancel);
@@ -233,6 +318,7 @@ export function mountCanvasSelection(editor, model) {
           false,
         );
       }
+      paintGroupOutline(drag.delta);
       for (const o of drag.objects) {
         const dom = editor.view.nodeDOM(o.pos);
         if (dom) {
@@ -298,7 +384,7 @@ export function mountCanvasSelection(editor, model) {
     )
       return;
     const objectDOM = e.target.closest('.canvas-object');
-    if (e.target.closest('.canvas-resize')) return; // Shift keeps the existing resize proportions.
+    if (e.target.closest('.canvas-resize') && !e.ctrlKey && !e.metaKey) return; // Shift keeps the existing resize proportions.
     if (
       objectDOM &&
       e.shiftKey &&
@@ -310,21 +396,34 @@ export function mountCanvasSelection(editor, model) {
       for (let depth = from.depth; depth > 0; depth--)
         if (from.node(depth).attrs.id === objectDOM.dataset.objectId) return;
     }
-    const ids = selectedIds();
-    if (objectDOM && e.shiftKey) {
+    let ids = selectedIds();
+    if (objectDOM && (e.shiftKey || e.ctrlKey || e.metaKey)) {
       const id = objectDOM.dataset.objectId;
+      const clicked = expandGroupIds(
+        canvasObjects(editor.state.doc).map((o) => o.node.attrs),
+        [id],
+      );
+      const remove = clicked.every((id) => ids.includes(id));
       e.preventDefault();
       e.stopImmediatePropagation();
       editor.view.dispatch(
         editor.state.tr.setSelection(
           selectCanvasObjects(
             editor.state.doc,
-            ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id],
+            remove ? ids.filter((x) => !clicked.includes(x)) : [...ids, ...clicked],
           ),
         ),
       );
       editor.view.focus();
       return;
+    }
+    if (objectDOM?.dataset.groupId && !ids.includes(objectDOM.dataset.objectId)) {
+      editor.view.dispatch(
+        editor.state.tr.setSelection(
+          selectCanvasObjects(editor.state.doc, [objectDOM.dataset.objectId]),
+        ),
+      );
+      ids = selectedIds();
     }
     const group = editor.state.selection instanceof CanvasMultiSelection;
     if (objectDOM && (!group || !ids.includes(objectDOM.dataset.objectId))) return;
@@ -335,13 +434,13 @@ export function mountCanvasSelection(editor, model) {
       pointer: e.pointerId,
       start: point(e),
       bookmark: editor.state.selection.getBookmark(),
-      baseIds: e.shiftKey ? ids : [],
+      baseIds: e.shiftKey || e.ctrlKey || e.metaKey ? ids : [],
       objects: objectDOM ? matching(editor.state.doc, ids) : [],
       delta: { x: 0, y: 0 },
       started: false,
     };
     drag.alignment = objectDOM ? model.alignment.begin(drag.objects) : null;
-    if (!objectDOM && !e.shiftKey)
+    if (!objectDOM && !e.shiftKey && !e.ctrlKey && !e.metaKey)
       editor.view.dispatch(
         editor.state.tr.setSelection(new GapCursor(editor.state.doc.resolve(0))),
       );
@@ -356,6 +455,7 @@ export function mountCanvasSelection(editor, model) {
   }
   const changed = ({ transaction }) => {
     if (drag && transaction.docChanged) cancel();
+    paintGroupOutline();
   };
   editor.on('transaction', changed);
   canvas.addEventListener('pointerdown', down, true);
@@ -364,6 +464,7 @@ export function mountCanvasSelection(editor, model) {
     closed = true;
     finish(false);
     marquee.remove();
+    groupOutline.remove();
     editor.off('transaction', changed);
     canvas.removeEventListener('pointerdown', down, true);
     window.removeEventListener('orodent-zoom-change', cancel);

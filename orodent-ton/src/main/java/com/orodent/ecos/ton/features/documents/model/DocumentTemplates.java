@@ -101,7 +101,7 @@ public final class DocumentTemplates {
             JsonObject envelope = parse(content);
             if (!envelope.get("schemaVersion").isJsonPrimitive()
                     || !envelope.getAsJsonPrimitive("schemaVersion").isNumber()
-                    || !Set.of("2", "3", "4", "5", "6")
+                    || !Set.of("2", "3", "4", "5", "6", "7")
                             .contains(envelope.get("schemaVersion").getAsString()))
                 throw new IllegalArgumentException();
             JsonPrimitive title = envelope.getAsJsonPrimitive("title");
@@ -217,6 +217,8 @@ public final class DocumentTemplates {
                         .contains(attrs.get("key").getAsString()))
                     throw new IllegalArgumentException("Campo etichetta non supportato.");
             } else {
+                if (attrs.has("tight") && !attrs.getAsJsonPrimitive("tight").isBoolean())
+                    throw new IllegalArgumentException("Formato del DataMatrix non valido.");
                 double size = attrs.get("size").getAsDouble();
                 if (!Double.isFinite(size) || size < 8 || size > 80)
                     throw new IllegalArgumentException("Dimensione GS1 da 8 a 80 mm.");

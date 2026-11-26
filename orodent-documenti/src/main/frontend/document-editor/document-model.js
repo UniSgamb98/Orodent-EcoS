@@ -1,9 +1,10 @@
+import { validateGroups } from './canvas-groups.js';
 import { validateObject } from './canvas-model.js';
 import { sizePaper } from './paper-layout.js';
 import { validateDocument } from './extensions.js';
 import { normalizeLayoutJSON } from './layout-model.js';
 
-export const documentSchemaVersion = 6;
+export const documentSchemaVersion = 7;
 import { defaultPage, validatePage, paperSize } from './page-settings.js';
 export { defaultPage, validatePage, paperSize } from './page-settings.js';
 
@@ -19,7 +20,7 @@ export function readModel(payload, schema) {
   if (!envelope || typeof envelope !== 'object' || Array.isArray(envelope))
     throw new Error('Il file non contiene un modello valido.');
   if (
-    ![1, 2, 3, 4, 5, documentSchemaVersion].includes(envelope.schemaVersion) ||
+    ![1, 2, 3, 4, 5, 6, documentSchemaVersion].includes(envelope.schemaVersion) ||
     envelope.content?.type !== 'doc'
   ) {
     throw new Error('Formato del documento non supportato.');
@@ -74,19 +75,23 @@ export function applyPage(page, zoom) {
   root.setProperty('--paper-height', size.height + 'mm');
   root.setProperty('--paper-margin', page.margin + 'mm');
   root.setProperty('--zoom', String(zoom));
-  root.setProperty('--chrome-scale', String(1/zoom));
+  root.setProperty('--chrome-scale', String(1 / zoom));
   sizePaper(zoom);
 }
 
 export function validateCanvas(doc, page) {
+  validateGroups(doc.content.content.map((node) => node.attrs));
   const ids = new Set();
   doc.forEach((node) => {
     if (node.type.name !== 'canvasObject')
       throw new Error('Tutti gli elementi devono appartenere a un oggetto.');
     validateObject(node.attrs, page);
-    if (node.attrs.kind === 'field' && (node.childCount !== 1 || node.firstChild.type.name !== 'labelValue'))
+    if (
+      node.attrs.kind === 'field' &&
+      (node.childCount !== 1 || node.firstChild.type.name !== 'labelValue')
+    )
       throw new Error('Un dato automatico deve contenere un solo campo.');
-    node.descendants(child => {
+    node.descendants((child) => {
       if (child.type.name === 'labelValue' && node.attrs.kind !== 'field')
         throw new Error('Il dato automatico deve essere un oggetto autonomo.');
     });

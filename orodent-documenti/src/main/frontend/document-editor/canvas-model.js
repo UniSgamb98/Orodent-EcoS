@@ -15,6 +15,12 @@ export function pagePixels(page) {
 export function validateObject(attrs, page) {
   if (!attrs || !/^obj-[a-zA-Z0-9_-]{1,64}$/.test(attrs.id) || !objectKinds.includes(attrs.kind))
     throw new Error('Oggetto del documento non valido.');
+  if (
+    attrs.groupId !== undefined &&
+    (typeof attrs.groupId !== 'string' ||
+      (attrs.groupId && !/^grp-[a-zA-Z0-9_-]{1,64}$/.test(attrs.groupId)))
+  )
+    throw new Error('Identificatore del gruppo non valido.');
   for (const key of ['x', 'y', 'width', 'height', 'z', 'page'])
     if (!Number.isFinite(attrs[key])) throw new Error('Coordinate dell’oggetto non valide.');
   if (
@@ -107,5 +113,5 @@ export function resizeGeometry(attrs, dx, dy, edge, size, keepRatio = attrs.keep
   return { ...attrs, x: left, y: top, width: right - left, height: bottom - top };
 }
 export function objectStyle(a) {
-  return `left:${a.x}px;top:calc(${a.y}px + ${a.page} * var(--page-step,0px));width:${a.width}px;height:${a.height}px;z-index:${a.z};font-family:${a.fontFamily};font-size:${a.fontSize};line-height:${a.lineHeight};color:${a.color};text-align:${a.textAlign};font-weight:${a.bold ? '700' : '400'};font-style:${a.italic ? 'italic' : 'normal'};text-decoration:${a.underline ? 'underline' : 'none'};`;
+  return `--object-width:${a.width}px;--object-height:${a.height}px;left:${a.x}px;top:calc(${a.y}px + ${a.page} * var(--page-step,0px));width:${a.width}px;height:${a.height}px;z-index:${a.z};font-family:${a.fontFamily};font-size:${a.fontSize};line-height:${a.lineHeight};color:${a.color};text-align:${a.textAlign};font-weight:${a.bold ? '700' : '400'};font-style:${a.italic ? 'italic' : 'normal'};text-decoration:${a.underline ? 'underline' : 'none'};`;
 }

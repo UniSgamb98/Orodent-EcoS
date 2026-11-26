@@ -1,5 +1,6 @@
+import { renderSelectionProperties } from './selection-properties.js';
 import { NodeSelection } from '@tiptap/pm/state';
-import { CanvasMultiSelection, deleteCanvasSelection } from './canvas-selection.js';
+import { CanvasMultiSelection } from './canvas-selection.js';
 import { selectedObject } from './canvas-object.js';
 import { objectName } from './object-properties-profile.js';
 import { mountGeometryProperties } from './geometry-properties.js';
@@ -23,7 +24,8 @@ export function mountObjectProperties({
       root = $('selection-properties');
     const key =
       (editor.state.selection instanceof CanvasMultiSelection
-        ? editor.state.selection.ids.join(',')
+        ? editor.state.selection.ids.join(',') +
+          JSON.stringify(editor.state.selection.ranges.map((r) => r.$from.nodeAfter.attrs))
         : o
           ? o.pos + JSON.stringify(o.node.attrs) + JSON.stringify(o.node.firstChild?.attrs)
           : 'none') +
@@ -33,15 +35,7 @@ export function mountObjectProperties({
     propertyKey = key;
 
     if (editor.state.selection instanceof CanvasMultiSelection) {
-      root.innerHTML =
-        '<span class="eyebrow">Selezione multipla</span><h2>' +
-        editor.state.selection.ids.length +
-        ' elementi selezionati</h2>' +
-        '<p>Trascina uno degli elementi per spostarli insieme. Frecce: 1 px; Maiusc + frecce: 10 px.</p>' +
-        '<div class="object-actions"><button id="delete-selection" class="danger">Elimina selezionati</button><button id="clear-selection">Deseleziona</button></div>';
-      $('delete-selection').disabled = !editor.isEditable;
-      $('delete-selection').onclick = () => deleteCanvasSelection(editor);
-      $('clear-selection').onclick = deselect;
+      renderSelectionProperties({ editor, model, root, safe, refresh, deselect });
       return;
     }
     if (!o) {

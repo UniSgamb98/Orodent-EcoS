@@ -135,7 +135,7 @@ export function mountEditorUI(editor, model) {
         symbolSize(symbol, px(8)),
       );
     }
-    if (kind === 'gs1') return add({ type: 'gs1Matrix' }, 'matrix');
+    if (kind === 'gs1') return add({ type: 'gs1Matrix', attrs: { tight: true } }, 'matrix');
     if (Object.hasOwn(blockTypes, kind))
       return add(
         {

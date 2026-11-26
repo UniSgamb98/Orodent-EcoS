@@ -75,6 +75,7 @@ export const CanvasObject = Node.create({
         italic: false,
         underline: false,
         keepRatio: false,
+        groupId: '',
       }).map(([key, value]) => [key, { default: value }]),
     );
   },
@@ -133,6 +134,7 @@ export const CanvasObject = Node.create({
         dom.style.cssText = objectStyle(attrs);
         dom.dataset.objectId = attrs.id;
         dom.dataset.kind = attrs.kind;
+        dom.dataset.groupId = attrs.groupId ?? '';
         contentDOM.contentEditable = attrs.kind === 'field' ? 'false' : 'inherit';
         dom.dataset.canvasPage = attrs.page;
         grip.textContent =

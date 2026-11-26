@@ -23,6 +23,17 @@ Inserisci riquadri di testo, immagini, simboli, GS1 DataMatrix, tabelle e blocch
 - Trascina la maniglia sopra l’oggetto per spostarlo. Immagini, dati automatici, codici e blocchi automatici si possono trascinare anche dal contenuto.
 - Sul foglio vuoto il puntatore è una freccia; il cursore di testo compare dentro i riquadri di testo.
 - Trascina sul foglio vuoto per disegnare un rettangolo: gli oggetti completamente racchiusi vengono selezionati. Puoi trascinare in entrambe le direzioni, anche con lo zoom.
+- **Ctrl + clic** aggiunge o toglie elementi dalla selezione (Cmd su macOS).
+  Funziona anche con un gruppo intero. Maiusc + clic rimane disponibile;
+  all'interno di un testo in modifica, Maiusc mantiene la selezione del testo.
+- Dopo una selezione con il rettangolo o con Ctrl + clic, premi **Raggruppa**
+  nelle proprietà a destra. Il gruppo viene conservato nel modello: un clic
+  su un membro seleziona tutto il gruppo e il trascinamento lo sposta insieme.
+  **Separa gruppo** rende di nuovo indipendenti gli elementi. Entrambe le
+  operazioni si possono annullare e ripetere. I gruppi contengono elementi
+  della stessa pagina; raggruppando gruppi esistenti si forma un unico gruppo.
+  Le proprietà mostrano X/Y del gruppo e le dimensioni complessive; queste
+  ultime sono di sola lettura.
 - **Maiusc + clic** aggiunge o rimuove un oggetto dalla selezione. **Maiusc + rettangolo** aggiunge altri oggetti.
 - Trascina un elemento selezionato per spostare la selezione multipla, mantenendo le distanze e i limiti della pagina. Frecce e Maiusc + frecce agiscono sull’intera selezione. **Elimina selezionati** o Canc eliminano soltanto gli oggetti selezionati; Annulla ripristina l’operazione.
 - Esc durante il trascinamento annulla il gesto. **Deseleziona** o un clic sul foglio vuoto cancellano la selezione.
@@ -52,6 +63,13 @@ mantengono il rapporto originale. **Alt** sospende lo snap durante il gesto.
 Le frecce restano spostamenti precisi di 1 o 10 pixel, senza snap. Attivare lo
 snap non modifica il modello: cambia soltanto il comportamento dell’editor.
 
+Un gruppo offre soltanto i quattro bordi esterni: i bordi dei suoi membri e
+il centro del gruppo non sono riferimenti di snap. Durante lo spostamento
+di un gruppo o di una selezione multipla si usano soltanto bordi e margini;
+anche i riferimenti centrali del foglio e degli altri elementi sono esclusi.
+Il contorno comune resta visibile anche selezionando altri elementi insieme
+al gruppo.
+
 ## Testo e contenuti variabili
 
 Selezionando un riquadro di testo, sulla destra compaiono stile del paragrafo, carattere, dimensione, grassetto, corsivo, sottolineatura, colori, allineamento, elenchi e interlinea. Con una porzione di testo selezionata puoi formattare quella porzione; selezionando l’intero oggetto modifichi il riquadro.
@@ -75,7 +93,15 @@ limiti visibili del simbolo. Il blocco delle proporzioni vale anche quando
 modifichi larghezza o altezza nei campi numerici. Aprendo una bozza precedente in modifica, il
 riquadro viene adattato senza spostare o ingrandire il disegno visibile.
 Le versioni approvate e i documenti già emessi restano invariati. Le immagini
-caricate dal PC e il margine di rispetto dei DataMatrix non vengono modificati.
+caricate dal PC non vengono ritagliate automaticamente.
+
+Il riquadro dei nuovi **GS1 DataMatrix** coincide con il codice visibile. Lo
+spazio bianco necessario alla lettura, pari ad almeno un modulo, viene
+disegnato all'esterno del riquadro anche in stampa. La verifica di stampa
+controlla che anche questo spazio resti entro la pagina e l'area stampabile.
+Aprendo in modifica una
+bozza precedente, il riquadro si restringe sul codice conservandone posizione
+e dimensione visibili. Le versioni approvate conservano il rendering precedente.
 
 **Adatta al dato** imposta larghezza e altezza usando il valore visualizzato,
 senza cambiare il carattere. Nell’editor quel valore è un esempio: un valore

@@ -5,6 +5,8 @@ import { EditorState, NodeSelection } from '@tiptap/pm/state';
 import { history, undo } from '@tiptap/pm/history';
 import {
   CanvasMultiSelection,
+  groupCanvasSelection,
+  ungroupCanvasSelection,
   selectCanvasObjects,
   moveCanvasSelection,
   deleteCanvasSelection,
@@ -19,6 +21,7 @@ const schema = new Schema({
       content: 'paragraph+',
       attrs: {
         id: {},
+        groupId: { default: '' },
         x: { default: 10 },
         y: { default: 20 },
         width: { default: 20 },
@@ -119,4 +122,40 @@ test('moving a selection is one undo step and preserves unselected objects', () 
   );
   assert.equal(e.state.doc.child(0).attrs.x, 10);
   assert.equal(e.state.doc.child(2).attrs.x, 110);
+});
+
+test('persistent groups survive JSON reload, expand single clicks and ungroup without changing geometry', () => {
+  const e = fixture(),
+    before = e.state.doc.toJSON();
+  groupCanvasSelection(e);
+  const id = e.state.doc.child(0).attrs.groupId;
+  assert.match(id, /^grp-/);
+  assert.equal(e.state.doc.child(2).attrs.groupId, id);
+  assert.equal(e.state.doc.child(1).attrs.groupId, '');
+  const saved = schema.nodeFromJSON(e.state.doc.toJSON());
+  assert.deepEqual(selectCanvasObjects(saved, ['a']).ids, ['a', 'c']);
+  moveCanvasSelection(e, 5, 3, { format: 'custom', width: 100, height: 65 });
+  assert.equal(e.state.doc.child(2).attrs.x, 115);
+  undo(e.state, (tr) => e.view.dispatch(tr));
+  assert.equal(e.state.doc.child(2).attrs.x, 110);
+  ungroupCanvasSelection(e);
+  assert.equal(e.state.doc.child(0).attrs.groupId, '');
+  assert.ok(selectCanvasObjects(e.state.doc, ['a']) instanceof NodeSelection);
+  undo(e.state, (tr) => e.view.dispatch(tr));
+  assert.deepEqual(selectCanvasObjects(e.state.doc, ['c']).ids, ['a', 'c']);
+  undo(e.state, (tr) => e.view.dispatch(tr));
+  assert.deepEqual(e.state.doc.toJSON(), before);
+});
+test('grouping across pages is rejected without mutating the document', () => {
+  const e = fixture();
+  e.view.dispatch(
+    e.state.tr.setNodeMarkup(
+      e.state.doc.child(0).nodeSize + e.state.doc.child(1).nodeSize,
+      undefined,
+      { ...e.state.doc.child(2).attrs, page: 1 },
+    ),
+  );
+  const before = e.state.doc.toJSON();
+  assert.throws(() => groupCanvasSelection(e), /stessa pagina/);
+  assert.deepEqual(e.state.doc.toJSON(), before);
 });

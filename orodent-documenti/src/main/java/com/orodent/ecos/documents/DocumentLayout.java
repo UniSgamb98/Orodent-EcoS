@@ -23,6 +23,7 @@ public final class DocumentLayout {
         var children = envelope.getAsJsonObject("content").getAsJsonArray("content");
         if (children == null) return;
         var ids = new java.util.HashSet<String>();
+        var groups = new java.util.HashMap<String, java.util.List<Integer>>();
         for (var child : children) {
             var node = child.getAsJsonObject();
             boolean object = "canvasObject".equals(node.get("type").getAsString());
@@ -63,6 +64,17 @@ public final class DocumentLayout {
                     w = number(a, "width"),
                     h = number(a, "height");
             int p = integer(a, "page"), z = integer(a, "z");
+            if (a.has("groupId")) {
+                if (!a.getAsJsonPrimitive("groupId").isString())
+                    throw new IllegalArgumentException("Identificatore del gruppo non valido.");
+                String group = a.get("groupId").getAsString();
+                if (!group.isEmpty()) {
+                    if (!group.matches("grp-[a-zA-Z0-9_-]{1,64}")
+                            || envelope.get("schemaVersion").getAsInt() < 7)
+                        throw new IllegalArgumentException("Identificatore del gruppo non valido.");
+                    groups.computeIfAbsent(group, k -> new java.util.ArrayList<>()).add(p);
+                }
+            }
             if (x < 0
                     || y < 0
                     || w < 8
@@ -90,6 +102,10 @@ public final class DocumentLayout {
                 if (!a.getAsJsonPrimitive(name).isBoolean())
                     throw new IllegalArgumentException("Stile del riquadro non valido.");
         }
+        for (var members : groups.values())
+            if (members.size() < 2 || members.stream().distinct().count() != 1)
+                throw new IllegalArgumentException(
+                        "Un gruppo deve contenere almeno due elementi della stessa pagina.");
     }
 
     private static double number(JsonObject a, String key) {
