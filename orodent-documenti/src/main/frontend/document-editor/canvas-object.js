@@ -11,6 +11,10 @@ import {
   resizeGeometry,
 } from './canvas-model.js';
 
+let alignmentProvider = () => null;
+export function setCanvasAlignmentProvider(provider) {
+  alignmentProvider = provider;
+}
 let settings = () => ({ format: 'a4', orientation: 'portrait', count: 1 });
 export function setCanvasPageProvider(provider) {
   settings = provider;
@@ -148,6 +152,7 @@ export const CanvasObject = Node.create({
         if (!drag) return;
         const current = drag;
         drag = null;
+        alignmentProvider()?.clear();
         document.removeEventListener('pointermove', move);
         document.removeEventListener('pointerup', up);
         document.removeEventListener('pointercancel', cancel);
@@ -193,6 +198,12 @@ export const CanvasObject = Node.create({
               e.shiftKey || drag.original.keepRatio,
             )
           : moveGeometry(drag.original, dx, dy, drag.size);
+        drag.attrs =
+          alignmentProvider()?.adjust(drag.attrs, drag.alignment, {
+            edge: drag.edge,
+            bypass: e.altKey,
+            keepRatio: e.shiftKey || drag.original.keepRatio,
+          }) ?? drag.attrs;
         paint(drag.attrs);
         dom.dispatchEvent(
           new CustomEvent('canvas-object-preview', {
@@ -229,6 +240,7 @@ export const CanvasObject = Node.create({
           y: e.clientY,
           zoom,
           edge: control?.dataset.edge,
+          alignment: alignmentProvider()?.begin([node.attrs]),
           original: { ...node.attrs },
           attrs: { ...node.attrs },
           size: pagePixels(settings()),

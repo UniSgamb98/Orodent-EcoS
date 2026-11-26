@@ -1314,3 +1314,28 @@ body:not(.label-layout) #label-palette,body:not(.label-layout) #label-heading {d
 /* A custom object selection must not leave the last text caret visible. */
 .canvas-object[data-kind="text"] .canvas-object-content,.canvas-object[data-kind="table"] .canvas-object-content {caret-color:transparent;}
 .canvas-object.context-selected[data-kind="text"] .canvas-object-content,.canvas-object.context-selected[data-kind="table"] .canvas-object-content {caret-color:auto;}
+
+/* Editor chrome uses screen pixels, never document pixels. */
+:root {--chrome-scale:1;}
+.canvas-resize {width:calc(8px * var(--chrome-scale));height:calc(8px * var(--chrome-scale));border-width:calc(1px * var(--chrome-scale));}
+.canvas-resize-nw {left:calc(-4px * var(--chrome-scale));top:calc(-4px * var(--chrome-scale));}
+.canvas-resize-n {left:calc(50% - 4px * var(--chrome-scale));top:calc(-4px * var(--chrome-scale));}
+.canvas-resize-ne {right:calc(-4px * var(--chrome-scale));top:calc(-4px * var(--chrome-scale));}
+.canvas-resize-e {right:calc(-4px * var(--chrome-scale));top:calc(50% - 4px * var(--chrome-scale));}
+.canvas-resize-se {right:calc(-4px * var(--chrome-scale));bottom:calc(-4px * var(--chrome-scale));}
+.canvas-resize-s {left:calc(50% - 4px * var(--chrome-scale));bottom:calc(-4px * var(--chrome-scale));}
+.canvas-resize-sw {left:calc(-4px * var(--chrome-scale));bottom:calc(-4px * var(--chrome-scale));}
+.canvas-resize-w {left:calc(-4px * var(--chrome-scale));top:calc(50% - 4px * var(--chrome-scale));}
+.canvas-object-grip {top:auto;bottom:100%;left:0;height:22px;padding:2px 8px;font:11px/18px Arial,sans-serif;transform:scale(var(--chrome-scale));transform-origin:bottom left;max-width:240px;overflow:hidden;text-overflow:ellipsis;}
+.canvas-top-actions {display:flex;align-items:center;gap:8px;flex-shrink:0;}
+#snap-toggle {border:1px solid var(--line);background:white;}
+#snap-toggle[aria-pressed="true"] {background:#e2f0f5;border-color:#087e93;color:#087e93;}
+#alignment-guides {position:absolute;inset:0;pointer-events:none;z-index:1000001;}
+.alignment-guide {position:absolute;pointer-events:none;}
+.alignment-guide-x {border-left:calc(1px * var(--chrome-scale)) solid #d84980;}
+.alignment-guide-y {border-top:calc(1px * var(--chrome-scale)) solid #d84980;}
+@media print {#alignment-guides {display:none!important;}}
+/* Reserve screen space for page captions, keeping them clear of the snap controls. */
+.canvas .paper {top:24px;}
+.paper-space {padding-top:24px;}
+.canvas-page-guide > span {top:auto;bottom:100%;right:0;font:10px/14px Arial,sans-serif;transform:scale(var(--chrome-scale));transform-origin:bottom right;}

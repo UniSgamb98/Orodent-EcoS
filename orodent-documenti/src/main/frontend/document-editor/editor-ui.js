@@ -1,39 +1,22 @@
 import { editorKey } from './keyboard.js';
-import {
-  CanvasMultiSelection,
-  mountCanvasSelection,
-  deleteCanvasSelection,
-} from './canvas-selection.js';
+import { CanvasMultiSelection, mountCanvasSelection } from './canvas-selection.js';
 import { GapCursor } from '@tiptap/pm/gapcursor';
 import { NodeSelection } from '@tiptap/pm/state';
-import { labelFields, validateMatrix, measureLabel } from './label-elements.js';
+import { labelFields, measureLabel } from './label-elements.js';
 import symbols from './symbols.json';
 import { blockTypes, fields, escape, checkOperationalContent } from './laboratory-blocks.js';
-import { blockProperties, bindBlockProperties } from './block-properties.js';
+import { objectName } from './object-properties-profile.js';
+import { mountObjectProperties } from './object-properties.js';
+import { mountTextProperties } from './text-properties.js';
 import { mountEditorZoom } from './editor-zoom.js';
-import { selectedObject, updateObject, selectObjectText } from './canvas-object.js';
-import { pagePixels, px, mm, clampGeometry } from './canvas-model.js';
+import { selectedObject, updateObject } from './canvas-object.js';
+import { pagePixels, px, clampGeometry } from './canvas-model.js';
 
 const $ = (id) => document.getElementById(id);
-const kindNames = {
-  text: 'Riquadro di testo',
-  field: 'Dato automatico',
-  image: 'Immagine',
-  matrix: 'GS1 DataMatrix',
-  table: 'Tabella',
-  block: 'Blocco automatico',
-  group: 'Gruppo',
-};
-const objectName = (node) =>
-  node.attrs.kind === 'field'
-    ? (labelFields[node.firstChild?.attrs.key] ?? kindNames.field)
-    : kindNames[node.attrs.kind];
 export function mountEditorUI(editor, model) {
   const cleanup = [];
   let disposed = false,
     timer,
-    propertyKey = '',
-    blockTab = 'content',
     printPreview = false,
     replaceImage = false;
   const on = (node, event, callback) => {
@@ -256,100 +239,11 @@ export function mountEditorUI(editor, model) {
   document
     .querySelectorAll('[data-insert]')
     .forEach((b) => on(b, 'click', () => safe(() => insert(b.dataset.insert))));
-  function deleteObject() {
-    const o = selectedObject(editor.state);
-    if (o && editor.isEditable) {
-      editor.view.dispatch(editor.state.tr.delete(o.pos, o.pos + o.node.nodeSize));
-      refresh(true);
-    }
-  }
-  function duplicate() {
-    const o = selectedObject(editor.state);
-    if (!o) return;
-    const copy = o.node.toJSON();
-    copy.attrs = clampGeometry(
-      {
-        ...copy.attrs,
-        id: uniqueId(),
-        x: copy.attrs.x + 10,
-        y: copy.attrs.y + 10,
-        z: Math.max(...editor.state.doc.content.content.map((n) => n.attrs.z)) + 1,
-      },
-      pagePixels(model.page()),
-    );
-    const at = editor.state.doc.content.size;
-    editor.view.dispatch(editor.state.tr.insert(at, editor.schema.nodeFromJSON(copy)));
-    editor.commands.setNodeSelection(at);
-    refresh(true);
-  }
-  function layer(front) {
-    const o = selectedObject(editor.state);
-    if (!o) return;
-    let items = [];
-    editor.state.doc.forEach((n, p) => items.push({ node: n, pos: p }));
-    items.sort((a, b) => a.node.attrs.z - b.node.attrs.z);
-    items = items.filter((x) => x.pos !== o.pos);
-    items[front ? 'push' : 'unshift'](o);
-    let tr = editor.state.tr;
-    items.forEach((x, i) => (tr = tr.setNodeMarkup(x.pos, undefined, { ...x.node.attrs, z: i })));
-    tr.setSelection(NodeSelection.create(tr.doc, o.pos));
-    editor.view.dispatch(tr);
-    refresh(true);
-  }
-  const hasRange = () =>
-    !editor.state.selection.empty && !(editor.state.selection instanceof NodeSelection);
-  function format(patch, command) {
-    const o = selectedObject(editor.state);
-    if (!o || !['text', 'field'].includes(o.node.attrs.kind) || !editor.isEditable) return;
-    if (o.node.attrs.kind === 'field') {
-      updateObject(editor, o, patch);
-      refresh();
-      return;
-    }
-    if (hasRange() && command) {
-      command(editor.chain().focus()).run();
-      return;
-    }
-    if (command) {
-      selectObjectText(editor, o);
-      command(editor.chain().focus()).run();
-    }
-    const current = { node: editor.state.doc.nodeAt(o.pos), pos: o.pos };
-    updateObject(editor, current, patch);
-    editor.commands.setNodeSelection(o.pos);
-    refresh();
-  }
+  const textProperties = mountTextProperties(editor, { on, safe, refresh });
   function run(command) {
     if (command === 'undo' || command === 'redo') return editor.chain().focus()[command]().run();
     if (!editor.isEditable) return false;
-    const o = selectedObject(editor.state);
-    if (['bold', 'italic', 'underline'].includes(command))
-      return format(
-        { [command]: !o?.node.attrs[command] },
-        hasRange()
-          ? (c) =>
-              c[
-                {
-                  bold: 'toggleBold',
-                  italic: 'toggleItalic',
-                  underline: 'toggleUnderline',
-                }[command]
-              ]()
-          : (c) =>
-              c[
-                {
-                  bold: 'unsetBold',
-                  italic: 'unsetItalic',
-                  underline: 'unsetUnderline',
-                }[command]
-              ](),
-      );
-    if (command.startsWith('align-'))
-      return format({ textAlign: command.slice(6) }, (c) => c.setTextAlign(command.slice(6)));
-    if (['bulletList', 'orderedList'].includes(command))
-      return format({}, (c) =>
-        c[command === 'bulletList' ? 'toggleBulletList' : 'toggleOrderedList'](),
-      );
+    if (textProperties.handles(command)) return textProperties.run(command);
     const tableCommands = [
       'addRowAfter',
       'addColumnAfter',
@@ -366,219 +260,19 @@ export function mountEditorUI(editor, model) {
     on(b, 'mousedown', (e) => e.preventDefault());
     on(b, 'click', () => safe(() => run(b.dataset.command)));
   });
-  const formats = {
-    'font-family': (v) => format({ fontFamily: v }, (c) => c.setFontFamily(v)),
-    'font-size': (v) => format({ fontSize: v }, (c) => c.setFontSize(v)),
-    'text-color': (v) => format({ color: v }, (c) => c.setColor(v)),
-    'text-highlight': (v) => format({}, (c) => c.setBackgroundColor(v)),
-    'line-height': (v) => format({ lineHeight: Number(v) }, (c) => c.setLineHeight(v)),
-    'text-type': (v) =>
-      format(
-        {
-          fontSize: v === 'paragraph' ? '11pt' : v === '1' ? '24pt' : v === '2' ? '18pt' : '14pt',
-        },
-        (c) => (v === 'paragraph' ? c.setParagraph() : c.setHeading({ level: Number(v) })),
-      ),
-  };
-  Object.entries(formats).forEach(([id, action]) =>
-    on($(id), 'change', () => safe(() => action($(id).value))),
-  );
-  function properties(force = false) {
-    const o = selectedObject(editor.state),
-      root = $('selection-properties'),
-      text = $('text-properties');
-    const key =
-      (editor.state.selection instanceof CanvasMultiSelection
-        ? editor.state.selection.ids.join(',')
-        : o
-          ? o.pos + JSON.stringify(o.node.attrs) + o.node.firstChild?.type.name
-          : 'none') +
-      editor.isEditable +
-      editor.isActive('table');
-    if (!force && (key === propertyKey || $('properties').contains(document.activeElement))) return;
-    propertyKey = key;
-    text.hidden = !o || !['text', 'field'].includes(o.node.attrs.kind);
-    text.classList.toggle('automatic-field', o?.node.attrs.kind === 'field');
-    if (editor.state.selection instanceof CanvasMultiSelection) {
-      root.innerHTML =
-        '<span class="eyebrow">Selezione multipla</span><h2>' +
-        editor.state.selection.ids.length +
-        ' elementi selezionati</h2>' +
-        '<p>Trascina uno degli elementi per spostarli insieme. Frecce: 1 px; Maiusc + frecce: 10 px.</p>' +
-        '<div class="object-actions"><button id="delete-selection" class="danger">Elimina selezionati</button><button id="clear-selection">Deseleziona</button></div>';
-      $('delete-selection').disabled = !editor.isEditable;
-      $('delete-selection').onclick = () => deleteCanvasSelection(editor);
-      $('clear-selection').onclick = () => actions.deselect();
-      return;
-    }
-    if (!o) {
-      root.innerHTML =
-        '<span class="eyebrow">Proprietà</span><h2>Seleziona un oggetto</h2><p>Inserisci un riquadro di testo, un’immagine o un codice. Trascina la maniglia per spostarlo; usa i bordi per ridimensionarlo.</p><p>Frecce: 1 px · Maiusc + frecce: 10 px.</p><div id="object-list"></div>';
-      editor.state.doc.forEach((n, pos) => {
-        if (n.type.name !== 'canvasObject') return;
-        const b = document.createElement('button');
-        b.className = 'object-list-item';
-        b.textContent = objectName(n) + ' · Pagina ' + (n.attrs.page + 1);
-        b.onclick = () => editor.commands.setNodeSelection(pos);
-        $('object-list').append(b);
-      });
-      return;
-    }
-    const a = o.node.attrs,
-      node =
-        editor.state.selection instanceof NodeSelection &&
-        editor.state.selection.node.type.name !== 'canvasObject'
-          ? editor.state.selection.node
-          : o.node.firstChild;
-    root.innerHTML = `<span class="eyebrow">Oggetto selezionato</span><h2>${escape(objectName(o.node))}</h2><div class="geometry-grid">${[
-      ['x', 'X'],
-      ['y', 'Y'],
-      ['width', 'Larghezza'],
-      ['height', 'Altezza'],
-    ]
-      .map(
-        ([key, label]) =>
-          `<label>${label} · px<input id="object-${key}" type="number" step="1" min="${key === 'x' || key === 'y' ? 0 : 8}" value="${Math.round(a[key] * 100) / 100}"></label>`,
-      )
-      .join(
-        '',
-      )}</div><p class="physical-size">${mm(a.width).toFixed(1)} × ${mm(a.height).toFixed(1)} mm</p>${(model.page().count ?? 1) > 1 ? `<label>Pagina<select id="object-page">${Array.from({ length: model.page().count }, (_, i) => `<option value="${i}" ${i === a.page ? 'selected' : ''}>${i + 1}</option>`).join('')}</select></label>` : ''}<div class="object-actions"><button data-object="front">In primo piano</button><button data-object="back">Sullo sfondo</button><button data-object="fit">${a.kind === 'field' ? 'Adatta al dato' : 'Adatta altezza'}</button><button data-object="duplicate">Duplica</button><button data-object="delete" class="danger">Elimina oggetto</button></div><div id="object-specific"></div><p id="object-overflow" class="matrix-error" hidden>Il contenuto supera il riquadro: aumenta le dimensioni o riduci il testo.</p>`;
-    const change = (id, action) => {
-      const input = $(id);
-      if (input) {
-        input.disabled = !editor.isEditable;
-        input.onchange = () => {
-          safe(() => action(input));
-          properties(true);
-        };
-      }
-    };
-    for (const k of ['x', 'y', 'width', 'height'])
-      change('object-' + k, (input) => {
-        const value = Number(input.value);
-        if (!Number.isFinite(value)) throw Error('Inserisci un valore numerico.');
-        updateObject(editor, selectedObject(editor.state), { [k]: value });
-      });
-    change('object-page', (input) =>
-      updateObject(editor, selectedObject(editor.state), {
-        page: Number(input.value),
-      }),
-    );
-    const specific = $('object-specific');
-    if (a.kind === 'field')
-      specific.innerHTML =
-        '<p class="field-name">' +
-        escape(labelFields[node.attrs.key]) +
-        '</p><p>Valore dal lavoro. Non modificabile come testo.</p>';
-    if (a.kind === 'image')
-      specific.innerHTML =
-        '<label>Descrizione immagine<input id="image-alt" value="' +
-        escape(node.attrs.alt ?? '') +
-        '"></label><button id="replace-image">Sostituisci immagine dal PC</button>';
-    if (a.kind === 'matrix')
-      specific.innerHTML =
-        '<h3>Dati GS1</h3>' +
-        [
-          ['gtin', 'GTIN · AI 01'],
-          ['lot', 'Lotto · AI 10'],
-          ['productionDate', 'Produzione · AI 11'],
-          ['expiryDate', 'Scadenza · AI 17'],
-        ]
-          .map(
-            ([k, label]) =>
-              `<label>${label}<input id="gs1-${k}" value="${escape(node.attrs[k])}"></label>`,
-          )
-          .join('') +
-        '<p>Usa {{gtin}}, {{lot}}, {{productionDateGs1}}, {{expiryDateGs1}}. Le date sono facoltative. FNC1 e separatori sono automatici.</p>';
-    if (a.kind === 'block') {
-      specific.innerHTML = blockProperties(node.attrs, blockTab);
-      bindBlockProperties(
-        specific,
-        editor,
-        node.attrs,
-        (tab) => {
-          blockTab = tab;
-        },
-        properties,
-        notify,
-      );
-    }
-    if (a.kind === 'table')
-      specific.innerHTML =
-        '<p>Fai clic in una cella per modificare la tabella.</p><div class="object-actions">' +
-        [
-          ['addRowAfter', '＋ Riga'],
-          ['addColumnAfter', '＋ Colonna'],
-          ['deleteRow', '− Riga'],
-          ['deleteColumn', '− Colonna'],
-          ['mergeCells', 'Unisci celle'],
-          ['splitCell', 'Dividi cella'],
-        ]
-          .map(([c, l]) => `<button data-table-command="${c}">${l}</button>`)
-          .join('') +
-        '</div>';
-    change('image-alt', (input) => editor.commands.updateAttributes('image', { alt: input.value }));
-    if ($('replace-image')) {
-      $('replace-image').disabled = !editor.isEditable;
-      $('replace-image').onclick = () => {
-        replaceImage = true;
-        $('image-file').click();
-      };
-    }
-    for (const k of ['gtin', 'lot', 'productionDate', 'expiryDate'])
-      change('gs1-' + k, (input) => {
-        const attrs = { ...node.attrs, [k]: input.value };
-        validateMatrix(attrs);
-        editor.commands.updateAttributes('gs1Matrix', attrs);
-      });
-    root.querySelectorAll('[data-table-command]').forEach((b) => {
-      b.disabled = !editor.isEditable || !editor.isActive('table');
-      b.onmousedown = (e) => e.preventDefault();
-      b.onclick = () => safe(() => run(b.dataset.tableCommand));
-    });
-    root.querySelectorAll('[data-object]').forEach((b) => {
-      b.disabled = !editor.isEditable;
-      b.onmousedown = (e) => e.preventDefault();
-      b.onclick = () =>
-        safe(() => {
-          ({
-            front: () => layer(true),
-            back: () => layer(false),
-            duplicate,
-            delete: deleteObject,
-            fit: () => {
-              if (a.kind === 'field') {
-                updateObject(editor, selectedObject(editor.state), measureLabel(node.attrs.key, a));
-                return;
-              }
-              const box = document.querySelector(
-                `[data-object-id="${a.id}"] .canvas-object-content`,
-              );
-              const top = box.getBoundingClientRect().top,
-                zoom = model.zoomValue();
-              const h = Math.max(
-                8,
-                ...[...box.children].map((n) =>
-                  Math.ceil((n.getBoundingClientRect().bottom - top) / zoom),
-                ),
-              );
-              updateObject(editor, selectedObject(editor.state), { height: h });
-            },
-          })[b.dataset.object]();
-        });
-    });
-  }
-  function overflow() {
-    const o = selectedObject(editor.state);
-    if (!o || !$('object-overflow')) return;
-    const content = document.querySelector(
-      `[data-object-id="${o.node.attrs.id}"] .canvas-object-content`,
-    );
-    if (content)
-      $('object-overflow').hidden =
-        content.scrollHeight <= content.clientHeight + 1 &&
-        content.scrollWidth <= content.clientWidth + 1;
-  }
+  const inspector = mountObjectProperties({
+    editor,
+    model,
+    safe,
+    notify,
+    uniqueId,
+    run,
+    deselect: () => actions.deselect(),
+    requestImageReplacement: () => {
+      replaceImage = true;
+      $('image-file').click();
+    },
+  });
   on($('editor'), 'canvas-object-preview', (e) => {
     for (const k of ['x', 'y', 'width', 'height'])
       if ($('object-' + k)) $('object-' + k).value = Math.round(e.detail[k] * 100) / 100;
@@ -724,6 +418,7 @@ export function mountEditorUI(editor, model) {
       }),
     );
   cleanup.push(mountEditorZoom(model));
+  cleanup.push(() => model.alignment.dispose());
   cleanup.push(mountCanvasSelection(editor, model));
   const resize = () => {
     const top = document.querySelector('.titlebar').getBoundingClientRect().bottom;
@@ -782,34 +477,12 @@ export function mountEditorUI(editor, model) {
       );
     if (o || editor.state.selection instanceof CanvasMultiSelection)
       $('properties').classList.add('open');
-    const a = o?.node.attrs;
-    if (a) {
-      for (const [id, value] of [
-        ['font-family', a.fontFamily],
-        ['font-size', a.fontSize],
-        ['line-height', String(a.lineHeight)],
-        ['text-color', a.color],
-        [
-          'text-type',
-          o.node.firstChild?.type.name === 'heading'
-            ? String(o.node.firstChild.attrs.level)
-            : 'paragraph',
-        ],
-      ])
-        if (document.activeElement !== $(id)) $(id).value = value;
-    }
-    $('text-properties')
-      .querySelectorAll('button,input,select')
-      .forEach((n) => (n.disabled = !editable || !['text', 'field'].includes(a?.kind)));
-    for (const c of ['bold', 'italic', 'underline'])
-      document
-        .querySelector(`[data-command="${c}"]`)
-        .setAttribute('aria-pressed', String(Boolean(a?.[c])));
+    textProperties.update(o, editable);
     const s = pagePixels(model.page());
     $('selection-status').textContent =
       `${model.page().format === 'a4' ? 'A4' : model.page().width + ' × ' + model.page().height + ' mm'} · ${s.count} ${s.count === 1 ? 'pagina' : 'pagine'}${o ? ' · ' + objectName(o.node) : editor.state.selection instanceof CanvasMultiSelection ? ' · ' + editor.state.selection.ids.length + ' elementi selezionati' : ''}`;
-    properties(force);
-    requestAnimationFrame(overflow);
+    inspector.refresh(force);
+    requestAnimationFrame(inspector.overflow);
   }
   refresh(true);
   resize();

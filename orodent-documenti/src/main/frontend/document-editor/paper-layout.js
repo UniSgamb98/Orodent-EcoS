@@ -2,7 +2,7 @@
 // CSS `zoom` does not, which misplaces pointer interactions in older WebKit builds.
 export function sizePaper(zoom) {
   const space = document.getElementById('paper-space'), paper = document.getElementById('paper');
-  const width = paper.offsetWidth * zoom, height = Math.ceil(paper.offsetHeight * zoom) + 43;
+  const width = paper.offsetWidth * zoom, height = Math.ceil(paper.offsetHeight * zoom) + 59;
   if (space.style.height !== `${height}px`) space.style.height = `${height}px`;
   space.style.minWidth = `${Math.ceil(width) + 50}px`;
   const left = Math.max(25, (space.clientWidth - width) / 2);

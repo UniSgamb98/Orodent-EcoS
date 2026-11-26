@@ -71,7 +71,7 @@ export class CanvasMultiSelection extends Selection {
 }
 Selection.jsonID('canvasMulti', CanvasMultiSelection);
 
-export function moveCanvasSelection(editor, dx, dy, page) {
+export function moveCanvasSelection(editor, dx, dy, page, exact = false) {
   const selection = editor.state.selection;
   if (!(selection instanceof CanvasMultiSelection) || !editor.isEditable) return false;
   const objects = matching(editor.state.doc, selection.ids),
@@ -80,6 +80,7 @@ export function moveCanvasSelection(editor, dx, dy, page) {
       dx,
       dy,
       pagePixels(page),
+      !exact,
     );
   if (!delta.x && !delta.y) return true;
   let tr = closeHistory(editor.state.tr);
@@ -184,6 +185,7 @@ export function mountCanvasSelection(editor, model) {
   function finish(commit) {
     if (!drag) return;
     const d = drag;
+    model.alignment.clear();
     restorePreview();
     drag = null;
     document.removeEventListener('pointermove', move);
@@ -200,13 +202,13 @@ export function mountCanvasSelection(editor, model) {
       if (!commit)
         editor.view.dispatch(editor.state.tr.setSelection(d.bookmark.resolve(editor.state.doc)));
       else if (d.mode === 'move')
-        moveCanvasSelection(editor, d.rawDelta?.x ?? 0, d.rawDelta?.y ?? 0, model.page());
+        moveCanvasSelection(editor, d.delta.x, d.delta.y, model.page(), true);
       editor.view.focus();
     }
   }
   function update(e) {
     if (!drag) return;
-    drag.last = { clientX: e.clientX, clientY: e.clientY };
+    drag.last = { clientX: e.clientX, clientY: e.clientY, altKey: e.altKey };
     const p = point(e);
     if (drag.mode === 'move') {
       drag.rawDelta = { x: p.x - drag.start.x, y: p.y - drag.start.y };
@@ -216,6 +218,21 @@ export function mountCanvasSelection(editor, model) {
         drag.rawDelta.y,
         pagePixels(model.page()),
       );
+      if (drag.alignment) {
+        const base = drag.alignment.bounds;
+        const snapped = model.alignment.adjust(
+          { ...base, x: base.x + drag.delta.x, y: base.y + drag.delta.y },
+          drag.alignment,
+          { bypass: e.altKey },
+        );
+        drag.delta = groupDelta(
+          drag.objects.map((o) => o.node.attrs),
+          snapped.x - base.x,
+          snapped.y - base.y,
+          pagePixels(model.page()),
+          false,
+        );
+      }
       for (const o of drag.objects) {
         const dom = editor.view.nodeDOM(o.pos);
         if (dom) {
@@ -323,6 +340,7 @@ export function mountCanvasSelection(editor, model) {
       delta: { x: 0, y: 0 },
       started: false,
     };
+    drag.alignment = objectDOM ? model.alignment.begin(drag.objects) : null;
     if (!objectDOM && !e.shiftKey)
       editor.view.dispatch(
         editor.state.tr.setSelection(new GapCursor(editor.state.doc.resolve(0))),

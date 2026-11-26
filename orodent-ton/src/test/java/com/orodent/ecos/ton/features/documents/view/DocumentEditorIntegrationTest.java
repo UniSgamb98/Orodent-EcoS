@@ -377,6 +377,7 @@ class DocumentEditorIntegrationTest {
                         return null;
                     });
             verifyCanvasSelection();
+            verifyAlignmentAndProperties();
             assertTrue(errors.isEmpty(), errors::toString);
         } finally {
             fx(
@@ -581,14 +582,188 @@ class DocumentEditorIntegrationTest {
                 });
     }
 
+    private void verifyAlignmentAndProperties() throws Exception {
+        fx(
+                () -> {
+                    api().call("newModel", "ETICHETTA");
+                    controls(new String[][] {{"paper-width", "102"}, {"paper-height", "65"}});
+                    api().call("insert", "label:height");
+                    for (String zoom : List.of(".5", "1", "2")) {
+                        controls(new String[][] {{"zoom", zoom}});
+                        assertEquals(
+                                8,
+                                ((Number)
+                                                js(
+                                                        "document.querySelector('.context-selected"
+                                                            + " .canvas-resize-se').getBoundingClientRect().width"))
+                                        .doubleValue(),
+                                .6);
+                        assertEquals(
+                                22,
+                                ((Number)
+                                                js(
+                                                        "document.querySelector('.context-selected"
+                                                            + " .canvas-object-grip').getBoundingClientRect().height"))
+                                        .doubleValue(),
+                                1);
+                    }
+                    controls(new String[][] {{"font-size", "9pt"}});
+                    js("document.querySelector('[data-object=fit]').click()");
+                    assertEquals("9pt", attrs().get("fontSize").getAsString());
+                    assertTrue(attrs().get("width").getAsDouble() >= 8);
+                    assertTrue(
+                            (Boolean)
+                                    js(
+                                            "getComputedStyle(document.querySelector('.text-only')).display==='none'"));
+                    api().call("insert", "text");
+                    js(
+                            "var e=document.querySelector('#editor"
+                                + " .tiptap').editor;e.commands.setTextSelection(e.state.selection.from+2);e.commands.insertContent('Testo"
+                                + " libero');");
+                    controls(new String[][] {{"text-highlight", "#ffee00"}});
+                    assertTrue(api().call("serialize").toString().contains("#ffee00"));
+                    api().call("insert", "symbol:modelnumber");
+                    assertTrue((Boolean) js("!!document.getElementById('replace-image')"));
+                    controls(new String[][] {{"image-alt", "Simbolo prova"}});
+                    assertTrue(api().call("serialize").toString().contains("Simbolo prova"));
+                    api().call("insert", "gs1");
+                    controls(new String[][] {{"gs1-lot", "LOT-PROVA"}});
+                    assertTrue(api().call("serialize").toString().contains("LOT-PROVA"));
+                    assertTrue((Boolean) js("document.getElementById('text-properties').hidden"));
+                    api().call("insert", "table");
+                    js("document.querySelector('[data-action=insert-table]').click()");
+                    assertEquals(
+                            6,
+                            ((Number)
+                                            js(
+                                                    "document.querySelectorAll('[data-table-command]').length"))
+                                    .intValue());
+                    api().call("newModel", "PRODUZIONE");
+                    api().call("insert", "identity");
+                    assertTrue((Boolean) js("!!document.querySelector('.block-property-tabs')"));
+                    api().call("newModel", "ETICHETTA");
+                    controls(
+                            new String[][] {
+                                {"paper-width", "102"}, {"paper-height", "65"}, {"zoom", "2"}
+                            });
+                    api().call("insert", "label:article");
+                    controls(new String[][] {{"object-x", "40"}, {"object-y", "25"}});
+                    api().call("insert", "label:lot");
+                    controls(
+                            new String[][] {
+                                {"object-width", "70"}, {"object-x", "220"}, {"object-y", "90"}
+                            });
+                    String before = api().call("serialize").toString();
+                    assertEquals(
+                            "false",
+                            js(
+                                    "document.getElementById('snap-toggle').getAttribute('aria-pressed')"));
+                    js("document.getElementById('snap-toggle').click()");
+                    assertEquals(before, api().call("serialize").toString());
+                    return null;
+                });
+        drag(
+                "[data-label-value=lot]",
+                -356,
+                0,
+                () -> {
+                    assertEquals(
+                            40,
+                            ((Number)
+                                            js(
+                                                    "Number(document.querySelector('.alignment-guide-x').dataset.value)"))
+                                    .doubleValue(),
+                            .01);
+                    screenshot("target/document-snap-guides.png");
+                    return null;
+                });
+        fx(
+                () -> {
+                    assertEquals(40, attrs(1).get("x").getAsDouble(), .01);
+                    assertEquals(
+                            0,
+                            ((Number) js("document.querySelectorAll('.alignment-guide').length"))
+                                    .intValue());
+                    api().call("run", "undo");
+                    assertEquals(220, attrs(1).get("x").getAsDouble(), .01);
+                    js("document.getElementById('snap-toggle').click()");
+                    return null;
+                });
+        drag(
+                "[data-label-value=lot]",
+                -356,
+                0,
+                () -> {
+                    assertEquals(
+                            0,
+                            ((Number) js("document.querySelectorAll('.alignment-guide').length"))
+                                    .intValue());
+                    return null;
+                });
+        fx(
+                () -> {
+                    assertEquals(42, attrs(1).get("x").getAsDouble(), .01);
+                    api().call("run", "undo");
+                    js("document.getElementById('snap-toggle').click()");
+                    return null;
+                });
+        drag("#paper", 640, 240);
+        await(
+                () ->
+                        "canvasMulti"
+                                .equals(
+                                        js(
+                                                "document.querySelector('#editor"
+                                                    + " .tiptap').editor.state.selection.toJSON().type")));
+        drag("[data-label-value=article]", 50, 0);
+        fx(
+                () -> {
+                    double centre =
+                            (attrs(0).get("x").getAsDouble() + attrs(1).get("x").getAsDouble() + 70)
+                                    / 2;
+                    assertEquals(102 * 96 / 25.4 / 2, centre, .01);
+                    api().call("run", "undo");
+                    assertEquals(40, attrs(0).get("x").getAsDouble(), .01);
+                    js(
+                            "document.querySelector('#editor"
+                                    + " .tiptap').editor.commands.setNodeSelection(0)");
+                    return null;
+                });
+        drag(
+                ".context-selected .canvas-resize-e",
+                150,
+                0,
+                () -> {
+                    assertEquals(
+                            220,
+                            ((Number)
+                                            js(
+                                                    "Number(document.querySelector('.alignment-guide-x').dataset.value)"))
+                                    .doubleValue(),
+                            .01);
+                    return null;
+                });
+        fx(
+                () -> {
+                    assertEquals(180, attrs(0).get("width").getAsDouble(), .01);
+                    api().call("run", "undo");
+                    assertEquals(103, attrs(0).get("width").getAsDouble(), 1);
+                    return null;
+                });
+    }
+
     private JsonObject model() {
         return JsonParser.parseString(api().call("serialize").toString()).getAsJsonObject();
     }
 
     private JsonObject attrs() {
+        return attrs(0);
+    }
+
+    private JsonObject attrs(int index) {
         return model().getAsJsonObject("content")
                 .getAsJsonArray("content")
-                .get(0)
+                .get(index)
                 .getAsJsonObject()
                 .getAsJsonObject("attrs");
     }
@@ -628,6 +803,11 @@ class DocumentEditorIntegrationTest {
     }
 
     private void drag(String selector, double dx, double dy) throws Exception {
+        drag(selector, dx, dy, null);
+    }
+
+    private void drag(String selector, double dx, double dy, Callable<Void> beforeRelease)
+            throws Exception {
         Point2D start =
                 fx(
                         () -> {
@@ -660,11 +840,15 @@ class DocumentEditorIntegrationTest {
                     });
             Thread.sleep(30);
         }
-        fx(
-                () -> {
-                    new Robot().mouseRelease(MouseButton.PRIMARY);
-                    return null;
-                });
+        try {
+            if (beforeRelease != null) fx(beforeRelease);
+        } finally {
+            fx(
+                    () -> {
+                        new Robot().mouseRelease(MouseButton.PRIMARY);
+                        return null;
+                    });
+        }
         Thread.sleep(100);
     }
 

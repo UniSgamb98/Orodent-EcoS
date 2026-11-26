@@ -7,6 +7,7 @@ import {
   deleteCanvasSelection,
 } from './canvas-selection.js';
 import { GapCursor } from '@tiptap/pm/gapcursor';
+import { createAlignmentGuides } from './alignment-guides.js';
 import { editorKey } from './keyboard.js';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
@@ -44,6 +45,7 @@ import {
   CanvasObject,
   CanvasDocument,
   setCanvasPageProvider,
+  setCanvasAlignmentProvider,
   selectedObject,
   updateObject,
   selectObjectText,
@@ -65,8 +67,10 @@ let page = { ...defaultPage },
   zoom = 0.8,
   canvas = true,
   purposeEditable = true,
-  nextId = 1;
+  nextId = 1,
+  alignment;
 setCanvasPageProvider(() => page);
+setCanvasAlignmentProvider(() => alignment);
 const activeEditor = () => {
   if (!editor || disposed) throw new Error('Editor non disponibile.');
   return editor;
@@ -373,7 +377,13 @@ try {
       if (!disposed) ui?.refresh();
     },
   });
+  alignment = createAlignmentGuides(
+    editor,
+    () => page,
+    () => zoom,
+  );
   const model = {
+    alignment,
     title: () => title,
     purpose: () => purpose,
     page: () => ({ ...page }),

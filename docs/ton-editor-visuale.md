@@ -11,7 +11,7 @@ Nel pannello sinistro, scheda **Pagina**, scegli:
 - Margine di riferimento per il posizionamento iniziale dei nuovi oggetti.
 - Numero di pagine per i documenti. Un’etichetta occupa una sola pagina.
 
-Un foglio di 102 × 38 mm mantiene queste proporzioni nell’editor e nell’anteprima. Lo zoom ingrandisce la vista e non modifica le misure del documento.
+Un foglio di 102 × 38 mm mantiene queste proporzioni nell’editor e nell’anteprima. Lo zoom ingrandisce la vista e non modifica le misure del documento. Maniglie e targhette mantengono una dimensione compatta sullo schermo: lo zoom del foglio non ingrandisce i controlli di selezione.
 
 I pulsanti **Inserisci**, **Annulla/Ripeti**, **Verifica** e **Anteprima** sono sulla
 stessa barra del titolo; la barra si adatta alle finestre più piccole.
@@ -37,6 +37,21 @@ I pixel sono quelli di riferimento CSS, 96 per pollice: 1 px corrisponde a 25,4/
 
 Gli oggetti rimangono entro la pagina. Se un nuovo formato non contiene gli oggetti esistenti, l’editor segnala il problema e ripristina i valori precedenti; puoi prima spostarli o ridimensionarli.
 
+## Allineamento e snap
+
+Il pulsante **Snap**, vicino a **Deseleziona**, attiva o disattiva le guide di
+allineamento. All’apertura è spento. Durante il trascinamento aggancia bordi e
+centri degli altri elementi della stessa pagina, oltre a bordi, margini e centro
+del foglio. Le guide rosa compaiono soltanto vicino a un riferimento (6 pixel
+sullo schermo, indipendenti dallo zoom) e scompaiono al rilascio.
+
+Funziona anche sugli spostamenti di selezioni multiple contenute nella stessa
+pagina, conservando le distanze fra gli oggetti. Nei ridimensionamenti liberi
+aggancia il bordo trascinato; i ridimensionamenti con proporzioni bloccate
+mantengono il rapporto originale. **Alt** sospende lo snap durante il gesto.
+Le frecce restano spostamenti precisi di 1 o 10 pixel, senza snap. Attivare lo
+snap non modifica il modello: cambia soltanto il comportamento dell’editor.
+
 ## Testo e contenuti variabili
 
 Selezionando un riquadro di testo, sulla destra compaiono stile del paragrafo, carattere, dimensione, grassetto, corsivo, sottolineatura, colori, allineamento, elenchi e interlinea. Con una porzione di testo selezionata puoi formattare quella porzione; selezionando l’intero oggetto modifichi il riquadro.
@@ -54,6 +69,14 @@ i dati dei blocchi continuano a provenire dal piano, senza alterare pesi o calco
 
 Tra i simboli sono disponibili anche **# · Numero modello**, **Tenere all’asciutto**
 (ombrello) e **Data di scadenza** (clessidra), oltre a quelli già presenti.
+
+**Adatta al dato** imposta larghezza e altezza usando il valore visualizzato,
+senza cambiare il carattere. Nell’editor quel valore è un esempio: un valore
+reale più lungo può richiedere più spazio. **Adatta altezza** mantiene la
+larghezza e modifica soltanto l’altezza per contenere il contenuto.
+L’**evidenziatore** imposta il colore di sfondo dietro al testo selezionato;
+non cambia il colore delle lettere. È disponibile sul testo libero, insieme
+agli elenchi e agli altri strumenti di paragrafo.
 
 Un contenuto troppo grande viene segnalato nelle proprietà. Puoi aumentare il riquadro, adattarne l’altezza o ridurre il testo. La stampa dei nuovi modelli controlla che gli oggetti e il loro contenuto rientrino nel formato, per evitare tagli silenziosi. I dati reali possono occupare più spazio rispetto agli esempi: verifica anche l’anteprima del documento generato.
 

@@ -16,14 +16,14 @@ export function insideSelection(rect, object, pageHeight) {
     y + object.height <= rect.y + rect.height + 0.1
   );
 }
-export function groupDelta(objects, dx, dy, size) {
+export function groupDelta(objects, dx, dy, size, round = true) {
   if (!objects.length) return { x: 0, y: 0 };
   const minX = Math.max(...objects.map((a) => -a.x)),
     maxX = Math.min(...objects.map((a) => size.width - a.x - a.width)),
     minY = Math.max(...objects.map((a) => -a.y)),
     maxY = Math.min(...objects.map((a) => size.height - a.y - a.height));
   return {
-    x: Math.max(minX, Math.min(maxX, Math.round(dx))),
-    y: Math.max(minY, Math.min(maxY, Math.round(dy))),
+    x: Math.max(minX, Math.min(maxX, round ? Math.round(dx) : dx)),
+    y: Math.max(minY, Math.min(maxY, round ? Math.round(dy) : dy)),
   };
 }

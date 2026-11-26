@@ -74,6 +74,7 @@ export function applyPage(page, zoom) {
   root.setProperty('--paper-height', size.height + 'mm');
   root.setProperty('--paper-margin', page.margin + 'mm');
   root.setProperty('--zoom', String(zoom));
+  root.setProperty('--chrome-scale', String(1/zoom));
   sizePaper(zoom);
 }
 

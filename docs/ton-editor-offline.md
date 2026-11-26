@@ -18,6 +18,30 @@ npm run check
 
 Il build produce HTML con CSS e JavaScript incorporati, hash CSP, manifest delle risorse e licenze delle dipendenze effettivamente distribuite. I test GS1 usano un decoder indipendente. Le immagini dei simboli sono accompagnate dall’attribuzione in `symbols/` e vengono incorporate come PNG nei modelli.
 
+## Proprietà e strumenti dell’editor
+
+`editor-ui.js` coordina inserimento, navigazione e comandi. L’ispettore è composto
+da moduli separati:
+
+- `object-properties-profile.js`: nomi e capacità dei tipi di oggetto.
+- `object-properties.js`: selezione e composizione dei pannelli.
+- `geometry-properties.js`: posizione, dimensioni e azioni comuni.
+- `text-properties.js`: carattere e stile condivisi; strumenti di paragrafo solo
+  quando il profilo li consente.
+- `specific-properties.js`: registro dei pannelli specifici per immagini, GS1,
+  tabelle, blocchi operativi e dati automatici.
+- `automatic-field-properties.js`: punto di estensione per pannelli di singoli
+  dati automatici, identificati dalla chiave (`article`, `lot`, ecc.). Per
+  aggiungere proprietà a un dato si registra il relativo `render`/`bind` senza
+  duplicare geometria e tipografia. Nuovi attributi persistenti devono sempre
+  essere validati nello schema del documento.
+
+`alignment.js` contiene soltanto geometria di allineamento, verificabile senza
+DOM; `alignment-guides.js` prepara i riferimenti una volta per trascinamento e
+mostra le guide temporanee. La soglia è in pixel di schermo. I controlli di
+selezione usano `--chrome-scale`, inverso dello zoom: non alterano le dimensioni
+salvate o la stampa. Guide e stato dello snap non entrano nel modello salvato.
+
 ## Formato interno e compatibilità
 
 Il formato interno alla versione 6 contiene titolo, utilizzo, impostazioni della pagina e contenuto. `layout: canvas` indica oggetti `canvasObject` con coordinate X/Y, larghezza, altezza, pagina, ordine di sovrapposizione e stile. Ogni oggetto contiene nodi Tiptap per testo, immagini, tabelle, campi, DataMatrix o blocchi automatici. I dati automatici dell’etichetta usano `kind: field` con un unico nodo atomico `labelValue`: non sono contenitori di testo editabile. I campi inline `labelField` rimangono leggibili per i modelli precedenti; nelle bozze i riquadri con un solo campo vengono convertiti senza modificare i testi misti. Le coordinate sono pixel di riferimento a 96 dpi; le dimensioni fisiche della carta sono millimetri.
