@@ -22,6 +22,11 @@ conservando quantità e riferimenti tecnici. Le giacenze CSV restano indipendent
 Una produzione comprende un solo prodotto/colore e più formati dello stesso
 diametro. I formati devono utilizzare la stessa versione di composizione e
 modello disco, ereditati dalla specifica approvata predefinita del prodotto.
+Il riepilogo mostra la versione della specifica e l'etichetta collegata. Per usare
+una nuova specifica approvata, premi **Imposta predefinita** nel prodotto prima
+di creare un nuovo piano. La versione visualizzata nella scheda del prodotto
+non viene selezionata automaticamente per la produzione; anche le bozze salvate
+conservano il riferimento originale.
 Non vengono selezionate specifiche separate per altezza. In assenza di una
 predefinita, o se il prodotto importato è da verificare, occorre configurarlo
 nei Dati tecnici. Il diametro dell’articolo sceglie stampo di riferimento e g/mm

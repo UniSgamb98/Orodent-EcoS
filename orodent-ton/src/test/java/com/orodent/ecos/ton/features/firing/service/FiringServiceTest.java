@@ -119,6 +119,123 @@ class FiringServiceTest {
     }
 
     @Test
+    void labelAssignmentFollowsTheDefaultSpecificationFromProductionThroughFiring() {
+        var catalog = new com.orodent.ecos.ton.features.catalog.service.CatalogService(db, workers);
+        var specifications =
+                new com.orodent.ecos.ton.features.catalog.service.SpecificationService(db, workers);
+        var product =
+                (com.orodent.ecos.ton.features.catalog.model.CatalogModels.Product)
+                        catalog.load(
+                                        com.orodent.ecos.ton.features.catalog.model.CatalogKind
+                                                .PRODUCTS,
+                                        fixture.product.id())
+                                .join()
+                                .entry();
+        var original = specifications.page(product, 0, "", "").join().rows().getFirst();
+        String content =
+                """
+{"schemaVersion":5,"purpose":"ETICHETTA","title":"Dischi","page":{"format":"custom","width":102,"height":38,"orientation":"landscape","margin":0},"content":{"type":"doc","content":[{"type":"paragraph","content":[{"type":"labelField","attrs":{"key":"expiryDate"}}]}]}}
+""";
+        var label =
+                new com.orodent.ecos.ton.features.documents.service.DocumentTemplateService(
+                                db, workers)
+                        .create(
+                                new com.orodent.ecos.ton.features.documents.model.DocumentTemplates
+                                        .Draft("ETICHETTA", content),
+                                true)
+                        .join();
+        specifications.copy(product, original).join();
+        var draft = specifications.page(product, 0, "", "").join().rows().getFirst();
+        specifications
+                .save(
+                        product,
+                        draft,
+                        new com.orodent.ecos.ton.features.catalog.model.CatalogModels
+                                .SpecificationDraft(
+                                original.compositionId(),
+                                original.modelId(),
+                                original.calculation(),
+                                "",
+                                original.calculationVersionId(),
+                                label.template().id()),
+                        true)
+                .join();
+        var approved = specifications.page(product, 0, "", "").join().rows().getFirst();
+
+        // Approval alone does not replace the product's default, even for a new plan.
+        assertFalse(approved.preferred());
+        assertTrue(
+                fixture.workspace().articles().stream()
+                        .allMatch(
+                                a ->
+                                        a.specificationId() == original.id()
+                                                && a.labelTemplateId() == null));
+        var oldPlan = confirm();
+        specifications.prefer(product, approved).join();
+        assertTrue(
+                fixture.workspace().articles().stream()
+                        .allMatch(
+                                a ->
+                                        a.specificationId() == approved.id()
+                                                && Objects.equals(
+                                                        a.labelTemplateId(),
+                                                        label.template().id())));
+        var newPlan = confirm();
+        assertTrue(
+                fixture.service.load(newPlan.id()).join().plan().formats().stream()
+                        .allMatch(
+                                f ->
+                                        Objects.equals(
+                                                f.article().labelTemplateId(),
+                                                label.template().id())));
+        assertTrue(
+                fixture.service.load(oldPlan.id()).join().plan().formats().stream()
+                        .allMatch(f -> f.article().labelTemplateId() == null));
+
+        var data = service.workspace().join();
+        var group =
+                Firing.group(data.pending()).stream()
+                        .filter(g -> g.key().planId() == newPlan.id())
+                        .findFirst()
+                        .orElseThrow();
+        var fired =
+                service.create(
+                                load(
+                                        data.furnaces().getFirst(),
+                                        "LABEL-FLOW",
+                                        quantity(group, group.count())))
+                        .join();
+        assertEquals(group.count(), service.loaded(fired.id()).join().size());
+        // This is the same historical-disc join used by measurement label printing.
+        db.withConnection(
+                c -> {
+                    try (var q =
+                            c.prepareStatement(
+                                    "SELECT"
+                                        + " d.specifica_prodotto_id,cp.etichetta_modello_id,e.data_produzione"
+                                        + " FROM TON.CARICO_DISCHI l JOIN TON.DISCHI_PRODOTTI d ON"
+                                        + " d.disco_id=l.disco_id JOIN TON.CONFIGURAZIONI_PRODOTTO"
+                                        + " cp ON cp.configurazione_id=d.specifica_prodotto_id JOIN"
+                                        + " TON.ESECUZIONI_PIANO e ON"
+                                        + " e.esecuzione_id=d.esecuzione_id WHERE l.ciclo_id=?")) {
+                        q.setLong(1, fired.id());
+                        try (var r = q.executeQuery()) {
+                            int rows = 0;
+                            while (r.next()) {
+                                rows++;
+                                assertEquals(approved.id(), r.getLong(1));
+                                assertEquals(label.template().id(), r.getLong(2));
+                                assertEquals(
+                                        fixture.request(false).date(), r.getDate(3).toLocalDate());
+                            }
+                            assertEquals(group.count(), rows);
+                        }
+                    }
+                    return null;
+                });
+    }
+
+    @Test
     void confirmationCreatesAllDiscsOnceAndOutputFailureRollsBackTheDraftAsWell() {
         var draft =
                 fixture.service

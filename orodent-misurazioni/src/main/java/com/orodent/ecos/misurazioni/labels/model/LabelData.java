@@ -4,13 +4,13 @@ import static com.orodent.ecos.misurazioni.labels.model.Labels.*;
 
 import com.google.gson.JsonObject;
 
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 public final class LabelData {
     private LabelData() {}
 
-    public static String payload(Source source, LocalDate expiry) {
+    public static String payload(Source source) {
+        var expiry = source.expiry();
         var j = source.job();
         var data = new JsonObject();
         data.addProperty("article", j.article());
@@ -35,15 +35,9 @@ public final class LabelData {
         data.addProperty(
                 "productionDateGs1",
                 source.produced().format(DateTimeFormatter.ofPattern("yyMMdd")));
-        data.addProperty(
-                "expiryDate",
-                expiry == null ? "" : expiry.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-        data.addProperty(
-                "expiryDateGs1",
-                expiry == null ? "" : expiry.format(DateTimeFormatter.ofPattern("yyMMdd")));
+        data.addProperty("expiryDate", expiry.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        data.addProperty("expiryDateGs1", expiry.format(DateTimeFormatter.ofPattern("yyMMdd")));
         data.addProperty("articleRevision", source.articleRevision());
-        if (expiry != null && expiry.isBefore(source.produced()))
-            throw new IllegalArgumentException("La scadenza precede la produzione.");
         return data.toString();
     }
 }

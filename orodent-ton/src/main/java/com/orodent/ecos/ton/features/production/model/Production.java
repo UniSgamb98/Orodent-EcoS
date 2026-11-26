@@ -97,7 +97,9 @@ public final class Production {
             BigDecimal pressure,
             BigDecimal pressDiameter,
             String reason,
-            List<Dose> doses) {
+            List<Dose> doses,
+            Long labelTemplateId,
+            String labelTemplateLabel) {
         public ArticleChoice {
             doses = List.copyOf(doses);
             reason = reason == null ? "" : reason;

@@ -10,6 +10,12 @@ La sezione **Dati automatici** del pannello di inserimento offre i campi del lav
 
 Nelle **Specifiche di produzione** del prodotto scegli una versione approvata nel campo **Modello etichetta**. La produzione conserva quel riferimento tramite la specifica esatta usata per i dischi. Approvare una nuova etichetta non cambia automaticamente le produzioni precedenti.
 
+La specifica con l'etichetta deve essere **predefinita** prima di creare il nuovo
+piano: approvarla o selezionarla nel catalogo non basta. Il riepilogo della
+produzione mostra la versione di specifica e l'etichetta effettivamente usate.
+Le bozze già salvate, i piani confermati e i dischi mantengono la specifica
+originale durante carico, cottura e misurazioni.
+
 Il **GTIN · GS1** si imposta nell’anagrafica del singolo **articolo**: i diversi formati commerciali di uno stesso prodotto hanno identificatori distinti. Sono accettati GTIN di 8, 12, 13 o 14 cifre, controllando la cifra finale e conservando la rappresentazione GS1 di 14 cifre. Anche le modifiche al GTIN entrano nello storico dell’articolo. Il campo può restare vuoto per articoli non ancora codificati; una stampa che richiede il GTIN segnala il dato mancante.
 
 ## GS1 DataMatrix
@@ -27,9 +33,9 @@ Le date nel codice sono facoltative: lascia il campo vuoto per omettere l’AI. 
 
 ## Stampa da Misurazioni
 
-Apri un lavoro e premi **Stampa etichetta**. Le misure possono essere ancora vuote. L’anteprima usa i codici, formato, lotto, forno, temperatura e data di produzione del lavoro. La scadenza viene inserita esplicitamente se serve al modello; EcoS non inventa una durata commerciale.
+Apri un lavoro e premi **Stampa etichetta**. Le misure possono essere ancora vuote. L’anteprima usa i codici, formato, lotto, forno, temperatura e data di produzione del lavoro. La scadenza viene calcolata automaticamente: **data di produzione + 5 anni**. Si usa la data registrata nella produzione, non il giorno di stampa o di fine cottura. Per il 29 febbraio, in un anno di scadenza non bisestile si usa il 28 febbraio. I campi di testo e l'AI 17 ricevono la stessa scadenza.
 
-Per le produzioni storiche senza modello nella specifica, l’operatore deve scegliere esplicitamente una versione approvata. Per quelle configurate si usa la versione della specifica, anche se successivamente ritirata.
+Per le produzioni storiche senza modello nella specifica, il messaggio indica la versione del piano e la predefinita attuale del prodotto. Non viene sostituita automaticamente la specifica storica con quella attuale. Per quelle configurate si usa la versione dell'etichetta della specifica originale, anche se successivamente ritirata.
 
 Prima di aprire il dialogo di stampa EcoS conserva l’HTML generato, il modello esatto, i dati, le dimensioni, l’operatore quando disponibile e i collegamenti ai singoli dischi. Annullare il dialogo non elimina questa etichetta preparata. Alla riapertura, **Ristampa ultima etichetta** usa il contenuto originale; **Crea da modello** permette una nuova generazione. La conferma di invio indica l’accettazione da parte del sistema di stampa, non una verifica dell’uscita fisica.
 

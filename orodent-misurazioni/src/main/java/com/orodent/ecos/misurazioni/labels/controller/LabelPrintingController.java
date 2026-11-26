@@ -13,17 +13,18 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Window;
 
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CompletionException;
 import java.util.function.Function;
 
 /** One owned modal print session; database work uses the application's borrowed executor. */
 public final class LabelPrintingController implements AutoCloseable {
+    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private final ModuleContext context;
     private final LabelService service;
     private final Function<LabelPreviewPane, Boolean> printJob;
     private final Dialog<Void> dialog = new Dialog<>();
     private final ComboBox<Template> templates = new ComboBox<>();
-    private final DatePicker expiry = new DatePicker();
     private final Button print = new Button("Stampa etichetta"),
             previous = new Button("Ristampa ultima etichetta"),
             regenerate = new Button("Crea da modello");
@@ -58,8 +59,6 @@ public final class LabelPrintingController implements AutoCloseable {
         templates.setId("label-template");
         templates.setMaxWidth(Double.MAX_VALUE);
         templates.setPromptText("Modello della specifica di produzione");
-        expiry.setId("label-expiry");
-        expiry.setPromptText("Solo se usata nel modello");
         print.setId("label-print");
         previous.setId("label-previous");
         preview.setId("label-preview");
@@ -70,12 +69,7 @@ public final class LabelPrintingController implements AutoCloseable {
         info.setMaxWidth(Double.MAX_VALUE);
         feedback.setMinHeight(Region.USE_PREF_SIZE);
         HBox.setHgrow(templates, Priority.ALWAYS);
-        options.getChildren()
-                .setAll(
-                        new Label("Versione del modello etichetta"),
-                        templates,
-                        new Label("Scadenza (se richiesta dal modello)"),
-                        expiry);
+        options.getChildren().setAll(new Label("Versione del modello etichetta"), templates);
         var actions = new HBox(10, print, previous, regenerate);
         var content = new VBox(12, info, options, preview, actions, feedback);
         content.setPadding(new Insets(12));
@@ -96,11 +90,6 @@ public final class LabelPrintingController implements AutoCloseable {
                 e -> {
                     if (!restoring) render();
                 });
-        expiry.valueProperty()
-                .addListener(
-                        (o, b, a) -> {
-                            if (!restoring) render();
-                        });
         print.setOnAction(e -> print());
         previous.setOnAction(e -> stored());
         regenerate.setOnAction(
@@ -153,18 +142,24 @@ public final class LabelPrintingController implements AutoCloseable {
                                                                     : source.gtin())
                                                             + " · "
                                                             + source.job().readings().size()
-                                                            + " dischi");
+                                                            + " dischi\n"
+                                                            + source.specificationLabel()
+                                                            + " · Produzione "
+                                                            + source.produced().format(DATE)
+                                                            + " · Scadenza "
+                                                            + source.expiry().format(DATE));
                                             currentInfo = info.getText();
                                             previous.setDisable(source.latest() == null);
                                             regenerate.setDisable(false);
                                             if (source.assignedTemplate() == null) {
                                                 templates.setDisable(true);
                                                 regenerate.setDisable(true);
-                                                feedback.setText(
-                                                        "Nessun modello etichetta assegnato nella"
-                                                            + " specifica di produzione di questo"
-                                                            + " lavoro. Collegalo prima di"
-                                                            + " stampare.");
+                                                preview.setCenter(
+                                                        new Label(
+                                                                "Anteprima non disponibile: manca"
+                                                                    + " il modello nella specifica"
+                                                                    + " del piano."));
+                                                feedback.setText(source.missingTemplateMessage());
                                             } else render();
                                         }));
     }
@@ -179,27 +174,26 @@ public final class LabelPrintingController implements AutoCloseable {
         issued = null;
         print.setDisable(true);
         templates.setDisable(true);
-        expiry.setDisable(false);
         Template template = templates.getValue();
         if (template == null) {
             feedback.setText(
-                    source.templates().isEmpty()
-                            ? "Crea e approva un modello di tipo Etichetta dischi in TON ›"
-                                    + " Documenti › Modelli documenti."
-                            : "La specifica storica non ha un modello etichetta: seleziona"
-                                    + " esplicitamente una versione per questo lavoro.");
+                    "Il modello etichetta #"
+                            + source.assignedTemplate()
+                            + " della "
+                            + source.specificationLabel().toLowerCase(java.util.Locale.ITALIAN)
+                            + " non è disponibile per la stampa. Verifica il modello in TON ›"
+                            + " Documenti.");
             return;
         }
         feedback.setText("Preparazione anteprima…");
         try {
-            var selectedExpiry = expiry.getValue();
-            var data = LabelService.payload(source, selectedExpiry);
+            var data = LabelService.payload(source);
             preview.render(
                     template.content(),
                     data,
                     html -> {
                         if (closed || token != generation) return;
-                        prepared = LabelService.prepared(source, template, selectedExpiry, html);
+                        prepared = LabelService.prepared(source, template, html);
                         print.setDisable(false);
                         if (!autoRequested) {
                             autoRequested = true;
@@ -231,7 +225,6 @@ public final class LabelPrintingController implements AutoCloseable {
         prepared = null;
         print.setDisable(true);
         templates.setDisable(true);
-        expiry.setDisable(true);
         var selected = issued;
         options.setVisible(false);
         options.setManaged(false);
@@ -270,7 +263,6 @@ public final class LabelPrintingController implements AutoCloseable {
         saving = true;
         print.setDisable(true);
         templates.setDisable(true);
-        expiry.setDisable(true);
         previous.setDisable(true);
         regenerate.setDisable(true);
         feedback.setText("Salvataggio etichetta e collegamento ai dischi…");

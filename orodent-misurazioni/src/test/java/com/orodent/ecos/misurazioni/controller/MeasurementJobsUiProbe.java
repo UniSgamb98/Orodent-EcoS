@@ -6,6 +6,7 @@ import com.orodent.ecos.core.ConnectionProvider;
 import com.orodent.ecos.database.*;
 import com.orodent.ecos.database.service.*;
 import com.orodent.ecos.misurazioni.devices.*;
+import com.orodent.ecos.misurazioni.jobs.model.MeasurementJobs.Key;
 import com.orodent.ecos.misurazioni.jobs.service.*;
 import com.orodent.ecos.misurazioni.model.Instrument;
 import com.orodent.ecos.module.*;
@@ -58,7 +59,7 @@ public final class MeasurementJobsUiProbe {
                 c -> {
                     String model =
                             """
-{"schemaVersion":5,"purpose":"ETICHETTA","title":"Scatola UI","page":{"format":"custom","width":100,"height":65,"orientation":"portrait","margin":3},"content":{"type":"doc","content":[{"type":"paragraph","content":[{"type":"labelField","attrs":{"key":"article"}}]},{"type":"paragraph","content":[{"type":"labelField","attrs":{"key":"lot"}}]},{"type":"gs1Matrix","attrs":{"gtin":"{{gtin}}","lot":"{{lot}}","productionDate":"","expiryDate":"","size":20}}]}}
+{"schemaVersion":5,"purpose":"ETICHETTA","title":"Scatola UI","page":{"format":"custom","width":100,"height":65,"orientation":"portrait","margin":3},"content":{"type":"doc","content":[{"type":"paragraph","content":[{"type":"labelField","attrs":{"key":"article"}}]},{"type":"paragraph","content":[{"type":"labelField","attrs":{"key":"lot"}}]},{"type":"paragraph","content":[{"type":"labelField","attrs":{"key":"expiryDate"}}]},{"type":"gs1Matrix","attrs":{"gtin":"{{gtin}}","lot":"{{lot}}","productionDate":"{{productionDateGs1}}","expiryDate":"{{expiryDateGs1}}","size":20}}]}}
 """;
                     try (var q =
                             c.prepareStatement(
@@ -215,10 +216,26 @@ public final class MeasurementJobsUiProbe {
                         return null;
                     });
             await(() -> labelFeedback().contains("Stampante simulata"));
+            var printed =
+                    new com.orodent.ecos.misurazioni.labels.service.LabelService(
+                                    db, workers, MeasurementJobsFixture.CLOCK)
+                            .source(new Key(1, 1, 1))
+                            .join()
+                            .latest();
+            assertTrue(
+                    printed.html().contains("21/11/2031"), "Expiry must render without user input");
+            assertEquals(
+                    "311121",
+                    com.google.gson.JsonParser.parseString(printed.data())
+                            .getAsJsonObject()
+                            .get("expiryDateGs1")
+                            .getAsString());
             fx(
                     () -> {
                         assertEquals(3, count("TON.DISCO_MISURE_REVISIONI"));
                         assertEquals(2, printAttempts);
+                        assertNull(printWindow().getScene().lookup("#label-expiry"));
+                        screenshot(printWindow(), "target/measurement-label-dates.png");
                         failPrint = false;
                         ((Button) printWindow().getScene().lookup("#label-print")).fire();
                         return null;
@@ -317,6 +334,8 @@ public final class MeasurementJobsUiProbe {
                         var picker =
                                 (ComboBox<?>) printWindow().getScene().lookup("#label-template");
                         assertNull(picker.getValue());
+                        assertTrue(labelFeedback().contains("specifica v1"));
+                        assertNull(printWindow().getScene().lookup("#label-expiry"));
                         assertTrue(picker.isDisabled());
                         ((Button)
                                         ((DialogPane) printWindow().getScene().getRoot())

@@ -51,13 +51,20 @@ Dopo il salvataggio si apre la stampa con il modello della **specifica storica
 associata ai dischi prodotti**. Alla chiusura del dialogo di stampa si torna
 all'elenco lavori; anche annullando la stampa, le misure salvate rimangono nel
 database. Una stampante non disponibile permette di riprovare nella stessa
-finestra, senza ripetere il salvataggio delle letture. Se il modello richiede
-una scadenza, questa va indicata nella finestra di stampa già presente.
+finestra, senza ripetere il salvataggio delle letture. La scadenza è sempre
+calcolata dalla data di produzione registrata più cinque anni, anche nei dati
+GS1, senza chiedere una data all'operatore. Il 29 febbraio diventa il 28 febbraio
+quando l'anno di scadenza non è bisestile.
 
 **Stampa etichetta** apre la stampa dello stesso modello, conservando eventuali
 letture non salvate nel lavoro e senza salvarle implicitamente. Un modello
 assente nella specifica viene segnalato: non si selezionano altri modelli né
 il primo dell'elenco. La ristampa storica rimane un comando esplicito.
+
+La stampa mostra la versione della specifica realmente associata al piano.
+Se manca l'etichetta, il messaggio distingue questa versione dalla predefinita
+attuale del prodotto: approvare o visualizzare una nuova specifica non la rende
+predefinita e non aggiorna i piani già salvati.
 
 Se si tenta di tornare ai lavori, alla Home o di chiudere la finestra con modifiche
 non salvate, compare la conferma **Modifiche non salvate**, condivisa con il

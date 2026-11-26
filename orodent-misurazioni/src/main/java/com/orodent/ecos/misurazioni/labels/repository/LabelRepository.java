@@ -26,19 +26,26 @@ public final class LabelRepository {
         LocalDate produced;
         String gtin, name, line;
         int revision;
+        Integer specificationVersion, preferredSpecificationVersion;
         try (var q =
                 c.prepareStatement(
                         "SELECT"
-                            + " cp.etichetta_modello_id,a.gtin,a.versione_modifica,e.data_produzione,p.contenuto_piano"
+                            + " cp.etichetta_modello_id,a.gtin,a.versione_modifica,e.data_produzione,p.contenuto_piano,cp.numero_versione,preferred.numero_versione"
                             + " FROM TON.DISCHI_PRODOTTI d JOIN TON.ARTICOLI a ON"
                             + " a.articolo_id=d.articolo_id JOIN TON.ESECUZIONI_PIANO e ON"
                             + " e.esecuzione_id=d.esecuzione_id JOIN TON.PIANI_PRODUZIONE p ON"
                             + " p.piano_id=d.piano_id LEFT JOIN TON.CONFIGURAZIONI_PRODOTTO cp ON"
-                            + " cp.configurazione_id=d.specifica_prodotto_id WHERE d.disco_id=?")) {
+                            + " cp.configurazione_id=d.specifica_prodotto_id JOIN TON.PRODOTTI"
+                            + " product ON product.prodotto_id=d.prodotto_id LEFT JOIN"
+                            + " TON.CONFIGURAZIONI_PRODOTTO preferred ON"
+                            + " preferred.configurazione_id=product.configurazione_predefinita_id"
+                            + " WHERE d.disco_id=?")) {
             q.setLong(1, disc);
             try (var rs = q.executeQuery()) {
                 if (!rs.next()) throw new IllegalArgumentException("Disco non disponibile.");
                 assigned = (Long) rs.getObject(1);
+                specificationVersion = (Integer) rs.getObject(6);
+                preferredSpecificationVersion = (Integer) rs.getObject(7);
                 gtin = rs.getString(2);
                 revision = rs.getInt(3);
                 produced = rs.getDate(4).toLocalDate();
@@ -80,7 +87,17 @@ public final class LabelRepository {
             }
         }
         return new Source(
-                job, assigned, templates, produced, gtin, name, line, revision, latest(key));
+                job,
+                assigned,
+                templates,
+                produced,
+                gtin,
+                name,
+                line,
+                revision,
+                latest(key),
+                specificationVersion,
+                preferredSpecificationVersion);
     }
 
     public Issued latest(Key key) throws SQLException {
@@ -109,8 +126,11 @@ public final class LabelRepository {
 
     public Issued issue(Prepared prepared, Operator operator, LocalDate today) throws SQLException {
         Source canonical = source(prepared.source().job().key(), today);
+        if (canonical.assignedTemplate() == null)
+            throw new IllegalArgumentException(canonical.missingTemplateMessage());
         var expected = prepared.source();
-        if (canonical.articleRevision() != expected.articleRevision()
+        if (!canonical.produced().equals(expected.produced())
+                || canonical.articleRevision() != expected.articleRevision()
                 || !Objects.equals(canonical.assignedTemplate(), expected.assignedTemplate())
                 || !canonical.job().readings().stream()
                         .map(Reading::discId)
@@ -132,8 +152,8 @@ public final class LabelRepository {
         if (canonical.assignedTemplate() != null && canonical.assignedTemplate() != actual.id())
             throw new IllegalArgumentException(
                     "Usa la versione etichetta della specifica di produzione.");
-        if (!com.orodent.ecos.misurazioni.labels.model.LabelData.payload(
-                                canonical, prepared.expiry())
+        if (!canonical.expiry().equals(prepared.expiry())
+                || !com.orodent.ecos.misurazioni.labels.model.LabelData.payload(canonical)
                         .equals(prepared.data())
                 || !DocumentPaper.from(actual.content()).equals(prepared.paper()))
             throw new IllegalArgumentException(

@@ -86,18 +86,18 @@ class LabelServiceTest {
         Source source = service.source(KEY).join();
         assertEquals(0, source.job().done());
         assertEquals(1L, source.assignedTemplate());
+        assertEquals(1, source.specificationVersion());
+        assertEquals(LocalDate.of(2031, 11, 21), source.expiry());
         assertEquals("Nome congelato", source.name());
         assertEquals("Thor originale", source.line());
-        var expiry = LocalDate.of(2031, 9, 30);
         String html = "<html><body>Etichetta originale</body></html>";
-        Prepared prepared =
-                LabelService.prepared(source, source.templates().getFirst(), expiry, html);
+        Prepared prepared = LabelService.prepared(source, source.templates().getFirst(), html);
         Issued issued = service.issue(prepared, new Operator("123", "Operatore test")).join();
         assertEquals(100, issued.paper().width());
         assertEquals(65, issued.paper().height());
         var data = JsonParser.parseString(issued.data()).getAsJsonObject();
         assertEquals("09506000134352", data.get("gtin").getAsString());
-        assertEquals("310930", data.get("expiryDateGs1").getAsString());
+        assertEquals("311121", data.get("expiryDateGs1").getAsString());
         assertEquals("261121", data.get("productionDateGs1").getAsString());
         db.withConnection(
                 c -> {
@@ -144,9 +144,15 @@ class LabelServiceTest {
                         .orElseThrow()
                         .content());
         assertThrows(CompletionException.class, () -> service.issue(prepared, null).join());
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> LabelService.payload(reopened, LocalDate.of(2025, 1, 1)));
+        var altered =
+                new Prepared(
+                        reopened,
+                        reopened.templates().getFirst(),
+                        LocalDate.of(2030, 1, 1),
+                        LabelService.payload(reopened),
+                        html,
+                        issued.paper());
+        assertThrows(CompletionException.class, () -> service.issue(altered, null).join());
     }
 
     @Test
@@ -156,13 +162,35 @@ class LabelServiceTest {
                     try (var q = c.createStatement()) {
                         q.executeUpdate(
                                 "UPDATE TON.CONFIGURAZIONI_PRODOTTO SET etichetta_modello_id=NULL");
+                        q.executeUpdate(
+                                "INSERT INTO"
+                                    + " TON.CONFIGURAZIONI_PRODOTTO(prodotto_id,numero_versione,composizione_id,modello_id,versione_calcolo,calcolo_versione_id,stato,approvato_il,etichetta_modello_id)"
+                                    + " VALUES"
+                                    + " (1,2,1,1,'RITIRO',1,'APPROVATA',CURRENT_TIMESTAMP,1)");
+                        q.executeUpdate(
+                                "UPDATE TON.PRODOTTI SET configurazione_predefinita_id=3 WHERE"
+                                        + " prodotto_id=1");
                     }
                     return null;
                 });
         Source source = service.source(KEY).join();
         assertNull(source.assignedTemplate());
+        assertEquals(1, source.specificationVersion());
+        assertEquals(2, source.preferredSpecificationVersion());
+        assertTrue(source.missingTemplateMessage().contains("specifica v1"));
+        assertTrue(source.missingTemplateMessage().contains("attuale del prodotto è v2"));
+        assertThrows(
+                CompletionException.class,
+                () ->
+                        service.issue(
+                                        LabelService.prepared(
+                                                source,
+                                                source.templates().getFirst(),
+                                                "<html>Test</html>"),
+                                        null)
+                                .join());
         assertEquals(1, source.templates().size());
         assertNull(source.latest());
-        assertDoesNotThrow(() -> LabelService.payload(source, null));
+        assertDoesNotThrow(() -> LabelService.payload(source));
     }
 }

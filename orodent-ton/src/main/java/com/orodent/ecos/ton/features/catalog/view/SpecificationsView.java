@@ -30,6 +30,7 @@ public final class SpecificationsView extends VBox {
             refresh = CatalogUi.button("Aggiorna versioni", "ton-product-spec-refresh", false);
     private final Label configurationNotice =
             CatalogUi.feedback("ton-product-spec-configuration-notice");
+    private final Label defaultNotice = CatalogUi.hint("");
     private final Label state = CatalogUi.hint(""),
             result = new Label(),
             feedback = CatalogUi.feedback("ton-product-spec-feedback");
@@ -79,15 +80,19 @@ public final class SpecificationsView extends VBox {
         previous.setAccessibleText("Versioni più recenti");
         next.setAccessibleText("Versioni precedenti");
         feedback.getStyleClass().add("ton-error-feedback");
+        defaultNotice.setId("ton-product-spec-default-notice");
         configurationNotice.getStyleClass().add("ton-error-feedback");
         getChildren()
                 .setAll(
                         CatalogUi.hint(
-                                "Ogni produzione userà una versione precisa di composizione e"
-                                        + " modello. Le versioni approvate sono di sola lettura."),
+                                "Le nuove produzioni usano la specifica predefinita del prodotto."
+                                        + " Approvare o visualizzare una versione non la rende"
+                                        + " predefinita. I piani salvati conservano la specifica"
+                                        + " originale."),
                         new FlowPane(10, 8, versions, previous, next, result, refresh),
                         configurationNotice,
                         state,
+                        defaultNotice,
                         fields,
                         new FlowPane(10, 8, save, approve, copy, prefer, retire),
                         feedback);
@@ -119,6 +124,8 @@ public final class SpecificationsView extends VBox {
             calculation.getItems().clear();
             calculation.setValue(null);
             notes.clear();
+            defaultNotice.setText("");
+            CatalogUi.visible(defaultNotice, false);
             disableFields(true);
             for (var b : List.of(save, approve, copy, prefer, retire, previous, next))
                 b.setDisable(true);
@@ -238,6 +245,21 @@ public final class SpecificationsView extends VBox {
                 else markingTemplate.setValue(null);
                 notes.setText(selected.notes() == null ? "" : selected.notes());
             }
+            boolean notPreferred =
+                    selected != null
+                            && "APPROVATA".equals(selected.state())
+                            && !selected.preferred();
+            defaultNotice.setText(
+                    notPreferred
+                            ? "La versione v"
+                                    + selected.number()
+                                    + " visualizzata non è predefinita. Le nuove produzioni usano"
+                                    + " la specifica predefinita del prodotto. Per usare questa"
+                                    + " versione premi «Imposta predefinita» prima di creare un"
+                                    + " nuovo piano. I piani già salvati conservano la specifica"
+                                    + " originale."
+                            : "");
+            CatalogUi.visible(defaultNotice, notPreferred);
             boolean locked = selected != null && selected.frozen();
             disableFields(locked || !available);
             CatalogUi.visible(save, !locked);

@@ -43,17 +43,16 @@ public final class LabelService {
                 workers);
     }
 
-    public static String payload(Source source, LocalDate expiry) {
-        return com.orodent.ecos.misurazioni.labels.model.LabelData.payload(source, expiry);
+    public static String payload(Source source) {
+        return com.orodent.ecos.misurazioni.labels.model.LabelData.payload(source);
     }
 
-    public static Prepared prepared(
-            Source source, Template template, LocalDate expiry, String html) {
+    public static Prepared prepared(Source source, Template template, String html) {
         return new Prepared(
                 source,
                 template,
-                expiry,
-                payload(source, expiry),
+                source.expiry(),
+                payload(source),
                 html,
                 DocumentPaper.from(template.content()));
     }

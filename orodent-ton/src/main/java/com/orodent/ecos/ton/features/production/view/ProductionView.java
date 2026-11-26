@@ -314,7 +314,7 @@ public final class ProductionView extends BorderPane {
         var quantityHint =
                 label(
                         "Le quantità a zero non entrano nella produzione. La maggiorazione si"
-                            + " applica solo alle miscele da preparare.",
+                                + " applica solo alle miscele da preparare.",
                         "muted-label");
         VBox quantityContent =
                 new VBox(16, metrics, quantitiesHeading, quantities, quantityHint, totals);
@@ -516,7 +516,13 @@ public final class ProductionView extends BorderPane {
         specification.setText(
                 a == null
                         ? "Seleziona i formati da produrre."
-                        : "Specifiche utilizzate\nComposizione "
+                        : "Specifica di produzione v"
+                                + a.specificationVersion()
+                                + "\nEtichetta: "
+                                + (a.labelTemplateLabel() == null
+                                        ? "consulta la specifica v" + a.specificationVersion()
+                                        : a.labelTemplateLabel())
+                                + "\nComposizione "
                                 + p.product().code()
                                 + " · v"
                                 + a.compositionVersion()
@@ -552,7 +558,7 @@ public final class ProductionView extends BorderPane {
                         label("Quanto pesare per ogni disco", "production-section-title"),
                         label(
                                 "Ogni valore è la dose di un singolo strato, per il formato"
-                                    + " richiesto.",
+                                        + " richiesto.",
                                 "muted-label"));
         var parameters =
                 label(
@@ -601,8 +607,8 @@ public final class ProductionView extends BorderPane {
                 .add(
                         label(
                                 "I grammi per disco non includono la maggiorazione. I totali delle"
-                                    + " miscele derivano dai valori analitici prima degli"
-                                    + " arrotondamenti.",
+                                        + " miscele derivano dai valori analitici prima degli"
+                                        + " arrotondamenti.",
                                 "muted-label"));
         var grid = new GridPane();
         grid.setHgap(12);

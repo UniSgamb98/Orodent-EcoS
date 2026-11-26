@@ -33,7 +33,7 @@ public final class ProductionRepository {
                 var r =
                         q.executeQuery(
                                 "SELECT linea_id,codice,nome FROM TON.LINEE WHERE attivo=TRUE ORDER"
-                                    + " BY codice")) {
+                                        + " BY codice")) {
             while (r.next())
                 lines.add(new LineChoice(r.getLong(1), r.getString(2), r.getString(3)));
         }
@@ -60,8 +60,8 @@ public final class ProductionRepository {
                 var r =
                         q.executeQuery(
                                 "SELECT modello_documento_id FROM TON.MODELLI_DOCUMENTO WHERE"
-                                    + " tipo='PRODUZIONE' AND stato='APPROVATA' ORDER BY"
-                                    + " nome,numero_versione DESC")) {
+                                        + " tipo='PRODUZIONE' AND stato='APPROVATA' ORDER BY"
+                                        + " nome,numero_versione DESC")) {
             while (r.next()) templates.add(template(r.getLong(1)));
         }
         return new Catalogues(lines, products, templates, PowderDisplayCatalogue.read(c));
@@ -83,7 +83,7 @@ public final class ProductionRepository {
         try (var q =
                 c.prepareStatement(
                         "SELECT DISTINCT diametro_mm FROM TON.ARTICOLI WHERE prodotto_id=? AND"
-                            + " attivo=TRUE ORDER BY diametro_mm DESC")) {
+                                + " attivo=TRUE ORDER BY diametro_mm DESC")) {
             q.setLong(1, product);
             try (var r = q.executeQuery()) {
                 while (r.next()) values.add(r.getBigDecimal(1));
@@ -138,7 +138,9 @@ public final class ProductionRepository {
                 null,
                 null,
                 reason,
-                List.of());
+                List.of(),
+                null,
+                null);
     }
 
     private ArticleChoice article(
@@ -232,7 +234,9 @@ public final class ProductionRepository {
                 m.pressure(),
                 m.mouldDiameterFor(a.diameter()),
                 reason,
-                doses);
+                doses,
+                spec.labelTemplateId(),
+                spec.labelTemplateId() == null ? "Non assegnata" : spec.labelTemplateLabel());
     }
 
     public void lockSelection(Workspace shown, Request request) throws SQLException {
@@ -289,7 +293,7 @@ public final class ProductionRepository {
             try (var q =
                     c.prepareStatement(
                             "UPDATE TON.MODELLI_DOCUMENTO SET versione_modifica=versione_modifica"
-                                + " WHERE modello_documento_id=?")) {
+                                    + " WHERE modello_documento_id=?")) {
                 q.setLong(1, request.templateId());
                 q.executeUpdate();
             }
@@ -332,7 +336,7 @@ public final class ProductionRepository {
                 if (q.executeUpdate() != 1)
                     throw invalid(
                             "La bozza è stata modificata da un'altra postazione. Ricarica i dati"
-                                + " prima di salvare.");
+                                    + " prima di salvare.");
             }
             for (String table : List.of("PIANO_PRODUZIONE_RIGHE", "PIANO_PRODOTTO_RIGHE"))
                 try (var q = c.prepareStatement("DELETE FROM TON." + table + " WHERE piano_id=?")) {
@@ -385,8 +389,8 @@ public final class ProductionRepository {
         try (var q =
                 c.prepareStatement(
                         "SELECT p.*,d.contenuto_html FROM TON.PIANI_PRODUZIONE p LEFT JOIN"
-                            + " TON.PIANI_DOCUMENTI d ON d.piano_id=p.piano_id WHERE"
-                            + " p.piano_id=?")) {
+                                + " TON.PIANI_DOCUMENTI d ON d.piano_id=p.piano_id WHERE"
+                                + " p.piano_id=?")) {
             q.setLong(1, id);
             try (var r = q.executeQuery()) {
                 if (!r.next()) throw invalid("Produzione non trovata.");
@@ -441,7 +445,7 @@ public final class ProductionRepository {
         try (var lock =
                 c.prepareStatement(
                         "UPDATE TON.PIANI_PRODUZIONE SET versione_modifica=versione_modifica WHERE"
-                            + " piano_id=? AND stato='PREPARATA'")) {
+                                + " piano_id=? AND stato='PREPARATA'")) {
             lock.setLong(1, id);
             if (lock.executeUpdate() != 1) throw invalid("Prima conferma la produzione.");
         }
