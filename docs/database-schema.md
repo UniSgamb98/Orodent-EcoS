@@ -141,6 +141,12 @@ campi, le tre tabelle di storico e i relativi vincoli, senza applicare migrazion
 
 ## Distribuzione e migrazioni automatiche
 
+La migrazione **V35** aggiunge il riferimento facoltativo
+`TON.CONFIGURAZIONI_PRODOTTO.marcatura_versione_id` a una revisione immutabile di
+`TON.MARCATURA_VERSIONI`, con chiave esterna e indice per la ricerca degli utilizzi.
+Le specifiche già presenti mantengono un valore NULL; non vengono riassegnate
+automaticamente a una marcatura. Il normale backup dell'HOST precede la migrazione.
+
 Il contatore delle migrazioni è indipendente dalla compatibilità del launcher.
 `database/version.properties`, nel JAR `orodent-database`, dichiara le versioni
 interna corrente e minima supportata. L'applicazione legge da lì la versione

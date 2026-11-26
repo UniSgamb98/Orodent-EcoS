@@ -194,7 +194,7 @@ public final class MarkingUiProbe {
             await(() -> !text().isEditable() && versions().getItems().size() == 4);
             fx(
                     () -> {
-                        ((TabPane) node("ton-marking-tabs")).getSelectionModel().select(2);
+                        ((TabPane) node("ton-marking-tabs")).getSelectionModel().select(3);
                         screenshot("target/marking-versions.png");
                         Snapshot old =
                                 versions().getItems().stream()
@@ -248,6 +248,87 @@ public final class MarkingUiProbe {
                     () ->
                             node("ton-marking-editor").isVisible()
                                     && text().getText().startsWith("NUOVO"));
+            var fixture =
+                    new com.orodent.ecos.ton.features.production.service.ProductionFixture(
+                            db, workers);
+            long snapshot =
+                    fx(
+                            () ->
+                                    versions().getItems().stream()
+                                            .filter(
+                                                    v ->
+                                                            v.number() == 2
+                                                                    && v.state()
+                                                                            .equals("APPROVATA"))
+                                            .findFirst()
+                                            .orElseThrow()
+                                            .id());
+            db.withTransaction(
+                    c -> {
+                        try (var q =
+                                c.prepareStatement(
+                                        "UPDATE TON.CONFIGURAZIONI_PRODOTTO SET"
+                                            + " marcatura_versione_id=?,calcolo_versione_id=1,versione_calcolo='RITIRO'"
+                                            + " WHERE prodotto_id=?")) {
+                            q.setLong(1, snapshot);
+                            q.setLong(2, fixture.product.id());
+                            q.executeUpdate();
+                        }
+                        return null;
+                    });
+            fx(
+                    () -> {
+                        var tabs = (TabPane) node("ton-marking-tabs");
+                        assertEquals(
+                                List.of("Dati generali", "Marcatura", "Utilizzi", "Versioni"),
+                                tabs.getTabs().stream().map(Tab::getText).toList());
+                        tabs.getSelectionModel().select(2);
+                        click("ton-marking-usages-refresh");
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-marking-usages-table") instanceof TableView<?> table
+                                    && !table.isDisabled()
+                                    && table.getItems().size() == 1);
+            fx(
+                    () -> {
+                        screenshot("target/marking-usages.png");
+                        var table = (TableView<?>) node("ton-marking-usages-table");
+                        table.getSelectionModel().selectFirst();
+                        table.fireEvent(enter());
+                        return null;
+                    });
+            await(() -> node("ton-product-editor") != null);
+            fx(
+                    () -> {
+                        ((TabPane) node("ton-product-tabs")).getSelectionModel().select(2);
+                        return null;
+                    });
+            await(
+                    () ->
+                            node("ton-product-spec-marking-template") instanceof ComboBox<?> box
+                                    && box.getValue() != null);
+            fx(
+                    () -> {
+                        var marking = (ComboBox<?>) node("ton-product-spec-marking-template");
+                        assertTrue(marking.isDisabled());
+                        assertEquals(
+                                snapshot,
+                                ((com.orodent.ecos.ton.features.catalog.model.CatalogModels
+                                                        .TechnicalChoice)
+                                                marking.getValue())
+                                        .id());
+                        var label = node("ton-product-spec-label-template");
+                        stage.setWidth(1720);
+                        stage.setHeight(1040);
+                        layout();
+                        assertTrue(
+                                marking.localToScene(marking.getBoundsInLocal()).getMinY()
+                                        > label.localToScene(label.getBoundsInLocal()).getMaxY());
+                        screenshot("target/production-spec-marking.png");
+                        return null;
+                    });
             assertTrue(errors.isEmpty(), errors::toString);
         } finally {
             fx(

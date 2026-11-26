@@ -391,7 +391,51 @@ public final class CatalogModels {
             boolean preferred,
             Long calculationVersionId,
             Long labelTemplateId,
-            String labelTemplateLabel) {
+            String labelTemplateLabel,
+            Long markingVersionId,
+            String markingLabel) {
+        public Specification(
+                long id,
+                long productId,
+                int number,
+                int revision,
+                String state,
+                long compositionId,
+                String compositionLabel,
+                long modelId,
+                String modelLabel,
+                String calculation,
+                String notes,
+                LocalDateTime approvedAt,
+                Integer lineRevision,
+                Integer productRevision,
+                boolean preferred,
+                Long calculationVersionId,
+                Long labelTemplateId,
+                String labelTemplateLabel) {
+            this(
+                    id,
+                    productId,
+                    number,
+                    revision,
+                    state,
+                    compositionId,
+                    compositionLabel,
+                    modelId,
+                    modelLabel,
+                    calculation,
+                    notes,
+                    approvedAt,
+                    lineRevision,
+                    productRevision,
+                    preferred,
+                    calculationVersionId,
+                    labelTemplateId,
+                    labelTemplateLabel,
+                    null,
+                    null);
+        }
+
         public Specification(
                 long id,
                 long productId,
@@ -493,7 +537,25 @@ public final class CatalogModels {
             String calculation,
             String notes,
             Long calculationVersionId,
-            Long labelTemplateId) {
+            Long labelTemplateId,
+            Long markingVersionId) {
+        public SpecificationDraft(
+                long compositionId,
+                long modelId,
+                String calculation,
+                String notes,
+                Long calculationVersionId,
+                Long labelTemplateId) {
+            this(
+                    compositionId,
+                    modelId,
+                    calculation,
+                    notes,
+                    calculationVersionId,
+                    labelTemplateId,
+                    null);
+        }
+
         public SpecificationDraft(
                 long compositionId,
                 long modelId,
@@ -531,7 +593,29 @@ public final class CatalogModels {
             List<TechnicalChoice> compositions,
             List<TechnicalChoice> models,
             List<com.orodent.ecos.database.CubatureRuleVersions.Version> calculationRules,
-            List<TechnicalChoice> labelTemplates) {
+            List<TechnicalChoice> labelTemplates,
+            List<TechnicalChoice> markingTemplates) {
+        public SpecificationPage(
+                List<Specification> rows,
+                long total,
+                int offset,
+                int limit,
+                List<TechnicalChoice> compositions,
+                List<TechnicalChoice> models,
+                List<com.orodent.ecos.database.CubatureRuleVersions.Version> calculationRules,
+                List<TechnicalChoice> labelTemplates) {
+            this(
+                    rows,
+                    total,
+                    offset,
+                    limit,
+                    compositions,
+                    models,
+                    calculationRules,
+                    labelTemplates,
+                    List.of());
+        }
+
         public SpecificationPage(
                 List<Specification> rows,
                 long total,
@@ -549,6 +633,7 @@ public final class CatalogModels {
             models = List.copyOf(models);
             calculationRules = List.copyOf(calculationRules);
             labelTemplates = List.copyOf(labelTemplates);
+            markingTemplates = List.copyOf(markingTemplates);
         }
 
         public boolean hasNext() {

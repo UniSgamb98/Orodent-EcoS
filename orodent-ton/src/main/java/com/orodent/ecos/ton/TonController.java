@@ -186,7 +186,11 @@ final class TonController {
             case DISK_MARKING -> {
                 var page = new MarkingTemplatesView();
                 page.subpageProperty().addListener((o, a, b) -> view.showFeature(page, feature, b));
-                var controller = new MarkingTemplatesController(page, markingTemplates);
+                var controller =
+                        new MarkingTemplatesController(
+                                page,
+                                markingTemplates,
+                                id -> openCatalogue(Navigation.open(CatalogKind.PRODUCTS, id)));
                 install(feature, page, controller, controller::start);
             }
             case DOCUMENT_TEMPLATES -> {

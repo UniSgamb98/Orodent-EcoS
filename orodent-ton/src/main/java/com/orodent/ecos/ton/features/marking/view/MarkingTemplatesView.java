@@ -28,6 +28,7 @@ public final class MarkingTemplatesView extends StackPane {
             copy = editor.copy;
     public final TechnicalRecordsView<Snapshot> versions = editor.versions;
     public final MarkingContentPane content = editor.content;
+    public final TechnicalRecordsView<Usage> usages = editor.usages;
     private final StringProperty subpage = new SimpleStringProperty("");
     private boolean editing;
 

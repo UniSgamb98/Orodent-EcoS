@@ -75,8 +75,34 @@ public final class MarkingTemplateRepository {
                                         () ->
                                                 new IllegalArgumentException(
                                                         "La versione non appartiene al modello di"
-                                                            + " marcatura."));
+                                                                + " marcatura."));
         return new Detail(entry, selected, snapshots, rules());
+    }
+
+    public List<Usage> usages(long snapshotId) throws SQLException {
+        var rows = new ArrayList<Usage>();
+        try (var q =
+                c.prepareStatement(
+                        "SELECT"
+                            + " p.prodotto_id,p.codice,s.configurazione_id,s.numero_versione,s.stato,CASE"
+                            + " WHEN p.configurazione_predefinita_id=s.configurazione_id THEN 1"
+                            + " ELSE 0 END FROM TON.CONFIGURAZIONI_PRODOTTO s JOIN TON.PRODOTTI p"
+                            + " ON p.prodotto_id=s.prodotto_id WHERE s.marcatura_versione_id=?"
+                            + " ORDER BY p.codice,s.numero_versione DESC")) {
+            q.setLong(1, snapshotId);
+            try (var r = q.executeQuery()) {
+                while (r.next())
+                    rows.add(
+                            new Usage(
+                                    r.getLong(1),
+                                    r.getString(2),
+                                    r.getLong(3),
+                                    r.getInt(4),
+                                    r.getString(5),
+                                    r.getInt(6) == 1));
+            }
+        }
+        return List.copyOf(rows);
     }
 
     public List<Version> rules() throws SQLException {
@@ -160,7 +186,7 @@ public final class MarkingTemplateRepository {
         try (var q =
                 c.prepareStatement(
                         "UPDATE TON.MODELLI_MARCATURA SET versione_modifica=versione_modifica+1"
-                            + " WHERE modello_id=? AND codice=? AND versione_modifica=?")) {
+                                + " WHERE modello_id=? AND codice=? AND versione_modifica=?")) {
             q.setLong(1, expected.id());
             q.setString(2, expected.code());
             q.setInt(3, expected.token());

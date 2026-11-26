@@ -24,6 +24,14 @@ public final class MarkingTemplates {
         }
     }
 
+    public record Usage(
+            long productId,
+            String productCode,
+            long specificationId,
+            int specificationVersion,
+            String state,
+            boolean preferred) {}
+
     public record Entry(long id, String code, int token, Snapshot latest) {}
 
     public record Snapshot(

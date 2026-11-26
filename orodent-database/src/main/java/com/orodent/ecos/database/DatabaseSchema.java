@@ -180,6 +180,11 @@ public final class DatabaseSchema {
                     34,
                     "Versioned labels and article GTIN",
                     "/database/migrations/V34__versioned_labels_and_gtin.sql");
+    private static final SchemaMigration SPECIFICATION_MARKING =
+            new SchemaMigration(
+                    35,
+                    "Production specification marking snapshot",
+                    "/database/migrations/V35__production_specification_marking.sql");
     private static final List<SchemaMigration> MIGRATIONS =
             List.of(
                     BASELINE,
@@ -215,7 +220,8 @@ public final class DatabaseSchema {
                     FIRING_PROGRAMS,
                     FIRING_LOAD_PROGRAM,
                     DISC_MEASUREMENTS,
-                    LABELS);
+                    LABELS,
+                    SPECIFICATION_MARKING);
     static final String INCOMPATIBLE_SCHEMA = "XEC01";
     private static final List<Column> CUSTOMERS =
             List.of(

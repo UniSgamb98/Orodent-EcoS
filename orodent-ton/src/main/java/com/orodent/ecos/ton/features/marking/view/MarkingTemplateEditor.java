@@ -27,7 +27,13 @@ final class MarkingTemplateEditor extends TechnicalDetailView {
                     ID + "-versions",
                     "Versioni della marcatura",
                     "Ogni salvataggio conserva testo, campi e formati. Doppio clic per consultare"
-                        + " una revisione.");
+                            + " una revisione.");
+    final TechnicalRecordsView<Usage> usages =
+            new TechnicalRecordsView<>(
+                    ID + "-usages",
+                    "Utilizzi della marcatura",
+                    "Specifiche di produzione che usano questa esatta versione. Doppio clic per"
+                            + " aprire il prodotto.");
     private final VBox general;
     private final Label state = TechnicalUi.label("", "muted-label");
 
@@ -47,6 +53,18 @@ final class MarkingTemplateEditor extends TechnicalDetailView {
                         active);
         addSheet("Dati generali", general, true);
         addSheet("Marcatura", content);
+        addSheet("Utilizzi", usages, true);
+        TechnicalUi.column(usages.table(), "Prodotto", 220, Usage::productCode);
+        TechnicalUi.column(
+                usages.table(),
+                "Specifica di produzione",
+                180,
+                u -> "v" + u.specificationVersion());
+        TechnicalUi.column(
+                usages.table(),
+                "Stato",
+                180,
+                u -> u.state() + (u.preferred() ? " · predefinita" : ""));
         addSheet("Versioni", versions, true);
         TechnicalUi.column(versions.table(), "Versione", 100, v -> "v" + v.number());
         TechnicalUi.column(versions.table(), "Revisione", 100, v -> "r" + v.revision());
@@ -87,6 +105,7 @@ final class MarkingTemplateEditor extends TechnicalDetailView {
                 v == null
                         ? "Nuovo modello"
                         : detail.entry().code() + " · " + v.name() + " · " + v.label());
+        usages.reset(detail != null);
         if (detail == null) versions.reset(false);
         else versions.show(detail.versions());
         feedback("", false);
@@ -111,6 +130,7 @@ final class MarkingTemplateEditor extends TechnicalDetailView {
 
     void dispose() {
         versions.dispose();
+        usages.dispose();
         content.dispose();
     }
 }

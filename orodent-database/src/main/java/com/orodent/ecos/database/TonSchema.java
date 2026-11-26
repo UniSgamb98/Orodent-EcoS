@@ -403,6 +403,12 @@ final class TonSchema {
                 column("DISCO_ID", Types.BIGINT, 0, 0, false, false, null)),
                 List.of("PK_TON_ETI_DISCHI", "FK_TON_ETI_DISCHI_ETICHETTA", "FK_TON_ETI_DISCHI_DISCO")));
         }
+        if (schemaVersion >= 35)
+            tables.add(
+                    new Table(
+                            "CONFIGURAZIONI_PRODOTTO",
+                            List.of(column("MARCATURA_VERSIONE_ID", Types.BIGINT, 0, 0, true, false, null)),
+                            List.of("FK_TON_CFG_MARCATURA")));
         for (Table table : tables) {
             Map<String, Column> columns = actual.getOrDefault(table.name(), Map.of());
             for (Column declared : table.columns()) {

@@ -26,6 +26,12 @@ public final class MarkingTemplateService {
                 workers);
     }
 
+    public CompletableFuture<List<Usage>> usages(long snapshotId) {
+        return CompletableFuture.supplyAsync(
+                () -> db.withConnection(c -> new MarkingTemplateRepository(c).usages(snapshotId)),
+                workers);
+    }
+
     public CompletableFuture<List<Version>> rules() {
         return CompletableFuture.supplyAsync(
                 () -> db.withConnection(c -> new MarkingTemplateRepository(c).rules()), workers);

@@ -18,10 +18,12 @@ public final class SpecificationRepository {
     private static final String SELECT =
             """
 SELECT c.*,p.numero_versione AS composition_version,m.codice AS model_code,m.numero_versione AS model_version,
-       a.configurazione_predefinita_id AS preferred_id, et.codice AS et_code,et.numero_versione AS et_version,et.nome AS et_name
+       a.configurazione_predefinita_id AS preferred_id, et.codice AS et_code,et.numero_versione AS et_version,et.nome AS et_name, mv.nome AS marking_name,mm.codice AS marking_code,mv.numero_versione AS marking_version,mv.numero_revisione AS marking_revision
 FROM TON.CONFIGURAZIONI_PRODOTTO c JOIN TON.COMPOSIZIONI p ON p.composizione_id=c.composizione_id
 JOIN TON.MODELLI_DISCO m ON m.modello_id=c.modello_id JOIN TON.PRODOTTI a ON a.prodotto_id=c.prodotto_id
 LEFT JOIN TON.MODELLI_DOCUMENTO et ON et.modello_documento_id=c.etichetta_modello_id
+LEFT JOIN TON.MARCATURA_VERSIONI mv ON mv.marcatura_versione_id=c.marcatura_versione_id
+LEFT JOIN TON.MODELLI_MARCATURA mm ON mm.modello_id=mv.modello_id
 """;
 
     public Specification load(long id) throws SQLException {
@@ -100,7 +102,8 @@ LEFT JOIN TON.MODELLI_DOCUMENTO et ON et.modello_documento_id=c.etichetta_modell
                 compositions,
                 models,
                 com.orodent.ecos.database.CubatureRuleVersions.choices(connection),
-                labelChoices());
+                labelChoices(),
+                markingChoices());
     }
 
     public SpecificationDraft resolveCalculation(SpecificationDraft draft) throws SQLException {
@@ -113,7 +116,8 @@ LEFT JOIN TON.MODELLI_DOCUMENTO et ON et.modello_documento_id=c.etichetta_modell
                 draft.calculation(),
                 draft.notes(),
                 version.id(),
-                draft.labelTemplateId());
+                draft.labelTemplateId(),
+                draft.markingVersionId());
     }
 
     public long insert(Product product, SpecificationDraft draft) throws SQLException {
@@ -134,8 +138,8 @@ LEFT JOIN TON.MODELLI_DOCUMENTO et ON et.modello_documento_id=c.etichetta_modell
         try (var q =
                 connection.prepareStatement(
                         "INSERT INTO"
-                            + " TON.CONFIGURAZIONI_PRODOTTO(prodotto_id,numero_versione,composizione_id,modello_id,versione_calcolo,note,calcolo_versione_id,etichetta_modello_id)"
-                            + " VALUES (?,?,?,?,?,?,?,?)",
+                            + " TON.CONFIGURAZIONI_PRODOTTO(prodotto_id,numero_versione,composizione_id,modello_id,versione_calcolo,note,calcolo_versione_id,etichetta_modello_id,marcatura_versione_id)"
+                            + " VALUES (?,?,?,?,?,?,?,?,?)",
                         Statement.RETURN_GENERATED_KEYS)) {
             q.setLong(1, product.id());
             q.setInt(2, number);
@@ -149,6 +153,7 @@ LEFT JOIN TON.MODELLI_DOCUMENTO et ON et.modello_documento_id=c.etichetta_modell
                             ? resolveCalculation(draft).calculationVersionId()
                             : draft.calculationVersionId());
             q.setObject(8, draft.labelTemplateId(), Types.BIGINT);
+            q.setObject(9, draft.markingVersionId(), Types.BIGINT);
             q.executeUpdate();
             try (var keys = q.getGeneratedKeys()) {
                 if (!keys.next()) throw new SQLException("ID configurazione non disponibile.");
@@ -169,7 +174,7 @@ LEFT JOIN TON.MODELLI_DOCUMENTO et ON et.modello_documento_id=c.etichetta_modell
                         """
 UPDATE TON.CONFIGURAZIONI_PRODOTTO SET composizione_id=?,modello_id=?,versione_calcolo=?,note=?,
 stato=?,approvato_il=%s,linea_id=?,linea_revisione=?,prodotto_revisione=?,
-versione_modifica=versione_modifica+1,aggiornato_il=CURRENT_TIMESTAMP,calcolo_versione_id=?,etichetta_modello_id=?
+versione_modifica=versione_modifica+1,aggiornato_il=CURRENT_TIMESTAMP,calcolo_versione_id=?,etichetta_modello_id=?,marcatura_versione_id=?
 WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='BOZZA'
 """
                                 .formatted(approve ? "CURRENT_TIMESTAMP" : "NULL"))) {
@@ -183,9 +188,10 @@ WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='B
             q.setObject(8, approve ? product.revision() : null, Types.INTEGER);
             q.setLong(9, draft.calculationVersionId());
             q.setObject(10, draft.labelTemplateId(), Types.BIGINT);
-            q.setLong(11, expected.id());
-            q.setLong(12, product.id());
-            q.setInt(13, expected.revision());
+            q.setObject(11, draft.markingVersionId(), Types.BIGINT);
+            q.setLong(12, expected.id());
+            q.setLong(13, product.id());
+            q.setInt(14, expected.revision());
             if (q.executeUpdate() != 1) throw new Conflict();
         }
     }
@@ -218,6 +224,23 @@ WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='B
 
     public void validateTechnical(Product product, SpecificationDraft draft, boolean approving)
             throws SQLException {
+        if (draft.markingVersionId() != null) {
+            try (var q =
+                    connection.prepareStatement(
+                            "SELECT v.stato,v.attivo,v.calcolo_versione_id FROM"
+                                + " TON.MARCATURA_VERSIONI v WHERE v.marcatura_versione_id=?")) {
+                q.setLong(1, draft.markingVersionId());
+                try (var rs = q.executeQuery()) {
+                    if (!rs.next() || !"APPROVATA".equals(rs.getString(1)) || !rs.getBoolean(2))
+                        throw invalid("Scegli una versione di marcatura approvata e attiva.");
+                    Long rule = (Long) rs.getObject(3);
+                    if (rule != null && !rule.equals(draft.calculationVersionId()))
+                        throw invalid(
+                                "La marcatura deve usare la stessa versione del metodo di calcolo"
+                                        + " della specifica.");
+                }
+            }
+        }
         if (draft.labelTemplateId() != null) {
             lock("MODELLI_DOCUMENTO", "modello_documento_id", draft.labelTemplateId());
             try (var q =
@@ -343,6 +366,32 @@ WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='B
         }
     }
 
+    private List<TechnicalChoice> markingChoices() throws SQLException {
+        var result = new ArrayList<TechnicalChoice>();
+        try (var q = connection.createStatement();
+                var rs =
+                        q.executeQuery(
+                                "SELECT"
+                                    + " v.marcatura_versione_id,m.codice,v.numero_versione,v.numero_revisione,v.nome"
+                                    + " FROM TON.MARCATURA_VERSIONI v JOIN TON.MODELLI_MARCATURA m"
+                                    + " ON m.modello_id=v.modello_id WHERE v.stato='APPROVATA' AND"
+                                    + " v.attivo=TRUE ORDER BY m.codice,v.numero_versione"
+                                    + " DESC,v.numero_revisione DESC")) {
+            while (rs.next())
+                result.add(
+                        new TechnicalChoice(
+                                rs.getLong(1),
+                                rs.getString(2)
+                                        + " · v"
+                                        + rs.getInt(3)
+                                        + " · r"
+                                        + rs.getInt(4)
+                                        + " · "
+                                        + rs.getString(5)));
+        }
+        return result;
+    }
+
     private List<TechnicalChoice> labelChoices() throws SQLException {
         var result = new ArrayList<TechnicalChoice>();
         try (var q = connection.createStatement();
@@ -408,6 +457,16 @@ WHERE configurazione_id=? AND prodotto_id=? AND versione_modifica=? AND stato='B
                                 + " · v"
                                 + r.getInt("et_version")
                                 + " · "
-                                + r.getString("et_name"));
+                                + r.getString("et_name"),
+                (Long) r.getObject("marcatura_versione_id"),
+                r.getString("marking_code") == null
+                        ? null
+                        : r.getString("marking_code")
+                                + " · v"
+                                + r.getInt("marking_version")
+                                + " · r"
+                                + r.getInt("marking_revision")
+                                + " · "
+                                + r.getString("marking_name"));
     }
 }

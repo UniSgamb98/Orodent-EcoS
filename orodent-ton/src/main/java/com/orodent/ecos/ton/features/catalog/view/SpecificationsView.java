@@ -13,7 +13,8 @@ public final class SpecificationsView extends VBox {
     private final ComboBox<TechnicalChoice> composition = new ComboBox<>(),
             model = new ComboBox<>();
     private final ComboBox<Version> calculation = new ComboBox<>();
-    private final ComboBox<TechnicalChoice> labelTemplate = new ComboBox<>();
+    private final ComboBox<TechnicalChoice> labelTemplate = new ComboBox<>(),
+            markingTemplate = new ComboBox<>();
     private final TextField
             compositionQuery =
                     CatalogUi.field("ton-product-spec-composition-search", "Numero versione"),
@@ -54,6 +55,10 @@ public final class SpecificationsView extends VBox {
         labelTemplate.setId("ton-product-spec-label-template");
         labelTemplate.setMaxWidth(Double.MAX_VALUE);
         labelTemplate.setPromptText("Nessuna etichetta · scegli una versione approvata");
+        HBox.setHgrow(markingTemplate, Priority.ALWAYS);
+        markingTemplate.setId("ton-product-spec-marking-template");
+        markingTemplate.setMaxWidth(Double.MAX_VALUE);
+        markingTemplate.setPromptText("Nessuna marcatura · scegli una versione approvata");
         var fields =
                 new VBox(
                         12,
@@ -65,7 +70,11 @@ public final class SpecificationsView extends VBox {
                                         "Modello approvato", new VBox(5, modelQuery, model))),
                         CatalogUi.field("Riferimento metodo di calcolo *", calculation),
                         CatalogUi.field(
-                                "Modello etichetta", new HBox(8, labelTemplate, clearLabel())),
+                                "Modello etichetta",
+                                new HBox(8, labelTemplate, clearChoice(labelTemplate))),
+                        CatalogUi.field(
+                                "Marcatura del dorso",
+                                new HBox(8, markingTemplate, clearChoice(markingTemplate))),
                         CatalogUi.field("Note della versione", notes));
         previous.setAccessibleText("Versioni più recenti");
         next.setAccessibleText("Versioni precedenti");
@@ -84,10 +93,10 @@ public final class SpecificationsView extends VBox {
                         feedback);
     }
 
-    private Button clearLabel() {
+    private Button clearChoice(ComboBox<TechnicalChoice> choice) {
         var b = new Button("Rimuovi");
-        b.disableProperty().bind(labelTemplate.disabledProperty());
-        b.setOnAction(e -> labelTemplate.setValue(null));
+        b.disableProperty().bind(choice.disabledProperty());
+        b.setOnAction(e -> choice.setValue(null));
         return b;
     }
 
@@ -104,6 +113,8 @@ public final class SpecificationsView extends VBox {
             compositionQuery.clear();
             modelQuery.clear();
             labelTemplate.getItems().clear();
+            markingTemplate.getItems().clear();
+            markingTemplate.setValue(null);
             labelTemplate.setValue(null);
             calculation.getItems().clear();
             calculation.setValue(null);
@@ -169,6 +180,7 @@ public final class SpecificationsView extends VBox {
             replace(composition, page.compositions());
             replace(model, page.models());
             replace(labelTemplate, page.labelTemplates());
+            replace(markingTemplate, page.markingTemplates());
             Version selectedRule = calculation.getValue();
             calculation.getItems().setAll(page.calculationRules());
             calculation.setValue(
@@ -201,6 +213,7 @@ public final class SpecificationsView extends VBox {
                 model.setValue(null);
                 calculation.setValue(null);
                 labelTemplate.setValue(null);
+                markingTemplate.setValue(null);
                 notes.clear();
             } else {
                 select(composition, selected.compositionId(), selected.compositionLabel());
@@ -220,6 +233,9 @@ public final class SpecificationsView extends VBox {
                             selected.labelTemplateId(),
                             selected.labelTemplateLabel());
                 else labelTemplate.setValue(null);
+                if (selected.markingVersionId() != null)
+                    select(markingTemplate, selected.markingVersionId(), selected.markingLabel());
+                else markingTemplate.setValue(null);
                 notes.setText(selected.notes() == null ? "" : selected.notes());
             }
             boolean locked = selected != null && selected.frozen();
@@ -272,7 +288,8 @@ public final class SpecificationsView extends VBox {
                 calculation.getValue().code(),
                 notes.getText(),
                 calculation.getValue().id(),
-                labelTemplate.getValue() == null ? null : labelTemplate.getValue().id());
+                labelTemplate.getValue() == null ? null : labelTemplate.getValue().id(),
+                markingTemplate.getValue() == null ? null : markingTemplate.getValue().id());
     }
 
     public List<String> fingerprint() {
@@ -281,7 +298,8 @@ public final class SpecificationsView extends VBox {
                 model.getValue() == null ? "" : "" + model.getValue().id(),
                 calculation.getValue() == null ? "" : "" + calculation.getValue().id(),
                 notes.getText(),
-                labelTemplate.getValue() == null ? "" : "" + labelTemplate.getValue().id());
+                labelTemplate.getValue() == null ? "" : "" + labelTemplate.getValue().id(),
+                markingTemplate.getValue() == null ? "" : "" + markingTemplate.getValue().id());
     }
 
     public void selectVersion(Specification value) {
@@ -314,6 +332,7 @@ public final class SpecificationsView extends VBox {
                         model,
                         calculation,
                         labelTemplate,
+                        markingTemplate,
                         notes)) input.setDisable(disabled);
     }
 

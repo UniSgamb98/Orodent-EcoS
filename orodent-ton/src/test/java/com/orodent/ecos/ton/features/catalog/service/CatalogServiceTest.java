@@ -75,6 +75,94 @@ class CatalogServiceTest {
     }
 
     @Test
+    void upgradesExistingSpecificationsAndPinsMarkingSnapshotsWithExactUsages() {
+        var product = product(line(), "A1");
+        technical(product.id());
+        product =
+                (Product)
+                        specs.save(product, null, new SpecificationDraft(1, 1, "v1", ""), true)
+                                .join()
+                                .entry();
+        var old = specs.page(product, 0, "", "").join().rows().getFirst();
+        assertNull(old.markingVersionId());
+        execute(
+                "ALTER TABLE TON.CONFIGURAZIONI_PRODOTTO DROP CONSTRAINT fk_ton_cfg_marcatura",
+                "ALTER TABLE TON.CONFIGURAZIONI_PRODOTTO DROP COLUMN marcatura_versione_id",
+                "DELETE FROM ECOS.ECOS_SCHEMA_HISTORY WHERE version=35");
+        new DatabaseSchema(db).initialize();
+        new DatabaseSchema(db).initialize();
+        assertEquals(old, specs.page(product, 0, "", "").join().rows().getFirst());
+        var marking =
+                new com.orodent.ecos.ton.features.marking.service.MarkingTemplateService(
+                        db, workers);
+        var content =
+                new com.orodent.ecos.ton.features.marking.model.MarkingTemplates.Draft(
+                        "DORSO",
+                        "Dorso",
+                        "",
+                        true,
+                        "{codice_articolo} LOT {lotto}",
+                        null,
+                        Map.of(),
+                        ",");
+        var first = marking.save(null, null, content, true).join();
+        var draft = marking.copy(first.entry(), first.selected()).join();
+        product = (Product) specs.copy(product, old).join().entry();
+        var copy = specs.page(product, 0, "", "").join().rows().getFirst();
+        final var currentProduct = product;
+        assertThrows(
+                CompletionException.class,
+                () ->
+                        specs.save(
+                                        currentProduct,
+                                        copy,
+                                        new SpecificationDraft(
+                                                1, 1, "v1", "", null, null, draft.selected().id()),
+                                        true)
+                                .join());
+        var second = marking.save(draft.entry(), draft.selected(), content, true).join();
+        product =
+                (Product)
+                        specs.save(
+                                        product,
+                                        copy,
+                                        new SpecificationDraft(
+                                                1, 1, "v1", "", null, null, first.selected().id()),
+                                        true)
+                                .join()
+                                .entry();
+        var pinned = specs.page(product, 0, "", "").join().rows().getFirst();
+        assertEquals(first.selected().id(), pinned.markingVersionId());
+        assertTrue(pinned.markingLabel().contains("v1"));
+        product = (Product) specs.copy(product, pinned).join().entry();
+        var page = specs.page(product, 0, "", "").join();
+        var next = page.rows().getFirst();
+        assertEquals(first.selected().id(), next.markingVersionId());
+        assertEquals(2, page.markingTemplates().size());
+        product =
+                (Product)
+                        specs.save(
+                                        product,
+                                        next,
+                                        new SpecificationDraft(
+                                                1, 1, "v1", "", null, null, second.selected().id()),
+                                        true)
+                                .join()
+                                .entry();
+        var finalPage = specs.page(product, 0, "", "").join();
+        assertEquals(second.selected().id(), finalPage.rows().getFirst().markingVersionId());
+        assertEquals(first.selected().id(), finalPage.rows().get(1).markingVersionId());
+        assertNull(finalPage.rows().getLast().markingVersionId());
+        assertEquals(
+                2, marking.usages(first.selected().id()).join().getFirst().specificationVersion());
+        assertEquals(
+                3, marking.usages(second.selected().id()).join().getFirst().specificationVersion());
+        assertTrue(marking.usages(draft.selected().id()).join().isEmpty());
+        assertEquals(
+                product.id(), marking.usages(first.selected().id()).join().getFirst().productId());
+    }
+
+    @Test
     void pinsTheChosenLabelVersionAndCarriesItIntoNewSpecificationDrafts() {
         var product = product(line(), "A1");
         technical(product.id());

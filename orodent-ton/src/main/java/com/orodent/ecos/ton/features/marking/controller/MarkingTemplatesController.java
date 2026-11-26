@@ -15,11 +15,13 @@ import javafx.util.Duration;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.LongConsumer;
 
 /** Reads can be abandoned; saves finish once and are never replayed automatically. */
 public final class MarkingTemplatesController implements FeatureController {
     private final MarkingTemplatesView view;
     private final MarkingTemplateService service;
+    private final LongConsumer openProduct;
     private final BooleanProperty saving = new SimpleBooleanProperty();
     private final PauseTransition debounce = new PauseTransition(Duration.millis(250));
     private final ChangeListener<String> query = (o, a, b) -> debounce.playFromStart();
@@ -31,8 +33,20 @@ public final class MarkingTemplatesController implements FeatureController {
     private volatile boolean disposed;
 
     public MarkingTemplatesController(MarkingTemplatesView view, MarkingTemplateService service) {
+        this(view, service, id -> {});
+    }
+
+    public MarkingTemplatesController(
+            MarkingTemplatesView view, MarkingTemplateService service, LongConsumer openProduct) {
         this.view = view;
         this.service = service;
+        this.openProduct = openProduct;
+        view.usages.refresh().setOnAction(e -> loadUsages());
+        view.usages.onOpen(
+                () -> {
+                    var usage = view.usages.table().getSelectionModel().getSelectedItem();
+                    if (usage != null && !saving.get()) openProduct.accept(usage.productId());
+                });
         debounce.setOnFinished(e -> loadList());
         view.listing.search().textProperty().addListener(query);
         view.listing.search().setOnAction(e -> loadList());
@@ -149,6 +163,25 @@ public final class MarkingTemplatesController implements FeatureController {
                                                     selected = row.selected();
                                                     view.showDetail(row);
                                                     baseline = view.fingerprint();
+                                                    loadUsages();
+                                                }));
+    }
+
+    private void loadUsages() {
+        if (disposed || selected == null || saving.get()) return;
+        cancelRead();
+        long token = request;
+        view.usages.loading();
+        reading =
+                service.usages(selected.id())
+                        .whenComplete(
+                                (rows, error) ->
+                                        Platform.runLater(
+                                                () -> {
+                                                    if (disposed || token != request) return;
+                                                    if (error != null)
+                                                        view.usages.error(message(error));
+                                                    else view.usages.show(rows);
                                                 }));
     }
 
@@ -180,6 +213,7 @@ public final class MarkingTemplatesController implements FeatureController {
                                             selected = row.selected();
                                             view.showDetail(row);
                                             baseline = view.fingerprint();
+                                            loadUsages();
                                         }));
     }
 
@@ -204,6 +238,7 @@ public final class MarkingTemplatesController implements FeatureController {
                                             selected = detail.selected();
                                             view.showDetail(detail);
                                             baseline = view.fingerprint();
+                                            loadUsages();
                                         }));
     }
 

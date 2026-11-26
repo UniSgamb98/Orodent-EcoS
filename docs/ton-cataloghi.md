@@ -151,6 +151,13 @@ specifica predefinita: composizione, modello e metodo di calcolo. Nell'articolo
 restano anagrafica, diametro e altezza; la sua colonna Produzione mostra la
 configurazione ereditata. Le anagrafiche si salvano anche senza specifiche.
 
+Sotto **Modello etichetta** è disponibile **Marcatura del dorso**, facoltativa.
+Si sceglie una revisione approvata e attiva; il riferimento viene conservato nella
+versione della specifica e copiato quando se ne crea una nuova. La regola di
+cubatura della marcatura, se presente, deve coincidere con quella della specifica.
+La scheda **Utilizzi** della marcatura mostra i prodotti e le versioni collegate.
+La migrazione V35 aggiunge il riferimento senza assegnarlo alle specifiche esistenti.
+
 Occorrono una composizione approvata dello stesso prodotto, un modello approvato
 e un riferimento al metodo di calcolo. Questa schermata non calcola le dosi:
 la Produzione usa il gruppo del modello corrispondente al diametro dell'articolo

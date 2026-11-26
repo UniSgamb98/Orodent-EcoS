@@ -2,10 +2,13 @@
 
 Aprire **TON → Documenti → Marcatura dischi**. L'elenco comune TON permette di
 cercare codice o nome, mostrare anche gli archiviati e creare un **Nuovo modello**.
-Doppio clic o Invio apre il modello. L'editor ha tre schede:
+Doppio clic o Invio apre il modello. L'editor ha quattro schede:
 
 - **Dati generali**: codice stabile, nome, descrizione e stato attivo.
 - **Marcatura**: scritta, campi, decimali e anteprima con dati di esempio.
+- **Utilizzi**: prodotti e versioni di specifica collegati alla revisione di
+  marcatura selezionata, con stato e indicazione della predefinita. Doppio clic
+  o Invio apre il prodotto.
 - **Versioni**: tutte le revisioni salvate, consultabili con doppio clic o Invio.
 
 ## Campi e formati
@@ -63,7 +66,11 @@ Le modifiche concorrenti sono respinte senza sovrascrivere i dati.
 
 La migrazione **V28** aggiunge `TON.MODELLI_MARCATURA` e
 `TON.MARCATURA_VERSIONI`; non cambia i modelli documento o le produzioni esistenti.
-Questo passaggio prepara i modelli: l'assegnazione nelle Specifiche di produzione,
-l'assegnazione del numero batch, la generazione della scritta per il singolo disco
-e l'invio a Clarinet verranno
-collegati successivamente, conservando versioni e contenuti effettivamente generati.
+La migrazione **V35** permette di scegliere **Marcatura del dorso** nelle
+Specifiche di produzione del prodotto, subito sotto il modello etichetta.
+Il collegamento è facoltativo e conserva una revisione approvata e attiva precisa:
+le successive versioni della marcatura non cambiano le specifiche salvate.
+Se la marcatura usa una regola di cubatura, deve essere la stessa versione
+assegnata alla specifica. Le specifiche esistenti restano senza marcatura finché
+non viene scelta in una nuova versione. La generazione della scritta per il
+singolo disco e l'invio a Clarinet saranno collegati successivamente.

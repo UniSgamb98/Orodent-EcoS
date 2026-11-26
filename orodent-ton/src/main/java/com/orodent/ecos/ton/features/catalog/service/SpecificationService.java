@@ -119,7 +119,8 @@ public final class SpecificationService {
                                                     current.calculation(),
                                                     current.notes(),
                                                     current.calculationVersionId(),
-                                                    current.labelTemplateId());
+                                                    current.labelTemplateId(),
+                                                    current.markingVersionId());
                                     repo.insert(product, draft);
                                     return CatalogService.detail(
                                             c,
@@ -160,7 +161,8 @@ public final class SpecificationService {
                                                     current.calculation(),
                                                     current.notes(),
                                                     current.calculationVersionId(),
-                                                    current.labelTemplateId()),
+                                                    current.labelTemplateId(),
+                                                    current.markingVersionId()),
                                             true);
                                     if (!Objects.equals(
                                             product.defaultSpecification(), current.id())) {
