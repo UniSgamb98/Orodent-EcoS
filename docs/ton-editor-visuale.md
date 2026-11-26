@@ -13,12 +13,20 @@ Nel pannello sinistro, scheda **Pagina**, scegli:
 
 Un foglio di 102 × 38 mm mantiene queste proporzioni nell’editor e nell’anteprima. Lo zoom ingrandisce la vista e non modifica le misure del documento.
 
+I pulsanti **Inserisci**, **Annulla/Ripeti**, **Verifica** e **Anteprima** sono sulla
+stessa barra del titolo; la barra si adatta alle finestre più piccole.
+
 ## Oggetti
 
 Inserisci riquadri di testo, immagini, simboli, GS1 DataMatrix, tabelle e blocchi automatici. Ogni oggetto ha coordinate e dimensioni proprie, indipendenti dagli altri elementi.
 
 - Trascina la maniglia sopra l’oggetto per spostarlo. Immagini, dati automatici, codici e blocchi automatici si possono trascinare anche dal contenuto.
-- Trascina i bordi o gli angoli per ridimensionarlo.
+- Sul foglio vuoto il puntatore è una freccia; il cursore di testo compare dentro i riquadri di testo.
+- Trascina sul foglio vuoto per disegnare un rettangolo: gli oggetti completamente racchiusi vengono selezionati. Puoi trascinare in entrambe le direzioni, anche con lo zoom.
+- **Maiusc + clic** aggiunge o rimuove un oggetto dalla selezione. **Maiusc + rettangolo** aggiunge altri oggetti.
+- Trascina un elemento selezionato per spostare la selezione multipla, mantenendo le distanze e i limiti della pagina. Frecce e Maiusc + frecce agiscono sull’intera selezione. **Elimina selezionati** o Canc eliminano soltanto gli oggetti selezionati; Annulla ripristina l’operazione.
+- Esc durante il trascinamento annulla il gesto. **Deseleziona** o un clic sul foglio vuoto cancellano la selezione.
+- Trascina i bordi o gli angoli di un singolo oggetto per ridimensionarlo.
 - Nel pannello destro inserisci **X, Y, larghezza e altezza** in pixel. Il riferimento è l’angolo superiore sinistro della pagina.
 - Con l’oggetto selezionato, le frecce spostano di **1 px**; **Maiusc + frecce** spostano di **10 px**.
 - Entra nel testo con un clic nel riquadro o con Invio. Esc torna alla selezione dell’oggetto.
@@ -34,7 +42,7 @@ Gli oggetti rimangono entro la pagina. Se un nuovo formato non contiene gli ogge
 Selezionando un riquadro di testo, sulla destra compaiono stile del paragrafo, carattere, dimensione, grassetto, corsivo, sottolineatura, colori, allineamento, elenchi e interlinea. Con una porzione di testo selezionata puoi formattare quella porzione; selezionando l’intero oggetto modifichi il riquadro.
 
 Nel pannello **Dati automatici**, codice articolo, lotto, GTIN e gli altri valori
-sono oggetti autonomi: non si può scrivere prima o dopo il dato. Il contenuto parte
+sono oggetti autonomi: non si può scrivere prima o dopo il dato. La maniglia e le proprietà mostrano il nome del dato effettivo, ad esempio **Codice articolo** o **Lotto di cottura**. Il contenuto parte
 dall’angolo superiore sinistro del riquadro, senza margini di paragrafo. Le proprietà
 consentono di cambiare carattere, dimensione, colore, grassetto, corsivo e
 sottolineatura; **Adatta al dato** calcola larghezza e altezza usando il valore

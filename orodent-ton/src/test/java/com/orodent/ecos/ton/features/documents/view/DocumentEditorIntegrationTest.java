@@ -376,6 +376,7 @@ class DocumentEditorIntegrationTest {
                         screenshot("target/document-canvas-editor.png");
                         return null;
                     });
+            verifyCanvasSelection();
             assertTrue(errors.isEmpty(), errors::toString);
         } finally {
             fx(
@@ -408,6 +409,175 @@ class DocumentEditorIntegrationTest {
                             return r.getString(1);
                         }
                     }
+                });
+    }
+
+    private void verifyCanvasSelection() throws Exception {
+        fx(
+                () -> {
+                    stage.setWidth(1700);
+                    stage.setHeight(1000);
+                    return null;
+                });
+        await(() -> web().getWidth() > 1350);
+        fx(
+                () -> {
+                    api().call("newModel", "ETICHETTA");
+                    controls(
+                            new String[][] {
+                                {"paper-width", "102"}, {"paper-height", "65"}, {"zoom", "1.2"}
+                            });
+                    api().call("insert", "label:article");
+                    controls(new String[][] {{"object-x", "18"}, {"object-y", "18"}});
+                    api().call("insert", "label:lot");
+                    controls(new String[][] {{"object-x", "80"}, {"object-y", "50"}});
+                    assertEquals(
+                            "Lotto di cottura",
+                            js(
+                                    "document.querySelector('[data-kind=field].context-selected"
+                                            + " .canvas-object-grip').textContent"));
+                    assertEquals(
+                            "Lotto di cottura",
+                            js(
+                                    "document.querySelector('#selection-properties"
+                                            + " h2').textContent"));
+                    api().call("insert", "text");
+                    controls(
+                            new String[][] {
+                                {"object-width", "90"},
+                                {"object-height", "35"},
+                                {"object-x", "250"},
+                                {"object-y", "150"}
+                            });
+                    assertEquals(
+                            "default",
+                            js(
+                                    "getComputedStyle(document.querySelector('#editor"
+                                            + " .tiptap')).cursor"));
+                    assertEquals(
+                            "text",
+                            js(
+                                    "getComputedStyle(document.querySelector('[data-kind=text]"
+                                            + " .canvas-object-content')).cursor"));
+                    assertEquals(
+                            "default",
+                            js(
+                                    "getComputedStyle(document.querySelector('[data-kind=field]"
+                                            + " .canvas-object-content')).cursor"));
+                    assertTrue(
+                            (Boolean)
+                                    js(
+                                            "Array.from(document.querySelectorAll('[data-action=toggle-insert],[data-command=undo],[data-command=redo],[data-action=check-model],[data-action=preview]')).every(function(b){return"
+                                                + " !!b.closest('.titlebar');})"));
+                    assertEquals(
+                            0,
+                            ((Number) js("document.querySelectorAll('nav.toolbar').length"))
+                                    .intValue());
+                    return null;
+                });
+        String beforeSelection = fx(() -> api().call("serialize").toString());
+        drag("#paper", 264, 120);
+        await(
+                () ->
+                        "canvasMulti"
+                                .equals(
+                                        js(
+                                                "document.querySelector('#editor"
+                                                    + " .tiptap').editor.state.selection.toJSON().type")));
+        fx(
+                () -> {
+                    assertEquals(
+                            2,
+                            ((Number)
+                                            js(
+                                                    "document.querySelector('#editor"
+                                                        + " .tiptap').editor.state.selection.ids.length"))
+                                    .intValue());
+                    assertEquals(beforeSelection, api().call("serialize").toString());
+                    return null;
+                });
+        drag("[data-label-value=article]", 24, 12);
+        fx(
+                () -> {
+                    assertEquals(38, attrs().get("x").getAsDouble(), 1);
+                    assertEquals(28, attrs().get("y").getAsDouble(), 1);
+                    assertEquals(
+                            100,
+                            model().getAsJsonObject("content")
+                                    .getAsJsonArray("content")
+                                    .get(1)
+                                    .getAsJsonObject()
+                                    .getAsJsonObject("attrs")
+                                    .get("x")
+                                    .getAsDouble(),
+                            1);
+                    assertEquals(
+                            250,
+                            model().getAsJsonObject("content")
+                                    .getAsJsonArray("content")
+                                    .get(2)
+                                    .getAsJsonObject()
+                                    .getAsJsonObject("attrs")
+                                    .get("x")
+                                    .getAsDouble());
+                    new Robot().keyPress(KeyCode.RIGHT);
+                    new Robot().keyRelease(KeyCode.RIGHT);
+                    return null;
+                });
+        await(() -> Math.abs(attrs().get("x").getAsDouble() - 39) < 1);
+        fx(
+                () -> {
+                    api().call("run", "undo");
+                    assertEquals(38, attrs().get("x").getAsDouble(), 1);
+                    api().call("run", "undo");
+                    assertEquals(18, attrs().get("x").getAsDouble(), 1);
+                    new Robot().keyPress(KeyCode.DELETE);
+                    new Robot().keyRelease(KeyCode.DELETE);
+                    return null;
+                });
+        await(() -> model().getAsJsonObject("content").getAsJsonArray("content").size() == 1);
+        fx(
+                () -> {
+                    api().call("run", "undo");
+                    assertEquals(
+                            3, model().getAsJsonObject("content").getAsJsonArray("content").size());
+                    controls(new String[][] {{"zoom", "2"}});
+                    return null;
+                });
+        drag("#paper", 440, 200);
+        await(
+                () ->
+                        "canvasMulti"
+                                .equals(
+                                        js(
+                                                "document.querySelector('#editor"
+                                                    + " .tiptap').editor.state.selection.toJSON().type")));
+        Thread.sleep(250);
+        fx(
+                () -> {
+                    screenshot("target/document-marquee-selection.png");
+                    return null;
+                });
+        double fieldRatio =
+                fx(() -> attrs().get("width").getAsDouble() / attrs().get("height").getAsDouble());
+        fx(
+                () -> {
+                    js(
+                            "document.querySelector('#editor"
+                                    + " .tiptap').editor.commands.setNodeSelection(0)");
+                    new Robot().keyPress(KeyCode.SHIFT);
+                    return null;
+                });
+        drag(".canvas-object.ProseMirror-selectednode .canvas-resize-se", 24, 12);
+        fx(
+                () -> {
+                    new Robot().keyRelease(KeyCode.SHIFT);
+                    assertEquals(
+                            fieldRatio,
+                            attrs().get("width").getAsDouble()
+                                    / attrs().get("height").getAsDouble(),
+                            .05);
+                    return null;
                 });
     }
 

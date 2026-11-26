@@ -1,3 +1,4 @@
+import { labelFields } from './label-elements.js';
 import { editorKey } from './keyboard.js';
 import { Node } from '@tiptap/core';
 import { NodeSelection, TextSelection } from '@tiptap/pm/state';
@@ -130,15 +131,18 @@ export const CanvasObject = Node.create({
         dom.dataset.kind = attrs.kind;
         contentDOM.contentEditable = attrs.kind === 'field' ? 'false' : 'inherit';
         dom.dataset.canvasPage = attrs.page;
-        grip.textContent = {
-          text: 'Testo',
-          field: 'Dato automatico',
-          image: 'Immagine',
-          matrix: 'GS1',
-          table: 'Tabella',
-          block: 'Blocco automatico',
-          group: 'Gruppo',
-        }[attrs.kind];
+        grip.textContent =
+          attrs.kind === 'field'
+            ? (labelFields[node.firstChild?.attrs.key] ?? 'Dato automatico')
+            : {
+                text: 'Testo',
+                field: 'Dato automatico',
+                image: 'Immagine',
+                matrix: 'GS1',
+                table: 'Tabella',
+                block: 'Blocco automatico',
+                group: 'Gruppo',
+              }[attrs.kind];
       };
       const finish = (commit = false) => {
         if (!drag) return;
@@ -167,7 +171,10 @@ export const CanvasObject = Node.create({
         dom.dispatchEvent(
           new CustomEvent('canvas-object-preview', {
             bubbles: true,
-            detail: { id: node.attrs.id, ...(commit ? current.attrs : node.attrs) },
+            detail: {
+              id: node.attrs.id,
+              ...(commit ? current.attrs : node.attrs),
+            },
           }),
         );
       };
@@ -188,7 +195,10 @@ export const CanvasObject = Node.create({
           : moveGeometry(drag.original, dx, dy, drag.size);
         paint(drag.attrs);
         dom.dispatchEvent(
-          new CustomEvent('canvas-object-preview', { bubbles: true, detail: { ...drag.attrs } }),
+          new CustomEvent('canvas-object-preview', {
+            bubbles: true,
+            detail: { ...drag.attrs },
+          }),
         );
       };
       const up = (e) => {

@@ -1,4 +1,9 @@
 import { editorKey } from './keyboard.js';
+import {
+  CanvasMultiSelection,
+  mountCanvasSelection,
+  deleteCanvasSelection,
+} from './canvas-selection.js';
 import { GapCursor } from '@tiptap/pm/gapcursor';
 import { NodeSelection } from '@tiptap/pm/state';
 import { labelFields, validateMatrix, measureLabel } from './label-elements.js';
@@ -19,6 +24,10 @@ const kindNames = {
   block: 'Blocco automatico',
   group: 'Gruppo',
 };
+const objectName = (node) =>
+  node.attrs.kind === 'field'
+    ? (labelFields[node.firstChild?.attrs.key] ?? kindNames.field)
+    : kindNames[node.attrs.kind];
 export function mountEditorUI(editor, model) {
   const cleanup = [];
   let disposed = false,
@@ -99,7 +108,11 @@ export function mountEditorUI(editor, model) {
     content = content.map((n) =>
       ['labelField', 'tonField'].includes(n.type) ? { type: 'paragraph', content: [n] } : n,
     );
-    const node = editor.schema.nodeFromJSON({ type: 'canvasObject', attrs, content });
+    const node = editor.schema.nodeFromJSON({
+      type: 'canvasObject',
+      attrs,
+      content,
+    });
     const pos = editor.state.doc.content.size;
     editor.view.dispatch(editor.state.tr.insert(pos, node));
     // The selection must be built against the inserted document (the old doc can be empty).
@@ -130,7 +143,10 @@ export function mountEditorUI(editor, model) {
       const symbol = symbols.find((s) => s.key === kind.slice(7));
       if (!symbol) throw Error('Simbolo non disponibile.');
       return add(
-        { type: 'image', attrs: { src: symbol.src, alt: symbol.title, width: '100%' } },
+        {
+          type: 'image',
+          attrs: { src: symbol.src, alt: symbol.title, width: '100%' },
+        },
         'image',
         { width: px(8), height: px(8) },
       );
@@ -140,7 +156,12 @@ export function mountEditorUI(editor, model) {
       return add(
         {
           type: 'tonBlock',
-          attrs: { id: 'block-' + model.nextId(), kind, title: blockTypes[kind], compact: true },
+          attrs: {
+            id: 'block-' + model.nextId(),
+            kind,
+            title: blockTypes[kind],
+            compact: true,
+          },
         },
         'block',
       );
@@ -148,8 +169,11 @@ export function mountEditorUI(editor, model) {
       const label = kind.startsWith('label:'),
         key = kind.slice(6);
       if (!(key in (label ? labelFields : fields))) throw Error('Campo non disponibile.');
-      if (label) return add({type: 'labelValue', attrs: {key}}, 'field', measureLabel(key));
-      const content = { type: label ? 'labelField' : 'tonField', attrs: { key } },
+      if (label) return add({ type: 'labelValue', attrs: { key } }, 'field', measureLabel(key));
+      const content = {
+          type: label ? 'labelField' : 'tonField',
+          attrs: { key },
+        },
         object = selectedObject(editor.state);
       if (object?.node.attrs.kind === 'text' && !(editor.state.selection instanceof NodeSelection))
         return editor.chain().focus().insertContent(content).run();
@@ -165,7 +189,10 @@ export function mountEditorUI(editor, model) {
       'text',
     );
     if (kind === 'heading')
-      updateObject(editor, selectedObject(editor.state), { fontSize: '18pt', height: 48 });
+      updateObject(editor, selectedObject(editor.state), {
+        fontSize: '18pt',
+        height: 48,
+      });
     return pos;
   }
   function table() {
@@ -302,13 +329,19 @@ export function mountEditorUI(editor, model) {
         hasRange()
           ? (c) =>
               c[
-                { bold: 'toggleBold', italic: 'toggleItalic', underline: 'toggleUnderline' }[
-                  command
-                ]
+                {
+                  bold: 'toggleBold',
+                  italic: 'toggleItalic',
+                  underline: 'toggleUnderline',
+                }[command]
               ]()
           : (c) =>
               c[
-                { bold: 'unsetBold', italic: 'unsetItalic', underline: 'unsetUnderline' }[command]
+                {
+                  bold: 'unsetBold',
+                  italic: 'unsetItalic',
+                  underline: 'unsetUnderline',
+                }[command]
               ](),
       );
     if (command.startsWith('align-'))
@@ -341,7 +374,9 @@ export function mountEditorUI(editor, model) {
     'line-height': (v) => format({ lineHeight: Number(v) }, (c) => c.setLineHeight(v)),
     'text-type': (v) =>
       format(
-        { fontSize: v === 'paragraph' ? '11pt' : v === '1' ? '24pt' : v === '2' ? '18pt' : '14pt' },
+        {
+          fontSize: v === 'paragraph' ? '11pt' : v === '1' ? '24pt' : v === '2' ? '18pt' : '14pt',
+        },
         (c) => (v === 'paragraph' ? c.setParagraph() : c.setHeading({ level: Number(v) })),
       ),
   };
@@ -353,13 +388,29 @@ export function mountEditorUI(editor, model) {
       root = $('selection-properties'),
       text = $('text-properties');
     const key =
-      (o ? o.pos + JSON.stringify(o.node.attrs) + o.node.firstChild?.type.name : 'none') +
+      (editor.state.selection instanceof CanvasMultiSelection
+        ? editor.state.selection.ids.join(',')
+        : o
+          ? o.pos + JSON.stringify(o.node.attrs) + o.node.firstChild?.type.name
+          : 'none') +
       editor.isEditable +
       editor.isActive('table');
     if (!force && (key === propertyKey || $('properties').contains(document.activeElement))) return;
     propertyKey = key;
     text.hidden = !o || !['text', 'field'].includes(o.node.attrs.kind);
     text.classList.toggle('automatic-field', o?.node.attrs.kind === 'field');
+    if (editor.state.selection instanceof CanvasMultiSelection) {
+      root.innerHTML =
+        '<span class="eyebrow">Selezione multipla</span><h2>' +
+        editor.state.selection.ids.length +
+        ' elementi selezionati</h2>' +
+        '<p>Trascina uno degli elementi per spostarli insieme. Frecce: 1 px; Maiusc + frecce: 10 px.</p>' +
+        '<div class="object-actions"><button id="delete-selection" class="danger">Elimina selezionati</button><button id="clear-selection">Deseleziona</button></div>';
+      $('delete-selection').disabled = !editor.isEditable;
+      $('delete-selection').onclick = () => deleteCanvasSelection(editor);
+      $('clear-selection').onclick = () => actions.deselect();
+      return;
+    }
     if (!o) {
       root.innerHTML =
         '<span class="eyebrow">Proprietà</span><h2>Seleziona un oggetto</h2><p>Inserisci un riquadro di testo, un’immagine o un codice. Trascina la maniglia per spostarlo; usa i bordi per ridimensionarlo.</p><p>Frecce: 1 px · Maiusc + frecce: 10 px.</p><div id="object-list"></div>';
@@ -367,7 +418,7 @@ export function mountEditorUI(editor, model) {
         if (n.type.name !== 'canvasObject') return;
         const b = document.createElement('button');
         b.className = 'object-list-item';
-        b.textContent = kindNames[n.attrs.kind] + ' · Pagina ' + (n.attrs.page + 1);
+        b.textContent = objectName(n) + ' · Pagina ' + (n.attrs.page + 1);
         b.onclick = () => editor.commands.setNodeSelection(pos);
         $('object-list').append(b);
       });
@@ -379,7 +430,7 @@ export function mountEditorUI(editor, model) {
         editor.state.selection.node.type.name !== 'canvasObject'
           ? editor.state.selection.node
           : o.node.firstChild;
-    root.innerHTML = `<span class="eyebrow">Oggetto selezionato</span><h2>${kindNames[a.kind]}</h2><div class="geometry-grid">${[
+    root.innerHTML = `<span class="eyebrow">Oggetto selezionato</span><h2>${escape(objectName(o.node))}</h2><div class="geometry-grid">${[
       ['x', 'X'],
       ['y', 'Y'],
       ['width', 'Larghezza'],
@@ -409,11 +460,16 @@ export function mountEditorUI(editor, model) {
         updateObject(editor, selectedObject(editor.state), { [k]: value });
       });
     change('object-page', (input) =>
-      updateObject(editor, selectedObject(editor.state), { page: Number(input.value) }),
+      updateObject(editor, selectedObject(editor.state), {
+        page: Number(input.value),
+      }),
     );
     const specific = $('object-specific');
     if (a.kind === 'field')
-      specific.innerHTML = '<p class="field-name">' + escape(labelFields[node.attrs.key]) + '</p><p>Valore dal lavoro. Non modificabile come testo.</p>';
+      specific.innerHTML =
+        '<p class="field-name">' +
+        escape(labelFields[node.attrs.key]) +
+        '</p><p>Valore dal lavoro. Non modificabile come testo.</p>';
     if (a.kind === 'image')
       specific.innerHTML =
         '<label>Descrizione immagine<input id="image-alt" value="' +
@@ -575,9 +631,15 @@ export function mountEditorUI(editor, model) {
           } else {
             const width = Math.min(220, pagePixels(model.page()).width * 0.7);
             add(
-              { type: 'image', attrs: { src: reader.result, alt: file.name, width: '100%' } },
+              {
+                type: 'image',
+                attrs: { src: reader.result, alt: file.name, width: '100%' },
+              },
               'image',
-              { width, height: (width * image.naturalHeight) / image.naturalWidth },
+              {
+                width,
+                height: (width * image.naturalHeight) / image.naturalWidth,
+              },
             );
           }
         });
@@ -662,14 +724,18 @@ export function mountEditorUI(editor, model) {
       }),
     );
   cleanup.push(mountEditorZoom(model));
+  cleanup.push(mountCanvasSelection(editor, model));
   const resize = () => {
-    const top = document.querySelector('.toolbar').getBoundingClientRect().bottom;
+    const top = document.querySelector('.titlebar').getBoundingClientRect().bottom;
     document.querySelector('.workspace').style.height =
       Math.max(240, innerHeight - top - 32) + 'px';
     $('properties').style.top = top + 'px';
     $('insert-panel').style.top = top + 'px';
   };
   on(window, 'resize', resize);
+  const titleObserver = new ResizeObserver(resize);
+  titleObserver.observe(document.querySelector('.titlebar'));
+  cleanup.push(() => titleObserver.disconnect());
   on(window, 'beforeprint', () => {
     model.preparePrint();
     if ($('preview-dialog').hidden) {
@@ -714,7 +780,8 @@ export function mountEditorUI(editor, model) {
       .forEach((n) =>
         n.classList.toggle('context-selected', n.dataset.objectId === o?.node.attrs.id),
       );
-    if (o) $('properties').classList.add('open');
+    if (o || editor.state.selection instanceof CanvasMultiSelection)
+      $('properties').classList.add('open');
     const a = o?.node.attrs;
     if (a) {
       for (const [id, value] of [
@@ -740,7 +807,7 @@ export function mountEditorUI(editor, model) {
         .setAttribute('aria-pressed', String(Boolean(a?.[c])));
     const s = pagePixels(model.page());
     $('selection-status').textContent =
-      `${model.page().format === 'a4' ? 'A4' : model.page().width + ' × ' + model.page().height + ' mm'} · ${s.count} ${s.count === 1 ? 'pagina' : 'pagine'}${o ? ' · ' + kindNames[a.kind] : ''}`;
+      `${model.page().format === 'a4' ? 'A4' : model.page().width + ' × ' + model.page().height + ' mm'} · ${s.count} ${s.count === 1 ? 'pagina' : 'pagine'}${o ? ' · ' + objectName(o.node) : editor.state.selection instanceof CanvasMultiSelection ? ' · ' + editor.state.selection.ids.length + ' elementi selezionati' : ''}`;
     properties(force);
     requestAnimationFrame(overflow);
   }

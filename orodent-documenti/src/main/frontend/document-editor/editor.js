@@ -1,3 +1,12 @@
+import {
+  CanvasSelectionExtension,
+  CanvasMultiSelection,
+  canvasObjects,
+  selectCanvasObjects,
+  moveCanvasSelection,
+  deleteCanvasSelection,
+} from './canvas-selection.js';
+import { GapCursor } from '@tiptap/pm/gapcursor';
 import { editorKey } from './keyboard.js';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
@@ -122,7 +131,10 @@ function upgradeFields() {
   }
 }
 function ensureCanvas() {
-  if (canvas) { upgradeFields(); return; }
+  if (canvas) {
+    upgradeFields();
+    return;
+  }
   const size = pagePixels(page),
     paper = document.getElementById('paper'),
     origin = paper.getBoundingClientRect(),
@@ -217,7 +229,12 @@ try {
     extensions: [
       CanvasDocument,
       CanvasObject,
-      StarterKit.configure({ link: false, document: false, trailingNode: false }),
+      CanvasSelectionExtension,
+      StarterKit.configure({
+        link: false,
+        document: false,
+        trailingNode: false,
+      }),
       TableKit.configure({ table: { resizable: true } }),
       TextStyleKit,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
@@ -232,7 +249,10 @@ try {
       TableAppearance,
     ],
     editorProps: {
-      attributes: { 'aria-label': 'Contenuto del documento', spellcheck: 'false' },
+      attributes: {
+        'aria-label': 'Contenuto del documento',
+        spellcheck: 'false',
+      },
       handleTextInput(view, from, to, text) {
         if (!canvas) return false;
         const object = selectedObject(view.state);
@@ -247,7 +267,11 @@ try {
       handlePaste(view, event) {
         if (!canvas) return false;
         const object = selectedObject(view.state);
-        if (object?.node.attrs.kind === 'field') return true;
+        if (
+          object?.node.attrs.kind === 'field' ||
+          view.state.selection instanceof CanvasMultiSelection
+        )
+          return true;
         if (object) return false;
         const text = event.clipboardData?.getData('text/plain');
         if (text) {
@@ -271,6 +295,42 @@ try {
           ArrowDown: [0, 1],
           Down: [0, 1],
         }[key];
+        const multi = view.state.selection instanceof CanvasMultiSelection;
+        if (multi) {
+          if (delta && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            event.preventDefault();
+            const step = event.shiftKey ? 10 : 1;
+            moveCanvasSelection(editor, delta[0] * step, delta[1] * step, page);
+            return true;
+          }
+          if (key === 'Delete' || key === 'Backspace') {
+            event.preventDefault();
+            return deleteCanvasSelection(editor);
+          }
+          if (key === 'Escape') {
+            editor.view.dispatch(
+              view.state.tr.setSelection(new GapCursor(view.state.doc.resolve(0))),
+            );
+            return true;
+          }
+          if (key === 'Enter') return true;
+        }
+        if (
+          (event.ctrlKey || event.metaKey) &&
+          key.toLowerCase() === 'a' &&
+          !(object?.node.attrs.kind === 'text' && !node)
+        ) {
+          event.preventDefault();
+          editor.view.dispatch(
+            view.state.tr.setSelection(
+              selectCanvasObjects(
+                view.state.doc,
+                canvasObjects(view.state.doc).map((o) => o.node.attrs.id),
+              ),
+            ),
+          );
+          return true;
+        }
         if (object && node && delta && !event.ctrlKey && !event.metaKey && !event.altKey) {
           event.preventDefault();
           const step = event.shiftKey ? 10 : 1;
