@@ -183,7 +183,13 @@ public final class MeasurementsController implements ModuleSession {
     }
 
     private void refreshRows(int index) {
-        view.list.getItems().setAll(batch.rows());
+        var values = batch.rows();
+        var items = view.list.getItems();
+        for (int i = 0; i < Math.min(items.size(), values.size()); i++)
+            if (!items.get(i).equals(values.get(i))) items.set(i, values.get(i));
+        if (items.size() > values.size()) items.subList(values.size(), items.size()).clear();
+        else if (items.size() < values.size())
+            items.addAll(values.subList(items.size(), values.size()));
         if (index >= 0) {
             view.list.getSelectionModel().select(index);
             view.list.scrollTo(index);

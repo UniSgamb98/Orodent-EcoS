@@ -24,3 +24,6 @@
 #misurazioni-module #jobs-back:hover, #misurazioni-module #jobs-print-label:hover { -fx-background-color: #e1f3f2; }
 #misurazioni-module .measurements-save-print { -fx-font-size: 16px; -fx-padding: 12px 24px; -fx-background-color: #19758b; -fx-background-radius: 8px; }
 #misurazioni-module #jobs-remaining { -fx-font-weight: bold; }
+
+#misurazioni-module .measurements-instrument-scroll, #misurazioni-module .measurements-instrument-scroll > .viewport { -fx-background-color: transparent; -fx-padding: 0; -fx-border-width: 0; }
+#misurazioni-module #jobs-context { -fx-font-size: 13px; }

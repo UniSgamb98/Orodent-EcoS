@@ -371,9 +371,8 @@ public final class CatalogController implements FeatureController {
         return !saving.get()
                 && (!editing
                         || !metadataDirty() && !specificationDirty()
-                        || confirm(
-                                "Modifiche non salvate",
-                                "Vuoi scartare le modifiche non salvate prima di continuare?"));
+                        || com.orodent.ecos.module.view.UnsavedChanges.confirmDiscard(
+                                view.getScene() == null ? null : view.getScene().getWindow()));
     }
 
     private void sheetChanged() {

@@ -35,6 +35,7 @@ public final class MeasurementsView extends BorderPane {
             footerActions = new HBox(12);
     private final BorderPane instrumentColumn = new BorderPane();
     private final Region footerSpace = new Region();
+    private final VBox instrument = new VBox(12);
     private BiConsumer<Integer, Instrument> remove = (index, instrument) -> {};
 
     public MeasurementsView() {
@@ -82,10 +83,17 @@ public final class MeasurementsView extends BorderPane {
         pedal.getStyleClass().add("measurements-hint");
         pedal.setWrapText(true);
         pedal.setMinHeight(Region.USE_PREF_SIZE);
-        VBox instrument = new VBox(12, acquire, instrumentImage, swap, pedal);
+        instrument.getChildren().setAll(acquire, instrumentImage, swap, pedal);
         instrument.setAlignment(Pos.CENTER);
         instrument.setPadding(new Insets(12, 18, 12, 18));
-        instrumentColumn.setCenter(instrument);
+        var instrumentScroll = new ScrollPane(instrument);
+        instrumentScroll.setFitToWidth(true);
+        instrumentScroll.setFitToHeight(false);
+        instrument.setMinHeight(Region.USE_PREF_SIZE);
+        instrumentScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        instrumentScroll.getStyleClass().add("measurements-instrument-scroll");
+        instrumentScroll.setMinSize(0, 0);
+        instrumentColumn.setCenter(instrumentScroll);
         instrumentColumn.setId("measurements-instrument-column");
         instrumentColumn.setMinWidth(190);
         instrumentColumn.setPrefWidth(205);
@@ -133,8 +141,9 @@ public final class MeasurementsView extends BorderPane {
     }
 
     public void workspace(Node back, Node context, Node print, Node savePrint, Node remaining) {
-        workInfo.getChildren().setAll(back, context);
-        HBox.setHgrow(context, Priority.ALWAYS);
+        workInfo.getChildren().setAll(back);
+        instrument.getChildren().remove(context);
+        instrument.getChildren().add(0, context);
         printAction.getChildren().setAll(print);
         footerActions.getChildren().setAll(copy, footerSpace, savePrint);
         instrumentColumn.setBottom(remaining);

@@ -14,11 +14,13 @@ import javafx.scene.layout.*;
 import javafx.stage.Window;
 
 import java.util.concurrent.CompletionException;
+import java.util.function.Function;
 
 /** One owned modal print session; database work uses the application's borrowed executor. */
 public final class LabelPrintingController implements AutoCloseable {
     private final ModuleContext context;
     private final LabelService service;
+    private final Function<LabelPreviewPane, Boolean> printJob;
     private final Dialog<Void> dialog = new Dialog<>();
     private final ComboBox<Template> templates = new ComboBox<>();
     private final DatePicker expiry = new DatePicker();
@@ -32,19 +34,30 @@ public final class LabelPrintingController implements AutoCloseable {
     private Source source;
     private Prepared prepared;
     private Issued issued;
-    private boolean closed, saving, restoring;
+    private boolean closed, saving, restoring, autoRequested;
     private long generation;
 
     public LabelPrintingController(
             ModuleContext context, LabelService service, Window owner, Key key, Runnable onClosed) {
+        this(context, service, owner, key, onClosed, LabelPreviewPane::print);
+    }
+
+    public LabelPrintingController(
+            ModuleContext context,
+            LabelService service,
+            Window owner,
+            Key key,
+            Runnable onClosed,
+            Function<LabelPreviewPane, Boolean> printJob) {
         this.context = context;
         this.service = service;
+        this.printJob = printJob;
         dialog.setTitle("Stampa etichetta");
         dialog.initOwner(owner);
         dialog.setResizable(true);
         templates.setId("label-template");
         templates.setMaxWidth(Double.MAX_VALUE);
-        templates.setPromptText("Scegli un modello etichetta approvato");
+        templates.setPromptText("Modello della specifica di produzione");
         expiry.setId("label-expiry");
         expiry.setPromptText("Solo se usata nel modello");
         print.setId("label-print");
@@ -61,7 +74,7 @@ public final class LabelPrintingController implements AutoCloseable {
                 .setAll(
                         new Label("Versione del modello etichetta"),
                         templates,
-                        new Label("Scadenza (facoltativa, nessuna data calcolata automaticamente)"),
+                        new Label("Scadenza (se richiesta dal modello)"),
                         expiry);
         var actions = new HBox(10, print, previous, regenerate);
         var content = new VBox(12, info, options, preview, actions, feedback);
@@ -124,8 +137,7 @@ public final class LabelPrintingController implements AutoCloseable {
                                                                                                         .assignedTemplate())
                                                                         .findFirst()
                                                                         .orElse(null));
-                                                templates.setDisable(
-                                                        source.assignedTemplate() != null);
+                                                templates.setDisable(true);
                                             } finally {
                                                 restoring = false;
                                             }
@@ -145,13 +157,20 @@ public final class LabelPrintingController implements AutoCloseable {
                                             currentInfo = info.getText();
                                             previous.setDisable(source.latest() == null);
                                             regenerate.setDisable(false);
-                                            if (source.latest() != null) stored();
-                                            else render();
+                                            if (source.assignedTemplate() == null) {
+                                                templates.setDisable(true);
+                                                regenerate.setDisable(true);
+                                                feedback.setText(
+                                                        "Nessun modello etichetta assegnato nella"
+                                                            + " specifica di produzione di questo"
+                                                            + " lavoro. Collegalo prima di"
+                                                            + " stampare.");
+                                            } else render();
                                         }));
     }
 
     private void render() {
-        if (closed || saving || source == null) return;
+        if (closed || saving || source == null || source.assignedTemplate() == null) return;
         options.setVisible(true);
         options.setManaged(true);
         info.setText(currentInfo);
@@ -159,7 +178,7 @@ public final class LabelPrintingController implements AutoCloseable {
         prepared = null;
         issued = null;
         print.setDisable(true);
-        templates.setDisable(source.assignedTemplate() != null);
+        templates.setDisable(true);
         expiry.setDisable(false);
         Template template = templates.getValue();
         if (template == null) {
@@ -182,6 +201,13 @@ public final class LabelPrintingController implements AutoCloseable {
                         if (closed || token != generation) return;
                         prepared = LabelService.prepared(source, template, selectedExpiry, html);
                         print.setDisable(false);
+                        if (!autoRequested) {
+                            autoRequested = true;
+                            Platform.runLater(
+                                    () -> {
+                                        if (!closed && token == generation) print();
+                                    });
+                        }
                         feedback.setText(
                                 "Formato "
                                         + prepared.paper().width()
@@ -276,13 +302,14 @@ public final class LabelPrintingController implements AutoCloseable {
 
     private void send() {
         try {
-            boolean accepted = preview.print();
+            boolean accepted = printJob.apply(preview);
             feedback.setText(
                     accepted
                             ? "Etichetta #" + issued.id() + " inviata alla stampante."
                             : "Stampa annullata. L’etichetta #"
                                     + issued.id()
                                     + " resta conservata e può essere ristampata.");
+            dialog.close();
         } catch (RuntimeException failure) {
             feedback.setText(message(failure));
         }

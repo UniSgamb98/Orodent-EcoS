@@ -10,21 +10,45 @@ import com.orodent.ecos.misurazioni.model.*;
 import com.orodent.ecos.module.*;
 
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.event.EventHandler;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.stage.Window;
+import javafx.stage.WindowEvent;
 
 import java.util.*;
 import java.util.concurrent.*;
 
-/** Autosaves acknowledged snapshots before another capture or navigation can change the job. */
+/** Edits stay local until the operator saves one transactional snapshot, then prints. */
 public final class MeasurementJobsController implements ModuleSession {
     final MeasurementJobsView view = new MeasurementJobsView();
     final MeasurementsController acquisition;
     private final ModuleContext context;
     private final MeasurementJobsService service;
     private Detail baseline;
-    private com.orodent.ecos.misurazioni.labels.controller.LabelPrintingController labelPrinting;
-    private boolean closed, saving, unsaved, completed;
+
+    @FunctionalInterface
+    interface PrintSessionFactory {
+        AutoCloseable open(Key key, Runnable onClosed);
+    }
+
+    private final PrintSessionFactory printSessions;
+    private AutoCloseable labelPrinting;
+    private Window window;
+    private boolean printing, closed, saving, unsaved, completed;
+    private final EventHandler<WindowEvent> closeRequest =
+            e -> {
+                if (!closed && !canLeave()) e.consume();
+            };
+    private final ChangeListener<Window> windowListener = (o, b, a) -> attachWindow(a);
+    private final ChangeListener<Scene> sceneListener =
+            (o, b, a) -> {
+                if (b != null) b.windowProperty().removeListener(windowListener);
+                if (a != null) a.windowProperty().addListener(windowListener);
+                attachWindow(a == null ? null : a.getWindow());
+            };
     private long request;
 
     public MeasurementJobsController(ModuleContext context, MeasurementSettings settings) {
@@ -38,21 +62,54 @@ public final class MeasurementJobsController implements ModuleSession {
             ModuleContext context,
             MeasurementJobsService service,
             DeviceConnections.Factory factory) {
+        this(context, service, factory, null);
+    }
+
+    MeasurementJobsController(
+            ModuleContext context,
+            MeasurementJobsService service,
+            DeviceConnections.Factory factory,
+            PrintSessionFactory printSessions) {
         this.context = context;
         this.service = service;
+        this.printSessions =
+                printSessions == null
+                        ? (key, done) ->
+                                new com.orodent.ecos.misurazioni.labels.controller
+                                        .LabelPrintingController(
+                                        context,
+                                        new com.orodent.ecos.misurazioni.labels.service
+                                                .LabelService(
+                                                context.connections(), context.workers()),
+                                        view.getScene().getWindow(),
+                                        key,
+                                        done)
+                        : printSessions;
+        view.sceneProperty().addListener(sceneListener);
         acquisition = new MeasurementsController(context.showHome(), factory);
         acquisition.view.embedded();
         acquisition.onChanged(
                 values -> {
                     if (baseline != null) {
-                        unsaved = true;
-                        save();
+                        unsaved =
+                                !values.equals(
+                                        baseline.job().readings().stream()
+                                                .map(Reading::value)
+                                                .toList());
+                        view.remaining(
+                                values.stream()
+                                        .filter(
+                                                r ->
+                                                        r.micrometer().isBlank()
+                                                                || r.scale().isBlank())
+                                        .count());
+                        view.saveStatus(unsaved ? "Modifiche non salvate" : status(), false);
                     }
                 });
         acquisition.onConnectionState(
                 (instrument, state) -> {
                     view.connection(instrument, state);
-                    view.saving(saving || acquisition.reading());
+                    view.saving(saving || printing || acquisition.reading());
                 });
         acquisition.view.reset.setOnAction(
                 e -> {
@@ -66,23 +123,8 @@ public final class MeasurementJobsController implements ModuleSession {
                 e -> {
                     if (canLeave()) context.showHome().run();
                 });
-        view.printLabel.setOnAction(
-                e -> {
-                    if (baseline == null || saving || acquisition.reading()) return;
-                    if (labelPrinting != null) labelPrinting.close();
-                    labelPrinting =
-                            new com.orodent.ecos.misurazioni.labels.controller
-                                    .LabelPrintingController(
-                                    context,
-                                    new com.orodent.ecos.misurazioni.labels.service.LabelService(
-                                            context.connections(), context.workers()),
-                                    view.getScene().getWindow(),
-                                    baseline.job().key(),
-                                    () -> {
-                                        if (!closed)
-                                            Platform.runLater(acquisition::focusAcquisition);
-                                    });
-                });
+        view.printLabel.setOnAction(e -> openPrint(false));
+        view.saveAndPrint.setOnAction(e -> save());
         view.pending.setOnAction(e -> queue(false));
         view.completed.setOnAction(e -> queue(true));
         for (var instrument : Instrument.values())
@@ -113,7 +155,7 @@ public final class MeasurementJobsController implements ModuleSession {
     }
 
     private void refresh() {
-        if (closed || saving) return;
+        if (closed || saving || printing) return;
         long token = ++request;
         view.busy(true);
         view.feedback.setText("Caricamento lavori…");
@@ -134,7 +176,7 @@ public final class MeasurementJobsController implements ModuleSession {
     }
 
     private void open(Key key) {
-        if (closed || saving || acquisition.reading()) return;
+        if (closed || saving || printing || acquisition.reading()) return;
         long token = ++request;
         view.busy(true);
         service.load(key)
@@ -162,10 +204,7 @@ public final class MeasurementJobsController implements ModuleSession {
                                                             .map(Reading::value)
                                                             .toList());
                                             acquisition.persistenceState(false, false);
-                                            view.showJob(
-                                                    detail.job(),
-                                                    detail.ruleLabel(),
-                                                    acquisition.view);
+                                            view.showJob(detail.job(), acquisition.view);
                                             view.saveStatus(status(), false);
                                             Platform.runLater(
                                                     () -> {
@@ -176,7 +215,7 @@ public final class MeasurementJobsController implements ModuleSession {
     }
 
     private void save() {
-        if (closed || saving || baseline == null) return;
+        if (closed || saving || printing || baseline == null || acquisition.reading()) return;
         var values = acquisition.readings();
         var expected = baseline;
         var operator =
@@ -198,7 +237,7 @@ public final class MeasurementJobsController implements ModuleSession {
                                             view.saving(false);
                                             if (error != null) {
                                                 unsaved = true;
-                                                acquisition.persistenceState(false, true);
+                                                acquisition.persistenceState(false, false);
                                                 view.saveStatus(
                                                         "Misure non salvate: " + message(error),
                                                         true);
@@ -207,13 +246,42 @@ public final class MeasurementJobsController implements ModuleSession {
                                             baseline = detail;
                                             unsaved = false;
                                             view.remaining(detail.job().remaining());
-                                            acquisition.restore(
+                                            var canonical =
                                                     detail.job().readings().stream()
                                                             .map(Reading::value)
-                                                            .toList());
+                                                            .toList();
+                                            if (!canonical.equals(values))
+                                                acquisition.restore(canonical);
                                             acquisition.persistenceState(false, false);
                                             view.saveStatus(status(), false);
+                                            openPrint(true);
                                         }));
+    }
+
+    private void openPrint(boolean returnToJobs) {
+        if (closed || saving || printing || baseline == null || acquisition.reading()) return;
+        printing = true;
+        view.saving(true);
+        acquisition.persistenceState(true, false);
+        try {
+            labelPrinting =
+                    printSessions.open(
+                            baseline.job().key(),
+                            () -> {
+                                printing = false;
+                                labelPrinting = null;
+                                if (closed) return;
+                                acquisition.persistenceState(false, false);
+                                view.saving(false);
+                                if (returnToJobs) queue(completed);
+                                else Platform.runLater(acquisition::focusAcquisition);
+                            });
+        } catch (RuntimeException failure) {
+            printing = false;
+            acquisition.persistenceState(false, false);
+            view.saving(false);
+            view.saveStatus("Impossibile aprire la stampa: " + message(failure), true);
+        }
     }
 
     private String status() {
@@ -227,9 +295,10 @@ public final class MeasurementJobsController implements ModuleSession {
     }
 
     private boolean canLeave() {
-        if (saving || acquisition.reading()) return false;
+        if (saving || printing || acquisition.reading()) return false;
         return !unsaved
-                || confirm("Alcune misure non sono state salvate. Vuoi scartarle e proseguire?");
+                || com.orodent.ecos.module.view.UnsavedChanges.confirmDiscard(
+                        view.getScene() == null ? null : view.getScene().getWindow());
     }
 
     private boolean confirm(String text) {
@@ -238,6 +307,13 @@ public final class MeasurementJobsController implements ModuleSession {
         dialog.setHeaderText(null);
         if (view.getScene() != null) dialog.initOwner(view.getScene().getWindow());
         return dialog.showAndWait().orElse(ButtonType.NO) == ButtonType.YES;
+    }
+
+    private void attachWindow(Window next) {
+        if (window != null)
+            window.removeEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, closeRequest);
+        window = next;
+        if (window != null) window.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, closeRequest);
     }
 
     private String message(Throwable failure) {
@@ -257,7 +333,15 @@ public final class MeasurementJobsController implements ModuleSession {
     public void close() {
         if (closed) return;
         closed = true;
-        if (labelPrinting != null) labelPrinting.close();
+        view.sceneProperty().removeListener(sceneListener);
+        if (view.getScene() != null)
+            view.getScene().windowProperty().removeListener(windowListener);
+        attachWindow(null);
+        if (labelPrinting != null)
+            try {
+                labelPrinting.close();
+            } catch (Exception ignored) {
+            }
         request++;
         acquisition.close(); /* In-flight database writes are intentionally allowed to finish. */
     }

@@ -287,11 +287,8 @@ public final class MeasurementJobsView extends BorderPane {
         saveMessages.setVisible(false);
         saveMessages.setManaged(false);
         saveAndPrint.getStyleClass().add("measurements-save-print");
-        saveAndPrint.setDisable(true);
         saveAndPrint.setTooltip(
-                new Tooltip(
-                        "Le misure vengono salvate automaticamente. Per stampare usa «Stampa"
-                                + " etichetta»."));
+                new Tooltip("Salva tutte le letture del lavoro e apre la stampa etichetta."));
         readingsPanel.setMinSize(0, 0);
         readingsPanel.getStyleClass().add("jobs-main");
         search.textProperty().addListener((o, a, b) -> render());
@@ -326,23 +323,22 @@ public final class MeasurementJobsView extends BorderPane {
         render();
     }
 
-    public void showJob(Job job, String rule, MeasurementsView measurements) {
+    public void showJob(Job job, MeasurementsView measurements) {
         jobMode(true);
         breadcrumb.setText("Misurazioni › " + job.article() + " › " + job.lot());
+        String furnace = job.furnace();
+        int separator = furnace.indexOf(" · ");
+        if (separator >= 0) furnace = furnace.substring(separator + 3);
         jobContext.setText(
                 job.name()
-                        + " · "
+                        + "\n"
                         + job.article()
                         + " · "
                         + job.format()
                         + "\nLotto "
                         + job.lot()
-                        + " · "
-                        + job.furnace()
-                        + " · "
-                        + job.production()
                         + "\n"
-                        + rule);
+                        + furnace);
         remaining(job.remaining());
         measurements.workspace(back, jobContext, printLabel, saveAndPrint, remaining);
         readingsPanel.getChildren().setAll(measurements, saveMessages);
@@ -388,6 +384,7 @@ public final class MeasurementJobsView extends BorderPane {
     public void saving(boolean value) {
         back.setDisable(value);
         printLabel.setDisable(value);
+        saveAndPrint.setDisable(value);
         home.setDisable(value);
         pending.setDisable(value);
         completed.setDisable(value);

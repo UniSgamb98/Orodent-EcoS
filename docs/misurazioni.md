@@ -40,19 +40,33 @@ riporta all'elenco con la sua navigazione. All'apertura il focus è assegnato al
 di acquisizione: Invio breve acquisisce una misura e Invio tenuto premuto cambia
 strumento, senza attivare i pulsanti di navigazione.
 
-**Ogni acquisizione è salvata automaticamente nel database**, anche se è arrivata
-soltanto la lettura di uno strumento. Il comportamento di salvataggio rimane
-invariato: dopo la conferma del database le letture vengono ripristinate nella lista.
-Il contatore sotto la colonna degli strumenti mostra soltanto **N da completare**.
-Tornando all'elenco o chiudendo e riaprendo il modulo, le letture precedenti sono
-ripristinate nella stessa schermata e si continua dalle righe incomplete.
-Un lavoro può quindi restare **In corso** con qualsiasi numero di dischi rimanenti.
+Le letture vengono conservate **in memoria durante la lavorazione**: acquisizioni,
+correzioni e Reset non scrivono nel database e non ricaricano l'intera lista.
+Il contatore **N da completare** si aggiorna usando le letture correnti.
+**Salva e stampa etichetta** salva tutte le modifiche in un'unica transazione
+nel database EcoS, senza inviare dati a Claricom. Le revisioni dei singoli dischi
+restano conservate. È possibile salvare anche un lavoro parziale e riprenderlo.
 
-Durante il salvataggio si attende prima di acquisire altre misure o cambiare
-lavoro. Se il salvataggio fallisce, i valori restano visibili, accompagnati da
-**Misure non salvate** e **Riprova salvataggio**. **Ricarica lavoro** ripristina i
-valori del database; scartare dati non salvati richiede conferma. Una modifica
-concorrente non viene sovrascritta automaticamente.
+Dopo il salvataggio si apre la stampa con il modello della **specifica storica
+associata ai dischi prodotti**. Alla chiusura del dialogo di stampa si torna
+all'elenco lavori; anche annullando la stampa, le misure salvate rimangono nel
+database. Una stampante non disponibile permette di riprovare nella stessa
+finestra, senza ripetere il salvataggio delle letture. Se il modello richiede
+una scadenza, questa va indicata nella finestra di stampa già presente.
+
+**Stampa etichetta** apre la stampa dello stesso modello, conservando eventuali
+letture non salvate nel lavoro e senza salvarle implicitamente. Un modello
+assente nella specifica viene segnalato: non si selezionano altri modelli né
+il primo dell'elenco. La ristampa storica rimane un comando esplicito.
+
+Se si tenta di tornare ai lavori, alla Home o di chiudere la finestra con modifiche
+non salvate, compare la conferma **Modifiche non salvate**, condivisa con il
+catalogo: «Vuoi scartare le modifiche non salvate prima di continuare?». **No**
+conserva le letture e mantiene aperto il lavoro; **Sì** prosegue scartandole.
+Dopo un errore di salvataggio si resta nel lavoro con i valori locali e i comandi
+**Riprova salvataggio** e **Ricarica lavoro**. Quest'ultimo richiede la stessa
+conferma prima di scartare le modifiche. Le modifiche concorrenti non vengono
+sovrascritte automaticamente.
 
 La migrazione **V33** introduce `TON.DISCO_MISURE_REVISIONI`: acquisizioni parziali,
 correzioni e cancellazioni di valori aggiungono revisioni, conservando le precedenti.
@@ -64,15 +78,17 @@ in memoria, non possono essere ricostruiti automaticamente.
 ## Disposizione della schermata
 
 Lo sfondo di acquisizione usa lo stesso azzurro del modulo. Nella fascia superiore,
-**← Lavori** e le informazioni del lavoro sono a sinistra; **Reset**, micrometro e
-bilancia sono centrati; **Stampa etichetta** è allineato a destra. Le righe delle
+**← Lavori** è a sinistra; **Reset**, micrometro e bilancia sono centrati;
+**Stampa etichetta** è allineato a destra. Le righe delle
 letture hanno due pixel di padding in meno sopra e sotto. Il contatore dei dischi
 da completare è in basso nella colonna con **Cambia strumento**.
 
-Nella fascia inferiore **Copia su appunti** è a sinistra e **Salva e stampa etichetta**
-a destra. Quest'ultimo è predisposto graficamente e disattivato: il passaggio al
-salvataggio unico è rinviato. Il salvataggio automatico rimane attivo e il pulsante
-superiore **Stampa etichetta** continua ad aprire la stampa delle misure già salvate.
+Le informazioni del lavoro si trovano sopra **Acquisisci** nella colonna sinistra:
+prodotto, articolo, formato, lotto e nome del forno. Codice forno, numero produzione
+e descrizione della regola non vengono mostrati. La colonna scorre quando lo spazio
+verticale è insufficiente. Nella fascia inferiore **Copia su appunti** è a sinistra
+e **Salva e stampa etichetta** a destra; entrambi i comandi sono attivi quando
+l'operazione corrente lo consente.
 
 ## Acquisizione
 
