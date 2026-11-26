@@ -378,6 +378,7 @@ class DocumentEditorIntegrationTest {
                     });
             verifyCanvasSelection();
             verifyAlignmentAndProperties();
+            verifySymbolBounds();
             assertTrue(errors.isEmpty(), errors::toString);
         } finally {
             fx(
@@ -588,24 +589,16 @@ class DocumentEditorIntegrationTest {
                     api().call("newModel", "ETICHETTA");
                     controls(new String[][] {{"paper-width", "102"}, {"paper-height", "65"}});
                     api().call("insert", "label:height");
-                    for (String zoom : List.of(".5", "1", "2")) {
+                    controls(
+                            new String[][] {
+                                {"object-x", "13.34"},
+                                {"object-y", "9.34"},
+                                {"object-width", "31.59"},
+                                {"object-height", "18.27"}
+                            });
+                    for (String zoom : List.of("0.25", "0.5", "0.65", "1", "1.2", "1.5", "2")) {
                         controls(new String[][] {{"zoom", zoom}});
-                        assertEquals(
-                                8,
-                                ((Number)
-                                                js(
-                                                        "document.querySelector('.context-selected"
-                                                            + " .canvas-resize-se').getBoundingClientRect().width"))
-                                        .doubleValue(),
-                                .6);
-                        assertEquals(
-                                22,
-                                ((Number)
-                                                js(
-                                                        "document.querySelector('.context-selected"
-                                                            + " .canvas-object-grip').getBoundingClientRect().height"))
-                                        .doubleValue(),
-                                1);
+                        assertCanvasChrome(Double.parseDouble(zoom));
                     }
                     controls(new String[][] {{"font-size", "9pt"}});
                     js("document.querySelector('[data-object=fit]').click()");
@@ -748,6 +741,143 @@ class DocumentEditorIntegrationTest {
                     assertEquals(180, attrs(0).get("width").getAsDouble(), .01);
                     api().call("run", "undo");
                     assertEquals(103, attrs(0).get("width").getAsDouble(), 1);
+                    return null;
+                });
+    }
+
+    private void assertCanvasChrome(double zoom) {
+        var measurement =
+                JsonParser.parseString(
+                                js("""
+JSON.stringify((()=>{
+  const object=document.querySelector('.context-selected'), box=object.getBoundingClientRect();
+  const anchors={nw:[0,0],n:[.5,0],ne:[1,0],e:[1,.5],se:[1,1],s:[.5,1],sw:[0,1],w:[0,.5]};
+  const handles=Array.from(object.querySelectorAll('.canvas-resize')).map(handle=>{
+    const rect=handle.getBoundingClientRect(), anchor=anchors[handle.dataset.edge];
+    return {edge:handle.dataset.edge, width:rect.width,height:rect.height,
+      dx:rect.left+rect.width/2-box.left-anchor[0]*box.width,
+      dy:rect.top+rect.height/2-box.top-anchor[1]*box.height,
+      border:parseFloat(getComputedStyle(handle).borderLeftWidth)};
+  });
+  const stroke=getComputedStyle(object,'::before'), grip=object.querySelector('.canvas-object-grip').getBoundingClientRect();
+  return {handles, gripHeight:grip.height, width:box.width,height:box.height,
+    strokeWidth:parseFloat(stroke.width),strokeHeight:parseFloat(stroke.height),
+    strokeLeft:parseFloat(stroke.left),strokeTop:parseFloat(stroke.top),
+    strokeBorder:parseFloat(stroke.borderLeftWidth),strokeTransform:stroke.transform,
+    outlineOffset:getComputedStyle(object).outlineOffset};
+})())
+""")
+                                        .toString())
+                        .getAsJsonObject();
+        for (var entry : measurement.getAsJsonArray("handles")) {
+            var h = entry.getAsJsonObject();
+            assertEquals(8, h.get("width").getAsDouble(), .15, entry.toString());
+            assertEquals(8, h.get("height").getAsDouble(), .15, entry.toString());
+            assertEquals(0, h.get("dx").getAsDouble(), .15, entry.toString());
+            assertEquals(0, h.get("dy").getAsDouble(), .15, entry.toString());
+            assertEquals(1, h.get("border").getAsDouble(), .01, entry.toString());
+        }
+        assertEquals(22, measurement.get("gripHeight").getAsDouble(), .15);
+        assertEquals("0px", measurement.get("outlineOffset").getAsString());
+        // The pseudo-element is counter-scaled once: its CSS width matches screen width + 1px.
+        assertEquals(
+                measurement.get("width").getAsDouble() + 1,
+                measurement.get("strokeWidth").getAsDouble(),
+                .15);
+        assertEquals(
+                measurement.get("height").getAsDouble() + 1,
+                measurement.get("strokeHeight").getAsDouble(),
+                .15);
+        assertEquals(-.5, measurement.get("strokeLeft").getAsDouble() * zoom, .05);
+        assertEquals(-.5, measurement.get("strokeTop").getAsDouble() * zoom, .05);
+        assertEquals(1, measurement.get("strokeBorder").getAsDouble(), .01);
+        assertTrue(measurement.get("strokeTransform").getAsString().startsWith("matrix("));
+    }
+
+    private void verifySymbolBounds() throws Exception {
+        var catalogue =
+                JsonParser.parseString(
+                                Files.readString(
+                                        Path.of(
+                                                "../orodent-documenti/src/main/frontend/document-editor/symbols.json")))
+                        .getAsJsonArray();
+        JsonObject ref = null;
+        for (var entry : catalogue)
+            if (entry.getAsJsonObject().get("key").getAsString().equals("cataloguenumber"))
+                ref = entry.getAsJsonObject();
+        final var symbol = Objects.requireNonNull(ref);
+        fx(
+                () -> {
+                    api().call("newModel", "ETICHETTA");
+                    controls(
+                            new String[][] {
+                                {"paper-width", "102"}, {"paper-height", "65"}, {"zoom", "2"}
+                            });
+                    api().call("insert", "symbol:cataloguenumber");
+                    assertEquals(
+                            338.0 / 212,
+                            attrs().get("width").getAsDouble()
+                                    / attrs().get("height").getAsDouble(),
+                            1e-8);
+                    assertTrue(attrs().get("keepRatio").getAsBoolean());
+                    controls(new String[][] {{"object-width", "40"}});
+                    assertEquals(40.0 * 212 / 338, attrs().get("height").getAsDouble(), 1e-8);
+                    controls(new String[][] {{"object-height", "20"}});
+                    assertEquals(20.0 * 338 / 212, attrs().get("width").getAsDouble(), 1e-8);
+                    var old = model();
+                    var object =
+                            old.getAsJsonObject("content")
+                                    .getAsJsonArray("content")
+                                    .get(0)
+                                    .getAsJsonObject();
+                    var a = object.getAsJsonObject("attrs");
+                    a.addProperty("x", 10.25);
+                    a.addProperty("y", 20.75);
+                    a.addProperty("width", 25);
+                    a.addProperty("height", 25);
+                    object.getAsJsonArray("content")
+                            .get(0)
+                            .getAsJsonObject()
+                            .getAsJsonObject("attrs")
+                            .addProperty(
+                                    "src",
+                                    symbol.getAsJsonObject("legacy").get("src").getAsString());
+                    api().call("setEditable", false);
+                    api().call("restore", old.toString());
+                    assertEquals(
+                            old,
+                            model(),
+                            "Passive display must preserve approved artwork and geometry");
+                    api().call("setEditable", true);
+                    assertEquals(10.25 + 31.0 / 16, attrs().get("x").getAsDouble(), 1e-8);
+                    assertEquals(20.75 + 93.0 / 16, attrs().get("y").getAsDouble(), 1e-8);
+                    assertEquals(338.0 / 16, attrs().get("width").getAsDouble(), 1e-8);
+                    assertEquals(212.0 / 16, attrs().get("height").getAsDouble(), 1e-8);
+                    var normalized = model();
+                    assertEquals(
+                            symbol.get("src"),
+                            normalized
+                                    .getAsJsonObject("content")
+                                    .getAsJsonArray("content")
+                                    .get(0)
+                                    .getAsJsonObject()
+                                    .getAsJsonArray("content")
+                                    .get(0)
+                                    .getAsJsonObject()
+                                    .getAsJsonObject("attrs")
+                                    .get("src"));
+                    api().call("setEditable", true);
+                    assertEquals(normalized, model(), "Normalization must be idempotent");
+                    js(
+                            "document.querySelector('.canvas-object-grip').dispatchEvent(new"
+                                + " MouseEvent('mousedown',{bubbles:true,button:0}));document.dispatchEvent(new"
+                                + " MouseEvent('mouseup',{bubbles:true,button:0}));");
+                    return null;
+                });
+        Thread.sleep(250);
+        fx(
+                () -> {
+                    screenshot("target/document-symbol-bounds.png");
                     return null;
                 });
     }

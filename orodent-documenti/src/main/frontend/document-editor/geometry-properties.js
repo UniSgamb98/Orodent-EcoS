@@ -68,7 +68,16 @@ export function mountGeometryProperties(editor, model, { uniqueId, refresh }) {
       change('object-' + k, (input) => {
         const value = Number(input.value);
         if (!Number.isFinite(value)) throw Error('Inserisci un valore numerico.');
-        updateObject(editor, selectedObject(editor.state), { [k]: value });
+        const object = selectedObject(editor.state),
+          patch = { [k]: value };
+        if (object?.node.attrs.keepRatio && (k === 'width' || k === 'height')) {
+          const a = object.node.attrs;
+          // The numeric controls follow the same ratio lock as dragging the handles.
+          // This also avoids reintroducing contain letterboxing around a symbol.
+          if (k === 'width') patch.height = (value * a.height) / a.width;
+          else patch.width = (value * a.width) / a.height;
+        }
+        updateObject(editor, object, patch);
       });
     change('object-page', (input) =>
       updateObject(editor, selectedObject(editor.state), {

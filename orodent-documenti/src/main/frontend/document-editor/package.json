@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node build.mjs",
     "check": "node build.mjs --check",
-    "test": "node --test *.test.mjs"
+    "test": "node --test *.test.mjs",
+    "prepare:symbols": "node prepare-symbols.mjs"
   },
   "engines": {
     "node": ">=20"

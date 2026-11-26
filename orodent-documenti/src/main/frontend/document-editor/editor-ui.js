@@ -4,6 +4,7 @@ import { GapCursor } from '@tiptap/pm/gapcursor';
 import { NodeSelection } from '@tiptap/pm/state';
 import { labelFields, measureLabel } from './label-elements.js';
 import symbols from './symbols.json';
+import { symbolSize } from './symbol-layout.js';
 import { blockTypes, fields, escape, checkOperationalContent } from './laboratory-blocks.js';
 import { objectName } from './object-properties-profile.js';
 import { mountObjectProperties } from './object-properties.js';
@@ -131,7 +132,7 @@ export function mountEditorUI(editor, model) {
           attrs: { src: symbol.src, alt: symbol.title, width: '100%' },
         },
         'image',
-        { width: px(8), height: px(8) },
+        symbolSize(symbol, px(8)),
       );
     }
     if (kind === 'gs1') return add({ type: 'gs1Matrix' }, 'matrix');

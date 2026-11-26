@@ -69,6 +69,13 @@ i dati dei blocchi continuano a provenire dal piano, senza alterare pesi o calco
 
 Tra i simboli sono disponibili anche **# · Numero modello**, **Tenere all’asciutto**
 (ombrello) e **Data di scadenza** (clessidra), oltre a quelli già presenti.
+I simboli della libreria non hanno margini trasparenti esterni e vengono
+inseriti con le loro proporzioni: i bordi usati dallo snap coincidono con i
+limiti visibili del simbolo. Il blocco delle proporzioni vale anche quando
+modifichi larghezza o altezza nei campi numerici. Aprendo una bozza precedente in modifica, il
+riquadro viene adattato senza spostare o ingrandire il disegno visibile.
+Le versioni approvate e i documenti già emessi restano invariati. Le immagini
+caricate dal PC e il margine di rispetto dei DataMatrix non vengono modificati.
 
 **Adatta al dato** imposta larghezza e altezza usando il valore visualizzato,
 senza cambiare il carattere. Nell’editor quel valore è un esempio: un valore

@@ -40,7 +40,18 @@ da moduli separati:
 DOM; `alignment-guides.js` prepara i riferimenti una volta per trascinamento e
 mostra le guide temporanee. La soglia è in pixel di schermo. I controlli di
 selezione usano `--chrome-scale`, inverso dello zoom: non alterano le dimensioni
-salvate o la stampa. Guide e stato dello snap non entrano nel modello salvato.
+salvate o la stampa. Le maniglie sono ancorate al centro dei bordi geometrici;
+la trasformazione inversa comprende anche il loro tratto. Il contorno di
+selezione è un overlay CSS con tratto di un pixel sullo schermo, centrato sugli
+stessi bordi. Guide e stato dello snap non entrano nel modello salvato.
+
+`symbol-layout.js` gestisce proporzioni e limiti visibili dei simboli della
+libreria. Il catalogo conserva dimensioni ritagliate, originali incorporati e
+coordinate del ritaglio: permette di riconoscere esattamente i simboli già
+salvati e adattare i riquadri nelle sole bozze aperte in modifica, mantenendo
+posizione e scala visibili. Immagini importate dal PC e DataMatrix non vengono
+ritagliati. Il comando di sviluppo `npm run prepare:symbols` riproduce il
+catalogo usando ImageMagick; non è richiesto per eseguire l'applicazione o i test.
 
 ## Formato interno e compatibilità
 

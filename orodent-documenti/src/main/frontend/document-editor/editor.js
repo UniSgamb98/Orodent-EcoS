@@ -7,6 +7,7 @@ import {
   deleteCanvasSelection,
 } from './canvas-selection.js';
 import { GapCursor } from '@tiptap/pm/gapcursor';
+import { normalizeSymbolObjects } from './symbol-layout.js';
 import { createAlignmentGuides } from './alignment-guides.js';
 import { editorKey } from './keyboard.js';
 import { Editor } from '@tiptap/core';
@@ -127,8 +128,11 @@ function restore(payload) {
     restoring = false;
   }
 }
-function upgradeFields() {
-  const upgraded = upgradeLabelObjects(editor.getJSON());
+function upgradeEditableObjects() {
+  const current = editor.getJSON(),
+    fields = upgradeLabelObjects(current);
+  const symbols = normalizeSymbolObjects(fields ?? current);
+  const upgraded = symbols ?? fields;
   if (upgraded) {
     editor.commands.setContent(upgraded);
     dirty = true;
@@ -136,7 +140,7 @@ function upgradeFields() {
 }
 function ensureCanvas() {
   if (canvas) {
-    upgradeFields();
+    upgradeEditableObjects();
     return;
   }
   const size = pagePixels(page),
@@ -189,7 +193,7 @@ function ensureCanvas() {
   page = { ...page, count: Math.max(page.count ?? 1, maxPage + 1) };
   canvas = true;
   editor.commands.setContent({ type: 'doc', content: objects });
-  upgradeFields();
+  upgradeEditableObjects();
   dirty = true;
   applyLayout();
 }

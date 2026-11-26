@@ -1233,16 +1233,10 @@ body:not(.label-layout) #label-palette,body:not(.label-layout) #label-heading {d
 .canvas-object[data-kind="matrix"] .gs1-matrix {width:100%!important;height:100%;}
 .canvas-object[data-kind="matrix"] img {width:100%!important;height:100%!important;object-fit:contain;margin:0;}
 .canvas-object[data-kind="block"] .ton-block {margin:0;max-width:100%;}
-.editing .canvas-object:hover {outline:1px dashed #8eb7c5;}
-.editing .canvas-object.ProseMirror-selectednode,.editing .canvas-object:focus-within,.editing .canvas-object.canvas-dragging {outline:1px solid #087e93;}
 .canvas-object-grip {display:none;position:absolute;left:-1px;top:-21px;height:20px;padding:2px 9px;border-radius:4px 4px 0 0;background:#087e93;color:white;font:10px/16px Arial,sans-serif;white-space:nowrap;cursor:move;user-select:none;}
 .editing .canvas-object:hover > .canvas-object-grip,.editing .canvas-object.ProseMirror-selectednode > .canvas-object-grip,.editing .canvas-object:focus-within > .canvas-object-grip {display:block;}
 .canvas-resize {display:none;position:absolute;width:8px;height:8px;background:white;border:1px solid #087e93;z-index:2;}
 .editing .canvas-object.ProseMirror-selectednode > .canvas-resize,.editing .canvas-object:focus-within > .canvas-resize {display:block;}
-.canvas-resize-nw {left:-4px;top:-4px;cursor:nwse-resize;}.canvas-resize-n {left:calc(50% - 4px);top:-4px;cursor:ns-resize;}
-.canvas-resize-ne {right:-4px;top:-4px;cursor:nesw-resize;}.canvas-resize-e {right:-4px;top:calc(50% - 4px);cursor:ew-resize;}
-.canvas-resize-se {right:-4px;bottom:-4px;cursor:nwse-resize;}.canvas-resize-s {left:calc(50% - 4px);bottom:-4px;cursor:ns-resize;}
-.canvas-resize-sw {left:-4px;bottom:-4px;cursor:nesw-resize;}.canvas-resize-w {left:-4px;top:calc(50% - 4px);cursor:ew-resize;}
 .canvas-layout .block-handle,.canvas-layout .layout-tools,.canvas-layout .layout-handles,.canvas-layout .ProseMirror-gapcursor {display:none!important;}
 .geometry-grid {display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .geometry-grid label {margin:0;}.geometry-grid input {width:100%;}
@@ -1266,7 +1260,6 @@ body:not(.label-layout) #label-palette,body:not(.label-layout) #label-heading {d
  #preview-content .canvas-sheet:last-child {break-after:auto;page-break-after:auto;}
 }
 
-.editing .canvas-object.context-selected {outline:1px solid #087e93;}
 .editing .canvas-object.context-selected > .canvas-object-grip,.editing .canvas-object.context-selected > .canvas-resize {display:block;}
 #page-tools input,#page-tools select {display:block;width:100%;margin-bottom:10px;}
 .object-list-item {display:block;width:100%;text-align:left;margin:5px 0;font-size:11px;}
@@ -1305,7 +1298,6 @@ body:not(.label-layout) #label-palette,body:not(.label-layout) #label-heading {d
 .canvas-marquee {position:fixed;z-index:40;pointer-events:none;border:1px solid #087e93;background:rgba(8,126,147,.12);box-sizing:border-box;}
 .canvas-selecting,.canvas-selecting * {cursor:default!important;user-select:none!important;-webkit-user-select:none!important;}
 .canvas-moving-group,.canvas-moving-group * {cursor:move!important;user-select:none!important;-webkit-user-select:none!important;}
-.editing .canvas-object.canvas-multi-selected {outline:2px solid #087e93;}
 .editing .canvas-object.canvas-multi-selected > .canvas-resize {display:none!important;}
 @media print {.canvas-marquee {display:none!important;}}
 @media (max-width:700px) {.title-field {flex:1 1 180px;}.titlebar .document-symbol {display:none;}}
@@ -1317,15 +1309,24 @@ body:not(.label-layout) #label-palette,body:not(.label-layout) #label-heading {d
 
 /* Editor chrome uses screen pixels, never document pixels. */
 :root {--chrome-scale:1;}
-.canvas-resize {width:calc(8px * var(--chrome-scale));height:calc(8px * var(--chrome-scale));border-width:calc(1px * var(--chrome-scale));}
-.canvas-resize-nw {left:calc(-4px * var(--chrome-scale));top:calc(-4px * var(--chrome-scale));}
-.canvas-resize-n {left:calc(50% - 4px * var(--chrome-scale));top:calc(-4px * var(--chrome-scale));}
-.canvas-resize-ne {right:calc(-4px * var(--chrome-scale));top:calc(-4px * var(--chrome-scale));}
-.canvas-resize-e {right:calc(-4px * var(--chrome-scale));top:calc(50% - 4px * var(--chrome-scale));}
-.canvas-resize-se {right:calc(-4px * var(--chrome-scale));bottom:calc(-4px * var(--chrome-scale));}
-.canvas-resize-s {left:calc(50% - 4px * var(--chrome-scale));bottom:calc(-4px * var(--chrome-scale));}
-.canvas-resize-sw {left:calc(-4px * var(--chrome-scale));bottom:calc(-4px * var(--chrome-scale));}
-.canvas-resize-w {left:calc(-4px * var(--chrome-scale));top:calc(50% - 4px * var(--chrome-scale));}
+/* Centre anchors on the actual geometry, then counter-scale the entire control,
+   including its stroke. Fractional CSS borders are rounded too early by WebKit. */
+.canvas-resize {width:8px;height:8px;border-width:1px;right:auto;bottom:auto;transform:translate(-50%,-50%) scale(var(--chrome-scale));transform-origin:center;}
+.canvas-resize-nw {left:0;top:0;cursor:nwse-resize;}
+.canvas-resize-n {left:50%;top:0;cursor:ns-resize;}
+.canvas-resize-ne {left:100%;top:0;cursor:nesw-resize;}
+.canvas-resize-e {left:100%;top:50%;cursor:ew-resize;}
+.canvas-resize-se {left:100%;top:100%;cursor:nwse-resize;}
+.canvas-resize-s {left:50%;top:100%;cursor:ns-resize;}
+.canvas-resize-sw {left:0;top:100%;cursor:nesw-resize;}
+.canvas-resize-w {left:0;top:50%;cursor:ew-resize;}
+/* The stroke is centred on the same geometry as the handles. Counter-scaling
+   the overlay keeps a one-screen-pixel border at every zoom level. */
+.canvas-object {outline:0!important;outline-offset:0!important;}
+.canvas-object::before {content:'';display:none;position:absolute;pointer-events:none;box-sizing:border-box;left:calc(-.5px * var(--chrome-scale));top:calc(-.5px * var(--chrome-scale));width:calc(100% * var(--zoom) + 1px);height:calc(100% * var(--zoom) + 1px);border:1px solid #087e93;transform:scale(var(--chrome-scale));transform-origin:top left;}
+.editing .canvas-object:hover::before {display:block;border-style:dashed;}
+.editing .canvas-object.ProseMirror-selectednode::before,.editing .canvas-object.context-selected::before,.editing .canvas-object:focus-within::before,.editing .canvas-object.canvas-dragging::before,.editing .canvas-object.canvas-multi-selected::before {display:block;border-style:solid;}
+@media print {.canvas-object::before {display:none!important;}}
 .canvas-object-grip {top:auto;bottom:100%;left:0;height:22px;padding:2px 8px;font:11px/18px Arial,sans-serif;transform:scale(var(--chrome-scale));transform-origin:bottom left;max-width:240px;overflow:hidden;text-overflow:ellipsis;}
 .canvas-top-actions {display:flex;align-items:center;gap:8px;flex-shrink:0;}
 #snap-toggle {border:1px solid var(--line);background:white;}
