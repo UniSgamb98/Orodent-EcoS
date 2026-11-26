@@ -59,7 +59,8 @@ validazione e riferimenti di allineamento. I gruppi usano un `groupId` condiviso
 fra oggetti nella stessa pagina: non introducono contenitori annidati e non
 cambiano coordinate o ordine dei livelli. Le selezioni si espandono a tutti i
 membri, anche con Ctrl + clic, undo e ripristino. Lo snap prepara un solo
-rettangolo esterno per gruppo, senza centri o bordi interni.
+rettangolo esterno per gruppo, con bordi e centro comuni, senza riferimenti
+ai singoli membri.
 
 `matrix-layout.js` aggiorna soltanto le bozze di vecchi oggetti DataMatrix.
 L'attributo `gs1Matrix.tight` distingue il codice senza padding dal rendering

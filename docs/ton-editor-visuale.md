@@ -63,12 +63,11 @@ mantengono il rapporto originale. **Alt** sospende lo snap durante il gesto.
 Le frecce restano spostamenti precisi di 1 o 10 pixel, senza snap. Attivare lo
 snap non modifica il modello: cambia soltanto il comportamento dell’editor.
 
-Un gruppo offre soltanto i quattro bordi esterni: i bordi dei suoi membri e
-il centro del gruppo non sono riferimenti di snap. Durante lo spostamento
-di un gruppo o di una selezione multipla si usano soltanto bordi e margini;
-anche i riferimenti centrali del foglio e degli altri elementi sono esclusi.
-Il contorno comune resta visibile anche selezionando altri elementi insieme
-al gruppo.
+Un gruppo offre i quattro bordi esterni e il centro del suo rettangolo
+complessivo. I bordi e i centri dei singoli membri non sono riferimenti di
+snap. Spostando un gruppo o una selezione multipla puoi allinearne anche il
+centro al foglio o agli altri elementi. Il contorno comune resta visibile
+anche selezionando altri elementi insieme al gruppo.
 
 ## Testo e contenuti variabili
 

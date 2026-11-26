@@ -35,7 +35,7 @@ export function renderSelectionProperties({ editor, model, root, safe, refresh, 
     ${anyGroups ? '<button id="ungroup-selection">Separa gruppo</button>' : ''}
     <button id="delete-selection" class="danger">Elimina selezionati</button>
     <button id="clear-selection">Deseleziona</button></div>
-    <p>${grouped ? 'Snap sui soli bordi esterni del gruppo.' : !bounds ? 'Per raggruppare seleziona elementi della stessa pagina.' : 'Raggruppa per conservare la selezione nel modello.'}</p>`;
+    <p>${grouped ? 'Snap sui bordi esterni e sul centro del gruppo.' : !bounds ? 'Per raggruppare seleziona elementi della stessa pagina.' : 'Raggruppa per conservare la selezione nel modello.'}</p>`;
   const bind = (id, action) => {
     const button = root.querySelector('#' + id);
     if (!button) return;

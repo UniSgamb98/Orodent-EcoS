@@ -31,13 +31,13 @@ export function alignmentObjects(objects) {
   const result = [],
     groups = new Map();
   for (const a of objects) {
-    if (!a.groupId) result.push(a.kind === 'group' ? { ...a, edgesOnly: true } : a);
+    if (!a.groupId) result.push(a);
     else {
       const members = groups.get(a.groupId) ?? [];
       members.push(a);
       groups.set(a.groupId, members);
     }
   }
-  for (const [id, members] of groups) result.push({ ...groupBounds(members), id, edgesOnly: true });
+  for (const [id, members] of groups) result.push({ ...groupBounds(members), id });
   return result;
 }

@@ -28,13 +28,11 @@ export function createAlignmentGuides(editor, getPage, getZoom) {
       if (node.type.name === 'canvasObject' && a.page === bounds.page && !exclude.has(a.id))
         others.push(a);
     });
-    const page = pagePixels(getPage()),
-      edgesOnly = attrs.length > 1 || attrs.some((a) => a.kind === 'group');
+    const page = pagePixels(getPage());
     return {
       bounds,
       page,
-      edgesOnly,
-      targets: alignmentTargets(alignmentObjects(others), page, px(getPage().margin), edgesOnly),
+      targets: alignmentTargets(alignmentObjects(others), page, px(getPage().margin)),
     };
   }
   function show(guides, page, size) {
@@ -66,7 +64,7 @@ export function createAlignmentGuides(editor, getPage, getZoom) {
     }
     const result = edge
       ? snapResize(attrs, edge, session.targets, session.page, 6 / getZoom())
-      : snapMove(attrs, session.targets, session.page, 6 / getZoom(), session.edgesOnly);
+      : snapMove(attrs, session.targets, session.page, 6 / getZoom());
     show(result.guides, attrs.page, session.page);
     return result.attrs;
   }

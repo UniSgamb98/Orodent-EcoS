@@ -82,7 +82,7 @@ test('capabilities distinguish common typography, free paragraph tools and field
   assert.equal(Boolean(propertyProfile({ attrs: { kind: 'image' } }).text), false);
 });
 
-test('group targets expose only their outer edges, never member edges or group centres', async () => {
+test('group targets expose outer edges and centre while ignoring individual member geometry', async () => {
   const { alignmentObjects, validateGroups } = await import('./canvas-groups.js');
   const objects = [
     { id: 'a', groupId: 'grp-test', page: 0, x: 20, y: 30, width: 10, height: 10 },
@@ -92,23 +92,21 @@ test('group targets expose only their outer edges, never member edges or group c
   const targets = alignmentTargets(alignmentObjects(objects), size, 10);
   assert.deepEqual(
     targets.x.filter((t) => t.id).map((t) => t.value),
-    [20, 80],
+    [20, 50, 80],
   );
   assert.deepEqual(
     targets.y.filter((t) => t.id).map((t) => t.value),
-    [30, 70],
+    [30, 50, 70],
   );
   const centres = { x: [{ value: 50 }], y: [] };
-  assert.equal(
-    snapMove({ x: 39, y: 0, width: 20, height: 10 }, centres, size, 3, true).attrs.x,
-    39,
-  );
   assert.equal(snapMove({ x: 39, y: 0, width: 20, height: 10 }, centres, size, 3).attrs.x, 40);
-  const groupTargets = alignmentTargets([{ x: 40, y: 40, width: 20, height: 20 }], size, 10, true);
-  assert.deepEqual(
-    groupTargets.x.map((t) => t.value),
-    [0, 200, 10, 190, 40, 60],
-  );
+  const snapped = snapMove({ x: 39, y: 39, width: 20, height: 20 }, targets, size, 3);
+  assert.equal(snapped.attrs.x, 40);
+  assert.equal(snapped.attrs.y, 40);
+  assert.deepEqual(snapped.guides, [
+    { axis: 'x', value: 50 },
+    { axis: 'y', value: 50 },
+  ]);
   assert.throws(() => validateGroups(objects.slice(0, 1)), /almeno due/);
   assert.throws(() => validateGroups([objects[0], { ...objects[1], page: 1 }]), /stessa pagina/);
 });

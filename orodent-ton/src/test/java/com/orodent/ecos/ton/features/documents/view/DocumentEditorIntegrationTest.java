@@ -713,8 +713,10 @@ class DocumentEditorIntegrationTest {
         drag("[data-label-value=article]", 50, 0);
         fx(
                 () -> {
-                    assertEquals(65, attrs(0).get("x").getAsDouble(), .01);
-                    assertEquals(245, attrs(1).get("x").getAsDouble(), .01);
+                    double centre =
+                            (attrs(0).get("x").getAsDouble() + attrs(1).get("x").getAsDouble() + 70)
+                                    / 2;
+                    assertEquals(102 * 96 / 25.4 / 2, centre, .01);
                     api().call("run", "undo");
                     assertEquals(40, attrs(0).get("x").getAsDouble(), .01);
                     js(
@@ -1037,20 +1039,38 @@ JSON.stringify((()=>{
                 });
         drag(
                 ".context-selected .canvas-object-grip",
-                -168,
+                -120,
                 0,
                 () -> {
-                    // x=140 is both an internal member edge and the group centre: neither is a
-                    // target.
+                    // The member's left edge x=180 remains excluded from group targets.
                     assertFalse(
                             (Boolean)
                                     js(
-                                            "Array.from(document.querySelectorAll('.alignment-guide-x')).some(g=>Math.abs(Number(g.dataset.value)-140)<.01)"));
+                                            "Array.from(document.querySelectorAll('.alignment-guide-x')).some(g=>Math.abs(Number(g.dataset.value)-180)<.01)"));
                     return null;
                 });
         fx(
                 () -> {
-                    assertEquals(140, attrs(2).get("x").getAsDouble(), 1);
+                    assertEquals(180, attrs(2).get("x").getAsDouble(), 1);
+                    return null;
+                });
+        drag(
+                ".context-selected .canvas-object-grip",
+                -46.8,
+                0,
+                () -> {
+                    assertEquals(
+                            140,
+                            ((Number)
+                                            js(
+                                                    "Number(document.querySelector('.alignment-guide-x').dataset.value)"))
+                                    .doubleValue(),
+                            .01);
+                    return null;
+                });
+        fx(
+                () -> {
+                    assertEquals(140, attrs(2).get("x").getAsDouble(), .01);
                     return null;
                 });
         clickWeb("[data-label-value=lot]", false);
@@ -1074,6 +1094,26 @@ JSON.stringify((()=>{
         fx(
                 () -> {
                     assertEquals(target - 200, attrs(0).get("x").getAsDouble(), .01);
+                    return null;
+                });
+        double pageCentre = 102 * 96 / 25.4 / 2;
+        drag(
+                "[data-label-value=article]",
+                (pageCentre - (target - 100) - 1) * 1.2,
+                0,
+                () -> {
+                    assertEquals(
+                            pageCentre,
+                            ((Number)
+                                            js(
+                                                    "Number(document.querySelector('.alignment-guide-x').dataset.value)"))
+                                    .doubleValue(),
+                            .01);
+                    return null;
+                });
+        fx(
+                () -> {
+                    assertEquals(pageCentre, attrs(0).get("x").getAsDouble() + 100, .01);
                     js("document.getElementById('ungroup-selection').click()");
                     assertEquals("", attrs(0).get("groupId").getAsString());
                     assertEquals("", attrs(1).get("groupId").getAsString());
